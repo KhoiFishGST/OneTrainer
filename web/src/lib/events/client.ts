@@ -55,8 +55,10 @@ export class EventClient {
       options.createSocket ??
       ((url: string) => new WebSocket(url) as unknown as WebSocketLike);
 
-    this.customSetTimeout = options.setTimeout ?? setTimeout;
-    this.customClearTimeout = options.clearTimeout ?? clearTimeout;
+    this.customSetTimeout =
+      options.setTimeout ?? ((fn: any, ms?: number) => setTimeout(fn, ms));
+    this.customClearTimeout =
+      options.clearTimeout ?? ((id: any) => clearTimeout(id));
   }
 
   start() {

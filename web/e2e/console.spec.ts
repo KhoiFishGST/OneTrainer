@@ -61,4 +61,61 @@ test.describe("Console Connection Flows", () => {
     await pageFilterInput.fill("stdout-line");
     await expect(page.locator(".console-row", { hasText: "stdout-line" })).toBeVisible();
   });
+
+  test("socket interruption shows disconnected state and reconnect restores backlog without duplicates", async ({ page }) => {
+    await page.addInitScript(() => {
+      const OriginalWebSocket = window.WebSocket;
+      (window as any).__sockets = [];
+
+      const WrappedWebSocket = function (url: string | URL, protocols?: string | string[]) {
+        const ws = new OriginalWebSocket(url, protocols);
+        (window as any).__sockets.push(ws);
+        return ws;
+      };
+      WrappedWebSocket.prototype = OriginalWebSocket.prototype;
+      (window as any).WebSocket = WrappedWebSocket;
+    });
+
+    await page.goto("/console");
+
+    const statusTag = page.locator(".status-tag");
+    await expect(statusTag).toHaveText("connected");
+
+    const filterInput = page.locator('input[placeholder="Filter console..."]');
+
+    await filterInput.fill("stdout-line");
+    await expect(page.locator(".console-row", { hasText: "stdout-line" })).toBeVisible();
+    await expect(page.locator(".console-row")).toHaveCount(1);
+
+    await filterInput.fill("stderr-line");
+    await expect(page.locator(".console-row", { hasText: "stderr-line" })).toBeVisible();
+    await expect(page.locator(".console-row")).toHaveCount(1);
+
+    await filterInput.fill("");
+
+    await page.evaluate(() => {
+      const sockets: WebSocket[] = (window as any).__sockets || [];
+      for (const ws of sockets) {
+        ws.close();
+        if (typeof ws.onclose === "function") {
+          ws.onclose(new CloseEvent("close"));
+        }
+      }
+    });
+
+    await expect(statusTag).toHaveText("disconnected");
+
+    await expect(statusTag).toHaveText("connected", { timeout: 5000 });
+
+    await filterInput.fill("stdout-line");
+    await expect(page.locator(".console-row", { hasText: "stdout-line" })).toBeVisible();
+    await expect(page.locator(".console-row")).toHaveCount(1);
+
+    await filterInput.fill("stderr-line");
+    await expect(page.locator(".console-row", { hasText: "stderr-line" })).toBeVisible();
+    await expect(page.locator(".console-row")).toHaveCount(1);
+
+    await filterInput.fill("");
+    await expect(page.locator(".console-row", { hasText: "20%" })).toBeVisible();
+  });
 });
