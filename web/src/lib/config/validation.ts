@@ -16,6 +16,7 @@ export interface SchemaField {
   required?: boolean;
   nullable?: boolean;
   visible?: boolean;
+  path_mode?: string;
   options?: Array<{ value: any; label: string } | string>;
   min?: number;
   max?: number;

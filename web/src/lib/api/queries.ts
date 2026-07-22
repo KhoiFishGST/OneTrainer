@@ -36,7 +36,7 @@ export function createSchemaQuery(modelType?: string, trainingMethod?: string) {
           ? { model_type: modelType, training_method: trainingMethod }
           : undefined
       ),
-    enabled: !!(modelType && trainingMethod),
+    enabled: modelType === undefined && trainingMethod === undefined ? true : !!(modelType && trainingMethod),
   });
 }
 

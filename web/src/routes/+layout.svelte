@@ -1,5 +1,6 @@
 <script lang="ts">
   import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
+  import LayoutContent from '$lib/components/LayoutContent.svelte';
   import '../app.css';
 
   const queryClient = new QueryClient({
@@ -15,5 +16,7 @@
 </script>
 
 <QueryClientProvider client={queryClient}>
-  {@render children()}
+  <LayoutContent>
+    {@render children()}
+  </LayoutContent>
 </QueryClientProvider>
