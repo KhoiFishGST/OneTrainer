@@ -14,6 +14,8 @@ export class ConfigWorkspace {
   private schema: ConfigSchema;
   private putConfigFn: (req: ConfigUpdateRequest) => Promise<ConfigResponse>;
   private autosaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private activeSavePromise: Promise<ConfigResponse | void> | null = null;
+  private mutationCount = 0;
 
   constructor(
     baselineEnvelope: ConfigResponse,
@@ -36,6 +38,7 @@ export class ConfigWorkspace {
   }
 
   setRaw(path: string, rawValue: any): void {
+    this.mutationCount++;
     this.draft = setPath(this.draft, path, rawValue);
     const result = validateConfig(this.draft, this.schema);
 
@@ -70,52 +73,74 @@ export class ConfigWorkspace {
     return [{ path: '', message: typeof detail === 'string' ? detail : 'Validation error' }];
   }
 
-  async flush(): Promise<ConfigResponse | void> {
+  flush(): Promise<ConfigResponse | void> {
     if (this.autosaveTimer !== null) {
       clearTimeout(this.autosaveTimer);
       this.autosaveTimer = null;
     }
 
-    if (this.state === 'saving') {
-      return;
+    if (this.activeSavePromise !== null) {
+      return this.activeSavePromise;
     }
 
     const valResult = validateConfig(this.draft, this.schema);
     if (!valResult.isValid) {
       this.errors = valResult.errors;
       this.state = 'unsaved';
-      return;
+      return Promise.resolve();
     }
 
     this.state = 'saving';
+    const startMutation = this.mutationCount;
 
-    try {
-      const response = await this.putConfigFn({
-        config: valResult.normalized,
-        base_revision: this.baseline.revision,
-        overwrite: false,
-      });
+    const promise = (async (): Promise<ConfigResponse | void> => {
+      try {
+        const response = await this.putConfigFn({
+          config: valResult.normalized,
+          base_revision: this.baseline.revision,
+          overwrite: false,
+        });
 
-      this.baseline = response;
-      this.draft = cloneDocument(response.config || {});
-      this.errors = [];
-      this.conflictRevision = null;
-      this.state = 'saved';
-      return response;
-    } catch (err: any) {
-      const status = err?.status ?? err?.statusCode;
-      const detail = err?.detail;
+        this.baseline = response;
+        this.errors = [];
+        this.conflictRevision = null;
 
-      if (status === 409) {
-        this.conflictRevision = detail?.current_revision ?? (typeof detail === 'string' ? detail : null);
-        this.state = 'conflict';
-      } else if (status === 422) {
-        this.errors = this.parse422Errors(detail);
-        this.state = 'unsaved';
-      } else {
-        this.state = 'failed';
+        if (this.mutationCount === startMutation) {
+          this.draft = cloneDocument(response.config || {});
+          this.state = 'saved';
+        } else {
+          this.state = 'unsaved';
+          if (this.autosaveTimer === null) {
+            const nextVal = validateConfig(this.draft, this.schema);
+            if (nextVal.isValid) {
+              this.autosaveTimer = setTimeout(() => {
+                this.autosaveTimer = null;
+                this.flush();
+              }, 500);
+            }
+          }
+        }
+        return response;
+      } catch (err: any) {
+        const status = err?.status ?? err?.statusCode;
+        const detail = err?.detail;
+
+        if (status === 409) {
+          this.conflictRevision = detail?.current_revision ?? (typeof detail === 'string' ? detail : null);
+          this.state = 'conflict';
+        } else if (status === 422) {
+          this.errors = this.parse422Errors(detail);
+          this.state = 'unsaved';
+        } else {
+          this.state = 'failed';
+        }
+      } finally {
+        this.activeSavePromise = null;
       }
-    }
+    })();
+
+    this.activeSavePromise = promise;
+    return promise;
   }
 
   async retry(): Promise<ConfigResponse | void> {
@@ -138,6 +163,7 @@ export class ConfigWorkspace {
     }
 
     if (!this.dirty) {
+      this.mutationCount++;
       this.baseline = envelope;
       this.draft = cloneDocument(envelope.config || {});
       this.errors = [];
@@ -157,56 +183,83 @@ export class ConfigWorkspace {
       this.autosaveTimer = null;
     }
 
+    this.mutationCount++;
     this.draft = cloneDocument(this.baseline.config || {});
     this.errors = [];
     this.conflictRevision = null;
     this.state = 'saved';
   }
 
-  async overwriteServer(): Promise<ConfigResponse | void> {
+  overwriteServer(): Promise<ConfigResponse | void> {
     if (this.autosaveTimer !== null) {
       clearTimeout(this.autosaveTimer);
       this.autosaveTimer = null;
+    }
+
+    if (this.activeSavePromise !== null) {
+      return this.activeSavePromise;
     }
 
     const valResult = validateConfig(this.draft, this.schema);
     if (!valResult.isValid) {
       this.errors = valResult.errors;
       this.state = 'unsaved';
-      return;
+      return Promise.resolve();
     }
 
     this.state = 'saving';
+    const startMutation = this.mutationCount;
 
     const baseRev = this.conflictRevision ?? this.baseline.revision;
 
-    try {
-      const response = await this.putConfigFn({
-        config: valResult.normalized,
-        base_revision: baseRev,
-        overwrite: true,
-      });
+    const promise = (async (): Promise<ConfigResponse | void> => {
+      try {
+        const response = await this.putConfigFn({
+          config: valResult.normalized,
+          base_revision: baseRev,
+          overwrite: true,
+        });
 
-      this.baseline = response;
-      this.draft = cloneDocument(response.config || {});
-      this.errors = [];
-      this.conflictRevision = null;
-      this.state = 'saved';
-      return response;
-    } catch (err: any) {
-      const status = err?.status ?? err?.statusCode;
-      const detail = err?.detail;
+        this.baseline = response;
+        this.errors = [];
+        this.conflictRevision = null;
 
-      if (status === 409) {
-        this.conflictRevision = detail?.current_revision ?? null;
-        this.state = 'conflict';
-      } else if (status === 422) {
-        this.errors = this.parse422Errors(detail);
-        this.state = 'unsaved';
-      } else {
-        this.state = 'failed';
+        if (this.mutationCount === startMutation) {
+          this.draft = cloneDocument(response.config || {});
+          this.state = 'saved';
+        } else {
+          this.state = 'unsaved';
+          if (this.autosaveTimer === null) {
+            const nextVal = validateConfig(this.draft, this.schema);
+            if (nextVal.isValid) {
+              this.autosaveTimer = setTimeout(() => {
+                this.autosaveTimer = null;
+                this.flush();
+              }, 500);
+            }
+          }
+        }
+        return response;
+      } catch (err: any) {
+        const status = err?.status ?? err?.statusCode;
+        const detail = err?.detail;
+
+        if (status === 409) {
+          this.conflictRevision = detail?.current_revision ?? null;
+          this.state = 'conflict';
+        } else if (status === 422) {
+          this.errors = this.parse422Errors(detail);
+          this.state = 'unsaved';
+        } else {
+          this.state = 'failed';
+        }
+      } finally {
+        this.activeSavePromise = null;
       }
-    }
+    })();
+
+    this.activeSavePromise = promise;
+    return promise;
   }
 
   async beforePresetSave(): Promise<ConfigResponse | void> {
@@ -221,7 +274,7 @@ export class ConfigWorkspace {
       throw new Error('Cannot save preset with invalid config');
     }
 
-    if (this.dirty) {
+    if (this.dirty || this.state === 'saving' || this.activeSavePromise !== null) {
       return this.flush();
     }
   }

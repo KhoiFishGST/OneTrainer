@@ -259,4 +259,77 @@ describe("ConfigWorkspace", () => {
     expect(put).toHaveBeenCalledWith({ config: { tensorboard_port: 7000 }, base_revision: "i:0", overwrite: false });
     expect(workspace.state).toBe("saved");
   });
+
+  it("returns active save promise when flush is called while saving", async () => {
+    let resolveSave!: (res: any) => void;
+    const pendingSave = new Promise((resolve) => {
+      resolveSave = resolve;
+    });
+    const put = vi.fn().mockImplementation(() => pendingSave);
+
+    const workspace = new ConfigWorkspace({ config: { tensorboard_port: 6006 }, revision: "i:0" }, schema as any, put);
+    workspace.setRaw("tensorboard_port", "7000");
+
+    const p1 = workspace.flush();
+    expect(workspace.state).toBe("saving");
+
+    const p2 = workspace.flush();
+    expect(p1).toBe(p2);
+
+    const p3 = workspace.beforePresetSave();
+
+    resolveSave({ config: { tensorboard_port: 7000 }, revision: "i:1" });
+    const [res1, res2, res3] = await Promise.all([p1, p2, p3]);
+
+    expect(res1).toEqual({ config: { tensorboard_port: 7000 }, revision: "i:1" });
+    expect(res2).toEqual({ config: { tensorboard_port: 7000 }, revision: "i:1" });
+    expect(res3).toEqual({ config: { tensorboard_port: 7000 }, revision: "i:1" });
+    expect(workspace.state).toBe("saved");
+    expect(put).toHaveBeenCalledTimes(1);
+  });
+
+  it("preserves local edits made while a save request is in flight", async () => {
+    let resolveSave!: (res: any) => void;
+    const pendingSave = new Promise((resolve) => {
+      resolveSave = resolve;
+    });
+    const put = vi.fn()
+      .mockImplementationOnce(() => pendingSave)
+      .mockResolvedValueOnce({ config: { tensorboard_port: 7000, debug_mode: "on" }, revision: "i:2" });
+
+    const workspace = new ConfigWorkspace(
+      { config: { tensorboard_port: 6006, debug_mode: "off" }, revision: "i:0" },
+      schema as any,
+      put
+    );
+
+    workspace.setRaw("tensorboard_port", "7000");
+    const p1 = workspace.flush();
+    expect(workspace.state).toBe("saving");
+
+    // Modify draft while p1 is in flight
+    workspace.setRaw("debug_mode", "on");
+    expect(workspace.state).toBe("unsaved");
+
+    // Complete first save
+    resolveSave({ config: { tensorboard_port: 7000, debug_mode: "off" }, revision: "i:1" });
+    await p1;
+
+    // Baseline updated to i:1, draft preserved with debug_mode: "on", state remains unsaved
+    expect(workspace.baseline).toEqual({ config: { tensorboard_port: 7000, debug_mode: "off" }, revision: "i:1" });
+    expect(workspace.draft.debug_mode).toBe("on");
+    expect(workspace.draft.tensorboard_port).toBe("7000");
+    expect(workspace.state).toBe("unsaved");
+
+    // Autosave triggers for new edits with updated base_revision i:1
+    await vi.advanceTimersByTimeAsync(600);
+    expect(put).toHaveBeenCalledTimes(2);
+    expect(put).toHaveBeenLastCalledWith({
+      config: { tensorboard_port: 7000, debug_mode: "on" },
+      base_revision: "i:1",
+      overwrite: false,
+    });
+    expect(workspace.state).toBe("saved");
+    expect(workspace.revision).toBe("i:2");
+  });
 });
