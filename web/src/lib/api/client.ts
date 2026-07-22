@@ -23,13 +23,14 @@ export class ApiError extends Error {
 }
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
+  const { headers, ...restOptions } = options ?? {};
   const res = await fetch(url, {
     credentials: 'same-origin',
     headers: {
       'Content-Type': 'application/json',
-      ...options?.headers,
+      ...headers,
     },
-    ...options,
+    ...restOptions,
   });
 
   if (!res.ok) {
