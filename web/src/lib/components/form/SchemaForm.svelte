@@ -23,7 +23,7 @@
     values?: Record<string, any>;
     issues?: FieldError[];
     setRaw: (path: string, val: any) => void;
-    openDirectory?: (path: string) => void;
+    openDirectory?: (path: string, onSelect?: (selectedPath: string) => void) => void;
   } = $props();
 
   function normalizeControl(control?: string): ControlType {
@@ -108,7 +108,7 @@
                       value={fieldValue}
                       {ariaDescribedBy}
                       onInput={(val) => setRaw(primaryKey, val)}
-                      onOpenDirectory={openDirectory}
+                      onOpenDirectory={openDirectory ? (path, cb) => openDirectory(path, cb ?? ((s) => setRaw(primaryKey, s))) : undefined}
                     />
                   {:else if controlType === 'time'}
                     {@const unitKey = field.keys?.[1] ?? `${primaryKey}_unit`}

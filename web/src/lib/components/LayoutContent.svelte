@@ -16,6 +16,7 @@
   import StatusBar from './shell/StatusBar.svelte';
   import ConsoleDrawer from './shell/ConsoleDrawer.svelte';
   import ErrorBanner from './shell/ErrorBanner.svelte';
+  import DirectoryPicker from './directory/DirectoryPicker.svelte';
 
   let { children }: { children?: Snippet } = $props();
 
@@ -25,7 +26,9 @@
   const updateConfigMutation = createUpdateConfigMutation();
 
   let workspace = $state<ConfigWorkspace | null>(null);
-  let activeDirectoryPath = $state<string | null>(null);
+  let pickerOpen = $state(false);
+  let pickerInitialPath = $state('/');
+  let pickerOnSelect = $state<((selectedPath: string) => void) | null>(null);
   let isMobile = $state(false);
 
   const currentModelType = $derived(workspace?.draft?.model_type);
@@ -56,8 +59,10 @@
     get schema() {
       return schemaData;
     },
-    openDirectory: (currentPath: string) => {
-      activeDirectoryPath = currentPath;
+    openDirectory: (currentPath: string, onSelect?: (selectedPath: string) => void) => {
+      pickerInitialPath = currentPath || '/';
+      pickerOnSelect = onSelect ?? null;
+      pickerOpen = true;
     },
   });
 
@@ -104,6 +109,20 @@
 
   <ConsoleDrawer open={currentPath === '/console'} />
   <StatusBar connected={$healthQuery.isSuccess} />
+
+  <DirectoryPicker
+    open={pickerOpen}
+    initialPath={pickerInitialPath}
+    onSelect={(selectedPath) => {
+      if (pickerOnSelect) {
+        pickerOnSelect(selectedPath);
+      }
+      pickerOpen = false;
+    }}
+    onClose={() => {
+      pickerOpen = false;
+    }}
+  />
 </div>
 
 <style>

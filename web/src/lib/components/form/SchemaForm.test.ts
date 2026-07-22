@@ -170,7 +170,7 @@ it("renders toggle, text, number, select, and time controls correctly", async ()
   // Directory button click
   const browseBtn = screen.getByRole("button", { name: "Browse directory" });
   await fireEvent.click(browseBtn);
-  expect(openDirectory).toHaveBeenCalledWith("/models");
+  expect(openDirectory).toHaveBeenCalledWith("/models", expect.any(Function));
 
   // Time control value & unit
   const timeInput = screen.getByLabelText("Save Frequency");

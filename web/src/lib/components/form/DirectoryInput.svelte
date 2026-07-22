@@ -1,5 +1,6 @@
 <script lang="ts">
   import { FolderOpen } from 'lucide-svelte';
+  import { getRouteContext } from '$lib/config/context';
 
   let {
     id,
@@ -16,7 +17,7 @@
     ariaDescribedBy?: string;
     placeholder?: string;
     onInput: (val: string) => void;
-    onOpenDirectory?: (currentPath: string) => void;
+    onOpenDirectory?: (currentPath: string, onSelect?: (selectedPath: string) => void) => void;
   } = $props();
 
   function handleInput(e: Event) {
@@ -26,7 +27,21 @@
 
   function handleOpen() {
     if (onOpenDirectory) {
-      onOpenDirectory(value || '');
+      onOpenDirectory(value || '', (selectedPath: string) => {
+        onInput(selectedPath);
+      });
+      return;
+    }
+
+    try {
+      const ctx = getRouteContext();
+      if (ctx.openDirectory) {
+        ctx.openDirectory(value || '', (selectedPath: string) => {
+          onInput(selectedPath);
+        });
+      }
+    } catch {
+      // Context not present
     }
   }
 </script>

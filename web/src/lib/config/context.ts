@@ -5,7 +5,7 @@ import type { ConfigSchema } from './validation';
 export interface RouteContext {
   workspace: ConfigWorkspace | null;
   schema: ConfigSchema;
-  openDirectory?: (currentPath: string) => void;
+  openDirectory?: (currentPath: string, onSelect?: (selectedPath: string) => void) => void;
 }
 
 const CONTEXT_KEY = Symbol('ROUTE_CONTEXT');
