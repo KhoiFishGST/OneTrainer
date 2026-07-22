@@ -1,0 +1,5 @@
+-r requirements-webui.txt
+httpx
+pytest
+pytest-asyncio
+ruff==0.15.21
