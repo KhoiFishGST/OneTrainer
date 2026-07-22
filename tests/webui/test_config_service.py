@@ -1,11 +1,11 @@
 import asyncio
 from pathlib import Path
 
-import pytest
-
 from modules.util.config.TrainConfig import TrainConfig
 from modules.webui.config_service import ConfigPersistenceError, ConfigService, RevisionConflict
 from modules.webui.state import WebUISettings
+
+import pytest
 
 
 @pytest.fixture

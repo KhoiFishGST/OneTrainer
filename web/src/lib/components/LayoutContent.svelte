@@ -38,8 +38,12 @@
   let drawerOpen = $state(false);
   let eventClient = $state<EventClient | null>(null);
 
-  const currentModelType = $derived(workspace?.draft?.model_type);
-  const currentTrainingMethod = $derived(workspace?.draft?.training_method);
+  const currentModelType = $derived(
+    workspace?.draft?.model_type ?? $configQuery.data?.config?.model_type
+  );
+  const currentTrainingMethod = $derived(
+    workspace?.draft?.training_method ?? $configQuery.data?.config?.training_method
+  );
 
   const schemaQuery = $derived(createSchemaQuery(currentModelType, currentTrainingMethod));
 
@@ -191,6 +195,8 @@
 
   .main-content {
     flex: 1;
+    display: flex;
+    flex-direction: column;
     overflow-y: auto;
     padding: 16px;
   }

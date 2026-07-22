@@ -1,10 +1,10 @@
 import json
 
-import pytest
-
 from modules.util.config.TrainConfig import TrainConfig
 from modules.webui.config_service import ConfigSnapshot
 from modules.webui.presets import PresetService, UnknownPreset
+
+import pytest
 
 
 def test_tree_returns_opaque_ids_and_loads_only_listed_entries(tmp_path):

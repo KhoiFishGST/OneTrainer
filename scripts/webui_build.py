@@ -10,9 +10,7 @@ def build_digest(web_dir: Path) -> str:
 
     src_dir = web_dir / "src"
     if src_dir.is_dir():
-        for path in src_dir.rglob("*"):
-            if path.is_file():
-                input_paths.append(path)
+        input_paths.extend([path for path in src_dir.rglob("*") if path.is_file()])
 
     top_level_files = [
         "package.json",

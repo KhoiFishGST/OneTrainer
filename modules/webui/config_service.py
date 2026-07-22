@@ -1,12 +1,12 @@
 import asyncio
 import logging
 import uuid
+from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Callable
 
-from modules.util.config.TrainConfig import TrainConfig
 from modules.util.config.config_io import load_secrets, load_train_config, save_settings
+from modules.util.config.TrainConfig import TrainConfig
 from modules.webui.config_codec import decode_settings_document
 from modules.webui.state import WebUISettings
 
@@ -87,13 +87,16 @@ class ConfigService:
             snapshot = self._snapshot_unlocked()
             listeners = list(self._change_listeners)
 
-        for listener in listeners:
+        async def _notify(listener):
             try:
                 res = listener(snapshot)
                 if asyncio.iscoroutine(res):
                     await res
             except Exception:
                 logger.exception("Error in config change listener")
+
+        for listener in listeners:
+            await _notify(listener)
 
         return snapshot
 

@@ -44,10 +44,10 @@ export class EventClient {
     this.onConfigChanged = options.onConfigChanged;
     this.onRestart = options.onRestart;
 
-    let defaultWsUrl = '/api/events/ws';
+    let defaultWsUrl = '/api/events';
     if (typeof window !== 'undefined') {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      defaultWsUrl = `${protocol}//${window.location.host}/api/events/ws`;
+      defaultWsUrl = `${protocol}//${window.location.host}/api/events`;
     }
     this.wsUrl = options.wsUrl ?? defaultWsUrl;
 

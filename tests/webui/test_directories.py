@@ -1,9 +1,9 @@
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 from modules.webui.directories import DirectoryDenied, DirectoryMissing, DirectoryService
+
+import pytest
 
 
 def test_directory_listing_is_sorted_resolved_and_directory_only(tmp_path):
@@ -37,6 +37,5 @@ def test_non_directory_file_raises_directory_missing(tmp_path):
 
 
 def test_permission_denied_raises_directory_denied(tmp_path):
-    with patch.object(Path, "resolve", side_effect=PermissionError("Denied")):
-        with pytest.raises(DirectoryDenied):
-            DirectoryService().list(str(tmp_path))
+    with patch.object(Path, "resolve", side_effect=PermissionError("Denied")), pytest.raises(DirectoryDenied):
+        DirectoryService().list(str(tmp_path))

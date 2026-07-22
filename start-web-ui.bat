@@ -71,9 +71,9 @@ if errorlevel 1 (
 %PYTHON% scripts\webui_build.py --check >NUL 2>NUL
 if errorlevel 1 (
     echo Building Web UI frontend...
-    bun --cwd web install --frozen-lockfile
+    bun install --cwd web --frozen-lockfile
     if errorlevel 1 goto :end_error
-    bun --cwd web run build
+    bun run --cwd web build
     if errorlevel 1 goto :end_error
     %PYTHON% scripts\webui_build.py --mark
     if errorlevel 1 goto :end_error

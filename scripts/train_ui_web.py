@@ -9,10 +9,11 @@ except ImportError:
 
 script_imports(allow_zluda=False)
 
-import uvicorn
 from modules.webui.app import create_app
 from modules.webui.console import ConsoleCapture
 from modules.webui.state import WebUISettings
+
+import uvicorn
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:

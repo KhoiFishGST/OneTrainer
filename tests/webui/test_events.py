@@ -1,10 +1,10 @@
 import asyncio
 import threading
 
-import pytest
-
 from modules.webui.console import ConsoleBuffer
 from modules.webui.events import EventHub
+
+import pytest
 
 
 @pytest.fixture
@@ -96,13 +96,18 @@ async def test_publish_from_thread_when_ingress_full_records_gap():
     # Wait for drain task to process events
     await asyncio.sleep(0.1)
 
+    async def _next_event():
+        try:
+            return await asyncio.wait_for(iterator.__anext__(), timeout=0.1)
+        except asyncio.TimeoutError:
+            return None
+
     received = []
     while True:
-        try:
-            event = await asyncio.wait_for(iterator.__anext__(), timeout=0.1)
-            received.append(event)
-        except asyncio.TimeoutError:
+        event = await _next_event()
+        if event is None:
             break
+        received.append(event)
 
     assert len(received) > 0
     assert any(event.get("gap") for event in received)

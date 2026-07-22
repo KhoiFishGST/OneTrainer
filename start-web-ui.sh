@@ -18,8 +18,8 @@ fi
 
 if ! run_python_in_active_env scripts/webui_build.py --check &>/dev/null; then
     print "Building Web UI frontend..."
-    bun --cwd web install --frozen-lockfile
-    bun --cwd web run build
+    bun install --cwd web --frozen-lockfile
+    bun run --cwd web build
     run_python_in_active_env scripts/webui_build.py --mark
 fi
 

@@ -1,7 +1,7 @@
 import json
 
-from modules.util.config.TrainConfig import TrainConfig
 from modules.util.config.config_io import load_preset_tree, load_train_config, save_named_preset, save_settings
+from modules.util.config.TrainConfig import TrainConfig
 
 
 def test_save_and_load_settings_preserves_external_secrets(tmp_path, monkeypatch):

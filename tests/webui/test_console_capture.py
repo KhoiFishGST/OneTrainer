@@ -3,7 +3,6 @@ import json
 import os
 import subprocess
 import sys
-from pathlib import Path
 
 from modules.webui.console import ConsoleCapture, ConsoleLine, ConsoleSpan
 from modules.webui.events import EventHub

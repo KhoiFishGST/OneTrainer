@@ -18,10 +18,9 @@
     presetsData?: any;
   }>();
 
-  let ctxWorkspace: ConfigWorkspace | null = null;
+  let ctx: any = null;
   try {
-    const ctx = getRouteContext();
-    ctxWorkspace = ctx.workspace;
+    ctx = getRouteContext();
   } catch {
     // context not provided in isolated unit test
   }
@@ -31,7 +30,7 @@
   const loadPresetMutation = createLoadPresetMutation();
   const savePresetMutation = createSavePresetMutation();
 
-  const workspace = $derived(workspaceProp ?? ctxWorkspace);
+  const workspace = $derived(workspaceProp ?? ctx?.workspace);
   const meta = $derived(metaDataProp ?? $metaQuery.data);
   const presets = $derived(presetsDataProp ?? $presetsQuery.data);
 

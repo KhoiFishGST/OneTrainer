@@ -1,8 +1,8 @@
 from pathlib import Path
 
-import pytest
-
 from scripts.train_ui_web import exposure_warning, make_settings, parse_args, validate_static_build
+
+import pytest
 
 
 def test_web_entry_defaults_to_loopback_7801() -> None:

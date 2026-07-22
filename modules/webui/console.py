@@ -421,7 +421,7 @@ class ConsoleCapture:
             self._last_workspace_error = str(e)
 
     def _reader_loop(self) -> None:
-        last_publish = time.monotonic()
+        last_publish = 0.0
         accumulated_lines: list[ConsoleLine] = []
         accumulated_bytes = 0
 
@@ -436,10 +436,8 @@ class ConsoleCapture:
                 break
 
             if self._saved_stdout is not None:
-                try:
+                with contextlib.suppress(OSError):
                     os.write(self._saved_stdout, data)
-                except OSError:
-                    pass
 
             if self._sink is not None:
                 self._sink.write(data)
@@ -449,7 +447,7 @@ class ConsoleCapture:
                 self._buffer.apply(lines)
                 if self._hub is not None:
                     accumulated_lines.extend(lines)
-                    accumulated_bytes += sum(len(l.text.encode("utf-8")) for l in lines)
+                    accumulated_bytes += sum(len(line_item.text.encode("utf-8")) for line_item in lines)
 
             transient = self._parser.snapshot_transient()
 

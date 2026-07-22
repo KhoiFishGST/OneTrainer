@@ -50,12 +50,13 @@ class DirectoryService:
             raise DirectoryDenied(f"Permission denied reading directory: {resolved}") from error
 
         directories = []
-        for child in children:
+        def _check_dir(child):
             try:
-                if child.is_dir():
-                    directories.append(child)
+                return child.is_dir()
             except PermissionError:
-                continue
+                return False
+
+        directories = [child for child in children if _check_dir(child)]
 
         directories.sort(key=lambda item: item.name.lower())
 

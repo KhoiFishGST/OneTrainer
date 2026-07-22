@@ -94,6 +94,15 @@ For a technically focused quick start, see the [Quick Start Guide](docs/QuickSta
 
 -   Execute `start-ui.sh` and the GUI will pop up.
 
+### Web UI Mode
+
+OneTrainer includes an optional browser-based Web UI (Phase A implementation).
+
+-   **Windows**: Run `start-web-ui.bat`
+-   **Linux / Mac**: Run `./start-web-ui.sh`
+
+By default, the Web UI listens at `http://127.0.0.1:7801`. See [LAUNCH-SCRIPTS.md](LAUNCH-SCRIPTS.md) for launch options, port overrides, and system setup details.
+
 ### CLI Mode
 
 If you need more control or a headless approach OT also supports the command-line interface. All commands **need** to be run inside the active venv created during installation.

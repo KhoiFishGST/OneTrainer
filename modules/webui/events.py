@@ -7,6 +7,8 @@ from typing import Any
 
 from modules.webui.console import ConsoleBuffer, ConsoleLine, ConsoleSpan
 
+from typing_extensions import Self
+
 
 def _to_console_line(item: Any) -> ConsoleLine:
     if isinstance(item, ConsoleLine):
@@ -104,10 +106,15 @@ class EventSubscription:
             self._event.set()
             self._hub._unregister_subscriber(self)
 
-    async def __aenter__(self) -> "EventSubscription":
+    async def __aenter__(self) -> Self:
         return self
 
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: object,
+    ) -> None:
         await self.aclose()
 
 
@@ -165,15 +172,11 @@ class EventHub:
         try:
             self._ingress_queue.put_nowait(item)
         except queue.Full:
-            try:
+            with contextlib.suppress(queue.Empty):
                 self._ingress_queue.get_nowait()
-            except queue.Empty:
-                pass
             self._ingress_gap = True
-            try:
+            with contextlib.suppress(queue.Full):
                 self._ingress_queue.put_nowait(item)
-            except queue.Full:
-                pass
 
         if self._loop and self._loop.is_running():
             self._loop.call_soon_threadsafe(self._ingress_event.set)
@@ -244,9 +247,7 @@ class EventHub:
 
             if not self._running:
                 break
-            try:
+            with contextlib.suppress(asyncio.TimeoutError):
                 await asyncio.wait_for(self._ingress_event.wait(), timeout=0.05)
-            except asyncio.TimeoutError:
-                pass
 
         await self._drain_ingress()

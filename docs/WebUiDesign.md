@@ -1,6 +1,6 @@
 # OneTrainer Web UI — Design Specification
 
-Status: **draft for review** — nothing in this document is implemented yet.
+Status: **Phase A Implemented** — see [Approved Phase A Specification](#9-delivery-phases) for implementation details.
 
 This document specifies a browser-based frontend for OneTrainer. It is intended
 to become the third UI implementation alongside the existing CustomTkinter and
@@ -439,11 +439,11 @@ server reports a detached run (Phase C, with the Cloud tab).
 
 Each phase is independently demoable and mergeable in the fork.
 
-- **Phase A — skeleton + pipeline proof.** FastAPI app, config GET/PUT with
-  persistence, presets, meta; SvelteKit shell with rail/header/status bar;
-  General + Backup + Data tabs rendered from a hand-seeded schema; console
-  tee + WS hub + console drawer (proves the whole event pipeline);
-  launchers; `docs/` updates.
+- **Phase A — skeleton + pipeline proof (COMPLETE).** FastAPI server backend
+  (`modules/webui`), SvelteKit SPA frontend (`web/`), isolated settings and presets
+  persistence, real-time console tee and WebSocket event hub, directory browser,
+  General/Data/Backup configuration tabs, launch scripts (`start-web-ui.sh`,
+  `start-web-ui.bat`), and Playwright E2E browser test coverage.
 - **Phase B — full config surface.** Complete `schema.py` for all tabs
   (Model, Training incl. optimizer/scheduler sub-dialogs as modals,
   Sampling, LoRA/Embedding, Concepts with image previews), PathEntry file
