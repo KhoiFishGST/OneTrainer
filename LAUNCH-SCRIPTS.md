@@ -7,7 +7,8 @@
 
 - `install.sh`: Ensures that you have a valid Python runtime environment and installs all requirements if necessary.
 - `update.sh`: Updates OneTrainer to the latest version and upgrades any outdated requirements in your Python runtime environment.
-- `start-ui.sh`: Launches the main OneTrainer interface.
+- `start-ui.sh`: Launches the main PySide6 OneTrainer interface.
+- `start-web-ui.sh`: Launches the Web UI interface.
 - `run-cmd.sh`: Executes a custom script (such as "train"), and supports providing command-line arguments. See the "running custom script commands" guide section for more details.
 
 
@@ -68,3 +69,31 @@
 - If you want to automate various OneTrainer CLI tasks, then you should call `run-cmd.sh` from your own scripts (see previous guide section), since it's capable of running *any* OneTrainer command with your own command-line arguments.
 - To run multiple tasks in the same scripts, you should perform separate calls to `run-cmd.sh`. Run it as many times as required for all the custom scripts and command-line arguments that you want to perform in your own script.
 - It's highly recommended that you use `set -e` at the top of your own scripts (see `install.sh` for an example of that), since it tells Bash to exit your script if any of the OneTrainer commands fail. Otherwise your script will continue running even if a previous step has failed, which is usually not what you want!
+
+
+## Web UI
+
+### Launching the Web UI
+
+- Linux/Mac: `./start-web-ui.sh`
+- Windows: `start-web-ui.bat`
+- On first launch (or whenever frontend source files change), the launcher automatically verifies frontend dependencies and builds the production static bundle into `web/build`.
+
+### Requirements & Optional Dependencies
+
+- **Python dependencies:** Web UI API dependencies are specified in `requirements-webui.txt` and can be installed via:
+  `python -m pip install -r requirements-webui.txt`
+- **Bun runtime:** [Bun](https://bun.sh) is required on your system PATH to install frontend dependencies and generate production builds.
+
+### Usage & Command Line Options
+
+- **Default URL:** `http://127.0.0.1:7801`
+- **Custom Port:** `./start-web-ui.sh --port 8080`
+- **Network Exposure:** `./start-web-ui.sh --host 0.0.0.0`
+  *Warning:* The Web UI has no built-in authentication. Binding to non-loopback interfaces (`0.0.0.0`) exposes all features and file-system operations to your local network.
+
+### Two-Terminal Development Mode
+
+For active frontend development with hot module reloading (HMR):
+- **Terminal 1 (Backend API):** `./start-web-ui.sh --dev`
+- **Terminal 2 (Vite Dev Server):** `cd web && bun run dev`
