@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { untrack } from 'svelte';
+  import { untrack, tick } from 'svelte';
   import { Folder, ArrowUp, X } from 'lucide-svelte';
   import { api } from '$lib/api/client';
 
@@ -36,6 +36,40 @@
   let error = $state<string | null>(null);
   let directoryData = $state<DirectoryData | null>(null);
 
+  let modalEl = $state<HTMLDivElement | null>(null);
+  let pathInputEl = $state<HTMLInputElement | null>(null);
+  let previousActiveElement = $state<HTMLElement | null>(null);
+
+  function getBreadcrumbs(pathStr: string): { label: string; path: string }[] {
+    if (!pathStr) return [];
+
+    const isWindows = /^[a-zA-Z]:/.test(pathStr) || pathStr.includes('\\');
+    const sep = pathStr.includes('\\') ? '\\' : '/';
+
+    if (!isWindows) {
+      const parts = pathStr.split('/').filter(Boolean);
+      const crumbs = [{ label: '/', path: '/' }];
+      let current = '';
+      for (const part of parts) {
+        current += '/' + part;
+        crumbs.push({ label: part, path: current });
+      }
+      return crumbs;
+    } else {
+      const parts = pathStr.split(/[/\\]/).filter(Boolean);
+      if (parts.length === 0) return [];
+
+      const drive = parts[0];
+      const crumbs = [{ label: drive + sep, path: drive + sep }];
+      let current = drive;
+      for (let i = 1; i < parts.length; i++) {
+        current += sep + parts[i];
+        crumbs.push({ label: parts[i], path: current });
+      }
+      return crumbs;
+    }
+  }
+
   async function loadDirectory(targetPath: string) {
     loading = true;
     error = null;
@@ -69,14 +103,52 @@
 
   $effect(() => {
     if (open) {
+      previousActiveElement = document.activeElement as HTMLElement | null;
       const startPath = untrack(() => initialPath);
       untrack(() => loadDirectory(startPath));
+      tick().then(() => {
+        pathInputEl?.focus();
+      });
+    } else {
+      if (previousActiveElement) {
+        previousActiveElement.focus();
+        previousActiveElement = null;
+      }
     }
   });
 
   function handleKeyDown(e: KeyboardEvent) {
     if (e.key === 'Escape') {
       handleClose();
+      return;
+    }
+
+    if (e.key === 'Tab' && modalEl) {
+      const focusableSelector =
+        'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+      const focusables = Array.from(
+        modalEl.querySelectorAll<HTMLElement>(focusableSelector)
+      );
+
+      if (focusables.length === 0) {
+        e.preventDefault();
+        return;
+      }
+
+      const firstEl = focusables[0];
+      const lastEl = focusables[focusables.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstEl || !modalEl.contains(document.activeElement)) {
+          lastEl.focus();
+          e.preventDefault();
+        }
+      } else {
+        if (document.activeElement === lastEl || !modalEl.contains(document.activeElement)) {
+          firstEl.focus();
+          e.preventDefault();
+        }
+      }
     }
   }
 
@@ -102,16 +174,16 @@
 </script>
 
 {#if open}
-  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <div
-    class="picker-backdrop"
-    role="dialog"
-    aria-modal="true"
-    aria-label="Select Directory"
-    tabindex="-1"
-    onkeydown={handleKeyDown}
-  >
-    <div class="picker-modal">
+  <div class="picker-backdrop">
+    <div
+      class="picker-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Server Directory Picker"
+      tabindex="-1"
+      onkeydown={handleKeyDown}
+      bind:this={modalEl}
+    >
       <div class="picker-header">
         <h3 class="picker-title">Select Directory</h3>
         <button type="button" class="close-btn" aria-label="Close" onclick={handleClose}>
@@ -123,6 +195,7 @@
         <input
           type="text"
           class="path-input"
+          bind:this={pathInputEl}
           bind:value={typedPath}
           oninput={(e) => (typedPath = (e.target as HTMLInputElement).value)}
           onkeydown={handleInputKeyDown}
@@ -137,6 +210,22 @@
           Go
         </button>
       </div>
+
+      <nav class="breadcrumb-bar" aria-label="Breadcrumb">
+        {#each getBreadcrumbs(currentPath) as crumb, index (crumb.path)}
+          {#if index > 0}
+            <span class="crumb-separator">/</span>
+          {/if}
+          <button
+            type="button"
+            class="crumb-btn"
+            class:active={crumb.path === currentPath}
+            onclick={() => loadDirectory(crumb.path)}
+          >
+            {crumb.label}
+          </button>
+        {/each}
+      </nav>
 
       {#if directoryData?.roots && directoryData.roots.length > 0}
         <div class="roots-bar">
@@ -290,6 +379,51 @@
     border-radius: 6px;
     font-size: 0.875rem;
     cursor: pointer;
+  }
+
+  .breadcrumb-bar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 16px;
+    background: var(--color-bg-subtle, #f9fafb);
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+    font-size: 0.875rem;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .crumb-separator {
+    color: var(--color-text-muted, #9ca3af);
+    font-size: 0.75rem;
+    user-select: none;
+  }
+
+  .crumb-btn {
+    background: transparent;
+    border: none;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--color-primary, #2563eb);
+    font-size: 0.875rem;
+    cursor: pointer;
+    font-weight: 400;
+  }
+
+  .crumb-btn:hover {
+    background: var(--color-bg-hover, #e5e7eb);
+    text-decoration: underline;
+  }
+
+  .crumb-btn.active {
+    font-weight: 600;
+    color: var(--color-text, #111827);
+    cursor: default;
+  }
+
+  .crumb-btn.active:hover {
+    text-decoration: none;
+    background: transparent;
   }
 
   .roots-bar {

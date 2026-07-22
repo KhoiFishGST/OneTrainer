@@ -111,3 +111,109 @@ it("calls onClose when cancel or escape key is pressed", async () => {
   await fireEvent.keyDown(dialog, { key: "Escape" });
   expect(onClose).toHaveBeenCalledTimes(2);
 });
+
+it("renders breadcrumbs and navigates when a breadcrumb segment is clicked", async () => {
+  const list = vi
+    .fn()
+    .mockResolvedValueOnce({
+      path: "/home/user/workspace",
+      parent: "/home/user",
+      directories: [],
+      roots: ["/"],
+      truncated: false,
+    })
+    .mockResolvedValueOnce({
+      path: "/home",
+      parent: "/",
+      directories: [{ name: "user", path: "/home/user" }],
+      roots: ["/"],
+      truncated: false,
+    });
+
+  render(DirectoryPicker, { initialPath: "/home/user/workspace", list, onSelect: vi.fn(), open: true });
+
+  const homeSegment = await screen.findByRole("button", { name: "home" });
+  expect(homeSegment).toBeVisible();
+  await fireEvent.click(homeSegment);
+
+  expect(list).toHaveBeenLastCalledWith("/home");
+});
+
+it("supports breadcrumb navigation for Windows paths", async () => {
+  const list = vi
+    .fn()
+    .mockResolvedValueOnce({
+      path: "C:\\Users\\Name",
+      parent: "C:\\Users",
+      directories: [],
+      roots: ["C:\\"],
+      truncated: false,
+    })
+    .mockResolvedValueOnce({
+      path: "C:\\Users",
+      parent: "C:\\",
+      directories: [{ name: "Name", path: "C:\\Users\\Name" }],
+      roots: ["C:\\"],
+      truncated: false,
+    });
+
+  render(DirectoryPicker, { initialPath: "C:\\Users\\Name", list, onSelect: vi.fn(), open: true });
+
+  const usersSegment = await screen.findByRole("button", { name: "Users" });
+  expect(usersSegment).toBeVisible();
+  await fireEvent.click(usersSegment);
+
+  expect(list).toHaveBeenLastCalledWith("C:\\Users");
+});
+
+it("manages dialog accessibility, initial focus, focus restoration, and tab trap", async () => {
+  const list = vi.fn().mockResolvedValue({
+    path: "/",
+    parent: null,
+    directories: [],
+    roots: ["/"],
+    truncated: false,
+  });
+
+  const triggerButton = document.createElement("button");
+  triggerButton.textContent = "Open Picker";
+  document.body.appendChild(triggerButton);
+  triggerButton.focus();
+  expect(document.activeElement).toBe(triggerButton);
+
+  const { rerender } = render(DirectoryPicker, {
+    initialPath: "/",
+    list,
+    onSelect: vi.fn(),
+    onClose: vi.fn(),
+    open: true,
+  });
+
+  const dialog = await screen.findByRole("dialog", { name: "Server Directory Picker" });
+  expect(dialog).toBeVisible();
+  expect(dialog).toHaveAttribute("aria-modal", "true");
+  expect(dialog).toHaveClass("picker-modal");
+
+  const pathInput = screen.getByPlaceholderText("Enter path...");
+  await vi.waitFor(() => {
+    expect(document.activeElement).toBe(pathInput);
+  });
+
+  const selectButton = screen.getByRole("button", { name: /^Select/ });
+  const closeButton = screen.getByRole("button", { name: "Close" });
+
+  selectButton.focus();
+  expect(document.activeElement).toBe(selectButton);
+  await fireEvent.keyDown(dialog, { key: "Tab", shiftKey: false });
+  expect(document.activeElement).toBe(closeButton);
+
+  closeButton.focus();
+  expect(document.activeElement).toBe(closeButton);
+  await fireEvent.keyDown(dialog, { key: "Tab", shiftKey: true });
+  expect(document.activeElement).toBe(selectButton);
+
+  rerender({ open: false });
+  expect(document.activeElement).toBe(triggerButton);
+
+  document.body.removeChild(triggerButton);
+});
