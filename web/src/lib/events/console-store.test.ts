@@ -41,3 +41,17 @@ it("enforces max bytes retention limit", () => {
   store.apply({ type: "console", stream_id: "s", seq: 3, lines: [line(3, "1234567890")] });
   expect(store.rows.map((r) => r.id)).toEqual([2, 3]);
 });
+
+it("does not double count transient row bytes in recalculateBytesAndPrune", () => {
+  const store = new ConsoleStore(10, 20); // 20 bytes max
+  // 10 bytes line + 10 bytes transient line = 20 bytes total (should fit!)
+  store.installBacklog({
+    stream_id: "s",
+    cursor: 1,
+    revision: "i:0",
+    lines: [line(1, "1234567890")],
+    transient: line(2, "1234567890", true),
+  });
+  expect(store.committedRows.map((r) => r.id)).toEqual([1]);
+  expect(store.rows.map((r) => r.id)).toEqual([1, 2]);
+});

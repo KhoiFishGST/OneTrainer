@@ -113,7 +113,7 @@ export class ConsoleStore {
   }
 
   private recalculateBytesAndPrune() {
-    let bytes = getLineBytes(this.transientRow);
+    let bytes = 0;
     for (const row of this.committedRows) {
       bytes += getLineBytes(row);
     }

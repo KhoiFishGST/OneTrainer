@@ -65,6 +65,23 @@
     window.removeEventListener('touchmove', onResize);
     window.removeEventListener('touchend', stopResize);
   }
+
+  function handleKeyDown(e: KeyboardEvent) {
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const maxHeight = typeof window !== 'undefined' ? window.innerHeight * 0.8 : 800;
+      drawerHeight = Math.min(drawerHeight + 10, maxHeight);
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('console_drawer_height', drawerHeight.toString());
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      drawerHeight = Math.max(drawerHeight - 10, 100);
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('console_drawer_height', drawerHeight.toString());
+      }
+    }
+  }
 </script>
 
 {#if open}
@@ -82,6 +99,7 @@
       tabindex="0"
       onmousedown={startResize}
       ontouchstart={startResize}
+      onkeydown={handleKeyDown}
     >
       <div class="handle-bar"></div>
     </div>

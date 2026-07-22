@@ -44,13 +44,15 @@
   const schemaQuery = $derived(createSchemaQuery(currentModelType, currentTrainingMethod));
 
   $effect(() => {
-    if ($configQuery.data && $schemaQuery.data) {
+    if ($configQuery.data) {
       if (!workspace) {
-        workspace = new ConfigWorkspace(
-          $configQuery.data,
-          $schemaQuery.data,
-          (req) => $updateConfigMutation.mutateAsync(req)
-        );
+        if ($schemaQuery.data) {
+          workspace = new ConfigWorkspace(
+            $configQuery.data,
+            $schemaQuery.data,
+            (req) => $updateConfigMutation.mutateAsync(req)
+          );
+        }
       } else {
         workspace.acceptRemote($configQuery.data);
       }
