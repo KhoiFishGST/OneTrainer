@@ -1,7 +1,11 @@
+import asyncio
 import codecs
 import contextlib
+import os
 import re
+import sys
 import threading
+import time
 from collections import deque
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -333,3 +337,181 @@ class RotatingLogSink:
     @property
     def last_error(self) -> str | None:
         return self._last_error
+
+
+class ConsoleCapture:
+    def __init__(self, max_lines: int = 10000, max_bytes: int = 4 * 1024 * 1024) -> None:
+        self._buffer = ConsoleBuffer(max_lines=max_lines, max_bytes=max_bytes)
+        self._parser = TerminalParser()
+        self._sink: RotatingLogSink | None = None
+        self._hub: Any = None
+        self._loop: asyncio.AbstractEventLoop | None = None
+
+        self._saved_stdout: int | None = None
+        self._saved_stderr: int | None = None
+        self._pipe_read_fd: int | None = None
+        self._pipe_write_fd: int | None = None
+        self._reader_thread: threading.Thread | None = None
+
+        self._installed = False
+        self._closed = False
+        self._lock = threading.Lock()
+        self._last_workspace_error: str | None = None
+
+    @property
+    def buffer(self) -> ConsoleBuffer:
+        return self._buffer
+
+    @property
+    def sink(self) -> RotatingLogSink | None:
+        return self._sink
+
+    def install(self) -> None:
+        with self._lock:
+            if self._installed or self._closed:
+                return
+
+            self._saved_stdout = os.dup(1)
+            self._saved_stderr = os.dup(2)
+
+            self._pipe_read_fd, self._pipe_write_fd = os.pipe()
+
+            os.dup2(self._pipe_write_fd, 1)
+            os.dup2(self._pipe_write_fd, 2)
+
+            self._installed = True
+
+            self._reader_thread = threading.Thread(target=self._reader_loop, daemon=True)
+            self._reader_thread.start()
+
+    def attach(
+        self,
+        loop: asyncio.AbstractEventLoop,
+        hub: Any,
+        workspace_dir: str | Path | None = None,
+    ) -> None:
+        with self._lock:
+            self._loop = loop
+            self._hub = hub
+
+            snapshot = self._buffer.snapshot()
+            lines: list[ConsoleLine] = list(snapshot["lines"])
+            if snapshot["transient"] is not None:
+                lines.append(snapshot["transient"])
+            if lines:
+                hub.publish_from_thread("console", {"lines": lines})
+
+            if workspace_dir is not None:
+                self.set_workspace(workspace_dir)
+
+    def set_workspace(self, workspace_dir: str | Path | None) -> None:
+        if workspace_dir is None:
+            return
+        log_path = Path(workspace_dir) / "webui.log"
+        try:
+            if self._sink is None:
+                self._sink = RotatingLogSink(log_path)
+            else:
+                self._sink.reopen(log_path)
+        except Exception as e:
+            self._last_workspace_error = str(e)
+
+    def _reader_loop(self) -> None:
+        last_publish = time.monotonic()
+        accumulated_lines: list[ConsoleLine] = []
+        accumulated_bytes = 0
+
+        while True:
+            if self._pipe_read_fd is None:
+                break
+            try:
+                data = os.read(self._pipe_read_fd, 4096)
+            except OSError:
+                break
+            if not data:
+                break
+
+            if self._saved_stdout is not None:
+                try:
+                    os.write(self._saved_stdout, data)
+                except OSError:
+                    pass
+
+            if self._sink is not None:
+                self._sink.write(data)
+
+            lines = self._parser.feed(data)
+            if lines:
+                self._buffer.apply(lines)
+                accumulated_lines.extend(lines)
+                accumulated_bytes += sum(len(l.text.encode("utf-8")) for l in lines)
+
+            transient = self._parser.snapshot_transient()
+
+            now = time.monotonic()
+            hub = self._hub
+            if hub is not None:
+                if (
+                    accumulated_lines
+                    or transient is not None
+                    or (now - last_publish >= 0.033)
+                    or accumulated_bytes >= 64 * 1024
+                ):
+                    to_send: list[ConsoleLine] = list(accumulated_lines)
+                    if transient is not None:
+                        to_send.append(transient)
+                    if to_send:
+                        hub.publish_from_thread("console", {"lines": to_send})
+                    accumulated_lines.clear()
+                    accumulated_bytes = 0
+                    last_publish = now
+
+    def close(self) -> None:
+        with self._lock:
+            if not self._installed or self._closed:
+                return
+            self._closed = True
+
+        with contextlib.suppress(Exception):
+            sys.stdout.flush()
+        with contextlib.suppress(Exception):
+            sys.stderr.flush()
+
+        if self._saved_stdout is not None:
+            with contextlib.suppress(Exception):
+                os.dup2(self._saved_stdout, 1)
+        if self._saved_stderr is not None:
+            with contextlib.suppress(Exception):
+                os.dup2(self._saved_stderr, 2)
+
+        if self._pipe_write_fd is not None:
+            with contextlib.suppress(Exception):
+                os.close(self._pipe_write_fd)
+            self._pipe_write_fd = None
+
+        if self._reader_thread is not None:
+            self._reader_thread.join(timeout=5.0)
+
+        if self._pipe_read_fd is not None:
+            with contextlib.suppress(Exception):
+                os.close(self._pipe_read_fd)
+            self._pipe_read_fd = None
+
+        transient = self._parser.snapshot_transient()
+        if transient is not None:
+            self._buffer.apply([transient])
+            if self._hub is not None:
+                self._hub.publish_from_thread("console", {"lines": [transient]})
+
+        if self._sink is not None:
+            self._sink.close()
+
+        if self._saved_stdout is not None:
+            with contextlib.suppress(Exception):
+                os.close(self._saved_stdout)
+            self._saved_stdout = None
+        if self._saved_stderr is not None:
+            with contextlib.suppress(Exception):
+                os.close(self._saved_stderr)
+            self._saved_stderr = None
+
