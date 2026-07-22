@@ -1,0 +1,1 @@
+import{R as o}from"../chunks/OA8UcISh.js";function r(e,t){throw new o(e,t.toString())}const n=()=>{throw r(307,"/general")},i=Object.freeze(Object.defineProperty({__proto__:null,load:n},Symbol.toStringTag,{value:"Module"}));export{i as universal};
