@@ -443,8 +443,9 @@ class ConsoleCapture:
             lines = self._parser.feed(data)
             if lines:
                 self._buffer.apply(lines)
-                accumulated_lines.extend(lines)
-                accumulated_bytes += sum(len(l.text.encode("utf-8")) for l in lines)
+                if self._hub is not None:
+                    accumulated_lines.extend(lines)
+                    accumulated_bytes += sum(len(l.text.encode("utf-8")) for l in lines)
 
             transient = self._parser.snapshot_transient()
 

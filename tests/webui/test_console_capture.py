@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -54,4 +55,28 @@ def test_capture_attach_transfers_buffer(tmp_path):
         await hub.close()
 
     asyncio.run(run_test())
+
+
+def test_capture_preattach_lines_not_duplicated(tmp_path):
+    async def run_test():
+        hub = EventHub()
+        await hub.start()
+        capture = ConsoleCapture()
+        capture.install()
+        os.write(1, b"preattach-line-1\n")
+        await asyncio.sleep(0.05)
+        capture.attach(asyncio.get_running_loop(), hub, tmp_path)
+        await asyncio.sleep(0.05)
+        os.write(1, b"postattach-line-2\n")
+        await asyncio.sleep(0.05)
+        capture.close()
+
+        backlog = await hub.backlog()
+        line_texts = [line.text for line in backlog["lines"]]
+        assert line_texts.count("preattach-line-1") == 1
+        assert line_texts.count("postattach-line-2") == 1
+        await hub.close()
+
+    asyncio.run(run_test())
+
 
