@@ -1,6 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from modules.webui.config_service import ConfigService
@@ -28,4 +28,7 @@ class AppState:
     schema: "SchemaRegistry"
     presets: "PresetService"
     directories: "DirectoryService"
-    events: Optional["EventHub"] = None
+    events: "EventHub | None" = None
+    version: str = "unknown"
+    warnings: list[str] = field(default_factory=list)
+    capture: Any | None = None

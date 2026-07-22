@@ -335,6 +335,10 @@ class RotatingLogSink:
                 self._file = None
 
     @property
+    def log_path(self) -> Path:
+        return self._log_path
+
+    @property
     def last_error(self) -> str | None:
         return self._last_error
 
