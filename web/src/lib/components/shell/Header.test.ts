@@ -1,0 +1,76 @@
+import { fireEvent, render, screen } from '@testing-library/svelte';
+import { expect, it, vi } from 'vitest';
+import HeaderTestWrapper from './HeaderTestWrapper.svelte';
+
+it('coerces training_method to first supported when new model_type does not support current training_method', async () => {
+  const setRawCalls: [string, any][] = [];
+  const mockWorkspace = {
+    draft: {
+      model_type: 'STABLE_DIFFUSION_15',
+      training_method: 'TEXTUAL_INVERSION',
+    },
+    setRaw: (path: string, val: any) => {
+      setRawCalls.push([path, val]);
+      (mockWorkspace.draft as any)[path] = val;
+    },
+    state: 'saved',
+    revision: 'rev-1',
+  } as any;
+
+  const mockMeta = {
+    version: '1.0',
+    model_types: [
+      {
+        value: 'STABLE_DIFFUSION_15',
+        label: 'SD 1.5',
+        training_methods: [
+          { value: 'FINE_TUNE', label: 'Fine Tune' },
+          { value: 'TEXTUAL_INVERSION', label: 'Textual Inversion' },
+        ],
+      },
+      {
+        value: 'FLUX_1',
+        label: 'Flux 1',
+        training_methods: [
+          { value: 'FINE_TUNE', label: 'Fine Tune' },
+          { value: 'LORA', label: 'LoRA' },
+        ],
+      },
+    ],
+  };
+
+  render(HeaderTestWrapper, {
+    workspace: mockWorkspace,
+    metaData: mockMeta,
+  });
+
+  const modelSelect = screen.getByRole('combobox', { name: 'Model Type' });
+  await fireEvent.change(modelSelect, { target: { value: 'FLUX_1' } });
+
+  // Verify training_method was coerced to FINE_TUNE (first supported method for FLUX_1)
+  expect(setRawCalls).toEqual([
+    ['training_method', 'FINE_TUNE'],
+    ['model_type', 'FLUX_1'],
+  ]);
+});
+
+it('calls beforePresetSave when saving preset', async () => {
+  const beforePresetSaveSpy = vi.fn().mockResolvedValue(undefined);
+  const mockWorkspace = {
+    draft: {
+      model_type: 'STABLE_DIFFUSION_15',
+      training_method: 'FINE_TUNE',
+    },
+    state: 'saved',
+    beforePresetSave: beforePresetSaveSpy,
+  } as any;
+
+  render(HeaderTestWrapper, {
+    workspace: mockWorkspace,
+  });
+
+  const savePresetBtn = screen.getByRole('button', { name: 'Save Preset' });
+  await fireEvent.click(savePresetBtn);
+
+  expect(beforePresetSaveSpy).toHaveBeenCalled();
+});

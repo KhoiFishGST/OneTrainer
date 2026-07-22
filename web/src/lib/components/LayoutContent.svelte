@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import { page } from '$app/stores';
+  import { onMount } from 'svelte';
   import { ConfigWorkspace } from '../config/workspace.svelte';
   import { setRouteContext } from '../config/context';
   import {
@@ -9,25 +11,39 @@
     createSchemaQuery,
     createUpdateConfigMutation,
   } from '../api/queries';
+  import Header from './shell/Header.svelte';
+  import Rail from './shell/Rail.svelte';
+  import StatusBar from './shell/StatusBar.svelte';
+  import ConsoleDrawer from './shell/ConsoleDrawer.svelte';
+  import ErrorBanner from './shell/ErrorBanner.svelte';
 
   let { children }: { children?: Snippet } = $props();
 
   const healthQuery = createHealthQuery();
   const metaQuery = createMetaQuery();
   const configQuery = createConfigQuery();
-  const schemaQuery = createSchemaQuery();
   const updateConfigMutation = createUpdateConfigMutation();
 
   let workspace = $state<ConfigWorkspace | null>(null);
   let activeDirectoryPath = $state<string | null>(null);
+  let isMobile = $state(false);
+
+  const currentModelType = $derived(workspace?.draft?.model_type);
+  const currentTrainingMethod = $derived(workspace?.draft?.training_method);
+
+  const schemaQuery = $derived(createSchemaQuery(currentModelType, currentTrainingMethod));
 
   $effect(() => {
-    if ($configQuery.data && $schemaQuery.data && !workspace) {
-      workspace = new ConfigWorkspace(
-        $configQuery.data,
-        $schemaQuery.data,
-        (req) => $updateConfigMutation.mutateAsync(req)
-      );
+    if ($configQuery.data && $schemaQuery.data) {
+      if (!workspace) {
+        workspace = new ConfigWorkspace(
+          $configQuery.data,
+          $schemaQuery.data,
+          (req) => $updateConfigMutation.mutateAsync(req)
+        );
+      } else {
+        workspace.acceptRemote($configQuery.data);
+      }
     }
   });
 
@@ -45,6 +61,18 @@
     },
   });
 
+  onMount(() => {
+    if (typeof window !== 'undefined') {
+      const mq = window.matchMedia('(max-width: 768px)');
+      isMobile = mq.matches;
+      const handler = (e: MediaQueryListEvent) => {
+        isMobile = e.matches;
+      };
+      mq.addEventListener('change', handler);
+      return () => mq.removeEventListener('change', handler);
+    }
+  });
+
   const isApiError = $derived(
     $healthQuery.isError || $metaQuery.isError || $configQuery.isError || $schemaQuery.isError
   );
@@ -55,25 +83,50 @@
       ($schemaQuery.error as Error)?.message ||
       'API Connection Error'
   );
+
+  const currentPath = $derived($page?.url?.pathname ?? '/general');
 </script>
 
-{#if isApiError}
-  <div class="shell-error-banner" role="alert">
-    <strong>Error:</strong>
-    {errorMessage}
-  </div>
-{/if}
+<div class="app-shell">
+  <Header />
+  {#if isApiError}
+    <ErrorBanner message={errorMessage} />
+  {/if}
 
-{#if children}
-  {@render children()}
-{/if}
+  <div class="shell-body">
+    <Rail {currentPath} mobile={isMobile} />
+    <main class="main-content">
+      {#if children}
+        {@render children()}
+      {/if}
+    </main>
+  </div>
+
+  <ConsoleDrawer open={currentPath === '/console'} />
+  <StatusBar connected={$healthQuery.isSuccess} />
+</div>
 
 <style>
-  .shell-error-banner {
-    background-color: var(--color-error-bg, #fef2f2);
-    border-bottom: 1px solid var(--color-error-border, #fecaca);
-    color: var(--color-error-text, #991b1b);
-    padding: 0.75rem 1rem;
-    font-size: 0.875rem;
+  .app-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    background-color: var(--bg);
+    color: var(--text);
+  }
+
+  .shell-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .main-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
   }
 </style>
