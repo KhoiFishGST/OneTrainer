@@ -109,3 +109,69 @@ async def test_publish_from_thread_when_ingress_full_records_gap():
 
     await subscription.aclose()
     await hub.close()
+
+
+@pytest.mark.anyio
+async def test_publish_envelope_overrides_payload_user_keys():
+    hub = EventHub(ConsoleBuffer())
+    await hub.start()
+    event = await hub.publish(
+        "config_changed",
+        {"stream_id": "fake_stream", "seq": 9999, "type": "fake_type", "revision": "v1"},
+    )
+    assert event["stream_id"] == hub.stream_id
+    assert event["stream_id"] != "fake_stream"
+    assert event["seq"] == 1
+    assert event["type"] == "config_changed"
+    assert event["revision"] == "v1"
+    await hub.close()
+
+
+@pytest.mark.anyio
+async def test_offer_resets_consecutive_drop_failures_on_successful_enqueue():
+    hub = EventHub(ConsoleBuffer())
+    sub = hub.subscribe()
+    sub._maxsize = 1
+
+    # First event fills queue (queue size = 1)
+    sub.offer({"type": "custom", "val": 1})
+    assert len(sub._queue) == 1
+
+    # Second event cannot drop 'custom' type -> drop failure 1
+    sub.offer({"type": "custom", "val": 2})
+    assert sub._consecutive_drop_failures == 1
+
+    # Third event cannot drop -> drop failure 2
+    sub.offer({"type": "custom", "val": 3})
+    assert sub._consecutive_drop_failures == 2
+
+    # Now consume an event from queue so queue length is 0 (< maxsize)
+    sub._queue.popleft()
+
+    # Offer event when queue has space -> successful enqueue -> reset drop failures
+    sub.offer({"type": "custom", "val": 4})
+    assert sub._consecutive_drop_failures == 0
+    assert not sub._closed
+
+    sub.close()
+
+
+@pytest.mark.anyio
+async def test_close_drains_remaining_ingress_queue():
+    hub = EventHub(ConsoleBuffer(), ingress_size=10, client_size=10)
+    await hub.start()
+    sub = hub.subscribe()
+
+    # Put items into ingress queue directly without setting event to simulate queued items prior to close
+    hub.publish_from_thread("test_event", {"idx": 1})
+    hub.publish_from_thread("test_event", {"idx": 2})
+
+    # Close hub which should trigger final drain
+    await hub.close()
+
+    received = []
+    while sub._queue:
+        received.append(sub._queue.popleft())
+
+    assert len(received) == 2
+    assert [e["idx"] for e in received] == [1, 2]

@@ -42,6 +42,7 @@ class EventSubscription:
         if len(self._queue) < self._maxsize:
             self._queue.append(event)
             self._event.set()
+            self._consecutive_drop_failures = 0
             return
 
         dropped = False
@@ -190,10 +191,10 @@ class EventHub:
                 self._console.apply(lines)
 
             event = {
+                **payload,
                 "stream_id": self._stream_id,
                 "seq": self._seq,
                 "type": event_type,
-                **payload,
             }
 
             for sub in list(self._subscribers):
@@ -220,27 +221,32 @@ class EventHub:
     def _unregister_subscriber(self, sub: EventSubscription) -> None:
         self._subscribers.discard(sub)
 
+    async def _drain_ingress(self) -> None:
+        if self._ingress_queue is not None:
+            while not self._ingress_queue.empty():
+                try:
+                    event_type, payload = self._ingress_queue.get_nowait()
+                except queue.Empty:
+                    break
+
+                gap = self._ingress_gap
+                self._ingress_gap = False
+                if gap:
+                    payload = dict(payload)
+                    payload["gap"] = True
+
+                await self.publish(event_type, payload)
+
     async def _drain_loop(self) -> None:
         while self._running:
-            if self._ingress_queue is not None:
-                while not self._ingress_queue.empty():
-                    try:
-                        event_type, payload = self._ingress_queue.get_nowait()
-                    except queue.Empty:
-                        break
-
-                    gap = self._ingress_gap
-                    self._ingress_gap = False
-                    if gap:
-                        payload = dict(payload)
-                        payload["gap"] = True
-
-                    await self.publish(event_type, payload)
-
             self._ingress_event.clear()
+            await self._drain_ingress()
+
             if not self._running:
                 break
             try:
                 await asyncio.wait_for(self._ingress_event.wait(), timeout=0.05)
             except asyncio.TimeoutError:
                 pass
+
+        await self._drain_ingress()
