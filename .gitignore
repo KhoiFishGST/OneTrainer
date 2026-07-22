@@ -42,6 +42,7 @@ CLAUDE.md
 .superpowers
 
 /web/build/
+/web/.svelte-kit/
 /web/node_modules/
 /web/.build-source
 /web/.e2e/
