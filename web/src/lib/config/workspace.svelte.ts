@@ -57,6 +57,19 @@ export class ConfigWorkspace {
     }
   }
 
+  private parse422Errors(detail: any): FieldError[] {
+    if (Array.isArray(detail)) {
+      return detail.map((e: any) => ({
+        path: e.path ?? (Array.isArray(e.loc) ? e.loc[e.loc.length - 1] : ''),
+        message: e.message ?? e.msg ?? 'Validation error',
+      }));
+    }
+    if (typeof detail === 'object' && detail !== null && detail.path) {
+      return [detail as FieldError];
+    }
+    return [{ path: '', message: typeof detail === 'string' ? detail : 'Validation error' }];
+  }
+
   async flush(): Promise<ConfigResponse | void> {
     if (this.autosaveTimer !== null) {
       clearTimeout(this.autosaveTimer);
@@ -97,16 +110,7 @@ export class ConfigWorkspace {
         this.conflictRevision = detail?.current_revision ?? (typeof detail === 'string' ? detail : null);
         this.state = 'conflict';
       } else if (status === 422) {
-        if (Array.isArray(detail)) {
-          this.errors = detail.map((e: any) => ({
-            path: e.path ?? (Array.isArray(e.loc) ? e.loc[e.loc.length - 1] : ''),
-            message: e.message ?? e.msg ?? 'Validation error',
-          }));
-        } else if (typeof detail === 'object' && detail !== null && detail.path) {
-          this.errors = [detail];
-        } else {
-          this.errors = [{ path: '', message: typeof detail === 'string' ? detail : 'Validation error' }];
-        }
+        this.errors = this.parse422Errors(detail);
         this.state = 'unsaved';
       } else {
         this.state = 'failed';
@@ -126,6 +130,11 @@ export class ConfigWorkspace {
   acceptRemote(envelope: ConfigResponse): void {
     if (envelope.revision === this.baseline.revision) {
       return;
+    }
+
+    if (this.autosaveTimer !== null) {
+      clearTimeout(this.autosaveTimer);
+      this.autosaveTimer = null;
     }
 
     if (!this.dirty) {
@@ -192,14 +201,7 @@ export class ConfigWorkspace {
         this.conflictRevision = detail?.current_revision ?? null;
         this.state = 'conflict';
       } else if (status === 422) {
-        if (Array.isArray(detail)) {
-          this.errors = detail.map((e: any) => ({
-            path: e.path ?? '',
-            message: e.message ?? 'Validation error',
-          }));
-        } else {
-          this.errors = [{ path: '', message: 'Validation error' }];
-        }
+        this.errors = this.parse422Errors(detail);
         this.state = 'unsaved';
       } else {
         this.state = 'failed';

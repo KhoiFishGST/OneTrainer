@@ -96,6 +96,31 @@ describe("Schema validation", () => {
     expect(badEnum.isValid).toBe(false);
     expect(badEnum.errors).toEqual([{ path: "debug_mode", message: "Invalid option" }]);
   });
+
+  it("requires a required field even if nullable is true when missing or empty", () => {
+    const requiredNullableSchema = {
+      fields: [
+        {
+          id: "req_null",
+          keys: ["name"],
+          required: true,
+          nullable: true,
+        },
+      ],
+    };
+
+    const missingRes = validateConfig({}, requiredNullableSchema as any);
+    expect(missingRes.isValid).toBe(false);
+    expect(missingRes.errors).toEqual([{ path: "name", message: "Field is required" }]);
+
+    const emptyRes = validateConfig({ name: "" }, requiredNullableSchema as any);
+    expect(emptyRes.isValid).toBe(false);
+    expect(emptyRes.errors).toEqual([{ path: "name", message: "Field is required" }]);
+
+    const nullValRes = validateConfig({ name: null }, requiredNullableSchema as any);
+    expect(nullValRes.isValid).toBe(true);
+    expect(nullValRes.normalized.name).toBeNull();
+  });
 });
 
 describe("ConfigWorkspace", () => {
@@ -176,6 +201,37 @@ describe("ConfigWorkspace", () => {
     workspace.acceptRemote({ config: { tensorboard_port: 8001 }, revision: "i:2" });
     expect(workspace.state).toBe("conflict");
     expect(workspace.draft.tensorboard_port).toBe("9000");
+  });
+
+  it("clears pending autosave timer in acceptRemote", async () => {
+    const put = vi.fn().mockResolvedValue({ config: { tensorboard_port: 9000 }, revision: "i:1" });
+    const workspace = new ConfigWorkspace({ config: { tensorboard_port: 6006 }, revision: "i:0" }, schema as any, put);
+
+    workspace.setRaw("tensorboard_port", "9000"); // trigger autosave timer
+    workspace.acceptRemote({ config: { tensorboard_port: 8001 }, revision: "i:2" });
+
+    expect(workspace.state).toBe("conflict");
+    await vi.advanceTimersByTimeAsync(600);
+    expect(put).not.toHaveBeenCalled();
+    expect(workspace.state).toBe("conflict");
+  });
+
+  it("handles 422 errors during overwriteServer using shared parser", async () => {
+    const put = vi.fn()
+      .mockRejectedValueOnce({ status: 409, detail: { current_revision: "i:1" } })
+      .mockRejectedValueOnce({
+        status: 422,
+        detail: [{ path: "tensorboard_port", message: "Invalid value on server" }],
+      });
+    const workspace = new ConfigWorkspace({ config: { tensorboard_port: 6006 }, revision: "i:0" }, schema as any, put);
+
+    workspace.setRaw("tensorboard_port", "7000");
+    await workspace.flush();
+    expect(workspace.state).toBe("conflict");
+
+    await workspace.overwriteServer();
+    expect(workspace.state).toBe("unsaved");
+    expect(workspace.errors).toEqual([{ path: "tensorboard_port", message: "Invalid value on server" }]);
   });
 
   it("reloadServer requires confirmation flag to discard local edits", () => {

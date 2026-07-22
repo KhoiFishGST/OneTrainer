@@ -90,17 +90,22 @@ export function validateConfig(draft: Record<string, any>, schema: ConfigSchema)
         continue;
       }
 
-      // Check undefined or empty string for required
-      if (val === undefined || val === '') {
-        if (field.required && !field.nullable) {
+      // Check undefined for required
+      if (val === undefined) {
+        if (field.required) {
+          errors.push({ path: key, message: 'Field is required' });
+        }
+        continue;
+      }
+
+      // Check empty string
+      if (val === '') {
+        if (field.required) {
           errors.push({ path: key, message: 'Field is required' });
           continue;
         }
-        if (field.nullable && val === '') {
+        if (field.nullable) {
           normalized = setPath(normalized, key, null);
-          continue;
-        }
-        if (val === undefined) {
           continue;
         }
       }
