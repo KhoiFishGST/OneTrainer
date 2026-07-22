@@ -51,6 +51,8 @@ class PresetService:
         return result
 
     def load(self, preset_id: str) -> TrainConfig:
+        if preset_id not in self._id_map:
+            self.tree()
         file_path = self._id_map.get(preset_id)
         if file_path is None:
             raise UnknownPreset(f"Unknown preset ID: {preset_id}")

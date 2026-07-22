@@ -15,8 +15,8 @@ export interface EventClientOptions {
   onRestart?: () => void;
   wsUrl?: string;
   createSocket?: (url: string) => WebSocketLike;
-  setTimeout?: typeof setTimeout;
-  clearTimeout?: typeof clearTimeout;
+  setTimeout?: (fn: (...args: any[]) => void, ms?: number, ...args: any[]) => any;
+  clearTimeout?: (id: any) => void;
 }
 
 const RECONNECT_DELAYS = [500, 1000, 2000, 4000, 8000, 10000];
@@ -28,8 +28,8 @@ export class EventClient {
   private onRestart?: () => void;
   private wsUrl: string;
   private createSocket: (url: string) => WebSocketLike;
-  private customSetTimeout: typeof setTimeout;
-  private customClearTimeout: typeof clearTimeout;
+  private customSetTimeout: (fn: (...args: any[]) => void, ms?: number, ...args: any[]) => any;
+  private customClearTimeout: (id: any) => void;
 
   private socket: WebSocketLike | null = null;
   private status: 'stopped' | 'connecting' | 'queueing' | 'live' | 'resyncing' = 'stopped';

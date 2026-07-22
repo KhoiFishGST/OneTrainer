@@ -27,9 +27,9 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 def make_settings(root_dir: Path, dev: bool = False) -> WebUISettings:
     return WebUISettings(
         root_dir=root_dir,
-        config_path=root_dir / "config.json",
+        config_path=root_dir / "training_presets" / "#.json",
         secrets_path=root_dir / "secrets.json",
-        presets_dir=root_dir / "presets",
+        presets_dir=root_dir / "training_presets",
         static_dir=root_dir / "web" / "build",
         dev=dev,
     )
