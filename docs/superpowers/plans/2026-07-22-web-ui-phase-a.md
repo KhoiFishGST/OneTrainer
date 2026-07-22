@@ -161,7 +161,7 @@ export type StreamEvent = {
 
 **Interfaces:**
 - Consumes: `TrainConfig`, `SecretsConfig`, `path_util.safe_filename`, `path_util.canonical_join`, and `write_json_atomic`.
-- Produces: `load_train_config`, `load_preset_tree`, `save_settings`, `save_named_preset`, and `save_secrets` for Tasks 3 and 5.
+- Produces: `load_train_config`, `load_secrets`, `load_preset_tree`, `save_settings`, `save_named_preset`, and `save_secrets` for Tasks 3 and 5.
 
 - [ ] **Step 1: Add isolated runtime and test requirements**
 
@@ -219,6 +219,17 @@ def test_preset_tree_excludes_last_session_and_user_files(tmp_path):
     ]
 
 
+def test_preset_tree_can_include_user_files(tmp_path):
+    presets = tmp_path / "training_presets"
+    presets.mkdir()
+    (presets / "#.json").write_text("{}", encoding="utf-8")
+    (presets / "user.json").write_text("{}", encoding="utf-8")
+    assert load_preset_tree(presets) == []
+    assert load_preset_tree(presets, include_user_files=True) == [
+        ("user", str(presets / "user.json").replace("\\", "/")),
+    ]
+
+
 def test_named_preset_sanitizes_name(tmp_path):
     path = save_named_preset(TrainConfig.default_values(), "unsafe:/ name", tmp_path)
     assert path.name == "unsafe name.json"
@@ -246,19 +257,32 @@ from modules.util.config.TrainConfig import TrainConfig
 from modules.util.path_util import write_json_atomic
 
 
-def load_preset_tree(directory: str | Path = "training_presets") -> list[tuple[str, str | list]]:
+def load_preset_tree(
+    directory: str | Path = "training_presets",
+    include_user_files: bool = False,
+) -> list[tuple[str, str | list]]:
+    # include_user_files=False mirrors the native top bar (built-in "#" presets only);
+    # the web PresetService passes True to also list web-saved user presets.
     directory = Path(directory)
     nodes: list[tuple[str, str | list]] = []
     if not directory.is_dir():
         return nodes
     for entry in sorted(directory.iterdir(), key=lambda item: item.name.lower()):
         if entry.is_dir():
-            children = load_preset_tree(entry)
+            children = load_preset_tree(entry, include_user_files)
             if children:
                 nodes.append((entry.name, children))
-        elif entry.name.startswith("#") and entry.name != "#.json" and entry.suffix == ".json":
+        elif entry.suffix == ".json" and entry.name != "#.json" \
+                and (include_user_files or entry.name.startswith("#")):
             nodes.append((entry.stem, str(entry).replace("\\", "/")))
     return nodes
+
+
+def load_secrets(path: str | Path = "secrets.json") -> SecretsConfig | None:
+    with suppress(FileNotFoundError):
+        secret_dict = json.loads(Path(path).read_text(encoding="utf-8"))
+        return SecretsConfig.default_values().from_dict(secret_dict)
+    return None
 
 
 def load_train_config(config_path: str | Path, secrets_path: str | Path = "secrets.json") -> TrainConfig | None:
@@ -267,9 +291,9 @@ def load_train_config(config_path: str | Path, secrets_path: str | Path = "secre
         loaded_dict = json.loads(config_path.read_text(encoding="utf-8"))
         is_builtin = config_path.name.startswith("#") and config_path.name != "#.json"
         loaded = TrainConfig.default_values().from_dict(loaded_dict, migrate=not is_builtin).to_unpacked_config()
-        with suppress(FileNotFoundError):
-            secret_dict = json.loads(Path(secrets_path).read_text(encoding="utf-8"))
-            loaded.secrets = SecretsConfig.default_values().from_dict(secret_dict)
+        secrets = load_secrets(secrets_path)
+        if secrets is not None:
+            loaded.secrets = secrets
         return loaded
     except FileNotFoundError:
         return None
@@ -511,6 +535,8 @@ Run: `python -m pytest tests/webui/test_config_codec.py -v`
 
 Expected: all tests pass, including new cases for malformed `additional_embeddings`, `optimizer_defaults`, and `scheduler_params`.
 
+Also add round-trip acceptance tests: `decode_settings_document(TrainConfig.default_values().to_settings_dict(secrets=False), SecretsConfig.default_values())` must succeed, and the same must hold for every `#*.json` under the repository's `training_presets/` tree after loading it through `load_train_config` and re-serializing with `to_settings_dict(secrets=False)`. These guard the codec against `BaseConfig` serialization quirks (enums serialized via `str(value)`, infinite floats serialized as `"inf"`/`"-inf"` strings): the server must always accept its own output.
+
 - [ ] **Step 5: Run Ruff on the new module**
 
 Run: `ruff check modules/webui/config_codec.py tests/webui/test_config_codec.py`
@@ -568,6 +594,16 @@ async def test_malformed_startup_config_falls_back_with_warning(tmp_path):
     service = ConfigService.load(app_settings)
     assert service.warnings and "Could not load last-session config" in service.warnings[0]
     assert (await service.snapshot()).config["workspace_dir"] == "workspace/run"
+
+
+@pytest.mark.asyncio
+async def test_missing_settings_file_still_loads_secrets(tmp_path):
+    app_settings = settings(tmp_path)
+    app_settings.secrets_path.write_text('{"huggingface_token": "kept"}', encoding="utf-8")
+    service = ConfigService.load(app_settings)
+    assert service.warnings == []
+    # secrets never appear in snapshots; assert on the canonical config directly
+    assert service._config.secrets.huggingface_token == "kept"
 
 
 @pytest.mark.asyncio
@@ -660,7 +696,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 
 from modules.util.config.TrainConfig import TrainConfig
-from modules.util.config.config_io import load_train_config, save_settings
+from modules.util.config.config_io import load_secrets, load_train_config, save_settings
 from modules.webui.config_codec import decode_settings_document
 from modules.webui.state import WebUISettings
 
@@ -699,7 +735,17 @@ class ConfigService:
         except Exception as error:
             warnings.append(f"Could not load last-session config: {error}")
             config = None
-        return cls(settings, config or TrainConfig.default_values(), warnings)
+        if config is None:
+            # A missing or malformed last-session file must not discard secrets.json:
+            # fall back to default settings but still load secrets independently.
+            config = TrainConfig.default_values()
+            try:
+                secrets = load_secrets(settings.secrets_path)
+                if secrets is not None:
+                    config.secrets = secrets
+            except Exception as error:
+                warnings.append(f"Could not load secrets: {error}")
+        return cls(settings, config, warnings)
 
     def _revision(self) -> str:
         return f"{self._instance_id}:{self._counter}"
@@ -980,9 +1026,9 @@ Expected: collection fails because both service modules are absent.
 
 - [ ] **Step 4: Implement constrained services**
 
-`PresetService.tree()` rebuilds an internal ID-to-path map on every call. IDs are URL-safe base64 of a random per-service nonce plus the canonical relative preset path; only IDs present in the current map are loadable. Tree nodes use `{label, id}` leaves and `{label, children}` groups. Exclude `#.json`, include built-in `#*.json` and web-saved user `*.json`, and sort case-insensitively.
+`PresetService.tree()` rebuilds an internal ID-to-path map on every call. IDs are URL-safe base64 of a random per-service nonce plus the canonical relative preset path; only IDs present in the current map are loadable. Tree nodes use `{label, id}` leaves and `{label, children}` groups. Walk the directory with `load_preset_tree(presets_dir, include_user_files=True)` from Task 1, so `#.json` is excluded while built-in `#*.json` and web-saved user `*.json` are both listed, sorted case-insensitively.
 
-`PresetService.load()` resolves only through the map, calls `load_train_config`, and raises `UnknownPreset` for stale/unknown IDs. `save()` decodes the snapshot with default secrets, saves through `save_named_preset`, refreshes the tree, and returns the filename.
+`PresetService.load()` resolves only through the map, calls `load_train_config`, and raises `UnknownPreset` for stale/unknown IDs. `save()` rejects names that sanitize to empty or begin with `#` (a user preset must never masquerade as a built-in, which would also skip migration on load), decodes the snapshot with default secrets, saves through `save_named_preset`, refreshes the tree, and returns the filename.
 
 `DirectoryService.list()` uses `Path(raw_path).expanduser().resolve(strict=True)`, maps `FileNotFoundError` to `DirectoryMissing` and `PermissionError` to `DirectoryDenied`, rejects non-directories, sorts child directories by lowercase name, returns canonical string paths, parent availability, platform roots, and the 5,000-entry cap.
 
@@ -1209,7 +1255,9 @@ Expected: collection fails because `modules.webui.events` does not exist.
 
 Each subscriber owns an `asyncio.Queue(maxsize=256)`. When full, remove oldest console entries first; replace older `config_changed` entries with the latest revision; set `gap: true` on the next deliverable event. After repeated inability to enqueue a control event, close that subscriber.
 
-`backlog()` reads console snapshot and current sequence under the event lock and returns `{stream_id, cursor, revision, lines, transient}`. `subscribe()` registers before yielding and always unregisters in `finally`.
+`backlog()` reads console snapshot and current sequence under the event lock and returns `{stream_id, cursor, revision, lines, transient}`.
+
+`subscribe()` MUST NOT be a bare `async def` generator: a generator body does not run — and therefore does not register the subscriber — until the first `__anext__`, so events published between `subscribe()` and the first read would be silently missed (the slow-client test above depends on this ordering). Return a small subscription object that registers its queue synchronously in `subscribe()` and implements `__aiter__`/`__anext__` plus `aclose()`, which unregisters; unregistration must also happen when iteration ends for any reason.
 
 - [ ] **Step 4: Run event tests, including thread ingress**
 
@@ -1997,7 +2045,7 @@ Add global focus-visible rings, reduced-motion overrides, 44 px mobile controls,
 
 `Rail` shows icons in both states, labels only when expanded, reflows desktop content, and uses an off-canvas focus-trapped dialog on phone. Implemented links are General, Data, Backup, Console. Disabled links are Model, Concepts, Training, Sampling, LoRA/Embedding, Cloud, Tools, and Live with concise unavailable tooltips.
 
-`Header` renders model type, valid methods, preset tree, save-name dialog, workspace save state, Retry, Reload, and Overwrite actions. Model/method edits update the config workspace and schema query immediately. Preset save calls `beforePresetSave`; preset load includes current revision and enters normal conflict UI on 409.
+`Header` renders model type, valid methods, preset tree, save-name dialog, workspace save state, Retry, Reload, and Overwrite actions. Model/method edits update the config workspace and schema query immediately. When a model-type change makes the current training method unsupported for the new model type, the header coerces `training_method` to the first supported method from `/api/meta` in the same workspace edit, mirroring the native top bar — the schema query must never be issued with an unsupported pair (the schema endpoint rejects it). Add a Vitest case for this coercion. Preset save calls `beforePresetSave`; preset load includes current revision and enters normal conflict UI on 409.
 
 `StatusBar` displays server connected state and disabled Start, Sample, Backup, and Save actions with `aria-disabled`. `ConsoleDrawer` provides the slot Task 16 fills. `ErrorBanner` retains API errors until dismissed.
 

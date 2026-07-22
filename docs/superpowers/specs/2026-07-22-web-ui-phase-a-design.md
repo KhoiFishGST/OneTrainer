@@ -236,9 +236,11 @@ existing UI support code in Phase A.
 
 At application startup, `ConfigService` loads `training_presets/#.json` and
 `secrets.json`. If the last-session file is absent, it uses
-`TrainConfig.default_values()`. If loading fails, the server logs the error,
-uses defaults, and exposes a startup warning through `/api/health` and the
-console backlog.
+`TrainConfig.default_values()`. Secrets are loaded from `secrets.json`
+independently of the last-session file: a missing or malformed last-session
+file must never discard existing server-side secrets. If loading fails, the
+server logs the error, uses defaults, and exposes a startup warning through
+`/api/health` and the console backlog.
 
 The service owns:
 
@@ -341,7 +343,11 @@ tool actions are not schema fields.
 The response contains resolved visibility rather than executable conditions.
 `GET /api/config/schema` requires valid `model_type` and `training_method`
 query parameters. Changing either valid draft value invalidates and refetches
-the schema immediately; it does not wait for the autosave request.
+the schema immediately; it does not wait for the autosave request. When a
+model-type change makes the current training method unsupported, the client
+coerces the training method to the first supported method for the new model
+type as part of the same edit — mirroring the native top bar — so the schema
+request always uses a supported pair.
 
 Tests assert that Phase A schema keys are real config paths, unique, and equal
 to the approved field set for the three implemented tabs. Full-config coverage
@@ -351,14 +357,19 @@ becomes mandatory when Phase B exposes all standard tabs.
 
 The preset tree returns opaque IDs constrained beneath the configured preset
 directory. Clients never submit arbitrary filesystem paths to preset
-endpoints.
+endpoints. The tree lists both built-in `#`-prefixed presets and web-saved
+user presets (never the `#.json` last-session file); the shared native helper
+defaults to built-ins only, so the web service requests user files
+explicitly.
 
 Preset load is revision-aware and uses the same atomic config transaction as a
 PUT. Built-in presets skip migration as the native UI does; user presets run
 migrations. Loading preserves secrets.
 
 Preset save snapshots the current canonical settings and writes a sanitized
-name atomically. Saving a named preset does not change the canonical revision.
+name atomically. Names that sanitize to empty or begin with `#` are rejected,
+so a user preset can never masquerade as a built-in preset. Saving a named
+preset does not change the canonical revision.
 
 ### 6.8 Directory browser
 
