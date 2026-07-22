@@ -2,6 +2,7 @@
   import type { Snippet } from 'svelte';
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
+  import { useQueryClient } from '@tanstack/svelte-query';
   import { ConfigWorkspace } from '../config/workspace.svelte';
   import { setRouteContext } from '../config/context';
   import {
@@ -17,9 +18,13 @@
   import ConsoleDrawer from './shell/ConsoleDrawer.svelte';
   import ErrorBanner from './shell/ErrorBanner.svelte';
   import DirectoryPicker from './directory/DirectoryPicker.svelte';
+  import { consoleStore } from '$lib/events/console-store.svelte';
+  import { EventClient } from '$lib/events/client';
+  import { api } from '$lib/api/client';
 
   let { children }: { children?: Snippet } = $props();
 
+  const queryClient = useQueryClient();
   const healthQuery = createHealthQuery();
   const metaQuery = createMetaQuery();
   const configQuery = createConfigQuery();
@@ -30,6 +35,8 @@
   let pickerInitialPath = $state('/');
   let pickerOnSelect = $state<((selectedPath: string) => void) | null>(null);
   let isMobile = $state(false);
+  let drawerOpen = $state(false);
+  let eventClient = $state<EventClient | null>(null);
 
   const currentModelType = $derived(workspace?.draft?.model_type);
   const currentTrainingMethod = $derived(workspace?.draft?.training_method);
@@ -67,6 +74,22 @@
   });
 
   onMount(() => {
+    if (typeof localStorage !== 'undefined') {
+      drawerOpen = localStorage.getItem('console_drawer_open') === 'true';
+    }
+
+    eventClient = new EventClient({
+      store: consoleStore,
+      getBacklog: () => api.getBacklog() as any,
+      onConfigChanged: (_revision) => {
+        queryClient.invalidateQueries({ queryKey: ['config'] });
+      },
+      onRestart: () => {
+        queryClient.invalidateQueries({ queryKey: ['config'] });
+      },
+    });
+    eventClient.start();
+
     if (typeof window !== 'undefined') {
       const mq = window.matchMedia('(max-width: 768px)');
       isMobile = mq.matches;
@@ -74,9 +97,30 @@
         isMobile = e.matches;
       };
       mq.addEventListener('change', handler);
-      return () => mq.removeEventListener('change', handler);
+      return () => {
+        mq.removeEventListener('change', handler);
+        eventClient?.stop();
+      };
     }
+
+    return () => {
+      eventClient?.stop();
+    };
   });
+
+  function toggleDrawer() {
+    drawerOpen = !drawerOpen;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('console_drawer_open', drawerOpen.toString());
+    }
+  }
+
+  function closeDrawer() {
+    drawerOpen = false;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('console_drawer_open', 'false');
+    }
+  }
 
   const isApiError = $derived(
     $healthQuery.isError || $metaQuery.isError || $configQuery.isError || $schemaQuery.isError
@@ -107,8 +151,8 @@
     </main>
   </div>
 
-  <ConsoleDrawer open={currentPath === '/console'} />
-  <StatusBar connected={$healthQuery.isSuccess} />
+  <ConsoleDrawer open={drawerOpen && currentPath !== '/console'} onClose={closeDrawer} store={consoleStore} />
+  <StatusBar connected={$healthQuery.isSuccess} onToggleConsole={toggleDrawer} />
 
   <DirectoryPicker
     open={pickerOpen}

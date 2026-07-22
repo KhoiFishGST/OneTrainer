@@ -1,7 +1,13 @@
 <script lang="ts">
   import { createHealthQuery } from '../../api/queries';
 
-  let { connected: connectedProp }: { connected?: boolean } = $props();
+  let {
+    connected: connectedProp,
+    onToggleConsole,
+  }: {
+    connected?: boolean;
+    onToggleConsole?: () => void;
+  } = $props();
 
   const healthQuery = createHealthQuery();
 
@@ -14,6 +20,16 @@
   <div class="server-status">
     <span class="status-indicator" class:connected={isConnected}></span>
     <span class="status-text">{isConnected ? 'Connected' : 'Disconnected'}</span>
+    {#if onToggleConsole}
+      <button
+        type="button"
+        class="console-toggle-btn"
+        onclick={onToggleConsole}
+        title="Toggle Console Drawer"
+      >
+        Console
+      </button>
+    {/if}
   </div>
 
   <div class="action-buttons">
@@ -88,6 +104,21 @@
 
   .status-text {
     color: var(--muted);
+  }
+
+  .console-toggle-btn {
+    background-color: var(--control, #21262d);
+    color: var(--text, #c9d1d9);
+    border: 1px solid var(--line, #30363d);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    margin-left: 8px;
+  }
+
+  .console-toggle-btn:hover {
+    background-color: var(--line, #30363d);
   }
 
   .action-buttons {

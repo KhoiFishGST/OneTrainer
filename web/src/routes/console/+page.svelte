@@ -1,13 +1,22 @@
 <script lang="ts">
+  import ConsoleView from '$lib/components/console/ConsoleView.svelte';
+  import { consoleStore } from '$lib/events/console-store.svelte';
 </script>
 
+<svelte:head>
+  <title>OneTrainer - Console</title>
+</svelte:head>
+
 <div class="console-page">
-  <h2>Console</h2>
-  <p>Console output and live metrics will be displayed here.</p>
+  <ConsoleView store={consoleStore} />
 </div>
 
 <style>
   .console-page {
-    padding: 1rem;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 </style>
