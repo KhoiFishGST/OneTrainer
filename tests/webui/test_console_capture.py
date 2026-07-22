@@ -4,7 +4,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from modules.webui.console import ConsoleCapture
+from modules.webui.console import ConsoleCapture, ConsoleLine, ConsoleSpan
 from modules.webui.events import EventHub
 
 
@@ -40,9 +40,9 @@ def test_capture_attach_transfers_buffer(tmp_path):
         await hub.start()
         capture = ConsoleCapture()
         capture.buffer.apply([
-            __import__("modules.webui.console", fromlist=["ConsoleLine"]).ConsoleLine(
+            ConsoleLine(
                 id=1,
-                spans=(__import__("modules.webui.console", fromlist=["ConsoleSpan"]).ConsoleSpan("preset-line"),),
+                spans=(ConsoleSpan("preset-line"),),
             )
         ])
         capture.attach(asyncio.get_running_loop(), hub, tmp_path)

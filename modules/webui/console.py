@@ -451,12 +451,7 @@ class ConsoleCapture:
             now = time.monotonic()
             hub = self._hub
             if hub is not None:
-                if (
-                    accumulated_lines
-                    or transient is not None
-                    or (now - last_publish >= 0.033)
-                    or accumulated_bytes >= 64 * 1024
-                ):
+                if (now - last_publish >= 0.033) or accumulated_bytes >= 64 * 1024:
                     to_send: list[ConsoleLine] = list(accumulated_lines)
                     if transient is not None:
                         to_send.append(transient)
@@ -465,6 +460,18 @@ class ConsoleCapture:
                     accumulated_lines.clear()
                     accumulated_bytes = 0
                     last_publish = now
+
+        # Flush remaining accumulated lines/transient state on EOF/closing
+        hub = self._hub
+        if hub is not None:
+            transient = self._parser.snapshot_transient()
+            to_send = list(accumulated_lines)
+            if transient is not None:
+                to_send.append(transient)
+            if to_send:
+                hub.publish_from_thread("console", {"lines": to_send})
+            accumulated_lines.clear()
+            accumulated_bytes = 0
 
     def close(self) -> None:
         with self._lock:
@@ -500,8 +507,6 @@ class ConsoleCapture:
         transient = self._parser.snapshot_transient()
         if transient is not None:
             self._buffer.apply([transient])
-            if self._hub is not None:
-                self._hub.publish_from_thread("console", {"lines": [transient]})
 
         if self._sink is not None:
             self._sink.close()
