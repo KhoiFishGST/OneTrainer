@@ -51,25 +51,26 @@
   }
 </script>
 
-<div class="schema-form">
+<div class="schema-form" class:is-model-tab={tab?.id === 'model'}>
   {#if tab?.groups}
     {#each tab.groups as group (group.id)}
       {@const visibleFields = (group.fields || []).filter((f) => f.visible !== false)}
       {@const inputFields = visibleFields.filter((f) => normalizeControl(f.control) !== 'toggle')}
       {@const toggleFields = visibleFields.filter((f) => normalizeControl(f.control) === 'toggle')}
 
-      <section class="form-group">
+      <section class="form-group" class:is-components-group={group.id === 'model_components'}>
         {#if group.title || group.label}
           <h3 class="group-title">{group.title || group.label}</h3>
         {/if}
 
         {#if inputFields.length > 0}
-          <div class="group-fields">
+          <div class="group-fields" class:components-table={group.id === 'model_components'}>
             {#each inputFields as field (field.id)}
               {@const controlType = normalizeControl(field.control)}
               {@const primaryKey = field.keys?.[0] ?? field.id}
               {@const error = getFieldError(field)}
               {@const fieldValue = getFieldValue(field, 0)}
+              {@const isFullWidth = ['base_model_name', 'model_type', 'output_model_destination'].includes(primaryKey)}
 
               <Field
                 id={field.id}
@@ -77,6 +78,7 @@
                 tooltip={field.tooltip}
                 {error}
                 inline={false}
+                fullWidth={isFullWidth}
               >
                 {#snippet children({ id, ariaDescribedBy })}
                   {#if controlType === 'text'}
@@ -171,6 +173,19 @@
     gap: 1.5rem;
   }
 
+  .schema-form.is-model-tab {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  @media (max-width: 1024px) {
+    .schema-form.is-model-tab {
+      grid-template-columns: 1fr;
+    }
+  }
+
   .form-group {
     border: 1px solid var(--color-border, var(--line, #2d3741));
     border-radius: 8px;
@@ -191,6 +206,19 @@
     flex-wrap: wrap;
     gap: 1rem 1.5rem;
     align-items: flex-end;
+  }
+
+  .group-fields.components-table {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .group-fields.components-table :global(.form-field) {
+    width: 100%;
+    flex: 1 1 100%;
   }
 
   .options-section {

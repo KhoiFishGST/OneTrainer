@@ -8,6 +8,7 @@
     tooltip,
     error,
     inline = false,
+    fullWidth = false,
     children,
   }: {
     id: string;
@@ -15,6 +16,7 @@
     tooltip?: string;
     error?: string;
     inline?: boolean;
+    fullWidth?: boolean;
     children?: Snippet<[{ id: string; ariaDescribedBy?: string }]>;
   } = $props();
 
@@ -29,7 +31,7 @@
   );
 </script>
 
-<div class="form-field" class:is-inline={inline} class:has-error={!!error}>
+<div class="form-field" class:is-inline={inline} class:is-full-width={fullWidth} class:has-error={!!error}>
   {#if inline}
     <div class="inline-row">
       <div class="field-control">
@@ -99,6 +101,18 @@
 
   .form-field.is-inline {
     align-self: flex-end;
+  }
+
+  .form-field.is-full-width {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .form-field.is-full-width :global(.text-input),
+  .form-field.is-full-width :global(.select-input),
+  .form-field.is-full-width :global(.directory-input-wrapper) {
+    max-width: 100% !important;
+    width: 100% !important;
   }
 
   .inline-row {
