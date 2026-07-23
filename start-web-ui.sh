@@ -16,11 +16,13 @@ if ! can_exec bun; then
     exit 1
 fi
 
-if ! run_python_in_active_env scripts/webui_build.py --check &>/dev/null; then
-    print "Building Web UI frontend..."
-    bun install --cwd web --frozen-lockfile
-    bun run --cwd web build
-    run_python_in_active_env scripts/webui_build.py --mark
+if [[ " $* " != *" --dev "* ]]; then
+    if ! run_python_in_active_env scripts/webui_build.py --check &>/dev/null; then
+        print "Building Web UI frontend..."
+        bun install --cwd web --frozen-lockfile
+        bun run --cwd web build
+        run_python_in_active_env scripts/webui_build.py --mark
+    fi
 fi
 
 run_python_in_active_env scripts/train_ui_web.py "$@"
