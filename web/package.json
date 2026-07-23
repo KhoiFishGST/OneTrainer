@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@tanstack/svelte-query": "^5.0.0",
-    "lucide-svelte": "^0.468.0"
+    "lucide-svelte": "^0.468.0",
+    "uplot": "^1.6.32"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",
