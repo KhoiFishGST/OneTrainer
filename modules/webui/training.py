@@ -1,7 +1,12 @@
+import asyncio
+import copy
+from collections import deque
 from enum import Enum
 from threading import Lock
-from typing import Dict, Any, Optional
-import copy
+import time
+from typing import Any, Dict, Optional
+
+from modules.webui.events import EventType
 
 
 class TrainingState(str, Enum):
@@ -30,8 +35,30 @@ class TrainingService:
         self._config_snapshot: Optional[Dict[str, Any]] = None
         self._sample_requested: bool = False
         self._backup_requested: bool = False
-        self._metrics: list = []
+        self._metrics: deque = deque(maxlen=10000)
         self._samples: list = []
+
+    def _emit_event(self, event_type: Any, data: Dict[str, Any]) -> None:
+        if self._event_bus is None:
+            return
+        evt_str = str(event_type.value) if hasattr(event_type, "value") else str(event_type)
+        try:
+            if hasattr(self._event_bus, "publish_from_thread"):
+                self._event_bus.publish_from_thread(evt_str, data)
+            elif hasattr(self._event_bus, "publish"):
+                res = self._event_bus.publish(evt_str, data)
+                if asyncio.iscoroutine(res):
+                    try:
+                        loop = asyncio.get_running_loop()
+                        loop.create_task(res)
+                    except RuntimeError:
+                        pass
+        except Exception:
+            pass
+
+    def _emit_state_event(self) -> None:
+        status = self.get_status()
+        self._emit_event(EventType.TRAINING_STATE, status)
 
     def request_sample(self):
         with self._lock:
@@ -44,6 +71,41 @@ class TrainingService:
             if self._state not in (TrainingState.TRAINING, TrainingState.PAUSED):
                 raise RuntimeError(f"Cannot request backup from state {self._state}")
             self._backup_requested = True
+
+    def record_metric(self, metric_data: Optional[Dict[str, Any]] = None, **kwargs) -> Dict[str, Any]:
+        data: Dict[str, Any] = {}
+        if metric_data is not None:
+            data.update(metric_data)
+        data.update(kwargs)
+        if "timestamp" not in data:
+            data["timestamp"] = time.time()
+
+        with self._lock:
+            self._metrics.append(data)
+
+        self._emit_event(EventType.TRAINING_METRIC, data)
+        return data
+
+    def record_sample(self, sample_data: Optional[Dict[str, Any]] = None, **kwargs) -> Dict[str, Any]:
+        data: Dict[str, Any] = {}
+        if sample_data is not None:
+            data.update(sample_data)
+        data.update(kwargs)
+
+        with self._lock:
+            self._samples.append(data)
+
+        self._emit_event(EventType.TRAINING_SAMPLE, data)
+        return data
+
+    def emit_gpu_stat(self, stat_data: Optional[Dict[str, Any]] = None, **kwargs) -> Dict[str, Any]:
+        data = self.get_gpu_stats()
+        if stat_data is not None:
+            data.update(stat_data)
+        data.update(kwargs)
+
+        self._emit_event(EventType.GPU_STAT, data)
+        return data
 
     def get_metrics(self) -> list:
         with self._lock:
@@ -107,37 +169,44 @@ class TrainingService:
             self._elapsed_seconds = 0.0
             self._eta_seconds = 0.0
             self._error_message = None
+        self._emit_state_event()
 
     def stop_training(self):
         with self._lock:
             if self._state not in (TrainingState.STARTING, TrainingState.TRAINING, TrainingState.PAUSED):
                 raise RuntimeError(f"Cannot stop training from state {self._state}")
             self._state = TrainingState.STOPPING
+        self._emit_state_event()
 
     def pause_training(self):
         with self._lock:
             if self._state != TrainingState.TRAINING:
                 raise RuntimeError(f"Cannot pause training from state {self._state}")
             self._state = TrainingState.PAUSED
+        self._emit_state_event()
 
     def resume_training(self):
         with self._lock:
             if self._state != TrainingState.PAUSED:
                 raise RuntimeError(f"Cannot resume training from state {self._state}")
             self._state = TrainingState.TRAINING
+        self._emit_state_event()
 
     def set_state(self, new_state: TrainingState):
         with self._lock:
             self._state = new_state
+        self._emit_state_event()
 
     def set_completed(self):
         with self._lock:
             self._state = TrainingState.COMPLETED
+        self._emit_state_event()
 
     def set_failed(self, error_message: str):
         with self._lock:
             self._state = TrainingState.FAILED
             self._error_message = error_message
+        self._emit_state_event()
 
     def update_progress(
         self,
@@ -164,3 +233,4 @@ class TrainingService:
                 self._elapsed_seconds = elapsed_seconds
             if eta_seconds is not None:
                 self._eta_seconds = eta_seconds
+        self._emit_state_event()

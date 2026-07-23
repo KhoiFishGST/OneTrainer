@@ -3,11 +3,25 @@ import contextlib
 import queue
 import uuid
 from collections import deque
+from enum import Enum
 from typing import Any
 
 from modules.webui.console import ConsoleBuffer, ConsoleLine, ConsoleSpan
 
 from typing_extensions import Self
+
+
+class EventType(str, Enum):
+    CONSOLE = "console"
+    CONFIG_CHANGED = "config_changed"
+    TRAINING_STATE = "training_state"
+    TRAINING_METRIC = "training_metric"
+    TRAINING_SAMPLE = "training_sample"
+    GPU_STAT = "gpu_stat"
+
+    def __str__(self) -> str:
+        return str(self.value)
+
 
 
 def _to_console_line(item: Any) -> ConsoleLine:
@@ -164,22 +178,42 @@ class EventHub:
         self._subscribers.clear()
 
     def publish_from_thread(self, event_type: str, data: dict[str, Any] | None = None) -> None:
-        if not self._running or self._ingress_queue is None:
-            return
-
         payload = data if data is not None else {}
-        item = (event_type, payload)
-        try:
-            self._ingress_queue.put_nowait(item)
-        except queue.Full:
-            with contextlib.suppress(queue.Empty):
-                self._ingress_queue.get_nowait()
-            self._ingress_gap = True
-            with contextlib.suppress(queue.Full):
+        if self._running and self._ingress_queue is not None:
+            item = (str(event_type), payload)
+            try:
                 self._ingress_queue.put_nowait(item)
+            except queue.Full:
+                with contextlib.suppress(queue.Empty):
+                    self._ingress_queue.get_nowait()
+                self._ingress_gap = True
+                with contextlib.suppress(queue.Full):
+                    self._ingress_queue.put_nowait(item)
 
-        if self._loop and self._loop.is_running():
-            self._loop.call_soon_threadsafe(self._ingress_event.set)
+            if self._loop and self._loop.is_running():
+                self._loop.call_soon_threadsafe(self._ingress_event.set)
+        else:
+            if self._loop and self._loop.is_running():
+                asyncio.run_coroutine_threadsafe(self.publish(str(event_type), payload), self._loop)
+            else:
+                self._seq += 1
+                if "revision" in payload:
+                    self._latest_revision = str(payload["revision"])
+
+                if str(event_type) == "console" and "lines" in payload:
+                    raw_lines = payload["lines"]
+                    lines = [_to_console_line(item) for item in raw_lines]
+                    self._console.apply(lines)
+
+                event = {
+                    **payload,
+                    "stream_id": self._stream_id,
+                    "seq": self._seq,
+                    "type": str(event_type),
+                }
+
+                for sub in list(self._subscribers):
+                    sub.offer(event)
 
     async def publish(self, event_type: str, data: dict[str, Any] | None = None) -> dict[str, Any]:
         payload = data if data is not None else {}
@@ -188,7 +222,7 @@ class EventHub:
             if "revision" in payload:
                 self._latest_revision = str(payload["revision"])
 
-            if event_type == "console" and "lines" in payload:
+            if str(event_type) == "console" and "lines" in payload:
                 raw_lines = payload["lines"]
                 lines = [_to_console_line(item) for item in raw_lines]
                 self._console.apply(lines)
@@ -197,7 +231,7 @@ class EventHub:
                 **payload,
                 "stream_id": self._stream_id,
                 "seq": self._seq,
-                "type": event_type,
+                "type": str(event_type),
             }
 
             for sub in list(self._subscribers):
@@ -251,3 +285,7 @@ class EventHub:
                 await asyncio.wait_for(self._ingress_event.wait(), timeout=0.05)
 
         await self._drain_ingress()
+
+
+EventBus = EventHub
+
