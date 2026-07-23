@@ -24,7 +24,7 @@ async def get_secrets(request: Request) -> dict[str, Any]:
     }
 
 
-@router.post("/secrets")
+@router.api_route("/secrets", methods=["POST", "PUT"])
 async def update_secrets(
     req: SecretsUpdateRequest,
     request: Request,
