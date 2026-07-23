@@ -53,17 +53,15 @@
 
 {#snippet renderGroup(group: any)}
   {@const visibleFields = (group.fields || []).filter((f: any) => f.visible !== false)}
-  {@const inputFields = visibleFields.filter((f: any) => normalizeControl(f.control) !== 'toggle')}
-  {@const toggleFields = visibleFields.filter((f: any) => normalizeControl(f.control) === 'toggle')}
 
   <section class="form-group" class:is-components-group={group.id === 'model_components'}>
     {#if group.title || group.label}
       <h3 class="group-title">{group.title || group.label}</h3>
     {/if}
 
-    {#if inputFields.length > 0}
+    {#if visibleFields.length > 0}
       <div class="group-fields" class:components-table={group.id === 'model_components'}>
-        {#each inputFields as field (field.id)}
+        {#each visibleFields as field (field.id)}
           {@const controlType = normalizeControl(field.control)}
           {@const primaryKey = field.keys?.[0] ?? field.id}
           {@const error = getFieldError(field)}
@@ -79,7 +77,14 @@
             fullWidth={isFullWidth}
           >
             {#snippet children({ id, ariaDescribedBy })}
-              {#if controlType === 'text'}
+              {#if controlType === 'toggle'}
+                <Toggle
+                  {id}
+                  value={fieldValue}
+                  {ariaDescribedBy}
+                  onChange={(val) => setRaw(primaryKey, val)}
+                />
+              {:else if controlType === 'text'}
                 <TextInput
                   {id}
                   value={fieldValue}
@@ -125,38 +130,6 @@
             {/snippet}
           </Field>
         {/each}
-      </div>
-    {/if}
-
-    {#if toggleFields.length > 0}
-      <div class="options-section">
-        <div class="options-header">
-          <span class="options-title">Options & Features</span>
-        </div>
-        <div class="options-grid">
-          {#each toggleFields as field (field.id)}
-            {@const primaryKey = field.keys?.[0] ?? field.id}
-            {@const error = getFieldError(field)}
-            {@const fieldValue = getFieldValue(field, 0)}
-
-            <Field
-              id={field.id}
-              label={field.label}
-              tooltip={field.tooltip}
-              {error}
-              inline={true}
-            >
-              {#snippet children({ id, ariaDescribedBy })}
-                <Toggle
-                  {id}
-                  value={fieldValue}
-                  {ariaDescribedBy}
-                  onChange={(val) => setRaw(primaryKey, val)}
-                />
-              {/snippet}
-            </Field>
-          {/each}
-        </div>
       </div>
     {/if}
   </section>
@@ -244,9 +217,9 @@
 
   .group-fields {
     display: flex;
-    flex-wrap: wrap;
-    gap: 1rem 1.5rem;
-    align-items: flex-end;
+    flex-direction: column;
+    gap: 0.625rem;
+    width: 100%;
   }
 
   .group-fields.components-table {

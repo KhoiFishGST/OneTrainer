@@ -32,31 +32,9 @@
 </script>
 
 <div class="form-field" class:is-inline={inline} class:is-full-width={fullWidth} class:has-error={!!error}>
-  {#if inline}
-    <div class="inline-row">
-      <div class="field-control">
-        {#if children}
-          {@render children({ id: inputId, ariaDescribedBy })}
-        {/if}
-      </div>
-      {#if label}
-        <label for={inputId} class="field-label inline-label">{label}</label>
-      {/if}
-      {#if tooltip}
-        <button
-          type="button"
-          class="tooltip-trigger"
-          aria-label={`Help for ${label}`}
-          aria-expanded={showTooltip}
-          onclick={() => (showTooltip = !showTooltip)}
-        >
-          <HelpCircle size={14} />
-        </button>
-      {/if}
-    </div>
-  {:else}
+  <div class="field-row">
     {#if label}
-      <div class="field-label-row">
+      <div class="field-label-side">
         <label for={inputId} class="field-label">{label}</label>
         {#if tooltip}
           <button
@@ -72,12 +50,12 @@
       </div>
     {/if}
 
-    <div class="field-control">
+    <div class="field-control-side">
       {#if children}
         {@render children({ id: inputId, ariaDescribedBy })}
       {/if}
     </div>
-  {/if}
+  </div>
 
   {#if tooltip && showTooltip}
     <div id={tooltipId} class="field-tooltip" role="tooltip">
@@ -96,11 +74,8 @@
   .form-field {
     display: flex;
     flex-direction: column;
-    gap: 0.375rem;
-  }
-
-  .form-field.is-inline {
-    align-self: flex-end;
+    gap: 0.25rem;
+    width: 100%;
   }
 
   .form-field.is-full-width {
@@ -108,18 +83,28 @@
     width: 100%;
   }
 
-  .form-field.is-full-width :global(.text-input),
-  .form-field.is-full-width :global(.select-input),
-  .form-field.is-full-width :global(.directory-input-wrapper) {
-    max-width: 100% !important;
-    width: 100% !important;
-  }
-
-  .inline-row {
+  .field-row {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    justify-content: space-between;
+    width: 100%;
+    gap: 1rem;
     min-height: 36px;
+  }
+
+  .field-label-side {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .field-control-side {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex: 0 0 auto;
   }
 
   .inline-label {
