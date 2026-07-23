@@ -448,33 +448,6 @@ TABS = (
                     ),
                 ),
             ),
-            Group(
-                "training_options",
-                "Training Options",
-                (
-                    Field(
-                        "force-circular-padding",
-                        ("force_circular_padding",),
-                        "Force Circular Padding",
-                        "Enables circular padding for all conv layers to better train seamless images",
-                        "toggle",
-                    ),
-                    Field(
-                        "text-encoder-layer-skip",
-                        ("text_encoder_layer_skip",),
-                        "Text Encoder Layer Skip",
-                        "Number of layers to skip in Text Encoder",
-                        "number",
-                    ),
-                    Field(
-                        "text-encoder-sequence-length",
-                        ("text_encoder_sequence_length",),
-                        "Text Encoder Sequence Length",
-                        "Sequence length for Text Encoder",
-                        "number",
-                    ),
-                ),
-            ),
         ),
     ),
     Tab(
@@ -816,6 +789,33 @@ TABS = (
                         ("clip_grad_norm",),
                         "Clip Grad Norm",
                         "Maximum gradient norm for gradient clipping",
+                        "number",
+                    ),
+                ),
+            ),
+            Group(
+                "training_options",
+                "Training Options",
+                (
+                    Field(
+                        "force-circular-padding",
+                        ("force_circular_padding",),
+                        "Force Circular Padding",
+                        "Enables circular padding for all conv layers to better train seamless images",
+                        "toggle",
+                    ),
+                    Field(
+                        "text-encoder-layer-skip",
+                        ("text_encoder_layer_skip",),
+                        "Text Encoder Layer Skip",
+                        "Number of layers to skip in Text Encoder",
+                        "number",
+                    ),
+                    Field(
+                        "text-encoder-sequence-length",
+                        ("text_encoder_sequence_length",),
+                        "Text Encoder Sequence Length",
+                        "Sequence length for Text Encoder",
                         "number",
                     ),
                 ),
