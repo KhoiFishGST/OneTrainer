@@ -12,6 +12,10 @@ export const queryKeys = {
   directories: (path?: string) => ['directories', path ?? ''] as const,
   backlog: () => ['backlog'] as const,
   concepts: () => ['concepts'] as const,
+  trainingStatus: () => ['training', 'status'] as const,
+  trainingMetrics: () => ['training', 'metrics'] as const,
+  trainingSamples: () => ['training', 'samples'] as const,
+  gpuStats: () => ['training', 'gpu'] as const,
 };
 
 export function createHealthQuery() {
@@ -114,6 +118,86 @@ export function createUpdateConceptsMutation() {
       queryClient.setQueryData(queryKeys.concepts(), data.concepts ?? data);
       queryClient.invalidateQueries({ queryKey: queryKeys.config() });
     },
+  });
+}
+
+export function createTrainingStatusQuery() {
+  return createQuery({
+    queryKey: queryKeys.trainingStatus(),
+    queryFn: () => api.getTrainingStatus(),
+  });
+}
+
+export function createTrainingMetricsQuery() {
+  return createQuery({
+    queryKey: queryKeys.trainingMetrics(),
+    queryFn: () => api.getTrainingMetrics(),
+  });
+}
+
+export function createTrainingSamplesQuery() {
+  return createQuery({
+    queryKey: queryKeys.trainingSamples(),
+    queryFn: () => api.getTrainingSamples(),
+  });
+}
+
+export function createGpuStatsQuery() {
+  return createQuery({
+    queryKey: queryKeys.gpuStats(),
+    queryFn: () => api.getGpuStats(),
+  });
+}
+
+export function createStartTrainingMutation() {
+  const queryClient = useQueryClient();
+  return createMutation({
+    mutationFn: (config?: Record<string, any>) => api.startTraining(config),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKeys.trainingStatus(), data);
+    },
+  });
+}
+
+export function createStopTrainingMutation() {
+  const queryClient = useQueryClient();
+  return createMutation({
+    mutationFn: () => api.stopTraining(),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKeys.trainingStatus(), data);
+    },
+  });
+}
+
+export function createPauseTrainingMutation() {
+  const queryClient = useQueryClient();
+  return createMutation({
+    mutationFn: () => api.pauseTraining(),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKeys.trainingStatus(), data);
+    },
+  });
+}
+
+export function createResumeTrainingMutation() {
+  const queryClient = useQueryClient();
+  return createMutation({
+    mutationFn: () => api.resumeTraining(),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKeys.trainingStatus(), data);
+    },
+  });
+}
+
+export function createRequestSampleMutation() {
+  return createMutation({
+    mutationFn: () => api.requestSample(),
+  });
+}
+
+export function createRequestBackupMutation() {
+  return createMutation({
+    mutationFn: () => api.requestBackup(),
   });
 }
 

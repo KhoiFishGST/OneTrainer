@@ -95,3 +95,56 @@ export interface ConceptsResponse {
   concepts: Concept[];
 }
 
+export type TrainingState =
+  | 'IDLE'
+  | 'STARTING'
+  | 'TRAINING'
+  | 'PAUSED'
+  | 'STOPPING'
+  | 'COMPLETED'
+  | 'FAILED';
+
+export interface TrainingStatus {
+  state: TrainingState | string;
+  step: number;
+  max_steps: number;
+  epoch: number;
+  max_epochs: number;
+  speed_its: number;
+  elapsed_seconds: number;
+  eta_seconds: number;
+  error_message?: string | null;
+  has_snapshot: boolean;
+}
+
+export interface TrainingMetric {
+  step?: number;
+  epoch?: number;
+  loss?: number;
+  lr?: number;
+  timestamp?: number;
+  [key: string]: any;
+}
+
+export interface TrainingSample {
+  id?: string;
+  sample_id?: string;
+  step?: number;
+  epoch?: number;
+  prompt?: string;
+  seed?: number;
+  url?: string;
+  [key: string]: any;
+}
+
+export interface GpuStat {
+  vram_used?: number;
+  vram_total?: number;
+  vram_used_mb?: number;
+  vram_total_mb?: number;
+  utilization?: number;
+  temperature?: number;
+  [key: string]: any;
+}
+
+

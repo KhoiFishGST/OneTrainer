@@ -12,6 +12,10 @@ import type {
   PresetsResponse,
   PresetSaveRequest,
   SchemaResponse,
+  TrainingStatus,
+  TrainingMetric,
+  TrainingSample,
+  GpuStat,
 } from './types';
 
 export class ApiError extends Error {
@@ -116,6 +120,45 @@ export function createApi(base = '') {
         method: 'PUT',
         body: JSON.stringify(concepts),
       }),
+
+    getTrainingStatus: () => request<TrainingStatus>(`${base}/api/training/status`),
+
+    startTraining: (config?: Record<string, any>) =>
+      request<TrainingStatus>(`${base}/api/training/start`, {
+        method: 'POST',
+        body: config ? JSON.stringify(config) : undefined,
+      }),
+
+    stopTraining: () =>
+      request<TrainingStatus>(`${base}/api/training/stop`, {
+        method: 'POST',
+      }),
+
+    pauseTraining: () =>
+      request<TrainingStatus>(`${base}/api/training/pause`, {
+        method: 'POST',
+      }),
+
+    resumeTraining: () =>
+      request<TrainingStatus>(`${base}/api/training/resume`, {
+        method: 'POST',
+      }),
+
+    requestSample: () =>
+      request<{ status: string }>(`${base}/api/training/sample`, {
+        method: 'POST',
+      }),
+
+    requestBackup: () =>
+      request<{ status: string }>(`${base}/api/training/backup`, {
+        method: 'POST',
+      }),
+
+    getTrainingMetrics: () => request<TrainingMetric[]>(`${base}/api/training/metrics`),
+
+    getTrainingSamples: () => request<TrainingSample[]>(`${base}/api/training/samples`),
+
+    getGpuStats: () => request<GpuStat>(`${base}/api/training/gpu`),
   };
 }
 
