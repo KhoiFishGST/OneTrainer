@@ -104,7 +104,24 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    flex: 0 0 auto;
+    flex: 0 0 220px;
+    width: 220px;
+    min-width: 220px;
+  }
+
+  .field-control-side :global(.select-input),
+  .field-control-side :global(.text-input),
+  .field-control-side :global(.number-input),
+  .field-control-side :global(.directory-input-wrapper),
+  .field-control-side :global(.time-input-group) {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  .field-control-side :global(.toggle-input) {
+    margin-left: auto;
   }
 
   .inline-label {

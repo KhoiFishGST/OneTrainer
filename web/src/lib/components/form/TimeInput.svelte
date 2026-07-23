@@ -72,7 +72,8 @@
   }
 
   .time-value-input {
-    width: 120px;
+    flex: 1;
+    min-width: 0;
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--color-border, var(--line, #2d3741));
     border-radius: 6px;
