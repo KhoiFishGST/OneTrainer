@@ -378,7 +378,11 @@ class ConsoleCapture:
             self._saved_stdout = os.dup(1)
             self._saved_stderr = os.dup(2)
 
-            self._pipe_read_fd, self._pipe_write_fd = os.pipe()
+            if sys.platform != "win32":
+                import pty
+                self._pipe_read_fd, self._pipe_write_fd = pty.openpty()
+            else:
+                self._pipe_read_fd, self._pipe_write_fd = os.pipe()
 
             os.dup2(self._pipe_write_fd, 1)
             os.dup2(self._pipe_write_fd, 2)
