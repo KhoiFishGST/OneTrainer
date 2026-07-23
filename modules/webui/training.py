@@ -8,6 +8,43 @@ from typing import Any, Dict, Optional
 
 from modules.webui.events import EventType
 
+_active_training_service: Optional["TrainingService"] = None
+
+try:
+    from torch.utils.tensorboard import SummaryWriter
+    _orig_add_scalar = SummaryWriter.add_scalar
+
+    def _global_add_scalar(writer_self, tag, scalar_value, global_step=None, walltime=None):
+        try:
+            _orig_add_scalar(writer_self, tag, scalar_value, global_step, walltime)
+        except Exception:
+            pass
+        if _active_training_service is not None:
+            try:
+                tag_lower = tag.lower()
+                val = float(scalar_value)
+                step_val = global_step if global_step is not None else _active_training_service._step
+
+                metric_payload = {
+                    "step": step_val,
+                    "epoch": _active_training_service._epoch,
+                }
+                key = tag.replace("/", "_")
+                metric_payload[key] = val
+
+                if "loss" in tag_lower:
+                    metric_payload["loss"] = val
+                if "lr" in tag_lower or "learning_rate" in tag_lower:
+                    metric_payload["lr"] = val
+
+                _active_training_service.record_metric(metric_payload)
+            except Exception:
+                pass
+
+    SummaryWriter.add_scalar = _global_add_scalar
+except Exception:
+    pass
+
 
 class TrainingState(str, Enum):
     IDLE = "IDLE"
@@ -182,6 +219,9 @@ class TrainingService:
             self.set_failed("Cannot start training: No base model selected. Please select a model in the Model tab.")
             return
 
+        global _active_training_service
+        _active_training_service = self
+
         try:
             import logging
             logging.info("TrainingService: Initializing TrainConfig from dictionary.")
@@ -228,6 +268,8 @@ class TrainingService:
                 self._train_commands = commands
 
             start_time = time.time()
+            last_step_time = [start_time]
+            last_step_count = [0]
 
             import threading
             def gpu_monitor_loop():
@@ -241,20 +283,29 @@ class TrainingService:
 
             def on_progress(train_progress, epoch_length, max_epoch):
                 now = time.time()
-                elapsed = max(0.1, now - start_time)
                 current_step = train_progress.global_step
                 total_steps = (epoch_length * max_epoch) if (epoch_length and max_epoch) else (self._max_steps or 0)
-                speed = current_step / elapsed if current_step > 0 else 0.0
+
+                dt = now - last_step_time[0]
+                ds = current_step - last_step_count[0]
+                if ds > 0 and dt > 0:
+                    instant_speed = ds / dt
+                    last_step_time[0] = now
+                    last_step_count[0] = current_step
+                else:
+                    elapsed = max(0.1, now - start_time)
+                    instant_speed = current_step / elapsed if current_step > 0 else 0.0
+
                 remaining_steps = max(0, total_steps - current_step) if total_steps > 0 else 0
-                eta = remaining_steps / speed if speed > 0 else 0.0
+                eta = remaining_steps / instant_speed if instant_speed > 0 else 0.0
 
                 self.update_progress(
                     step=current_step,
                     epoch=train_progress.epoch + 1,
                     max_steps=total_steps,
                     max_epochs=max_epoch,
-                    speed_its=round(speed, 2),
-                    elapsed_seconds=round(elapsed, 1),
+                    speed_its=round(instant_speed, 2),
+                    elapsed_seconds=round(now - start_time, 1),
                     eta_seconds=round(eta, 1),
                 )
 
