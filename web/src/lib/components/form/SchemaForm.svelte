@@ -175,7 +175,7 @@
 
   .schema-form.is-model-tab {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: calc(65% - 0.75rem) calc(35% - 0.75rem);
     gap: 1.5rem;
     align-items: start;
   }
@@ -211,7 +211,7 @@
   .group-fields.components-table {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.875rem;
     align-items: stretch;
     width: 100%;
   }
@@ -219,6 +219,16 @@
   .group-fields.components-table :global(.form-field) {
     width: 100%;
     flex: 1 1 100%;
+  }
+
+  .group-fields.components-table :global(.select-input),
+  .group-fields.components-table :global(.text-input),
+  .group-fields.components-table :global(.number-input),
+  .group-fields.components-table :global(.directory-input-wrapper) {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    box-sizing: border-box;
   }
 
   .options-section {
