@@ -1,56 +1,66 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { api } from '$lib/api/client';
+  import { onDestroy } from 'svelte';
+  import { createConceptsQuery, createUpdateConceptsMutation } from '$lib/api/queries';
   import type { Concept } from '$lib/api/types';
   import ConceptsEditor from '$lib/components/concepts/ConceptsEditor.svelte';
   import { Save, Check, AlertCircle, RefreshCw } from 'lucide-svelte';
 
-  let concepts = $state<Concept[]>([]);
-  let loading = $state(true);
-  let saving = $state(false);
-  let saveSuccess = $state(false);
-  let errorMessage = $state<string | null>(null);
+  const conceptsQuery = createConceptsQuery();
+  const updateConceptsMutation = createUpdateConceptsMutation();
 
-  onMount(async () => {
-    await fetchConcepts();
+  let concepts = $state<Concept[]>([]);
+  let isInitialized = $state(false);
+  let saveSuccess = $state(false);
+
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let saveSuccessTimer: ReturnType<typeof setTimeout> | null = null;
+
+  $effect(() => {
+    if ($conceptsQuery.data && !isInitialized) {
+      const data = $conceptsQuery.data;
+      concepts = Array.isArray(data) ? data : (data as any)?.concepts || [];
+      isInitialized = true;
+    }
   });
 
-  async function fetchConcepts() {
-    loading = true;
-    errorMessage = null;
-    try {
-      const data = await api.getConcepts();
-      concepts = Array.isArray(data) ? data : (data as any)?.concepts || [];
-    } catch (err: any) {
-      errorMessage = err.message || 'Failed to load concepts';
-    } finally {
-      loading = false;
+  function performSave(listToSave: Concept[]) {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+      debounceTimer = null;
     }
-  }
-
-  async function saveConcepts(updatedConcepts?: Concept[]) {
-    const listToSave = updatedConcepts ?? concepts;
-    saving = true;
-    errorMessage = null;
-    saveSuccess = false;
-    try {
-      const res = await api.putConcepts(listToSave);
-      concepts = res.concepts || listToSave;
-      saveSuccess = true;
-      setTimeout(() => {
-        saveSuccess = false;
-      }, 3000);
-    } catch (err: any) {
-      errorMessage = err.message || 'Failed to save concepts';
-    } finally {
-      saving = false;
-    }
+    $updateConceptsMutation.mutate(listToSave, {
+      onSuccess: () => {
+        saveSuccess = true;
+        if (saveSuccessTimer) clearTimeout(saveSuccessTimer);
+        saveSuccessTimer = setTimeout(() => {
+          saveSuccess = false;
+        }, 3000);
+      },
+    });
   }
 
   function handleConceptsChange(newConcepts: Concept[]) {
     concepts = newConcepts;
-    saveConcepts(newConcepts);
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      performSave(newConcepts);
+    }, 1000);
   }
+
+  function handleSaveClick() {
+    performSave(concepts);
+  }
+
+  onDestroy(() => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    if (saveSuccessTimer) clearTimeout(saveSuccessTimer);
+  });
+
+  const errorMessage = $derived(
+    ($conceptsQuery.error as Error)?.message ||
+      ($updateConceptsMutation.error as Error)?.message ||
+      null
+  );
 </script>
 
 <div class="concepts-page">
@@ -70,10 +80,10 @@
       <button
         type="button"
         class="btn btn-primary"
-        disabled={loading || saving}
-        onclick={() => saveConcepts()}
+        disabled={$conceptsQuery.isLoading || $updateConceptsMutation.isPending}
+        onclick={handleSaveClick}
       >
-        {#if saving}
+        {#if $updateConceptsMutation.isPending}
           <span class="spinning"><RefreshCw size={16} /></span>
           <span>Saving...</span>
         {:else}
@@ -91,7 +101,7 @@
     </div>
   {/if}
 
-  {#if loading}
+  {#if $conceptsQuery.isLoading}
     <div class="skeleton-container" aria-label="Loading concepts">
       <div class="skeleton-card"></div>
       <div class="skeleton-card"></div>
@@ -99,7 +109,7 @@
   {:else}
     <ConceptsEditor
       {concepts}
-      disabled={saving}
+      disabled={false}
       onChange={handleConceptsChange}
     />
   {/if}
