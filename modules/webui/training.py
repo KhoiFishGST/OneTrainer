@@ -159,9 +159,7 @@ class TrainingService:
             config_data.get("model_path") or (isinstance(config_data.get("model"), dict) and config_data["model"].get("name"))
         )
         if not has_real_config:
-            with self._lock:
-                self._state = TrainingState.IDLE
-            self._emit_state_event()
+            self.set_failed("Cannot start training: No base model selected. Please select a model in the Model tab.")
             return
 
         try:

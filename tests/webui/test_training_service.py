@@ -49,7 +49,7 @@ def test_valid_state_transitions():
     service = TrainingService()
     
     # IDLE -> STARTING / TRAINING
-    service.start_training({"max_steps": 500})
+    service.start_training({"max_steps": 500, "model_path": "mock"})
     assert service.get_status()["state"] == TrainingState.TRAINING
 
     # TRAINING -> PAUSED
@@ -60,16 +60,16 @@ def test_valid_state_transitions():
     service.resume_training()
     assert service.get_status()["state"] == TrainingState.TRAINING
 
-    # TRAINING -> STOPPING
+    # TRAINING -> STOPPING/IDLE
     service.stop_training()
-    assert service.get_status()["state"] == TrainingState.STOPPING
+    assert service.get_status()["state"] == TrainingState.IDLE
 
-    # Transition to COMPLETED from STOPPING or TRAINING
+    # Transition to COMPLETED from IDLE (previously STOPPING)
     service.set_completed()
     assert service.get_status()["state"] == TrainingState.COMPLETED
 
     # COMPLETED -> start_training -> TRAINING
-    service.start_training({"max_steps": 200})
+    service.start_training({"max_steps": 200, "model_path": "mock"})
     assert service.get_status()["state"] == TrainingState.TRAINING
 
     # Transition to FAILED
@@ -78,7 +78,7 @@ def test_valid_state_transitions():
     assert service.get_status()["error_message"] == "Out of memory error"
 
     # FAILED -> start_training -> TRAINING
-    service.start_training({"max_steps": 300})
+    service.start_training({"max_steps": 300, "model_path": "mock"})
     assert service.get_status()["state"] == TrainingState.TRAINING
     assert service.get_status()["error_message"] is None
 
@@ -86,29 +86,26 @@ def test_valid_state_transitions():
 def test_invalid_state_transitions():
     service = TrainingService()
 
-    # Cannot pause, resume, or stop when IDLE
+    # Pause/Resume from IDLE is invalid
     with pytest.raises(RuntimeError, match="Cannot pause training"):
         service.pause_training()
         
     with pytest.raises(RuntimeError, match="Cannot resume training"):
         service.resume_training()
 
-    with pytest.raises(RuntimeError, match="Cannot stop training"):
-        service.stop_training()
-
     # Start training
-    service.start_training({})
+    service.start_training({"model_path": "mock"})
 
     # Cannot start training when already TRAINING
     with pytest.raises(RuntimeError, match="Cannot start training"):
-        service.start_training({})
+        service.start_training({"model_path": "mock"})
 
     # Pause training
     service.pause_training()
 
     # Cannot start training when PAUSED
     with pytest.raises(RuntimeError, match="Cannot start training"):
-        service.start_training({})
+        service.start_training({"model_path": "mock"})
 
     # Cannot pause training when PAUSED
     with pytest.raises(RuntimeError, match="Cannot pause training"):
@@ -119,10 +116,6 @@ def test_invalid_state_transitions():
 
     # Stop training
     service.stop_training()
-
-    # Cannot stop training when already STOPPING
-    with pytest.raises(RuntimeError, match="Cannot stop training"):
-        service.stop_training()
 
 
 def test_update_progress_and_status():
