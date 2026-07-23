@@ -40,7 +40,8 @@ async def stop_training(request: Request):
         app_state.training_service.stop_training()
         return app_state.training_service.get_status()
     except RuntimeError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=409, detail=str(e))
+
 
 
 @router.post("/training/pause")
@@ -50,7 +51,8 @@ async def pause_training(request: Request):
         app_state.training_service.pause_training()
         return app_state.training_service.get_status()
     except RuntimeError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=409, detail=str(e))
+
 
 
 @router.post("/training/resume")
@@ -60,7 +62,8 @@ async def resume_training(request: Request):
         app_state.training_service.resume_training()
         return app_state.training_service.get_status()
     except RuntimeError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=409, detail=str(e))
+
 
 
 @router.post("/training/sample")
@@ -70,7 +73,8 @@ async def request_sample(request: Request):
         app_state.training_service.request_sample()
         return {"status": "ok"}
     except RuntimeError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=409, detail=str(e))
+
 
 
 @router.post("/training/backup")
@@ -80,7 +84,8 @@ async def request_backup(request: Request):
         app_state.training_service.request_backup()
         return {"status": "ok"}
     except RuntimeError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=409, detail=str(e))
+
 
 
 @router.get("/training/metrics")
@@ -99,10 +104,15 @@ async def get_samples(request: Request):
 async def get_sample_image(sample_id: str, request: Request):
     app_state: AppState = request.app.state.webui
     samples = app_state.training_service.get_samples()
-    for s in samples:
-        if s.get("sample_id") == sample_id and "filepath" in s:
-            return FileResponse(s["filepath"])
-    raise HTTPException(status_code=404, detail="Sample image not found")
+    sample = next((s for s in samples if s.get("sample_id") == sample_id), None)
+    if not sample:
+        raise HTTPException(status_code=404, detail="Sample not found")
+
+    file_path = Path(sample["filepath"])
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Sample image file missing from disk")
+
+    return FileResponse(file_path)
 
 
 @router.get("/training/gpu")
