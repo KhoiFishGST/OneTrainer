@@ -67,6 +67,21 @@ if errorlevel 1 (
     goto :end_error
 )
 
+:check_dev
+set IS_DEV=0
+for %%a in (%*) do (
+    if "%%a"=="dev" set IS_DEV=1
+    if "%%a"=="--dev" set IS_DEV=1
+)
+
+if "%IS_DEV%"=="1" (
+    echo Starting OneTrainer Web UI in DEV mode with Live HMR...
+    cd web && bun install --frozen-lockfile && cd ..
+    start "OneTrainer Backend" %PYTHON% scripts\train_ui_web.py --dev %*
+    cd web && bun run dev
+    goto :end
+)
+
 :check_build
 %PYTHON% scripts\webui_build.py --check >NUL 2>NUL
 if errorlevel 1 (
