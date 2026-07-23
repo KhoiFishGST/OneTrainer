@@ -2,12 +2,38 @@ from dataclasses import dataclass
 from enum import Enum
 
 from modules.ui.TopBarController import TopBarController
+from modules.util.config.BaseConfig import BaseConfig
 from modules.util.config.TrainConfig import TrainConfig
+from modules.util.enum.AttentionMechanism import AttentionMechanism
+from modules.util.enum.ConfigPart import ConfigPart
+from modules.util.enum.DataType import DataType
+from modules.util.enum.EMAMode import EMAMode
 from modules.util.enum.GradientReducePrecision import GradientReducePrecision
-from modules.util.enum.ModelType import ModelType
+from modules.util.enum.ImageFormat import ImageFormat
+from modules.util.enum.LearningRateScaler import LearningRateScaler
+from modules.util.enum.LearningRateScheduler import LearningRateScheduler
+from modules.util.enum.LossScaler import LossScaler
+from modules.util.enum.LossWeight import LossWeight
+from modules.util.enum.ModelFormat import ModelFormat
+from modules.util.enum.ModelType import ModelType, PeftType
+from modules.util.enum.Optimizer import Optimizer
+from modules.util.enum.TimestepDistribution import TimestepDistribution
 from modules.util.enum.TimeUnit import TimeUnit
 from modules.util.enum.TrainingMethod import TrainingMethod
+from modules.util.enum.VideoFormat import VideoFormat
 from modules.util.type_util import issubclass_safe
+
+
+def serialize_val(val: object) -> object:
+    if isinstance(val, Enum):
+        return val.value
+    if isinstance(val, BaseConfig):
+        return val.to_dict()
+    if isinstance(val, list):
+        return [serialize_val(x) for x in val]
+    if isinstance(val, dict):
+        return {k: serialize_val(v) for k, v in val.items()}
+    return val
 
 
 @dataclass(frozen=True)
@@ -34,12 +60,12 @@ class Field:
 
         if len(self.keys) == 1:
             raw_val = getattr(config_template, self.keys[0], None)
-            default_val = raw_val.value if isinstance(raw_val, Enum) else raw_val
+            default_val = serialize_val(raw_val)
         else:
             default_val = []
             for k in self.keys:
                 raw_val = getattr(config_template, k, None)
-                default_val.append(raw_val.value if isinstance(raw_val, Enum) else raw_val)
+                default_val.append(serialize_val(raw_val))
 
         options = None
         key_type = config_template.types.get(self.keys[0])
@@ -128,6 +154,75 @@ PHASE_A_KEYS = {
     "save_every_unit",
     "save_skip_first",
     "save_filename_prefix",
+}
+
+OPTIMIZER_SUB_SCHEMAS = {
+    "AdamW": {
+        "beta1": {"type": "float", "default": 0.9, "label": "Beta 1", "tooltip": "Exponential decay rate for first moment estimates"},
+        "beta2": {"type": "float", "default": 0.999, "label": "Beta 2", "tooltip": "Exponential decay rate for second moment estimates"},
+        "eps": {"type": "float", "default": 1e-8, "label": "Epsilon", "tooltip": "Small constant for numerical stability"},
+        "weight_decay": {"type": "float", "default": 0.01, "label": "Weight Decay", "tooltip": "Weight decay regularization factor"},
+        "amsgrad": {"type": "bool", "default": False, "label": "AMSGrad", "tooltip": "Whether to use AMSGrad variant"},
+    },
+    "Prodigy": {
+        "beta1": {"type": "float", "default": 0.9, "label": "Beta 1", "tooltip": "Exponential decay rate for first moment estimates"},
+        "beta2": {"type": "float", "default": 0.999, "label": "Beta 2", "tooltip": "Exponential decay rate for second moment estimates"},
+        "beta3": {"type": "float", "default": None, "label": "Beta 3", "tooltip": "Prodigy step size coefficient"},
+        "d0": {"type": "float", "default": 1e-6, "label": "Initial D", "tooltip": "Initial D estimate for D-adaptation"},
+        "d_coef": {"type": "float", "default": 1.0, "label": "D Coefficient", "tooltip": "Coefficient for estimate of D"},
+        "weight_decay": {"type": "float", "default": 0.0, "label": "Weight Decay", "tooltip": "Weight decay regularization factor"},
+        "decouple": {"type": "bool", "default": True, "label": "Decouple", "tooltip": "Use AdamW style decoupled weight decay"},
+        "use_bias_correction": {"type": "bool", "default": False, "label": "Bias Correction", "tooltip": "Use bias correction"},
+        "safeguard_warmup": {"type": "bool", "default": False, "label": "Safeguard Warmup", "tooltip": "Safeguard warmup stage"},
+        "slice_p": {"type": "int", "default": 11, "label": "Slice Parameters", "tooltip": "Slice parameter reduction factor"},
+    },
+    "CAME": {
+        "beta1": {"type": "float", "default": 0.9, "label": "Beta 1", "tooltip": "Exponential decay rate for first moment estimates"},
+        "beta2": {"type": "float", "default": 0.999, "label": "Beta 2", "tooltip": "Exponential decay rate for second moment estimates"},
+        "beta3": {"type": "float", "default": 0.9999, "label": "Beta 3", "tooltip": "Exponential decay rate for third moment estimates"},
+        "eps": {"type": "float", "default": 1e-30, "label": "Epsilon 1", "tooltip": "First small constant for numerical stability"},
+        "eps2": {"type": "float", "default": 1e-16, "label": "Epsilon 2", "tooltip": "Second small constant for numerical stability"},
+        "weight_decay": {"type": "float", "default": 0.01, "label": "Weight Decay", "tooltip": "Weight decay regularization factor"},
+    },
+    "ADAM_8BIT": {
+        "beta1": {"type": "float", "default": 0.9, "label": "Beta 1", "tooltip": "Exponential decay rate for first moment estimates"},
+        "beta2": {"type": "float", "default": 0.999, "label": "Beta 2", "tooltip": "Exponential decay rate for second moment estimates"},
+        "eps": {"type": "float", "default": 1e-8, "label": "Epsilon", "tooltip": "Small constant for numerical stability"},
+        "weight_decay": {"type": "float", "default": 0.0, "label": "Weight Decay", "tooltip": "Weight decay regularization factor"},
+        "block_wise": {"type": "bool", "default": True, "label": "Block Wise", "tooltip": "Perform block-wise 8-bit quantization"},
+        "min_8bit_size": {"type": "int", "default": 4096, "label": "Min 8-bit Size", "tooltip": "Minimum tensor size for 8-bit quantization"},
+    },
+    "Adafactor": {
+        "eps": {"type": "float", "default": 1e-30, "label": "Epsilon 1", "tooltip": "First epsilon value"},
+        "eps2": {"type": "float", "default": 1e-3, "label": "Epsilon 2", "tooltip": "Second epsilon value"},
+        "clip_threshold": {"type": "float", "default": 1.0, "label": "Clip Threshold", "tooltip": "Clipping threshold for update RMS"},
+        "decay_rate": {"type": "float", "default": -0.8, "label": "Decay Rate", "tooltip": "Decay rate coefficient"},
+        "beta1": {"type": "float", "default": None, "label": "Beta 1", "tooltip": "Beta 1 factor"},
+        "weight_decay": {"type": "float", "default": 0.0, "label": "Weight Decay", "tooltip": "Weight decay regularization factor"},
+        "scale_parameter": {"type": "bool", "default": False, "label": "Scale Parameter", "tooltip": "Scale learning rate by root mean square of parameter"},
+        "relative_step": {"type": "bool", "default": False, "label": "Relative Step", "tooltip": "Use relative step size"},
+        "warmup_init": {"type": "bool", "default": False, "label": "Warmup Initialization", "tooltip": "Warmup initialization"},
+    },
+}
+
+SCHEDULER_SUB_SCHEMAS = {
+    "Cosine": {
+        "learning_rate_cycles": {"type": "float", "default": 0.5, "label": "Cycles", "tooltip": "Number of cosine cycles"},
+        "learning_rate_min_factor": {"type": "float", "default": 0.0, "label": "Min LR Factor", "tooltip": "Minimum learning rate multiplier factor"},
+        "learning_rate_warmup_steps": {"type": "float", "default": 0, "label": "Warmup Steps", "tooltip": "Number of warmup steps or ratio"},
+    },
+    "Linear": {
+        "learning_rate_min_factor": {"type": "float", "default": 0.0, "label": "Min LR Factor", "tooltip": "Minimum learning rate multiplier factor"},
+        "learning_rate_warmup_steps": {"type": "float", "default": 0, "label": "Warmup Steps", "tooltip": "Number of warmup steps or ratio"},
+    },
+    "Polynomial": {
+        "power": {"type": "float", "default": 1.0, "label": "Power", "tooltip": "Polynomial decay power exponent"},
+        "learning_rate_min_factor": {"type": "float", "default": 0.0, "label": "Min LR Factor", "tooltip": "Minimum learning rate multiplier factor"},
+        "learning_rate_warmup_steps": {"type": "float", "default": 0, "label": "Warmup Steps", "tooltip": "Number of warmup steps or ratio"},
+    },
+    "Constant with Warmup": {
+        "learning_rate_warmup_steps": {"type": "float", "default": 0, "label": "Warmup Steps", "tooltip": "Number of warmup steps or ratio"},
+    },
 }
 
 TABS = (
@@ -334,6 +429,935 @@ TABS = (
         ),
     ),
     Tab(
+        "model",
+        "Model",
+        (
+            Group(
+                "base_model",
+                "Base Model",
+                (
+                    Field(
+                        "base-model-name",
+                        ("base_model_name",),
+                        "Base Model Name",
+                        "The base model file path or name",
+                        "text",
+                    ),
+                    Field(
+                        "model-type",
+                        ("model_type",),
+                        "Model Type",
+                        "Type of base model",
+                        "select",
+                    ),
+                    Field(
+                        "output-dtype",
+                        ("output_dtype",),
+                        "Output Dtype",
+                        "Data type for saved model weights",
+                        "select",
+                    ),
+                    Field(
+                        "output-model-format",
+                        ("output_model_format",),
+                        "Output Model Format",
+                        "Format for saved model file",
+                        "select",
+                    ),
+                    Field(
+                        "output-model-destination",
+                        ("output_model_destination",),
+                        "Output Destination",
+                        "Output model file path",
+                        "text",
+                    ),
+                    Field(
+                        "force-circular-padding",
+                        ("force_circular_padding",),
+                        "Force Circular Padding",
+                        "Force circular padding mode in Conv2d layers",
+                        "toggle",
+                    ),
+                    Field(
+                        "compile",
+                        ("compile",),
+                        "Compile Model",
+                        "Enable PyTorch model compilation",
+                        "toggle",
+                    ),
+                ),
+            ),
+            Group(
+                "model_components",
+                "Model Components",
+                (
+                    Field(
+                        "unet",
+                        ("unet",),
+                        "UNet Config",
+                        "UNet model component configuration",
+                        "text",
+                    ),
+                    Field(
+                        "prior",
+                        ("prior",),
+                        "Prior Config",
+                        "Prior model component configuration",
+                        "text",
+                    ),
+                    Field(
+                        "transformer",
+                        ("transformer",),
+                        "Transformer Config",
+                        "Transformer model component configuration",
+                        "text",
+                    ),
+                    Field(
+                        "unconditional-transformer",
+                        ("unconditional_transformer",),
+                        "Unconditional Transformer",
+                        "Unconditional transformer model component configuration",
+                        "text",
+                    ),
+                    Field(
+                        "quantization",
+                        ("quantization",),
+                        "Quantization Config",
+                        "Model quantization configuration",
+                        "text",
+                    ),
+                    Field(
+                        "text-encoder",
+                        ("text_encoder",),
+                        "Text Encoder",
+                        "Text Encoder model component configuration",
+                        "text",
+                    ),
+                    Field(
+                        "text-encoder-layer-skip",
+                        ("text_encoder_layer_skip",),
+                        "Text Encoder Layer Skip",
+                        "Number of layers to skip in Text Encoder",
+                        "number",
+                    ),
+                    Field(
+                        "text-encoder-sequence-length",
+                        ("text_encoder_sequence_length",),
+                        "Text Encoder Sequence Length",
+                        "Sequence length for Text Encoder",
+                        "number",
+                    ),
+                    Field(
+                        "text-encoder-2",
+                        ("text_encoder_2",),
+                        "Text Encoder 2",
+                        "Text Encoder 2 model component configuration",
+                        "text",
+                    ),
+                    Field(
+                        "text-encoder-2-layer-skip",
+                        ("text_encoder_2_layer_skip",),
+                        "Text Encoder 2 Layer Skip",
+                        "Number of layers to skip in Text Encoder 2",
+                        "number",
+                    ),
+                    Field(
+                        "text-encoder-2-sequence-length",
+                        ("text_encoder_2_sequence_length",),
+                        "Text Encoder 2 Sequence Length",
+                        "Sequence length for Text Encoder 2",
+                        "number",
+                    ),
+                    Field(
+                        "text-encoder-3",
+                        ("text_encoder_3",),
+                        "Text Encoder 3",
+                        "Text Encoder 3 model component configuration",
+                        "text",
+                    ),
+                    Field(
+                        "text-encoder-3-layer-skip",
+                        ("text_encoder_3_layer_skip",),
+                        "Text Encoder 3 Layer Skip",
+                        "Number of layers to skip in Text Encoder 3",
+                        "number",
+                    ),
+                    Field(
+                        "text-encoder-4",
+                        ("text_encoder_4",),
+                        "Text Encoder 4",
+                        "Text Encoder 4 model component configuration",
+                        "text",
+                    ),
+                    Field(
+                        "text-encoder-4-layer-skip",
+                        ("text_encoder_4_layer_skip",),
+                        "Text Encoder 4 Layer Skip",
+                        "Number of layers to skip in Text Encoder 4",
+                        "number",
+                    ),
+                    Field(
+                        "vae",
+                        ("vae",),
+                        "VAE Config",
+                        "VAE model component configuration",
+                        "text",
+                    ),
+                    Field(
+                        "effnet-encoder",
+                        ("effnet_encoder",),
+                        "EffNet Encoder Config",
+                        "EffNet Encoder component configuration",
+                        "text",
+                    ),
+                    Field(
+                        "decoder",
+                        ("decoder",),
+                        "Decoder Config",
+                        "Decoder component configuration",
+                        "text",
+                    ),
+                    Field(
+                        "decoder-text-encoder",
+                        ("decoder_text_encoder",),
+                        "Decoder Text Encoder Config",
+                        "Decoder Text Encoder component configuration",
+                        "text",
+                    ),
+                    Field(
+                        "decoder-vqgan",
+                        ("decoder_vqgan",),
+                        "Decoder VQGAN Config",
+                        "Decoder VQGAN component configuration",
+                        "text",
+                    ),
+                ),
+            ),
+        ),
+    ),
+    Tab(
+        "training",
+        "Training",
+        (
+            Group(
+                "basic_training",
+                "Basic Training",
+                (
+                    Field(
+                        "training-method",
+                        ("training_method",),
+                        "Training Method",
+                        "Training method mode",
+                        "select",
+                    ),
+                    Field(
+                        "learning-rate",
+                        ("learning_rate",),
+                        "Learning Rate",
+                        "Base learning rate",
+                        "number",
+                    ),
+                    Field(
+                        "lr-scheduler",
+                        ("learning_rate_scheduler",),
+                        "LR Scheduler",
+                        "Learning rate scheduler strategy",
+                        "select",
+                    ),
+                    Field(
+                        "custom-lr-scheduler",
+                        ("custom_learning_rate_scheduler",),
+                        "Custom LR Scheduler",
+                        "Python class for custom learning rate scheduler",
+                        "text",
+                    ),
+                    Field(
+                        "scheduler-params",
+                        ("scheduler_params",),
+                        "Scheduler Parameters",
+                        "Key-value parameters for custom LR scheduler",
+                        "text",
+                    ),
+                    Field(
+                        "lr-warmup-steps",
+                        ("learning_rate_warmup_steps",),
+                        "LR Warmup Steps",
+                        "Warmup steps or ratio for learning rate schedule",
+                        "number",
+                    ),
+                    Field(
+                        "lr-cycles",
+                        ("learning_rate_cycles",),
+                        "LR Cycles",
+                        "Cosine decay cycles",
+                        "number",
+                    ),
+                    Field(
+                        "lr-min-factor",
+                        ("learning_rate_min_factor",),
+                        "LR Min Factor",
+                        "Minimum learning rate multiplier factor",
+                        "number",
+                    ),
+                    Field(
+                        "epochs",
+                        ("epochs",),
+                        "Epochs",
+                        "Total number of training epochs",
+                        "number",
+                    ),
+                    Field(
+                        "batch-size",
+                        ("batch_size",),
+                        "Batch Size",
+                        "Training batch size per step",
+                        "number",
+                    ),
+                    Field(
+                        "grad-accum-steps",
+                        ("gradient_accumulation_steps",),
+                        "Gradient Accumulation Steps",
+                        "Number of steps to accumulate gradients",
+                        "number",
+                    ),
+                    Field(
+                        "train-dtype",
+                        ("train_dtype",),
+                        "Train Dtype",
+                        "Data type for training computations",
+                        "select",
+                    ),
+                    Field(
+                        "fallback-train-dtype",
+                        ("fallback_train_dtype",),
+                        "Fallback Train Dtype",
+                        "Fallback data type for training",
+                        "select",
+                    ),
+                    Field(
+                        "autocast-cache",
+                        ("enable_autocast_cache",),
+                        "Enable Autocast Cache",
+                        "Cache autocast linear layers for speedup",
+                        "toggle",
+                    ),
+                    Field(
+                        "resolution",
+                        ("resolution",),
+                        "Resolution",
+                        "Training image resolution e.g. 512,512",
+                        "text",
+                    ),
+                    Field(
+                        "frames",
+                        ("frames",),
+                        "Frames",
+                        "Frame count specification for video models",
+                        "text",
+                    ),
+                    Field(
+                        "attention-mechanism",
+                        ("attention_mechanism",),
+                        "Attention Mechanism",
+                        "Attention implementation engine",
+                        "select",
+                    ),
+                    Field(
+                        "clip-grad-norm",
+                        ("clip_grad_norm",),
+                        "Clip Grad Norm",
+                        "Maximum gradient norm for gradient clipping",
+                        "number",
+                    ),
+                    Field(
+                        "include-train-config",
+                        ("include_train_config",),
+                        "Include Train Config",
+                        "Save training configuration inside output model",
+                        "select",
+                    ),
+                ),
+            ),
+            Group(
+                "optimizer_group",
+                "Optimizer",
+                (
+                    Field(
+                        "optimizer",
+                        ("optimizer",),
+                        "Optimizer Config",
+                        "Primary optimizer settings",
+                        "text",
+                    ),
+                    Field(
+                        "optimizer-defaults",
+                        ("optimizer_defaults",),
+                        "Optimizer Defaults",
+                        "Per-optimizer saved default settings",
+                        "text",
+                    ),
+                ),
+            ),
+            Group(
+                "ema_and_loss",
+                "EMA & Loss",
+                (
+                    Field(
+                        "ema",
+                        ("ema",),
+                        "EMA Mode",
+                        "Exponential Moving Average mode",
+                        "select",
+                    ),
+                    Field(
+                        "ema-decay",
+                        ("ema_decay",),
+                        "EMA Decay",
+                        "Decay rate for Exponential Moving Average",
+                        "number",
+                    ),
+                    Field(
+                        "ema-update-interval",
+                        ("ema_update_step_interval",),
+                        "EMA Update Interval",
+                        "Step interval for EMA updates",
+                        "number",
+                    ),
+                    Field(
+                        "mse-strength",
+                        ("mse_strength",),
+                        "MSE Loss Strength",
+                        "Multiplier for Mean Squared Error loss",
+                        "number",
+                    ),
+                    Field(
+                        "mae-strength",
+                        ("mae_strength",),
+                        "MAE Loss Strength",
+                        "Multiplier for Mean Absolute Error loss",
+                        "number",
+                    ),
+                    Field(
+                        "log-cosh-strength",
+                        ("log_cosh_strength",),
+                        "Log-Cosh Loss Strength",
+                        "Multiplier for Log-Cosh loss",
+                        "number",
+                    ),
+                    Field(
+                        "huber-strength",
+                        ("huber_strength",),
+                        "Huber Loss Strength",
+                        "Multiplier for Huber loss",
+                        "number",
+                    ),
+                    Field(
+                        "huber-delta",
+                        ("huber_delta",),
+                        "Huber Delta",
+                        "Delta parameter for Huber loss",
+                        "number",
+                    ),
+                    Field(
+                        "vb-loss-strength",
+                        ("vb_loss_strength",),
+                        "VB Loss Strength",
+                        "Multiplier for Variational Bound loss",
+                        "number",
+                    ),
+                    Field(
+                        "loss-weight-fn",
+                        ("loss_weight_fn",),
+                        "Loss Weight Function",
+                        "Loss weighting strategy",
+                        "select",
+                    ),
+                    Field(
+                        "loss-weight-strength",
+                        ("loss_weight_strength",),
+                        "Loss Weight Strength",
+                        "Strength multiplier for loss weight function",
+                        "number",
+                    ),
+                    Field(
+                        "loss-scaler",
+                        ("loss_scaler",),
+                        "Loss Scaler",
+                        "Dynamic or fixed loss scaling strategy",
+                        "select",
+                    ),
+                    Field(
+                        "lr-scaler",
+                        ("learning_rate_scaler",),
+                        "LR Scaler",
+                        "Learning rate scaling strategy",
+                        "select",
+                    ),
+                ),
+            ),
+            Group(
+                "layer_filtering",
+                "Layer Filtering",
+                (
+                    Field(
+                        "layer-filter",
+                        ("layer_filter",),
+                        "Layer Filter",
+                        "Comma-separated list of target layers",
+                        "text",
+                    ),
+                    Field(
+                        "layer-filter-preset",
+                        ("layer_filter_preset",),
+                        "Layer Filter Preset",
+                        "Preset name for layer filtering",
+                        "text",
+                    ),
+                    Field(
+                        "layer-filter-regex",
+                        ("layer_filter_regex",),
+                        "Layer Filter Regex",
+                        "Treat layer filter pattern as regular expression",
+                        "toggle",
+                    ),
+                ),
+            ),
+            Group(
+                "noise_and_timesteps",
+                "Noise & Timesteps",
+                (
+                    Field(
+                        "offset-noise-weight",
+                        ("offset_noise_weight",),
+                        "Offset Noise Weight",
+                        "Weight for offset noise addition",
+                        "number",
+                    ),
+                    Field(
+                        "generalized-offset-noise",
+                        ("generalized_offset_noise",),
+                        "Generalized Offset Noise",
+                        "Enable generalized offset noise calculation",
+                        "toggle",
+                    ),
+                    Field(
+                        "perturbation-noise-weight",
+                        ("perturbation_noise_weight",),
+                        "Perturbation Noise Weight",
+                        "Weight for input perturbation noise",
+                        "number",
+                    ),
+                    Field(
+                        "rescale-noise-to-zero-snr",
+                        ("rescale_noise_scheduler_to_zero_terminal_snr",),
+                        "Rescale to Zero Terminal SNR",
+                        "Rescale noise scheduler to zero terminal SNR",
+                        "toggle",
+                    ),
+                    Field(
+                        "force-v-prediction",
+                        ("force_v_prediction",),
+                        "Force V Prediction",
+                        "Force V-prediction mode",
+                        "toggle",
+                    ),
+                    Field(
+                        "force-epsilon-prediction",
+                        ("force_epsilon_prediction",),
+                        "Force Epsilon Prediction",
+                        "Force Epsilon-prediction mode",
+                        "toggle",
+                    ),
+                    Field(
+                        "timestep-distribution",
+                        ("timestep_distribution",),
+                        "Timestep Distribution",
+                        "Distribution mode for sampling timesteps",
+                        "select",
+                    ),
+                    Field(
+                        "min-noising-strength",
+                        ("min_noising_strength",),
+                        "Min Noising Strength",
+                        "Minimum noising strength bound",
+                        "number",
+                    ),
+                    Field(
+                        "max-noising-strength",
+                        ("max_noising_strength",),
+                        "Max Noising Strength",
+                        "Maximum noising strength bound",
+                        "number",
+                    ),
+                    Field(
+                        "noising-weight",
+                        ("noising_weight",),
+                        "Noising Weight",
+                        "Weight parameter for timestep distribution",
+                        "number",
+                    ),
+                    Field(
+                        "noising-bias",
+                        ("noising_bias",),
+                        "Noising Bias",
+                        "Bias parameter for timestep distribution",
+                        "number",
+                    ),
+                    Field(
+                        "timestep-shift",
+                        ("timestep_shift",),
+                        "Timestep Shift",
+                        "Shift offset for sampling timesteps",
+                        "number",
+                    ),
+                    Field(
+                        "dynamic-timestep-shifting",
+                        ("dynamic_timestep_shifting",),
+                        "Dynamic Timestep Shifting",
+                        "Enable resolution-based dynamic timestep shifting",
+                        "toggle",
+                    ),
+                ),
+            ),
+            Group(
+                "masking_and_conditioning",
+                "Masking & Conditioning",
+                (
+                    Field(
+                        "masked-training",
+                        ("masked_training",),
+                        "Masked Training",
+                        "Enable masked training",
+                        "toggle",
+                    ),
+                    Field(
+                        "unmasked-probability",
+                        ("unmasked_probability",),
+                        "Unmasked Probability",
+                        "Probability of sampling unmasked images",
+                        "number",
+                    ),
+                    Field(
+                        "unmasked-weight",
+                        ("unmasked_weight",),
+                        "Unmasked Weight",
+                        "Loss weight for unmasked regions",
+                        "number",
+                    ),
+                    Field(
+                        "normalize-masked-loss",
+                        ("normalize_masked_area_loss",),
+                        "Normalize Masked Area Loss",
+                        "Normalize loss by area of mask",
+                        "toggle",
+                    ),
+                    Field(
+                        "masked-prior-preservation-weight",
+                        ("masked_prior_preservation_weight",),
+                        "Masked Prior Preservation Weight",
+                        "Weight for prior preservation in masked regions",
+                        "number",
+                    ),
+                    Field(
+                        "custom-conditioning-image",
+                        ("custom_conditioning_image",),
+                        "Custom Conditioning Image",
+                        "Enable custom conditioning image inputs",
+                        "toggle",
+                    ),
+                ),
+            ),
+        ),
+    ),
+    Tab(
+        "sampling",
+        "Sampling",
+        (
+            Group(
+                "sampling_settings",
+                "Sample Settings",
+                (
+                    Field(
+                        "sample-def-filename",
+                        ("sample_definition_file_name",),
+                        "Sample Definition Filename",
+                        "File path for sample definitions JSON",
+                        "file",
+                        path_mode="file",
+                    ),
+                    Field(
+                        "samples",
+                        ("samples",),
+                        "Samples Config",
+                        "Inline list of sample configurations",
+                        "text",
+                    ),
+                    Field(
+                        "sample-after",
+                        ("sample_after", "sample_after_unit"),
+                        "Sample After",
+                        "Interval for generating preview samples",
+                        "time",
+                    ),
+                    Field(
+                        "sample-skip-first",
+                        ("sample_skip_first",),
+                        "Sample Skip First",
+                        "Skip preview sampling for initial steps/epochs",
+                        "number",
+                    ),
+                    Field(
+                        "sample-image-format",
+                        ("sample_image_format",),
+                        "Sample Image Format",
+                        "File format for saved sample images",
+                        "select",
+                    ),
+                    Field(
+                        "sample-video-format",
+                        ("sample_video_format",),
+                        "Sample Video Format",
+                        "File format for saved sample videos",
+                        "select",
+                    ),
+                    Field(
+                        "sample-audio-format",
+                        ("sample_audio_format",),
+                        "Sample Audio Format",
+                        "File format for saved sample audio",
+                        "select",
+                    ),
+                    Field(
+                        "samples-to-tensorboard",
+                        ("samples_to_tensorboard",),
+                        "Samples To TensorBoard",
+                        "Log sample previews into TensorBoard",
+                        "toggle",
+                    ),
+                    Field(
+                        "non-ema-sampling",
+                        ("non_ema_sampling",),
+                        "Non-EMA Sampling",
+                        "Generate sample previews using base model without EMA",
+                        "toggle",
+                    ),
+                ),
+            ),
+        ),
+    ),
+    Tab(
+        "lora_embedding",
+        "LoRA / Embedding",
+        (
+            Group(
+                "lora",
+                "LoRA / PEFT",
+                (
+                    Field(
+                        "peft-type",
+                        ("peft_type",),
+                        "PEFT Type",
+                        "Parameter-efficient fine-tuning type",
+                        "select",
+                    ),
+                    Field(
+                        "lora-model-name",
+                        ("lora_model_name",),
+                        "LoRA Model Name",
+                        "Base LoRA model file path or name",
+                        "text",
+                    ),
+                    Field(
+                        "lora-rank",
+                        ("lora_rank",),
+                        "LoRA Rank",
+                        "Dimension rank for LoRA matrices",
+                        "number",
+                    ),
+                    Field(
+                        "lora-alpha",
+                        ("lora_alpha",),
+                        "LoRA Alpha",
+                        "Scaling factor alpha for LoRA weights",
+                        "number",
+                    ),
+                    Field(
+                        "lora-decompose",
+                        ("lora_decompose",),
+                        "LoRA Decompose (DoRA)",
+                        "Enable Weight-Decomposed Low-Rank Adaptation (DoRA)",
+                        "toggle",
+                    ),
+                    Field(
+                        "lora-decompose-norm-eps",
+                        ("lora_decompose_norm_epsilon",),
+                        "DoRA Norm Epsilon",
+                        "Norm epsilon for DoRA weight magnitude normalization",
+                        "toggle",
+                    ),
+                    Field(
+                        "lora-decompose-output-axis",
+                        ("lora_decompose_output_axis",),
+                        "DoRA Output Axis",
+                        "Use output axis for DoRA magnitude vector",
+                        "toggle",
+                    ),
+                    Field(
+                        "lora-weight-dtype",
+                        ("lora_weight_dtype",),
+                        "LoRA Weight Dtype",
+                        "Data type for LoRA model weights",
+                        "select",
+                    ),
+                    Field(
+                        "dropout-probability",
+                        ("dropout_probability",),
+                        "Dropout Probability",
+                        "Dropout probability for LoRA / text encoder",
+                        "number",
+                    ),
+                    Field(
+                        "bundle-additional-embeddings",
+                        ("bundle_additional_embeddings",),
+                        "Bundle Additional Embeddings",
+                        "Bundle additional embeddings into LoRA output checkpoint",
+                        "toggle",
+                    ),
+                ),
+            ),
+            Group(
+                "oft",
+                "OFT",
+                (
+                    Field(
+                        "oft-block-size",
+                        ("oft_block_size",),
+                        "OFT Block Size",
+                        "Block size for Orthogonal Fine-Tuning",
+                        "number",
+                    ),
+                    Field(
+                        "oft-block-share",
+                        ("oft_block_share",),
+                        "OFT Block Share",
+                        "Share orthogonal block matrices across layers",
+                        "toggle",
+                    ),
+                    Field(
+                        "oft-scaled",
+                        ("oft_scaled",),
+                        "OFT Scaled",
+                        "Use scaled orthogonal matrices in OFT",
+                        "toggle",
+                    ),
+                ),
+            ),
+            Group(
+                "lokr",
+                "LoKr",
+                (
+                    Field(
+                        "lokr-dim",
+                        ("lokr_dim",),
+                        "LoKr Factor Factorization Dimension",
+                        "Kronecker product dimension for LoKr",
+                        "number",
+                    ),
+                    Field(
+                        "lokr-decompose-both",
+                        ("lokr_decompose_both",),
+                        "LoKr Decompose Both",
+                        "Decompose both Kronecker matrix factors into low-rank",
+                        "toggle",
+                    ),
+                    Field(
+                        "lokr-decompose-factor",
+                        ("lokr_decompose_factor",),
+                        "LoKr Decompose Factor",
+                        "Factor for low-rank matrix decomposition",
+                        "number",
+                    ),
+                    Field(
+                        "lokr-use-tucker",
+                        ("lokr_use_tucker",),
+                        "LoKr Use Tucker",
+                        "Use Tucker tensor decomposition for 4D convolutions",
+                        "toggle",
+                    ),
+                    Field(
+                        "lokr-weight-decompose",
+                        ("lokr_weight_decompose",),
+                        "LoKr Weight Decompose",
+                        "Apply weight decomposition to LoKr updates",
+                        "toggle",
+                    ),
+                    Field(
+                        "lokr-dora-on-output",
+                        ("lokr_dora_on_output",),
+                        "LoKr DoRA on Output",
+                        "Apply DoRA magnitude normalization on output axis",
+                        "toggle",
+                    ),
+                    Field(
+                        "lokr-full-matrix",
+                        ("lokr_full_matrix",),
+                        "LoKr Full Matrix",
+                        "Use full matrix instead of Kronecker product decomposition",
+                        "toggle",
+                    ),
+                    Field(
+                        "lokr-vec-trick",
+                        ("lokr_vec_trick",),
+                        "LoKr Vector Trick",
+                        "Use vectorization trick for faster Kronecker multiplication",
+                        "toggle",
+                    ),
+                ),
+            ),
+            Group(
+                "embeddings",
+                "Embeddings",
+                (
+                    Field(
+                        "embedding-lr",
+                        ("embedding_learning_rate",),
+                        "Embedding Learning Rate",
+                        "Learning rate for textual inversion embeddings",
+                        "number",
+                    ),
+                    Field(
+                        "preserve-embedding-norm",
+                        ("preserve_embedding_norm",),
+                        "Preserve Embedding Norm",
+                        "Keep norm of trained embedding tokens close to initial norm",
+                        "toggle",
+                    ),
+                    Field(
+                        "embedding",
+                        ("embedding",),
+                        "Primary Embedding Config",
+                        "Primary textual inversion embedding configuration",
+                        "text",
+                    ),
+                    Field(
+                        "additional-embeddings",
+                        ("additional_embeddings",),
+                        "Additional Embeddings",
+                        "List of additional textual inversion embedding configurations",
+                        "text",
+                    ),
+                    Field(
+                        "embedding-weight-dtype",
+                        ("embedding_weight_dtype",),
+                        "Embedding Weight Dtype",
+                        "Data type for saving textual inversion embeddings",
+                        "select",
+                    ),
+                ),
+            ),
+        ),
+    ),
+    Tab(
         "data",
         "Data",
         (
@@ -361,6 +1385,46 @@ TABS = (
                         "Clear cache before training",
                         "Clears the cache directory before starting to train. Only disable this if you want to continue using the same cached data. Disabling this can lead to errors, if other settings are changed during a restart",
                         "toggle",
+                    ),
+                ),
+            ),
+            Group(
+                "concepts_group",
+                "Concepts",
+                (
+                    Field(
+                        "concept-filename",
+                        ("concept_file_name",),
+                        "Concept File Name",
+                        "File path for concepts dataset configuration JSON",
+                        "file",
+                        path_mode="file",
+                    ),
+                    Field(
+                        "concepts",
+                        ("concepts",),
+                        "Concepts List",
+                        "List of training concept dataset configurations",
+                        "text",
+                    ),
+                ),
+            ),
+        ),
+    ),
+    Tab(
+        "cloud",
+        "Cloud",
+        (
+            Group(
+                "cloud_group",
+                "Cloud Settings",
+                (
+                    Field(
+                        "cloud",
+                        ("cloud",),
+                        "Cloud Config",
+                        "Cloud storage and remote synchronization settings",
+                        "text",
                     ),
                 ),
             ),
@@ -427,10 +1491,58 @@ TABS = (
             ),
         ),
     ),
+    Tab(
+        "secrets",
+        "Secrets",
+        (
+            Group(
+                "secrets_group",
+                "Secrets",
+                (
+                    Field(
+                        "secrets",
+                        ("secrets",),
+                        "Secrets Config",
+                        "Authentication credentials and API secrets",
+                        "text",
+                    ),
+                ),
+            ),
+        ),
+    ),
 )
 
 
 class SchemaRegistry:
+    @classmethod
+    def get_all_field_names(cls) -> list[str]:
+        field_names = []
+        for tab in TABS:
+            for group in tab.groups:
+                for field in group.fields:
+                    field_names.extend(field.keys)
+        return field_names
+
+    @classmethod
+    def get_schema_for_domain(cls, domain: str) -> dict[str, object] | None:
+        config_template = TrainConfig.default_values()
+        for tab in TABS:
+            if tab.id == domain:
+                return tab.to_dict(config_template)
+        return None
+
+    @classmethod
+    def get_sub_schema(cls, key: str) -> dict[str, object]:
+        if key == "optimizer":
+            return OPTIMIZER_SUB_SCHEMAS
+        if key in ("scheduler", "scheduler_params", "learning_rate_scheduler"):
+            return SCHEDULER_SUB_SCHEMAS
+        if key in OPTIMIZER_SUB_SCHEMAS:
+            return OPTIMIZER_SUB_SCHEMAS[key]
+        if key in SCHEDULER_SUB_SCHEMAS:
+            return SCHEDULER_SUB_SCHEMAS[key]
+        return {}
+
     def build(self, model_type: str, training_method: str) -> dict[str, object]:
         try:
             model_type_enum = ModelType(model_type)
@@ -469,9 +1581,25 @@ class SchemaRegistry:
             "GradientReducePrecision": [e.value for e in GradientReducePrecision],
             "ModelType": [e.value for e in ModelType],
             "TrainingMethod": [e.value for e in TrainingMethod],
+            "AttentionMechanism": [e.value for e in AttentionMechanism],
+            "ConfigPart": [e.value for e in ConfigPart],
+            "DataType": [e.value for e in DataType],
+            "EMAMode": [e.value for e in EMAMode],
+            "ImageFormat": [e.value for e in ImageFormat],
+            "LearningRateScaler": [e.value for e in LearningRateScaler],
+            "LearningRateScheduler": [e.value for e in LearningRateScheduler],
+            "LossScaler": [e.value for e in LossScaler],
+            "LossWeight": [e.value for e in LossWeight],
+            "ModelFormat": [e.value for e in ModelFormat],
+            "Optimizer": [e.value for e in Optimizer],
+            "PeftType": [e.value for e in PeftType],
+            "TimestepDistribution": [e.value for e in TimestepDistribution],
+            "VideoFormat": [e.value for e in VideoFormat],
         }
 
         return {
             "model_types": model_types,
             "enums": enums,
+            "optimizer_sub_schemas": OPTIMIZER_SUB_SCHEMAS,
+            "scheduler_sub_schemas": SCHEDULER_SUB_SCHEMAS,
         }
