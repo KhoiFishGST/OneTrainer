@@ -3,6 +3,7 @@ import type {
   ConfigResponse,
   ConfigUpdateRequest,
   DirectoryListResponse,
+  FileSystemEntry,
   HealthResponse,
   MetaResponse,
   PresetLoadRequest,
@@ -83,6 +84,21 @@ export function createApi(base = '') {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+
+    listDirectory: (
+      path = '',
+      mode: 'dir' | 'file' | 'both' = 'both',
+      extensions?: string[]
+    ) => {
+      const query = new URLSearchParams();
+      if (path) query.set('path', path);
+      if (mode) query.set('mode', mode);
+      if (extensions && extensions.length > 0) {
+        extensions.forEach((ext) => query.append('extensions', ext));
+      }
+      const q = query.toString();
+      return request<DirectoryListResponse>(`${base}/api/fs/list${q ? `?${q}` : ''}`);
+    },
 
     listDirectories: (path = '') => {
       const query = path ? `?path=${encodeURIComponent(path)}` : '';

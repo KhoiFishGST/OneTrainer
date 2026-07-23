@@ -1,17 +1,21 @@
 <script lang="ts">
   import { untrack, tick } from 'svelte';
-  import { Folder, ArrowUp, X } from 'lucide-svelte';
+  import { Folder, File, ArrowUp, X } from 'lucide-svelte';
   import { api } from '$lib/api/client';
 
   interface DirectoryItem {
     name: string;
     path: string;
+    is_dir?: boolean;
+    size_bytes?: number;
+    modified?: number;
   }
 
   interface DirectoryData {
     path: string;
     parent?: string | null;
     directories: DirectoryItem[];
+    entries: DirectoryItem[];
     roots?: string[];
     truncated?: boolean;
   }
@@ -19,18 +23,23 @@
   let {
     open = false,
     initialPath = '/',
+    mode = 'dir',
+    extensions = [],
     list,
     onSelect,
     onClose,
   }: {
     open?: boolean;
     initialPath?: string;
-    list?: (path: string) => Promise<any>;
+    mode?: 'dir' | 'file' | 'both';
+    extensions?: string[];
+    list?: (path: string, mode?: 'dir' | 'file' | 'both', extensions?: string[]) => Promise<any>;
     onSelect: (path: string) => void;
     onClose?: () => void;
   } = $props();
 
   let currentPath = $state('/');
+  let selectedPath = $state('/');
   let typedPath = $state('/');
   let loading = $state(false);
   let error = $state<string | null>(null);
@@ -39,6 +48,14 @@
   let modalEl = $state<HTMLDivElement | null>(null);
   let pathInputEl = $state<HTMLInputElement | null>(null);
   let previousActiveElement = $state<HTMLElement | null>(null);
+
+  function formatSize(bytes?: number): string {
+    if (bytes === undefined || bytes === null) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+  }
 
   function getBreadcrumbs(pathStr: string): { label: string; path: string }[] {
     if (!pathStr) return [];
@@ -74,24 +91,31 @@
     loading = true;
     error = null;
     try {
-      const fetchFn = list ?? api.listDirectories;
+      const fetchFn = list ?? ((p: string) => api.listDirectory(p, mode, extensions));
       const res = await fetchFn(targetPath);
       
-      const rawDirs = res.directories ?? res.entries?.filter((e: any) => e.is_dir) ?? [];
-      const directories: DirectoryItem[] = rawDirs.map((d: any) => ({
+      const rawItems = res.entries ?? res.directories ?? [];
+      const entries: DirectoryItem[] = rawItems.map((d: any) => ({
         name: d.name,
         path: d.path,
+        is_dir: d.is_dir ?? true,
+        size_bytes: d.size_bytes,
+        modified: d.modified,
       }));
+
+      const directories = entries.filter((e) => e.is_dir !== false);
 
       directoryData = {
         path: res.path ?? targetPath,
         parent: res.parent ?? null,
         directories,
+        entries,
         roots: res.roots ?? [],
         truncated: Boolean(res.truncated),
       };
 
       currentPath = directoryData.path;
+      selectedPath = directoryData.path;
       typedPath = directoryData.path;
     } catch (err: any) {
       error = err?.detail || err?.message || 'Failed to list directory';
@@ -168,7 +192,7 @@
   }
 
   function handleSelect() {
-    onSelect(currentPath);
+    onSelect(selectedPath || currentPath);
     handleClose();
   }
 </script>
@@ -185,7 +209,9 @@
       bind:this={modalEl}
     >
       <div class="picker-header">
-        <h3 class="picker-title">Select Directory</h3>
+        <h3 class="picker-title">
+          {mode === 'file' ? 'Select File' : mode === 'both' ? 'Select File or Directory' : 'Select Directory'}
+        </h3>
         <button type="button" class="close-btn" aria-label="Close" onclick={handleClose}>
           <X size={20} />
         </button>
@@ -268,21 +294,43 @@
 
         {#if loading}
           <div class="loading-state">Loading...</div>
-        {:else if directoryData && directoryData.directories.length > 0}
+        {:else if directoryData && directoryData.entries.length > 0}
           <div class="dir-list">
-            {#each directoryData.directories as dir}
-              <button
-                type="button"
-                class="dir-item"
-                onclick={() => loadDirectory(dir.path)}
-              >
-                <Folder size={16} />
-                <span>{dir.name}</span>
-              </button>
+            {#each directoryData.entries as item}
+              {#if item.is_dir !== false}
+                <button
+                  type="button"
+                  class="dir-item"
+                  onclick={() => loadDirectory(item.path)}
+                >
+                  <Folder size={16} />
+                  <span>{item.name}</span>
+                </button>
+              {:else}
+                <button
+                  type="button"
+                  class="dir-item file-item"
+                  class:selected={selectedPath === item.path}
+                  onclick={() => {
+                    selectedPath = item.path;
+                    currentPath = item.path;
+                  }}
+                  ondblclick={() => {
+                    onSelect(item.path);
+                    handleClose();
+                  }}
+                >
+                  <File size={16} />
+                  <span class="file-name">{item.name}</span>
+                  {#if item.size_bytes !== undefined}
+                    <span class="file-size">{formatSize(item.size_bytes)}</span>
+                  {/if}
+                </button>
+              {/if}
             {/each}
           </div>
         {:else if !error}
-          <div class="empty-state">No subdirectories found</div>
+          <div class="empty-state">No items found</div>
         {/if}
       </div>
 
@@ -296,7 +344,7 @@
           disabled={loading}
           onclick={handleSelect}
         >
-          Select {currentPath}
+          Select {selectedPath || currentPath}
         </button>
       </div>
     </div>
@@ -498,6 +546,20 @@
 
   .dir-item:hover {
     background: var(--color-bg-hover, #f3f4f6);
+  }
+
+  .dir-item.selected {
+    background: var(--color-bg-selected, #e0e7ff);
+    border-color: var(--color-primary, #2563eb);
+  }
+
+  .file-name {
+    flex: 1;
+  }
+
+  .file-size {
+    font-size: 0.75rem;
+    color: var(--color-text-muted, #6b7280);
   }
 
   .parent-item {

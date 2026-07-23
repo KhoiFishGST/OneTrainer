@@ -36,15 +36,29 @@ export interface PresetSaveRequest {
   name: string;
 }
 
+export interface FileSystemEntry {
+  name: string;
+  path: string;
+  is_dir: boolean;
+  size_bytes?: number;
+  modified?: number;
+}
+
 export interface DirectoryEntry {
   name: string;
   path: string;
   is_dir: boolean;
+  size_bytes?: number;
+  modified?: number;
 }
 
 export interface DirectoryListResponse {
   path: string;
-  entries: DirectoryEntry[];
+  parent?: string | null;
+  entries?: FileSystemEntry[];
+  directories?: DirectoryEntry[];
+  roots?: string[];
+  truncated?: boolean;
 }
 
 export interface EventMessage {
