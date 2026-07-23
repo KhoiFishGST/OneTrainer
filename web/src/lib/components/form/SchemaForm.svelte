@@ -54,13 +54,18 @@
 <div class="schema-form">
   {#if tab?.groups}
     {#each tab.groups as group (group.id)}
+      {@const visibleFields = (group.fields || []).filter((f) => f.visible !== false)}
+      {@const inputFields = visibleFields.filter((f) => normalizeControl(f.control) !== 'toggle')}
+      {@const toggleFields = visibleFields.filter((f) => normalizeControl(f.control) === 'toggle')}
+
       <section class="form-group">
         {#if group.title || group.label}
           <h3 class="group-title">{group.title || group.label}</h3>
         {/if}
-        <div class="group-fields">
-          {#each group.fields || [] as field (field.id)}
-            {#if field.visible !== false}
+
+        {#if inputFields.length > 0}
+          <div class="group-fields">
+            {#each inputFields as field (field.id)}
               {@const controlType = normalizeControl(field.control)}
               {@const primaryKey = field.keys?.[0] ?? field.id}
               {@const error = getFieldError(field)}
@@ -71,17 +76,10 @@
                 label={field.label}
                 tooltip={field.tooltip}
                 {error}
-                inline={controlType === 'toggle'}
+                inline={false}
               >
                 {#snippet children({ id, ariaDescribedBy })}
-                  {#if controlType === 'toggle'}
-                    <Toggle
-                      {id}
-                      value={fieldValue}
-                      {ariaDescribedBy}
-                      onChange={(val) => setRaw(primaryKey, val)}
-                    />
-                  {:else if controlType === 'text'}
+                  {#if controlType === 'text'}
                     <TextInput
                       {id}
                       value={fieldValue}
@@ -126,9 +124,41 @@
                   {/if}
                 {/snippet}
               </Field>
-            {/if}
-          {/each}
-        </div>
+            {/each}
+          </div>
+        {/if}
+
+        {#if toggleFields.length > 0}
+          <div class="options-section">
+            <div class="options-header">
+              <span class="options-title">Options & Features</span>
+            </div>
+            <div class="options-grid">
+              {#each toggleFields as field (field.id)}
+                {@const primaryKey = field.keys?.[0] ?? field.id}
+                {@const error = getFieldError(field)}
+                {@const fieldValue = getFieldValue(field, 0)}
+
+                <Field
+                  id={field.id}
+                  label={field.label}
+                  tooltip={field.tooltip}
+                  {error}
+                  inline={true}
+                >
+                  {#snippet children({ id, ariaDescribedBy })}
+                    <Toggle
+                      {id}
+                      value={fieldValue}
+                      {ariaDescribedBy}
+                      onChange={(val) => setRaw(primaryKey, val)}
+                    />
+                  {/snippet}
+                </Field>
+              {/each}
+            </div>
+          </div>
+        {/if}
       </section>
     {/each}
   {/if}
@@ -157,6 +187,37 @@
   }
 
   .group-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 1.5rem;
+    align-items: flex-end;
+  }
+
+  .options-section {
+    margin-top: 1rem;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--color-border, var(--line, #2d3741));
+    border-radius: 6px;
+    background: var(--color-bg-secondary, var(--panel-raised, #13181f));
+  }
+
+  .group-fields + .options-section {
+    margin-top: 1.25rem;
+  }
+
+  .options-header {
+    margin-bottom: 0.625rem;
+  }
+
+  .options-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted, var(--muted, #8995a1));
+  }
+
+  .options-grid {
     display: flex;
     flex-wrap: wrap;
     gap: 1rem 1.5rem;
