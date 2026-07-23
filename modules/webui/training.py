@@ -119,18 +119,36 @@ class TrainingService:
         with self._lock:
             vram_used = 0
             vram_total = 0
+            gpu_util = 0.0
+            gpu_temp = 0.0
             try:
                 import torch
                 if torch.cuda.is_available():
-                    vram_used = torch.cuda.memory_allocated()
-                    vram_total = torch.cuda.get_device_properties(0).total_memory
+                    free_b, total_b = torch.cuda.mem_get_info(0)
+                    vram_used = total_b - free_b
+                    vram_total = total_b
             except Exception:
                 pass
+
+            try:
+                import pynvml
+                pynvml.nvmlInit()
+                handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+                info = pynvml.nvmlDeviceGetMemoryInfo(handle)
+                util = pynvml.nvmlDeviceGetUtilizationRates(handle)
+                temp = pynvml.nvmlDeviceGetTemperature(handle, pynvml.NVML_TEMPERATURE_GPU)
+                vram_used = info.used
+                vram_total = info.total
+                gpu_util = float(util.gpu)
+                gpu_temp = float(temp)
+            except Exception:
+                pass
+
             return {
                 "vram_used": vram_used,
                 "vram_total": vram_total,
-                "utilization": 0.0,
-                "temperature": 0.0,
+                "utilization": gpu_util,
+                "temperature": gpu_temp,
             }
 
     def get_status(self) -> Dict[str, Any]:
@@ -211,18 +229,29 @@ class TrainingService:
 
             start_time = time.time()
 
-            def on_progress(train_progress, max_step, max_epoch):
+            import threading
+            def gpu_monitor_loop():
+                while self._state in (TrainingState.TRAINING, TrainingState.PAUSED):
+                    try:
+                        self.emit_gpu_stat()
+                    except Exception:
+                        pass
+                    time.sleep(1.0)
+            threading.Thread(target=gpu_monitor_loop, daemon=True).start()
+
+            def on_progress(train_progress, epoch_length, max_epoch):
                 now = time.time()
                 elapsed = max(0.1, now - start_time)
                 current_step = train_progress.global_step
+                total_steps = (epoch_length * max_epoch) if (epoch_length and max_epoch) else (self._max_steps or 0)
                 speed = current_step / elapsed if current_step > 0 else 0.0
-                remaining_steps = max(0, max_step - current_step) if max_step > 0 else 0
+                remaining_steps = max(0, total_steps - current_step) if total_steps > 0 else 0
                 eta = remaining_steps / speed if speed > 0 else 0.0
 
                 self.update_progress(
                     step=current_step,
-                    epoch=train_progress.epoch,
-                    max_steps=max_step,
+                    epoch=train_progress.epoch + 1,
+                    max_steps=total_steps,
                     max_epochs=max_epoch,
                     speed_its=round(speed, 2),
                     elapsed_seconds=round(elapsed, 1),
@@ -263,14 +292,23 @@ class TrainingService:
                     except Exception:
                         pass
                     try:
-                        key = tag.replace("/", "_")
+                        tag_lower = tag.lower()
                         val = float(scalar_value)
                         step_val = global_step if global_step is not None else self._step
-                        self.record_metric(step=step_val, epoch=self._epoch, **{key: val})
-                        if "loss" in key.lower():
-                            self.record_metric(step=step_val, epoch=self._epoch, loss=val)
-                        if "lr" in key.lower() or "learning_rate" in key.lower():
-                            self.record_metric(step=step_val, epoch=self._epoch, lr=val)
+                        
+                        metric_payload = {
+                            "step": step_val,
+                            "epoch": self._epoch,
+                        }
+                        key = tag.replace("/", "_")
+                        metric_payload[key] = val
+
+                        if "loss" in tag_lower:
+                            metric_payload["loss"] = val
+                        if "lr" in tag_lower or "learning_rate" in tag_lower:
+                            metric_payload["lr"] = val
+
+                        self.record_metric(metric_payload)
                     except Exception:
                         pass
 

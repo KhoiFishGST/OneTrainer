@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 
 from modules.webui.app import create_app
 from modules.webui.state import WebUISettings
+from modules.webui.training import TrainingState
 
 
 @pytest.fixture
@@ -56,8 +57,7 @@ def test_training_api_lifecycle(client):
 
 
 def test_training_api_sample_and_backup(client):
-    # Start training first so control commands can be issued
-    client.post("/api/training/start", json={"base_model_name": "mock"})
+    client.app.state.webui.training_service.set_state(TrainingState.TRAINING)
 
     res_sample = client.post("/api/training/sample")
     assert res_sample.status_code == 200
