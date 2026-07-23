@@ -247,6 +247,7 @@
     <span
       data-testid="training-status-pill"
       class="status-pill status-{trainingState.toLowerCase()}"
+      title={$trainingStore.status?.error_message ?? ''}
     >
       {trainingState}
     </span>
@@ -377,6 +378,12 @@
 {#if saveError && !showSaveDialog}
   <div class="save-error-toast" role="alert">
     {saveError}
+  </div>
+{/if}
+
+{#if trainingState === 'FAILED' && $trainingStore.status?.error_message}
+  <div class="save-error-toast" role="alert">
+    {$trainingStore.status.error_message}
   </div>
 {/if}
 
