@@ -78,7 +78,7 @@ if "%IS_DEV%"=="1" (
     echo Starting OneTrainer Web UI in DEV mode with Live HMR...
     cd web && bun install --frozen-lockfile && cd ..
     start "OneTrainer Backend" %PYTHON% scripts\train_ui_web.py --dev %*
-    cd web && bun run dev
+    cd web && bun run dev -- --host 0.0.0.0
     goto :end
 )
 

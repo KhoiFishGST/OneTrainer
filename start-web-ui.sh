@@ -39,9 +39,9 @@ if [ "$IS_DEV" = true ]; then
     BACKEND_PID=$!
 
     print "Backend running on http://127.0.0.1:7801 (PID $BACKEND_PID)"
-    print "Starting Vite Dev Server with Live HMR on http://localhost:5173 ..."
+    print "Starting Vite Dev Server with Live HMR on http://0.0.0.0:5173 ..."
 
-    (cd web && bun run dev)
+    (cd web && bun run dev -- --host 0.0.0.0)
 else
     if ! run_python_in_active_env scripts/webui_build.py --check &>/dev/null; then
         print "Building Web UI frontend..."
