@@ -17,8 +17,10 @@ from modules.webui.routers.events import router as events_router
 from modules.webui.routers.health import router as health_router
 from modules.webui.routers.meta import router as meta_router
 from modules.webui.routers.presets import router as presets_router
+from modules.webui.routers.training import router as training_router
 from modules.webui.schema import SchemaRegistry
 from modules.webui.state import AppState, WebUISettings
+from modules.webui.training import TrainingService
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -88,6 +90,7 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
         preset_svc = PresetService(settings.presets_dir, settings.secrets_path)
         directory_svc = DirectoryService()
         event_hub = EventHub()
+        training_svc = TrainingService(event_bus=event_hub)
 
         await event_hub.start()
 
@@ -135,6 +138,7 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
             version=version,
             warnings=warnings,
             capture=capture,
+            training=training_svc,
         )
 
         try:
@@ -163,6 +167,7 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
     app.include_router(directories_router, prefix="/api")
     app.include_router(console_router, prefix="/api")
     app.include_router(events_router, prefix="/api")
+    app.include_router(training_router, prefix="/api")
 
     index_file = settings.static_dir / "index.html"
     if not settings.dev and index_file.exists():

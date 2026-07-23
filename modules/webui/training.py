@@ -28,6 +28,48 @@ class TrainingService:
         self._eta_seconds = 0.0
         self._error_message: Optional[str] = None
         self._config_snapshot: Optional[Dict[str, Any]] = None
+        self._sample_requested: bool = False
+        self._backup_requested: bool = False
+        self._metrics: list = []
+        self._samples: list = []
+
+    def request_sample(self):
+        with self._lock:
+            if self._state not in (TrainingState.TRAINING, TrainingState.PAUSED):
+                raise RuntimeError(f"Cannot request sample from state {self._state}")
+            self._sample_requested = True
+
+    def request_backup(self):
+        with self._lock:
+            if self._state not in (TrainingState.TRAINING, TrainingState.PAUSED):
+                raise RuntimeError(f"Cannot request backup from state {self._state}")
+            self._backup_requested = True
+
+    def get_metrics(self) -> list:
+        with self._lock:
+            return list(self._metrics)
+
+    def get_samples(self) -> list:
+        with self._lock:
+            return list(self._samples)
+
+    def get_gpu_stats(self) -> Dict[str, Any]:
+        with self._lock:
+            vram_used = 0
+            vram_total = 0
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    vram_used = torch.cuda.memory_allocated()
+                    vram_total = torch.cuda.get_device_properties(0).total_memory
+            except Exception:
+                pass
+            return {
+                "vram_used": vram_used,
+                "vram_total": vram_total,
+                "utilization": 0.0,
+                "temperature": 0.0,
+            }
 
     def get_status(self) -> Dict[str, Any]:
         with self._lock:
