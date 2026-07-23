@@ -1,0 +1,129 @@
+<script lang="ts">
+  import ModalDialog from '../ui/ModalDialog.svelte';
+  import Field from './Field.svelte';
+  import Toggle from './Toggle.svelte';
+  import TextInput from './TextInput.svelte';
+  import NumberInput from './NumberInput.svelte';
+  import Select from './Select.svelte';
+  import { getPath, setPath, cloneDocument } from '../../config/path';
+  import type { SchemaField } from '../../config/validation';
+
+  let {
+    open = $bindable(false),
+    title = 'Optimizer / Scheduler Parameters',
+    fields = [],
+    values = {},
+    onSave,
+    onClose,
+  }: {
+    open?: boolean;
+    title?: string;
+    fields?: SchemaField[];
+    values?: Record<string, any>;
+    onSave: (values: Record<string, any>) => void;
+    onClose?: () => void;
+  } = $props();
+
+  let localValues = $state<Record<string, any>>({});
+
+  $effect(() => {
+    if (open) {
+      localValues = cloneDocument(values || {});
+    }
+  });
+
+  function normalizeControl(control?: string): 'toggle' | 'text' | 'number' | 'select' {
+    const norm = (control || 'text').toLowerCase();
+    if (['toggle', 'checkbox', 'bool', 'boolean'].includes(norm)) return 'toggle';
+    if (['number', 'integer', 'int', 'float', 'double'].includes(norm)) return 'number';
+    if (['select', 'dropdown', 'enum'].includes(norm)) return 'select';
+    return 'text';
+  }
+
+  function handleSave() {
+    let finalValues = cloneDocument(localValues);
+    for (const field of fields) {
+      const primaryKey = field.keys?.[0] ?? field.id;
+      const controlType = normalizeControl(field.control);
+      if (controlType === 'number') {
+        const currentVal = getPath(finalValues, primaryKey);
+        if (typeof currentVal === 'string' && currentVal.trim() !== '') {
+          const num = Number(currentVal.trim());
+          if (!isNaN(num)) {
+            finalValues = setPath(finalValues, primaryKey, num);
+          }
+        }
+      }
+    }
+    onSave(finalValues);
+    open = false;
+  }
+
+  function handleClose() {
+    open = false;
+    onClose?.();
+  }
+
+  function setValue(key: string, val: any) {
+    localValues = setPath(localValues, key, val);
+  }
+</script>
+
+<ModalDialog
+  bind:open
+  {title}
+  onClose={handleClose}
+  onApply={handleSave}
+  applyText="Save"
+>
+  <form class="optimizer-scheduler-form" onsubmit={(e) => { e.preventDefault(); handleSave(); }}>
+    {#each fields as field (field.id)}
+      {@const primaryKey = field.keys?.[0] ?? field.id}
+      {@const controlType = normalizeControl(field.control)}
+      {@const fieldValue = getPath(localValues, primaryKey)}
+
+      <Field id={field.id} label={field.label} tooltip={field.tooltip}>
+        {#snippet children({ id, ariaDescribedBy })}
+          {#if controlType === 'toggle'}
+            <Toggle
+              {id}
+              value={Boolean(fieldValue)}
+              {ariaDescribedBy}
+              onChange={(val) => setValue(primaryKey, val)}
+            />
+          {:else if controlType === 'number'}
+            <NumberInput
+              {id}
+              value={fieldValue}
+              {ariaDescribedBy}
+              onInput={(val) => setValue(primaryKey, val)}
+            />
+          {:else if controlType === 'select'}
+            <Select
+              {id}
+              value={fieldValue}
+              options={field.options || []}
+              {ariaDescribedBy}
+              onChange={(val) => setValue(primaryKey, val)}
+            />
+          {:else}
+            <TextInput
+              {id}
+              value={fieldValue}
+              {ariaDescribedBy}
+              onInput={(val) => setValue(primaryKey, val)}
+            />
+          {/if}
+        {/snippet}
+      </Field>
+    {/each}
+  </form>
+</ModalDialog>
+
+<style>
+  .optimizer-scheduler-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+</style>
