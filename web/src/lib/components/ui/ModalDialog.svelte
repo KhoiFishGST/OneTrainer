@@ -159,8 +159,8 @@
   }
 
   .modal-dialog {
-    background: var(--color-bg-card, #ffffff);
-    color: var(--color-text, #111827);
+    background: var(--panel-raised);
+    color: var(--text);
     border-radius: 8px;
     width: 100%;
     max-width: 550px;
@@ -168,12 +168,12 @@
     display: flex;
     flex-direction: column;
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--color-border, #e5e7eb);
+    border: 1px solid var(--line);
     overflow: hidden;
+  }
 
-    &:focus {
-      outline: none;
-    }
+  .modal-dialog:focus {
+    outline: none;
   }
 
   .modal-header {
@@ -181,21 +181,21 @@
     align-items: center;
     justify-content: space-between;
     padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--color-border, #e5e7eb);
+    border-bottom: 1px solid var(--line);
   }
 
   .modal-title {
     margin: 0;
     font-size: 1.125rem;
     font-weight: 600;
-    color: var(--color-text-title, #111827);
+    color: var(--text);
   }
 
   .close-btn {
     background: transparent;
     border: none;
     cursor: pointer;
-    color: var(--color-text-muted, #6b7280);
+    color: var(--muted);
     padding: 4px;
     border-radius: 4px;
     display: flex;
@@ -204,8 +204,8 @@
   }
 
   .close-btn:hover {
-    background: var(--color-bg-hover, #f3f4f6);
-    color: var(--color-text, #111827);
+    background: var(--control);
+    color: var(--text);
   }
 
   .modal-body {
@@ -223,8 +223,8 @@
     justify-content: flex-end;
     gap: 0.75rem;
     padding: 1rem 1.25rem;
-    border-top: 1px solid var(--color-border, #e5e7eb);
-    background: var(--color-bg-subtle, #f9fafb);
+    border-top: 1px solid var(--line);
+    background: var(--control);
   }
 
   .btn {
@@ -233,27 +233,27 @@
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.15s ease;
+    transition: background-color 0.15s ease, opacity 0.15s ease;
   }
 
   .cancel-btn {
     background: transparent;
-    border: 1px solid var(--color-border, #d1d5db);
-    color: var(--color-text, #374151);
+    border: 1px solid var(--line);
+    color: var(--text);
   }
 
   .cancel-btn:hover {
-    background: var(--color-bg-hover, #f3f4f6);
+    background: var(--control);
   }
 
   .apply-btn {
-    background: var(--color-primary, #2563eb);
+    background: var(--accent);
     color: #ffffff;
     border: none;
   }
 
   .apply-btn:hover {
-    background: var(--color-primary-hover, #1d4ed8);
+    opacity: 0.9;
   }
 
   @media (max-width: 640px) {

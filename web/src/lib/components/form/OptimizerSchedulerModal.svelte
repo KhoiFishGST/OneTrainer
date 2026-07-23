@@ -25,11 +25,13 @@
   } = $props();
 
   let localValues = $state<Record<string, any>>({});
+  let wasOpen = $state(false);
 
   $effect(() => {
-    if (open) {
+    if (open && !wasOpen) {
       localValues = cloneDocument(values || {});
     }
+    wasOpen = open;
   });
 
   function normalizeControl(control?: string): 'toggle' | 'text' | 'number' | 'select' {
