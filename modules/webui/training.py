@@ -159,10 +159,12 @@ class TrainingService:
             config_data.get("model_path") or (isinstance(config_data.get("model"), dict) and config_data["model"].get("name"))
         )
         if not has_real_config:
+            with self._lock:
+                self._state = TrainingState.IDLE
+            self._emit_state_event()
             return
 
         try:
-
             from modules.util.config.TrainConfig import TrainConfig
             from modules.util.config.SecretsConfig import SecretsConfig
             from modules.util.callbacks.TrainCallbacks import TrainCallbacks
@@ -265,8 +267,7 @@ class TrainingService:
                 trainer.end()
 
             with self._lock:
-                if self._state not in (TrainingState.STOPPING, TrainingState.FAILED):
-                    self._state = TrainingState.COMPLETED
+                self._state = TrainingState.COMPLETED
             self._emit_state_event()
 
         except Exception as e:
@@ -299,12 +300,12 @@ class TrainingService:
 
     def stop_training(self):
         with self._lock:
-            if self._state not in (TrainingState.STARTING, TrainingState.TRAINING, TrainingState.PAUSED):
-                raise RuntimeError(f"Cannot stop training from state {self._state}")
-            self._state = TrainingState.STOPPING
+            self._state = TrainingState.IDLE
             if hasattr(self, "_train_commands") and self._train_commands:
                 self._train_commands.stop()
         self._emit_state_event()
+
+
 
     def pause_training(self):
         with self._lock:
