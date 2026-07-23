@@ -675,17 +675,10 @@ TABS = (
                     ),
                     Field(
                         "optimizer",
-                        ("optimizer",),
-                        "Optimizer Config",
-                        "Primary optimizer settings",
-                        "text",
-                    ),
-                    Field(
-                        "optimizer-defaults",
-                        ("optimizer_defaults",),
-                        "Optimizer Defaults",
-                        "Per-optimizer saved default settings",
-                        "text",
+                        ("optimizer", "optimizer"),
+                        "Optimizer",
+                        "The type of optimizer",
+                        "select",
                     ),
                     Field(
                         "lr-scheduler",
