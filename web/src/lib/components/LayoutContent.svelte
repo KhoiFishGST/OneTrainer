@@ -142,38 +142,44 @@
   const currentPath = $derived($page?.url?.pathname ?? '/general');
 </script>
 
-<div class="app-shell">
-  <Header />
-  {#if isApiError}
-    <ErrorBanner message={errorMessage} />
+{#if currentPath === '/login'}
+  {#if children}
+    {@render children()}
   {/if}
+{:else}
+  <div class="app-shell">
+    <Header />
+    {#if isApiError}
+      <ErrorBanner message={errorMessage} />
+    {/if}
 
-  <div class="shell-body">
-    <Rail {currentPath} mobile={isMobile} />
-    <main class="main-content">
-      {#if children}
-        {@render children()}
-      {/if}
-    </main>
+    <div class="shell-body">
+      <Rail {currentPath} mobile={isMobile} />
+      <main class="main-content">
+        {#if children}
+          {@render children()}
+        {/if}
+      </main>
+    </div>
+
+    <ConsoleDrawer open={drawerOpen && currentPath !== '/console'} onClose={closeDrawer} store={consoleStore} />
+    <StatusBar connected={$healthQuery.isSuccess} onToggleConsole={toggleDrawer} />
+
+    <DirectoryPicker
+      open={pickerOpen}
+      initialPath={pickerInitialPath}
+      onSelect={(selectedPath) => {
+        if (pickerOnSelect) {
+          pickerOnSelect(selectedPath);
+        }
+        pickerOpen = false;
+      }}
+      onClose={() => {
+        pickerOpen = false;
+      }}
+    />
   </div>
-
-  <ConsoleDrawer open={drawerOpen && currentPath !== '/console'} onClose={closeDrawer} store={consoleStore} />
-  <StatusBar connected={$healthQuery.isSuccess} onToggleConsole={toggleDrawer} />
-
-  <DirectoryPicker
-    open={pickerOpen}
-    initialPath={pickerInitialPath}
-    onSelect={(selectedPath) => {
-      if (pickerOnSelect) {
-        pickerOnSelect(selectedPath);
-      }
-      pickerOpen = false;
-    }}
-    onClose={() => {
-      pickerOpen = false;
-    }}
-  />
-</div>
+{/if}
 
 <style>
   .app-shell {

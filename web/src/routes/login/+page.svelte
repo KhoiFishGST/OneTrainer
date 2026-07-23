@@ -47,7 +47,7 @@
   <div class="login-container">
     <div class="brand-header">
       <div class="logo-icon">
-        <Lock size={32} />
+        <img src="/logo.png" alt="OneTrainer Logo" class="brand-logo-img" />
       </div>
       <h1 class="brand-title">OneTrainer Portal</h1>
       <p class="brand-subtitle">Protected Instance Access</p>
@@ -123,12 +123,18 @@
     width: 56px;
     height: 56px;
     margin: 0 auto 1rem;
-    background-color: rgba(99, 102, 241, 0.15);
+    background-color: var(--panel-raised, #111827);
+    border: 1px solid var(--line, #374151);
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--accent, #6366f1);
+  }
+
+  .brand-logo-img {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
   }
 
   .brand-title {
