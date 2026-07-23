@@ -36,6 +36,18 @@ def serialize_val(val: object) -> object:
     return val
 
 
+def getattr_nested(obj: object, path: str) -> object:
+    curr = obj
+    for part in path.split("."):
+        if curr is None:
+            return None
+        if isinstance(curr, dict):
+            curr = curr.get(part)
+        else:
+            curr = getattr(curr, part, None)
+    return curr
+
+
 @dataclass(frozen=True)
 class Option:
     value: str
@@ -56,19 +68,29 @@ class Field:
     required: bool = False
 
     def to_dict(self, config_template: TrainConfig) -> dict[str, object]:
+        first_key = self.keys[0]
         nullable = any(config_template.nullables.get(k, False) for k in self.keys)
 
         if len(self.keys) == 1:
-            raw_val = getattr(config_template, self.keys[0], None)
+            raw_val = getattr_nested(config_template, first_key)
             default_val = serialize_val(raw_val)
         else:
             default_val = []
             for k in self.keys:
-                raw_val = getattr(config_template, k, None)
+                raw_val = getattr_nested(config_template, k)
                 default_val.append(serialize_val(raw_val))
 
         options = None
-        key_type = config_template.types.get(self.keys[0])
+        key_type = None
+        parts = first_key.split(".")
+        if len(parts) == 2 and parts[0] in config_template.types:
+            sub_cls = config_template.types[parts[0]]
+            if hasattr(sub_cls, "default_values"):
+                sub_defaults = sub_cls.default_values()
+                key_type = sub_defaults.types.get(parts[1])
+        else:
+            key_type = config_template.types.get(first_key)
+
         if issubclass_safe(key_type, Enum):
             options = [{"value": e.value, "label": e.value} for e in key_type]
 
@@ -1513,6 +1535,348 @@ TABS = (
 )
 
 
+def build_model_tab(model_type_enum: ModelType) -> Tab:
+    parts = model_type_enum.model_parts()
+
+    base_fields = [
+        Field(
+            "base-model-name",
+            ("base_model_name",),
+            "Base Model Name",
+            "The base model file path or name",
+            "text",
+            path_mode="file",
+        ),
+        Field(
+            "model-type",
+            ("model_type",),
+            "Model Type",
+            "Type of base model",
+            "select",
+        ),
+        Field(
+            "output-dtype",
+            ("output_dtype",),
+            "Output Dtype",
+            "Data type for saved model weights",
+            "select",
+        ),
+        Field(
+            "output-model-format",
+            ("output_model_format",),
+            "Output Model Format",
+            "Format for saved model file",
+            "select",
+        ),
+        Field(
+            "output-model-destination",
+            ("output_model_destination",),
+            "Output Destination",
+            "Output model file path",
+            "text",
+            path_mode="file",
+        ),
+        Field(
+            "force-circular-padding",
+            ("force_circular_padding",),
+            "Force Circular Padding",
+            "Force circular padding mode in Conv2d layers",
+            "toggle",
+        ),
+        Field(
+            "compile",
+            ("compile",),
+            "Compile Model",
+            "Enable PyTorch model compilation",
+            "toggle",
+        ),
+    ]
+
+    component_fields = []
+
+    # UNet
+    if "unet" in parts:
+        component_fields.append(
+            Field(
+                "unet-weight-dtype",
+                ("unet.weight_dtype",),
+                "UNet Data Type",
+                "The unet weight data type",
+                "select",
+            )
+        )
+
+    # Prior
+    if "prior" in parts:
+        if model_type_enum.is_stable_cascade():
+            component_fields.append(
+                Field(
+                    "prior-model-name",
+                    ("prior.model_name",),
+                    "Prior Model",
+                    "Filename, directory or Hugging Face repository of the prior model",
+                    "text",
+                    path_mode="file",
+                )
+            )
+        component_fields.append(
+            Field(
+                "prior-weight-dtype",
+                ("prior.weight_dtype",),
+                "Prior Data Type",
+                "The prior weight data type",
+                "select",
+            )
+        )
+
+    # Transformer
+    if "transformer" in parts:
+        component_fields.append(
+            Field(
+                "transformer-model-name",
+                ("transformer.model_name",),
+                "Override Transformer / GGUF",
+                "Can be used to override the transformer in the base model",
+                "text",
+                path_mode="file",
+            )
+        )
+        component_fields.append(
+            Field(
+                "transformer-weight-dtype",
+                ("transformer.weight_dtype",),
+                "Transformer Data Type",
+                "The transformer weight data type",
+                "select",
+            )
+        )
+
+    # Unconditional Transformer
+    if "unconditional_transformer" in parts:
+        component_fields.append(
+            Field(
+                "unconditional-transformer-weight-dtype",
+                ("unconditional_transformer.weight_dtype",),
+                "Unconditional Transformer Data Type",
+                "Weight data type of unconditional transformer",
+                "select",
+            )
+        )
+
+    # Quantization
+    component_fields.append(
+        Field(
+            "quantization-svd-dtype",
+            ("quantization.svd_dtype",),
+            "SVDQuant Data Type",
+            "Datatype to use for SVDQuant weights decomposition",
+            "select",
+        )
+    )
+    component_fields.append(
+        Field(
+            "quantization-svd-rank",
+            ("quantization.svd_rank",),
+            "SVDQuant Rank",
+            "Rank for SVDQuant weights decomposition",
+            "number",
+        )
+    )
+
+    # Text Encoders
+    has_multiple = model_type_enum.has_multiple_text_encoders()
+    if not has_multiple:
+        component_fields.append(
+            Field(
+                "text-encoder-weight-dtype",
+                ("text_encoder.weight_dtype",),
+                "Text Encoder Data Type",
+                "The text encoder weight data type",
+                "select",
+            )
+        )
+        component_fields.append(
+            Field(
+                "text-encoder-layer-skip",
+                ("text_encoder_layer_skip",),
+                "Text Encoder Layer Skip",
+                "Number of layers to skip in Text Encoder",
+                "number",
+            )
+        )
+        component_fields.append(
+            Field(
+                "text-encoder-sequence-length",
+                ("text_encoder_sequence_length",),
+                "Text Encoder Sequence Length",
+                "Sequence length for Text Encoder",
+                "number",
+            )
+        )
+    else:
+        component_fields.append(
+            Field(
+                "text-encoder-1-weight-dtype",
+                ("text_encoder.weight_dtype",),
+                "Text Encoder 1 Data Type",
+                "The text encoder 1 weight data type",
+                "select",
+            )
+        )
+        component_fields.append(
+            Field(
+                "text-encoder-layer-skip",
+                ("text_encoder_layer_skip",),
+                "Text Encoder 1 Layer Skip",
+                "Number of layers to skip in Text Encoder 1",
+                "number",
+            )
+        )
+
+    if "text_encoder_2" in parts:
+        component_fields.append(
+            Field(
+                "text-encoder-2-weight-dtype",
+                ("text_encoder_2.weight_dtype",),
+                "Text Encoder 2 Data Type",
+                "The text encoder 2 weight data type",
+                "select",
+            )
+        )
+        component_fields.append(
+            Field(
+                "text-encoder-2-layer-skip",
+                ("text_encoder_2_layer_skip",),
+                "Text Encoder 2 Layer Skip",
+                "Number of layers to skip in Text Encoder 2",
+                "number",
+            )
+        )
+
+    if "text_encoder_3" in parts:
+        component_fields.append(
+            Field(
+                "text-encoder-3-weight-dtype",
+                ("text_encoder_3.weight_dtype",),
+                "Text Encoder 3 Data Type",
+                "The text encoder 3 weight data type",
+                "select",
+            )
+        )
+        component_fields.append(
+            Field(
+                "text-encoder-3-layer-skip",
+                ("text_encoder_3_layer_skip",),
+                "Text Encoder 3 Layer Skip",
+                "Number of layers to skip in Text Encoder 3",
+                "number",
+            )
+        )
+
+    if "text_encoder_4" in parts:
+        component_fields.append(
+            Field(
+                "text-encoder-4-model-name",
+                ("text_encoder_4.model_name",),
+                "Text Encoder 4 Override",
+                "Filename, directory or Hugging Face repository of text encoder 4",
+                "text",
+                path_mode="file",
+            )
+        )
+        component_fields.append(
+            Field(
+                "text-encoder-4-weight-dtype",
+                ("text_encoder_4.weight_dtype",),
+                "Text Encoder 4 Data Type",
+                "The text encoder 4 weight data type",
+                "select",
+            )
+        )
+        component_fields.append(
+            Field(
+                "text-encoder-4-layer-skip",
+                ("text_encoder_4_layer_skip",),
+                "Text Encoder 4 Layer Skip",
+                "Number of layers to skip in Text Encoder 4",
+                "number",
+            )
+        )
+
+    # VAE
+    if "vae" in parts:
+        component_fields.append(
+            Field(
+                "vae-model-name",
+                ("vae.model_name",),
+                "VAE Override",
+                "Directory or Hugging Face repository of a VAE model in diffusers format",
+                "text",
+                path_mode="file",
+            )
+        )
+        component_fields.append(
+            Field(
+                "vae-weight-dtype",
+                ("vae.weight_dtype",),
+                "VAE Data Type",
+                "The VAE weight data type",
+                "select",
+            )
+        )
+
+    # EffNet Encoder
+    if "effnet_encoder" in parts:
+        component_fields.append(
+            Field(
+                "effnet-encoder-model-name",
+                ("effnet_encoder.model_name",),
+                "Effnet Encoder Model",
+                "Filename, directory or Hugging Face repository of effnet encoder",
+                "text",
+                path_mode="file",
+            )
+        )
+        component_fields.append(
+            Field(
+                "effnet-encoder-weight-dtype",
+                ("effnet_encoder.weight_dtype",),
+                "Effnet Encoder Data Type",
+                "The effnet encoder weight data type",
+                "select",
+            )
+        )
+
+    # Decoder
+    if "decoder" in parts:
+        component_fields.append(
+            Field(
+                "decoder-model-name",
+                ("decoder.model_name",),
+                "Decoder Model",
+                "Filename, directory or Hugging Face repository of decoder model",
+                "text",
+                path_mode="file",
+            )
+        )
+        component_fields.append(
+            Field(
+                "decoder-weight-dtype",
+                ("decoder.weight_dtype",),
+                "Decoder Data Type",
+                "The decoder weight data type",
+                "select",
+            )
+        )
+
+    groups = [
+        Group("base_model", "Base Model", tuple(base_fields)),
+        Group("model_components", "Model Components", tuple(component_fields)),
+    ]
+
+    return Tab("model", "Model", tuple(groups))
+
+
 class SchemaRegistry:
     @classmethod
     def get_all_field_names(cls) -> list[str]:
@@ -1521,7 +1885,23 @@ class SchemaRegistry:
             for group in tab.groups:
                 for field in group.fields:
                     field_names.extend(field.keys)
-        return field_names
+        top_level_components = [
+            "unet",
+            "transformer",
+            "prior",
+            "unconditional_transformer",
+            "quantization",
+            "text_encoder",
+            "text_encoder_2",
+            "text_encoder_3",
+            "text_encoder_4",
+            "vae",
+            "effnet_encoder",
+            "decoder",
+            "decoder_text_encoder",
+            "decoder_vqgan",
+        ]
+        return field_names + top_level_components
 
     @classmethod
     def get_schema_for_domain(cls, domain: str) -> dict[str, object] | None:
@@ -1554,10 +1934,18 @@ class SchemaRegistry:
             raise ValueError(f"Training method is not supported for model type {model_type}")
 
         config_template = TrainConfig.default_values()
+        dynamic_tabs = []
+        for tab in TABS:
+            if tab.id == "model":
+                dynamic_tab = build_model_tab(model_type_enum)
+                dynamic_tabs.append(dynamic_tab.to_dict(config_template))
+            else:
+                dynamic_tabs.append(tab.to_dict(config_template))
+
         return {
             "model_type": model_type_enum.value,
             "training_method": training_method_enum.value,
-            "tabs": [tab.to_dict(config_template) for tab in TABS],
+            "tabs": dynamic_tabs,
         }
 
     def meta(self) -> dict[str, object]:
