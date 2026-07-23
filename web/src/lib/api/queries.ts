@@ -1,6 +1,6 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
 import { api } from './client';
-import type { ConfigUpdateRequest, PresetLoadRequest, PresetSaveRequest } from './types';
+import type { Concept, ConfigUpdateRequest, PresetLoadRequest, PresetSaveRequest } from './types';
 
 export const queryKeys = {
   health: () => ['health'] as const,
@@ -11,6 +11,7 @@ export const queryKeys = {
   presets: () => ['presets'] as const,
   directories: (path?: string) => ['directories', path ?? ''] as const,
   backlog: () => ['backlog'] as const,
+  concepts: () => ['concepts'] as const,
 };
 
 export function createHealthQuery() {
@@ -97,3 +98,22 @@ export function createSavePresetMutation() {
     },
   });
 }
+
+export function createConceptsQuery() {
+  return createQuery({
+    queryKey: queryKeys.concepts(),
+    queryFn: () => api.getConcepts(),
+  });
+}
+
+export function createUpdateConceptsMutation() {
+  const queryClient = useQueryClient();
+  return createMutation({
+    mutationFn: (concepts: Concept[]) => api.putConcepts(concepts),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKeys.concepts(), data.concepts ?? data);
+      queryClient.invalidateQueries({ queryKey: queryKeys.config() });
+    },
+  });
+}
+

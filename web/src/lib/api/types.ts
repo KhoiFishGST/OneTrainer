@@ -76,3 +76,22 @@ export interface FieldError {
   path: string;
   message: string;
 }
+
+export interface Concept {
+  name?: string;
+  path?: string;
+  instance_prompt?: string;
+  class_prompt?: string;
+  dataset_directory?: string;
+  class_dataset_directory?: string;
+  enabled?: boolean;
+  repeats?: number;
+  include_subdirectories?: boolean;
+  loss_weight?: number;
+  [key: string]: any;
+}
+
+export interface ConceptsResponse {
+  concepts: Concept[];
+}
+

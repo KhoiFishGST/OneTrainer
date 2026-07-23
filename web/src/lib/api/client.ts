@@ -1,5 +1,7 @@
 import type {
   BacklogResponse,
+  Concept,
+  ConceptsResponse,
   ConfigResponse,
   ConfigUpdateRequest,
   DirectoryListResponse,
@@ -106,6 +108,14 @@ export function createApi(base = '') {
     },
 
     getBacklog: () => request<BacklogResponse>(`${base}/api/events/backlog`),
+
+    getConcepts: () => request<Concept[]>(`${base}/api/concepts`),
+
+    putConcepts: (concepts: Concept[] | ConceptsResponse) =>
+      request<ConceptsResponse>(`${base}/api/concepts`, {
+        method: 'PUT',
+        body: JSON.stringify(concepts),
+      }),
   };
 }
 

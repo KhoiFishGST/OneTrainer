@@ -45,7 +45,7 @@
     { name: 'Backup', path: '/backup', icon: Archive, disabled: false },
     { name: 'Console', path: '/console', icon: Terminal, disabled: false },
     { name: 'Model', path: '/model', icon: Box, disabled: false },
-    { name: 'Concepts', path: '/concepts', icon: Layers, disabled: true },
+    { name: 'Concepts', path: '/concepts', icon: Layers, disabled: false },
     { name: 'Training', path: '/training', icon: Activity, disabled: false },
     { name: 'Sampling', path: '/sampling', icon: Sparkles, disabled: false },
     { name: 'LoRA/Embedding', path: '/lora-embedding', icon: Cpu, disabled: false },
