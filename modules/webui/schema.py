@@ -41,10 +41,14 @@ def getattr_nested(obj: object, path: str) -> object:
     for part in path.split("."):
         if curr is None:
             return None
+        if isinstance(curr, Enum):
+            return curr.value if hasattr(curr, "value") else str(curr)
         if isinstance(curr, dict):
             curr = curr.get(part)
         else:
             curr = getattr(curr, part, None)
+    if isinstance(curr, Enum):
+        return curr.value if hasattr(curr, "value") else str(curr)
     return curr
 
 
@@ -675,7 +679,7 @@ TABS = (
                     ),
                     Field(
                         "optimizer",
-                        ("optimizer", "optimizer"),
+                        ("optimizer.optimizer",),
                         "Optimizer",
                         "The type of optimizer",
                         "select",
@@ -1872,7 +1876,7 @@ class SchemaRegistry:
         for tab in TABS:
             for group in tab.groups:
                 for field in group.fields:
-                    field_names.extend(field.keys)
+                    field_names.extend([k.split(".")[0] for k in field.keys])
         top_level_components = [
             "unet",
             "transformer",

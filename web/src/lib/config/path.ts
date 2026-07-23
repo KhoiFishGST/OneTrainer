@@ -8,10 +8,17 @@ export function getPath(obj: Record<string, any>, path: string): any {
   const parts = path.split('.');
   let current: any = obj;
   for (const part of parts) {
-    if (current === null || current === undefined || typeof current !== 'object') {
+    if (current === null || current === undefined) {
       return undefined;
     }
-    current = current[part];
+    if (typeof current !== 'object') {
+      return current;
+    }
+    const next = current[part];
+    if (next === undefined && typeof current === 'string') {
+      return current;
+    }
+    current = next;
   }
   return current;
 }
