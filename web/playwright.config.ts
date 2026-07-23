@@ -18,7 +18,7 @@ export default defineConfig({
     timeout: 120000,
   },
   projects: [
-    { name: "chromium-desktop", testMatch: /phase-a|phase-b|console/, use: Object.assign({}, devices["Desktop Chrome"]) },
+    { name: "chromium-desktop", testMatch: /phase-a|phase-b|phase-c|console/, use: Object.assign({}, devices["Desktop Chrome"]) },
     { name: "webkit-phone", testMatch: /mobile/, use: Object.assign({}, devices["iPhone 13"]) },
     { name: "firefox-smoke", testMatch: /firefox-smoke/, use: Object.assign({}, devices["Desktop Firefox"]) },
   ],
