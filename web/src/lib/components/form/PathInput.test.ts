@@ -52,4 +52,15 @@ describe('PathInput', () => {
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
+
+  it('handles trailing slashes in file preview name', () => {
+    render(PathInput, {
+      props: {
+        value: '/tmp/model.safetensors/',
+        label: 'Model Path',
+        mode: 'file',
+      },
+    });
+    expect(screen.getByText('model.safetensors')).toBeInTheDocument();
+  });
 });

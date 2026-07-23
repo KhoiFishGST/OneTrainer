@@ -5,7 +5,7 @@
   let {
     id = `path-input-${Math.random().toString(36).slice(2, 9)}`,
     label = '',
-    value = '',
+    value = $bindable(''),
     disabled = false,
     placeholder = '',
     mode = 'both',
@@ -28,11 +28,13 @@
 
   function handleInputChange(e: Event) {
     const val = (e.target as HTMLInputElement).value;
+    value = val;
     onInput?.(val);
     onChange?.(val);
   }
 
   function handleSelect(selectedPath: string) {
+    value = selectedPath;
     onInput?.(selectedPath);
     onChange?.(selectedPath);
     pickerOpen = false;
@@ -78,7 +80,7 @@
   {#if value && mode !== 'dir'}
     <div class="file-preview-info">
       <span class="preview-label">Selected:</span>
-      <span class="file-preview-name">{value.split(/[/\\]/).pop()}</span>
+      <span class="file-preview-name">{value.split(/[/\\]/).filter(Boolean).pop() || ''}</span>
     </div>
   {/if}
 </div>

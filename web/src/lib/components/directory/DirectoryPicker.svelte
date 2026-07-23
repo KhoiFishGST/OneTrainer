@@ -45,6 +45,13 @@
   let error = $state<string | null>(null);
   let directoryData = $state<DirectoryData | null>(null);
 
+  let selectedEntry = $derived(
+    directoryData?.entries.find((e) => e.path === selectedPath)
+  );
+  let isSelectDisabled = $derived(
+    loading || (mode === 'file' && (!selectedEntry || selectedEntry.is_dir !== false))
+  );
+
   let modalEl = $state<HTMLDivElement | null>(null);
   let pathInputEl = $state<HTMLInputElement | null>(null);
   let previousActiveElement = $state<HTMLElement | null>(null);
@@ -192,6 +199,7 @@
   }
 
   function handleSelect() {
+    if (isSelectDisabled) return;
     onSelect(selectedPath || currentPath);
     handleClose();
   }
@@ -341,7 +349,7 @@
         <button
           type="button"
           class="select-btn"
-          disabled={loading}
+          disabled={isSelectDisabled}
           onclick={handleSelect}
         >
           Select {selectedPath || currentPath}

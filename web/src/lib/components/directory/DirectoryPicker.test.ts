@@ -217,3 +217,28 @@ it("manages dialog accessibility, initial focus, focus restoration, and tab trap
 
   document.body.removeChild(triggerButton);
 });
+
+it("disables select button in file mode when no file is selected", async () => {
+  const list = vi.fn().mockResolvedValue({
+    path: "/dir",
+    parent: "/",
+    directories: [],
+    entries: [
+      { name: "sub", path: "/dir/sub", is_dir: true },
+      { name: "file.txt", path: "/dir/file.txt", is_dir: false },
+    ],
+    roots: ["/"],
+    truncated: false,
+  });
+
+  const onSelect = vi.fn();
+  render(DirectoryPicker, { initialPath: "/dir", mode: "file", list, onSelect, open: true });
+
+  const selectButton = await screen.findByRole("button", { name: /^Select/ });
+  expect(selectButton).toBeDisabled();
+
+  const fileItem = await screen.findByRole("button", { name: "file.txt" });
+  await fireEvent.click(fileItem);
+
+  expect(selectButton).not.toBeDisabled();
+});
