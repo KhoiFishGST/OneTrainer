@@ -28,11 +28,34 @@ def _get_platform_roots() -> list[str]:
     return ["/"]
 
 
+def _normalize_extensions(extensions: str | list[str] | set[str] | None) -> set[str] | None:
+    if not extensions:
+        return None
+    if isinstance(extensions, str):
+        raw_list = [e.strip() for e in extensions.split(",") if e.strip()]
+    else:
+        raw_list = [str(e).strip() for e in extensions if str(e).strip()]
+
+    normalized = set()
+    for ext in raw_list:
+        ext_lower = ext.lower()
+        if not ext_lower.startswith("."):
+            ext_lower = "." + ext_lower
+        normalized.add(ext_lower)
+    return normalized if normalized else None
+
+
 class DirectoryService:
     def __init__(self, max_entries: int = 5000):
         self.max_entries = max_entries
 
-    def list(self, raw_path: str | Path = "") -> dict:
+    def list(
+        self,
+        raw_path: str | Path = "",
+        mode: str = "both",
+        extensions: str | list[str] | set[str] | None = None,
+        show_hidden: bool = False,
+    ) -> dict:
         target_path = Path(raw_path) if raw_path else Path.cwd()
         try:
             resolved = target_path.expanduser().resolve(strict=True)
@@ -49,36 +72,80 @@ class DirectoryService:
         except PermissionError as error:
             raise DirectoryDenied(f"Permission denied reading directory: {resolved}") from error
 
-        directories = []
-        def _check_dir(child):
+        normalized_mode = mode.lower() if mode else "both"
+        ext_set = _normalize_extensions(extensions)
+
+        entries = []
+        for child in children:
+            if not show_hidden and child.name.startswith("."):
+                continue
+
             try:
-                return child.is_dir()
-            except PermissionError:
-                return False
+                is_dir = child.is_dir()
+            except (PermissionError, OSError):
+                continue
 
-        directories = [child for child in children if _check_dir(child)]
+            if normalized_mode in ("dir", "directories", "directory") and not is_dir:
+                continue
+            if normalized_mode in ("file", "files") and is_dir:
+                continue
 
-        directories.sort(key=lambda item: item.name.lower())
+            if not is_dir and ext_set is not None:
+                name_lower = child.name.lower()
+                suffix_lower = child.suffix.lower()
+                matches = suffix_lower in ext_set or any(name_lower.endswith(ext) for ext in ext_set)
+                if not matches:
+                    continue
 
-        truncated = len(directories) > self.max_entries
+            try:
+                st = child.stat()
+                size_bytes = st.st_size if not is_dir else 0
+                modified = float(st.st_mtime)
+            except Exception:
+                size_bytes = 0
+                modified = 0.0
+
+            try:
+                child_path = str(child.resolve())
+            except Exception:
+                child_path = str(child)
+
+            entries.append({
+                "name": child.name,
+                "path": child_path,
+                "is_dir": is_dir,
+                "size_bytes": size_bytes,
+                "modified": modified,
+            })
+
+        entries.sort(key=lambda item: (not item["is_dir"], item["name"].lower()))
+
+        truncated = len(entries) > self.max_entries
         if truncated:
-            directories = directories[: self.max_entries]
+            entries = entries[: self.max_entries]
 
         parent = resolved.parent
         has_parent = parent != resolved
         parent_path = str(parent) if has_parent else None
 
+        directories_legacy = [
+            {
+                "name": item["name"],
+                "path": item["path"],
+            }
+            for item in entries
+            if item["is_dir"]
+        ]
+
         return {
             "path": str(resolved),
+            "current_path": str(resolved),
             "parent": parent_path,
+            "parent_path": parent_path,
             "has_parent": has_parent,
             "roots": _get_platform_roots(),
-            "directories": [
-                {
-                    "name": item.name,
-                    "path": str(item.resolve()),
-                }
-                for item in directories
-            ],
+            "directories": directories_legacy,
+            "entries": entries,
             "truncated": truncated,
         }
+
