@@ -156,13 +156,17 @@ class TrainingService:
 
     def _run_training_worker(self, config_data: Dict[str, Any]):
         has_real_config = isinstance(config_data, dict) and bool(
-            config_data.get("model_path") or (isinstance(config_data.get("model"), dict) and config_data["model"].get("name"))
+            config_data.get("base_model_name") or config_data.get("model_path") or (isinstance(config_data.get("model"), dict) and config_data["model"].get("name"))
         )
         if not has_real_config:
+            import logging
+            logging.error(f"TrainingService: Cannot start training. No valid base model selected in config. Keys present: {list(config_data.keys())}")
             self.set_failed("Cannot start training: No base model selected. Please select a model in the Model tab.")
             return
 
         try:
+            import logging
+            logging.info("TrainingService: Initializing TrainConfig from dictionary.")
             from modules.util.config.TrainConfig import TrainConfig
             from modules.util.config.SecretsConfig import SecretsConfig
             from modules.util.callbacks.TrainCallbacks import TrainCallbacks
@@ -170,6 +174,7 @@ class TrainingService:
             from modules.util import create
 
             train_config = TrainConfig.default_values().from_dict(config_data, migrate=True)
+            logging.info(f"TrainingService: Base model name resolved as: {train_config.base_model_name}")
 
             try:
                 import json
@@ -252,23 +257,33 @@ class TrainingService:
             except Exception:
                 pass
 
+            logging.info("TrainingService: Instantiating PyTorch trainer...")
             trainer = create.create_trainer(train_config, callbacks, commands)
+            logging.info(f"TrainingService: Trainer instantiated successfully: {type(trainer).__name__}")
+            
             trainer.start()
+            logging.info("TrainingService: trainer.start() completed.")
 
             with self._lock:
                 self._state = TrainingState.TRAINING
             self._emit_state_event()
 
+            logging.info("TrainingService: Beginning trainer.train() loop...")
             trainer.train()
+            logging.info("TrainingService: trainer.train() loop exited normally.")
 
             if not commands.get_stop_command() or train_config.backup_before_save:
+                logging.info("TrainingService: Finalizing training (trainer.end())...")
                 trainer.end()
 
             with self._lock:
                 self._state = TrainingState.COMPLETED
             self._emit_state_event()
+            logging.info("TrainingService: Training completed successfully.")
 
         except Exception as e:
+            import logging
+            logging.exception(f"TrainingService: Caught exception during training: {str(e)}")
             with self._lock:
                 self._state = TrainingState.FAILED
                 self._error_message = str(e)
