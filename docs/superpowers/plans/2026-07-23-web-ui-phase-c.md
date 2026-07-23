@@ -447,3 +447,45 @@ Expected: All E2E browser tests pass.
 git add web/src/routes/live/+page.svelte web/e2e/phase-c.spec.ts
 git commit -m "test(webui): add Live dashboard page and Playwright E2E integration test suite for Phase C"
 ```
+
+---
+
+### Task 9: Secrets Management, Insecure HTTP Warning & Web Portal Password Authentication
+
+**Files:**
+- Modify: `modules/webui/routers/` (Add `secrets.py` and `auth.py` router modules)
+- Create: `web/src/routes/secrets/+page.svelte`
+- Create: `web/src/routes/login/+page.svelte`
+- Test: `tests/webui/test_secrets_api.py` & `test_auth_service.py`
+
+**Interfaces:**
+- Consumes: `SecretsConfig`, `secrets.json`, session storage
+- Produces: `/secrets` settings page, `/login` portal page, HTTP security warning banner, and `GET/POST /api/secrets` REST endpoints.
+
+- [ ] **Step 1: Write Pytest backend tests for `/api/secrets` and `/api/auth/login`**
+
+Create `tests/webui/test_secrets_api.py` testing secrets loading/saving and auth token verification.
+
+- [ ] **Step 2: Implement Secrets & Auth REST Routers (`modules/webui/routers/secrets.py` & `auth.py`)**
+
+Implement endpoints to get/set secrets in `secrets.json` and authenticate portal sessions when `webui_password` is set.
+
+- [ ] **Step 3: Implement Svelte `/secrets` page & Insecure HTTP Warning Banner (`web/src/routes/secrets/+page.svelte`)**
+
+Build `/secrets` form for setting Hugging Face Access Token and Web Portal Password. Add HTTP protocol detection (`window.location.protocol === 'http:'`) to render a bright red security warning banner when not using HTTPS.
+
+- [ ] **Step 4: Implement Svelte `/login` page (`web/src/routes/login/+page.svelte`)**
+
+Build dark-mode on-brand login page with password input, error handling, and redirection upon successful authentication.
+
+- [ ] **Step 5: Run Pytest and Vitest test suites**
+
+Run: `PYTHONPATH=. pytest tests/webui/test_secrets_api.py -v && cd web && bun run test`
+Expected: All backend and frontend unit tests pass.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add modules/webui/ web/src/routes/secrets/ web/src/routes/login/ tests/webui/
+git commit -m "feat(webui): add Secrets management page, bright red HTTP security warning banner, and portal authentication"
+```

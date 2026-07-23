@@ -43,6 +43,10 @@ Phase C extends the OneTrainer Web UI from a configuration surface into a fully 
 - `GET /api/training/samples`: Returns array of generated sample records (`sample_id`, `step`, `epoch`, `prompt`, `seed`, `url`).
 - `GET /api/training/samples/{sample_id}/image`: Serves the sample image binary file from disk.
 - `GET /api/training/gpu`: Returns current GPU VRAM (used/total), utilization %, and temperature.
+- `GET /api/secrets`: Returns masked status of stored secrets (`huggingface_token_set`, `webui_password_set`).
+- `POST /api/secrets`: Updates secrets (`huggingface_token`, `webui_password`) safely on disk in `secrets.json`.
+- `POST /api/auth/login`: Validates `webui_password` and issues session cookie/token.
+- `POST /api/auth/logout`: Clears active web session.
 
 ---
 
@@ -119,6 +123,18 @@ The WebSocket event envelope (`modules/webui/events.py`) is extended with four n
   - Image grid featuring generated sample thumbnails with metadata overlay (Step, Epoch, Seed, Prompt).
   - Step/epoch timeline scrubber to filter samples across training steps.
   - Interactive Lightbox view for full-resolution sample image inspection.
+
+### 4.3 Secrets & Web Portal Security (`/secrets` & `/login`)
+- **Secrets Management Page (`web/src/routes/secrets/+page.svelte`)**:
+  - Secure management of Hugging Face Access Token (`huggingface_token`) and Web Portal Password (`webui_password`).
+  - Saves secrets directly into `secrets.json` on the server without leaking sensitive keys into general training configuration JSON files.
+- **Insecure Connection (HTTP) Warning Banner**:
+  - Automatically evaluates `window.location.protocol === 'http:'` (when host is not `localhost` or `127.0.0.1`).
+  - Displays a bright, unmissable red alert banner (`#dc2626` / `var(--color-error)`):
+    > ⚠️ **Insecure Connection (HTTP)**: Your connection to OneTrainer is unencrypted. Passwords and API tokens entered on this page can be intercepted in plain text. Consider enabling HTTPS or using a secure reverse proxy.
+- **Web Portal Password Authentication & Login Page (`web/src/routes/login/+page.svelte`)**:
+  - **Bypass Mode (Default)**: If `webui_password` is empty in `secrets.json`, all UI routes and API endpoints remain accessible without password prompts.
+  - **Protected Mode**: When `webui_password` is configured, unauthenticated Web UI visits and WebSocket connections are redirected to an on-brand, dark-themed `/login` page requiring password authentication before granting session access.
 
 ---
 
