@@ -51,118 +51,140 @@
   }
 </script>
 
-<div class="schema-form" class:is-model-tab={tab?.id === 'model'}>
+{#snippet renderGroup(group: any)}
+  {@const visibleFields = (group.fields || []).filter((f: any) => f.visible !== false)}
+  {@const inputFields = visibleFields.filter((f: any) => normalizeControl(f.control) !== 'toggle')}
+  {@const toggleFields = visibleFields.filter((f: any) => normalizeControl(f.control) === 'toggle')}
+
+  <section class="form-group" class:is-components-group={group.id === 'model_components'}>
+    {#if group.title || group.label}
+      <h3 class="group-title">{group.title || group.label}</h3>
+    {/if}
+
+    {#if inputFields.length > 0}
+      <div class="group-fields" class:components-table={group.id === 'model_components'}>
+        {#each inputFields as field (field.id)}
+          {@const controlType = normalizeControl(field.control)}
+          {@const primaryKey = field.keys?.[0] ?? field.id}
+          {@const error = getFieldError(field)}
+          {@const fieldValue = getFieldValue(field, 0)}
+          {@const isFullWidth = ['base_model_name', 'model_type', 'output_model_destination'].includes(primaryKey)}
+
+          <Field
+            id={field.id}
+            label={field.label}
+            tooltip={field.tooltip}
+            {error}
+            inline={false}
+            fullWidth={isFullWidth}
+          >
+            {#snippet children({ id, ariaDescribedBy })}
+              {#if controlType === 'text'}
+                <TextInput
+                  {id}
+                  value={fieldValue}
+                  {ariaDescribedBy}
+                  onInput={(val) => setRaw(primaryKey, val)}
+                />
+              {:else if controlType === 'number'}
+                <NumberInput
+                  {id}
+                  value={fieldValue}
+                  {ariaDescribedBy}
+                  onInput={(val) => setRaw(primaryKey, val)}
+                />
+              {:else if controlType === 'select'}
+                <Select
+                  {id}
+                  value={fieldValue}
+                  options={field.options || []}
+                  {ariaDescribedBy}
+                  onChange={(val) => setRaw(primaryKey, val)}
+                />
+              {:else if controlType === 'directory'}
+                <DirectoryInput
+                  {id}
+                  value={fieldValue}
+                  {ariaDescribedBy}
+                  onInput={(val) => setRaw(primaryKey, val)}
+                  onOpenDirectory={openDirectory ? (path, cb) => openDirectory(path, cb ?? ((s) => setRaw(primaryKey, s))) : undefined}
+                />
+              {:else if controlType === 'time'}
+                {@const unitKey = field.keys?.[1] ?? `${primaryKey}_unit`}
+                {@const unitValue = getFieldValue(field, 1) ?? 'seconds'}
+                <TimeInput
+                  {id}
+                  value={fieldValue}
+                  unit={unitValue}
+                  unitOptions={field.options}
+                  {ariaDescribedBy}
+                  onValueInput={(val) => setRaw(primaryKey, val)}
+                  onUnitChange={(unit) => setRaw(unitKey, unit)}
+                />
+              {/if}
+            {/snippet}
+          </Field>
+        {/each}
+      </div>
+    {/if}
+
+    {#if toggleFields.length > 0}
+      <div class="options-section">
+        <div class="options-header">
+          <span class="options-title">Options & Features</span>
+        </div>
+        <div class="options-grid">
+          {#each toggleFields as field (field.id)}
+            {@const primaryKey = field.keys?.[0] ?? field.id}
+            {@const error = getFieldError(field)}
+            {@const fieldValue = getFieldValue(field, 0)}
+
+            <Field
+              id={field.id}
+              label={field.label}
+              tooltip={field.tooltip}
+              {error}
+              inline={true}
+            >
+              {#snippet children({ id, ariaDescribedBy })}
+                <Toggle
+                  {id}
+                  value={fieldValue}
+                  {ariaDescribedBy}
+                  onChange={(val) => setRaw(primaryKey, val)}
+                />
+              {/snippet}
+            </Field>
+          {/each}
+        </div>
+      </div>
+    {/if}
+  </section>
+{/snippet}
+
+<div class="schema-form" class:is-model-tab={tab?.id === 'model'} class:is-training-tab={tab?.id === 'training'}>
   {#if tab?.groups}
-    {#each tab.groups as group (group.id)}
-      {@const visibleFields = (group.fields || []).filter((f) => f.visible !== false)}
-      {@const inputFields = visibleFields.filter((f) => normalizeControl(f.control) !== 'toggle')}
-      {@const toggleFields = visibleFields.filter((f) => normalizeControl(f.control) === 'toggle')}
-
-      <section class="form-group" class:is-components-group={group.id === 'model_components'}>
-        {#if group.title || group.label}
-          <h3 class="group-title">{group.title || group.label}</h3>
-        {/if}
-
-        {#if inputFields.length > 0}
-          <div class="group-fields" class:components-table={group.id === 'model_components'}>
-            {#each inputFields as field (field.id)}
-              {@const controlType = normalizeControl(field.control)}
-              {@const primaryKey = field.keys?.[0] ?? field.id}
-              {@const error = getFieldError(field)}
-              {@const fieldValue = getFieldValue(field, 0)}
-              {@const isFullWidth = ['base_model_name', 'model_type', 'output_model_destination'].includes(primaryKey)}
-
-              <Field
-                id={field.id}
-                label={field.label}
-                tooltip={field.tooltip}
-                {error}
-                inline={false}
-                fullWidth={isFullWidth}
-              >
-                {#snippet children({ id, ariaDescribedBy })}
-                  {#if controlType === 'text'}
-                    <TextInput
-                      {id}
-                      value={fieldValue}
-                      {ariaDescribedBy}
-                      onInput={(val) => setRaw(primaryKey, val)}
-                    />
-                  {:else if controlType === 'number'}
-                    <NumberInput
-                      {id}
-                      value={fieldValue}
-                      {ariaDescribedBy}
-                      onInput={(val) => setRaw(primaryKey, val)}
-                    />
-                  {:else if controlType === 'select'}
-                    <Select
-                      {id}
-                      value={fieldValue}
-                      options={field.options || []}
-                      {ariaDescribedBy}
-                      onChange={(val) => setRaw(primaryKey, val)}
-                    />
-                  {:else if controlType === 'directory'}
-                    <DirectoryInput
-                      {id}
-                      value={fieldValue}
-                      {ariaDescribedBy}
-                      onInput={(val) => setRaw(primaryKey, val)}
-                      onOpenDirectory={openDirectory ? (path, cb) => openDirectory(path, cb ?? ((s) => setRaw(primaryKey, s))) : undefined}
-                    />
-                  {:else if controlType === 'time'}
-                    {@const unitKey = field.keys?.[1] ?? `${primaryKey}_unit`}
-                    {@const unitValue = getFieldValue(field, 1) ?? 'seconds'}
-                    <TimeInput
-                      {id}
-                      value={fieldValue}
-                      unit={unitValue}
-                      unitOptions={field.options}
-                      {ariaDescribedBy}
-                      onValueInput={(val) => setRaw(primaryKey, val)}
-                      onUnitChange={(unit) => setRaw(unitKey, unit)}
-                    />
-                  {/if}
-                {/snippet}
-              </Field>
-            {/each}
-          </div>
-        {/if}
-
-        {#if toggleFields.length > 0}
-          <div class="options-section">
-            <div class="options-header">
-              <span class="options-title">Options & Features</span>
-            </div>
-            <div class="options-grid">
-              {#each toggleFields as field (field.id)}
-                {@const primaryKey = field.keys?.[0] ?? field.id}
-                {@const error = getFieldError(field)}
-                {@const fieldValue = getFieldValue(field, 0)}
-
-                <Field
-                  id={field.id}
-                  label={field.label}
-                  tooltip={field.tooltip}
-                  {error}
-                  inline={true}
-                >
-                  {#snippet children({ id, ariaDescribedBy })}
-                    <Toggle
-                      {id}
-                      value={fieldValue}
-                      {ariaDescribedBy}
-                      onChange={(val) => setRaw(primaryKey, val)}
-                    />
-                  {/snippet}
-                </Field>
-              {/each}
-            </div>
-          </div>
-        {/if}
-      </section>
-    {/each}
+    {#if tab.id === 'training'}
+      <div class="training-column col-1">
+        {#each tab.groups.filter((g) => ['base_settings', 'text_encoders', 'embeddings'].includes(g.id)) as group (group.id)}
+          {@render renderGroup(group)}
+        {/each}
+      </div>
+      <div class="training-column col-2">
+        {#each tab.groups.filter((g) => ['execution', 'denoising_model', 'noise_and_timesteps'].includes(g.id)) as group (group.id)}
+          {@render renderGroup(group)}
+        {/each}
+      </div>
+      <div class="training-column col-3">
+        {#each tab.groups.filter((g) => ['masking_and_conditioning', 'loss', 'layer_filtering'].includes(g.id)) as group (group.id)}
+          {@render renderGroup(group)}
+        {/each}
+      </div>
+    {:else}
+      {#each tab.groups as group (group.id)}
+        {@render renderGroup(group)}
+      {/each}
+    {/if}
   {/if}
 </div>
 
@@ -178,6 +200,25 @@
     grid-template-columns: calc(65% - 0.75rem) calc(35% - 0.75rem);
     gap: 1.5rem;
     align-items: start;
+  }
+
+  .schema-form.is-training-tab {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .training-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 1280px) {
+    .schema-form.is-training-tab {
+      grid-template-columns: 1fr;
+    }
   }
 
   @media (max-width: 1024px) {
