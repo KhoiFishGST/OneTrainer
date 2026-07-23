@@ -7,6 +7,7 @@ export interface ConsoleLine {
   id: number;
   spans: ConsoleSpan[];
   overwrite?: boolean;
+  channel?: 'console' | 'webui';
 }
 
 export interface BacklogData {
@@ -60,6 +61,12 @@ export class ConsoleStore {
 
   get rows(): ConsoleLine[] {
     return this.transientRow ? [...this.committedRows, this.transientRow] : this.committedRows;
+  }
+
+  clear() {
+    this.committedRows = [];
+    this.transientRow = null;
+    this.currentBytes = 0;
   }
 
   installBacklog(backlog: BacklogData) {

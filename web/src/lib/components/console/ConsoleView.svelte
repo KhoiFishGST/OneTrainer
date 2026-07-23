@@ -1,7 +1,7 @@
 <script lang="ts">
   import { consoleStore, type ConsoleStore, type ConsoleSpan } from '$lib/events/console-store.svelte';
   import { onMount, tick } from 'svelte';
-  import { Download, ArrowDown } from 'lucide-svelte';
+  import { Download, ArrowDown, Pause, Play, Trash2 } from 'lucide-svelte';
 
   const ROW_HEIGHT = 20;
   const ALLOWED_CLASSES = new Set([
@@ -13,6 +13,9 @@
   let { store = consoleStore }: { store?: ConsoleStore } = $props();
 
   let filterText = $state('');
+  let activeChannel = $state<'console' | 'webui' | 'all'>('console');
+  let isPaused = $state(false);
+
   let containerRef = $state<HTMLDivElement | null>(null);
   let scrollTop = $state(0);
   let containerHeight = $state(300);
@@ -20,6 +23,10 @@
 
   const filteredRows = $derived(
     store.rows.filter((row) => {
+      const rowChannel = row.channel || 'console';
+      if (activeChannel === 'console' && rowChannel !== 'console') return false;
+      if (activeChannel === 'webui' && rowChannel !== 'webui') return false;
+
       if (!filterText) return true;
       const lower = filterText.toLowerCase();
       return row.spans.some((span) => span.text.toLowerCase().includes(lower));
@@ -54,23 +61,34 @@
 
   async function scrollToBottom() {
     await tick();
-    if (containerRef && autoScroll) {
+    if (containerRef && autoScroll && !isPaused) {
       containerRef.scrollTop = containerRef.scrollHeight;
     }
   }
 
   $effect(() => {
-    // Re-run whenever store.rows or filteredRows length changes
     const _ = filteredRows.length;
-    if (autoScroll) {
+    if (autoScroll && !isPaused) {
       scrollToBottom();
     }
   });
 
   function jumpToLatest() {
     autoScroll = true;
+    isPaused = false;
     if (containerRef) {
       containerRef.scrollTop = containerRef.scrollHeight;
+    }
+  }
+
+  function handleClear() {
+    store.clear();
+  }
+
+  function togglePause() {
+    isPaused = !isPaused;
+    if (!isPaused) {
+      jumpToLatest();
     }
   }
 
@@ -89,12 +107,41 @@
 <div class="console-view">
   <div class="toolbar">
     <div class="toolbar-left">
+      <!-- Channel Selector -->
+      <div class="channel-selector" role="radiogroup" aria-label="Log Channel">
+        <button
+          type="button"
+          class="channel-btn"
+          class:active={activeChannel === 'console'}
+          onclick={() => (activeChannel = 'console')}
+        >
+          Console
+        </button>
+        <button
+          type="button"
+          class="channel-btn"
+          class:active={activeChannel === 'webui'}
+          onclick={() => (activeChannel = 'webui')}
+        >
+          Web UI
+        </button>
+        <button
+          type="button"
+          class="channel-btn"
+          class:active={activeChannel === 'all'}
+          onclick={() => (activeChannel = 'all')}
+        >
+          ALL
+        </button>
+      </div>
+
       <input
         type="text"
         placeholder="Filter console..."
         bind:value={filterText}
         class="filter-input"
       />
+
       <div class="status-indicators">
         <span class="status-tag status-{store.connectionState}">
           {store.connectionState}
@@ -102,18 +149,42 @@
         {#if store.gapState}
           <span class="status-tag status-gap">resyncing</span>
         {/if}
+        {#if isPaused}
+          <span class="status-tag status-paused">PAUSED</span>
+        {/if}
       </div>
     </div>
 
     <div class="toolbar-right">
-      {#if !autoScroll}
-        <button type="button" class="btn-jump" onclick={jumpToLatest}>
+      <button
+        type="button"
+        class="btn-action"
+        class:active={isPaused}
+        onclick={togglePause}
+        title={isPaused ? 'Resume stream' : 'Pause stream'}
+      >
+        {#if isPaused}
+          <Play size={14} />
+          <span>Resume</span>
+        {:else}
+          <Pause size={14} />
+          <span>Pause</span>
+        {/if}
+      </button>
+
+      <button type="button" class="btn-action" onclick={handleClear} title="Clear view buffer">
+        <Trash2 size={14} />
+        <span>Clear</span>
+      </button>
+
+      {#if !autoScroll && !isPaused}
+        <button type="button" class="btn-action btn-jump" onclick={jumpToLatest}>
           <ArrowDown size={14} />
-          <span>Jump to latest</span>
+          <span>Latest</span>
         </button>
       {/if}
 
-      <a href="/api/console/log" download class="btn-download">
+      <a href="/api/console/log" download class="btn-action btn-download">
         <Download size={14} />
         <span>Download Log</span>
       </a>
@@ -128,7 +199,7 @@
     <div class="spacer" style="height: {totalHeight}px;">
       <div class="visible-window" style="transform: translateY({topOffset}px);">
         {#each visibleRows as row (row.id)}
-          <div class="console-row">
+          <div class="console-row" class:channel-webui={row.channel === 'webui'}>
             {#each row.spans as span}
               <span class={filterClasses(span.classes)}>{span.text}</span>
             {/each}
@@ -169,6 +240,36 @@
     gap: 8px;
   }
 
+  .channel-selector {
+    display: flex;
+    background-color: var(--input-bg, #0d1117);
+    border: 1px solid var(--border-color, #30363d);
+    border-radius: 4px;
+    padding: 2px;
+    gap: 2px;
+  }
+
+  .channel-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted, #8b949e);
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .channel-btn:hover {
+    color: var(--text, #c9d1d9);
+  }
+
+  .channel-btn.active {
+    background-color: var(--accent, #6366f1);
+    color: #ffffff;
+  }
+
   .filter-input {
     background-color: var(--input-bg, #0d1117);
     border: 1px solid var(--border-color, #30363d);
@@ -176,7 +277,7 @@
     padding: 4px 8px;
     border-radius: 4px;
     font-size: 0.75rem;
-    width: 180px;
+    width: 160px;
   }
 
   .filter-input:focus {
@@ -212,12 +313,12 @@
     color: #f85149;
   }
 
-  .status-gap {
+  .status-gap, .status-paused {
     background-color: rgba(210, 153, 34, 0.2);
     color: #d29922;
   }
 
-  .btn-jump, .btn-download {
+  .btn-action {
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -231,8 +332,14 @@
     text-decoration: none;
   }
 
-  .btn-jump:hover, .btn-download:hover {
+  .btn-action:hover {
     background-color: var(--button-hover-bg, #30363d);
+  }
+
+  .btn-action.active {
+    background-color: rgba(210, 153, 34, 0.2);
+    color: #d29922;
+    border-color: #d29922;
   }
 
   .terminal-viewport {
@@ -261,6 +368,10 @@
     white-space: pre;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .console-row.channel-webui {
+    opacity: 0.85;
   }
 
   /* ANSI Color classes */

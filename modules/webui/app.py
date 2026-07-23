@@ -1,9 +1,22 @@
 import asyncio
+import logging
 import subprocess
 import sys
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
+
+
+class QuietPollFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        msg = record.getMessage()
+        if any(ep in msg for ep in ("/api/events", "/api/training/gpu", "/api/console", "/api/auth/status")):
+            if " 200 " in msg or " 304 " in msg or " 200" in msg or " 304" in msg:
+                return False
+        return True
+
+
+logging.getLogger("uvicorn.access").addFilter(QuietPollFilter())
 
 from modules.webui.config_service import ConfigService, ConfigSnapshot
 from modules.webui.directories import DirectoryService

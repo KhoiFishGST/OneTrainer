@@ -36,7 +36,9 @@ BG_MAP = {
 CSI_RE = re.compile(r"^\x1b\[([\d;]*)([\x40-\x7e])")
 INCOMPLETE_CSI_RE = re.compile(r"^\x1b\[[\d;]*$")
 OSC_RE = re.compile(r"^\x1b\].*?(\x07|\x1b\\)", re.DOTALL)
-INCOMPLETE_OSC_RE = re.compile(r"^\x1b\][^\x07\x1b]*$")
+WEB_LOG_RE = re.compile(
+    r'(?:INFO|DEBUG|WARNING|ERROR|CRITICAL):\s+(?:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+\s+-\s+)?"[A-Z]+\s+/|\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+\s+-\s+"|\b(?:GET|POST|PUT|DELETE|PATCH)\s+/api/'
+)
 
 
 @dataclass(frozen=True)
@@ -50,6 +52,7 @@ class ConsoleLine:
     id: int
     spans: Sequence[ConsoleSpan] = ()
     overwrite: bool = False
+    channel: str = "console"
 
     @property
     def text(self) -> str:
@@ -66,6 +69,12 @@ class TerminalParser:
         self._active_classes: list[str] = []
         self._overwrite: bool = False
         self._pending_cr: bool = False
+
+    def _determine_channel(self, spans: Sequence[ConsoleSpan]) -> str:
+        text = "".join(s.text for s in spans)
+        if WEB_LOG_RE.search(text):
+            return "webui"
+        return "console"
 
     def feed(self, chunk: bytes) -> list[ConsoleLine]:
         decoded = self._decoder.decode(chunk, final=False)
@@ -132,10 +141,12 @@ class TerminalParser:
                 self._flush_text()
                 if self._pending_cr:
                     self._pending_cr = False
+                channel = self._determine_channel(self._current_spans)
                 line = ConsoleLine(
                     id=self._line_counter,
                     spans=tuple(self._current_spans),
                     overwrite=False,
+                    channel=channel,
                 )
                 self._line_counter += 1
                 committed_lines.append(line)
@@ -165,10 +176,12 @@ class TerminalParser:
             spans.append(ConsoleSpan(text, tuple(self._active_classes)))
         if not spans:
             return None
+        channel = self._determine_channel(spans)
         return ConsoleLine(
             id=self._line_counter,
             spans=tuple(spans),
             overwrite=self._overwrite or self._pending_cr,
+            channel=channel,
         )
 
     def _flush_text(self) -> None:
