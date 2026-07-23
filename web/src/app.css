@@ -12,6 +12,20 @@
   --danger: #d97878;
   --success: #65b98d;
   --focus: #f2a16f;
+
+  /* Theme aliases for form components */
+  --color-bg-card: var(--panel);
+  --color-bg-input: var(--control);
+  --color-bg-secondary: var(--panel-raised);
+  --color-bg-button: var(--control);
+  --color-bg-button-hover: var(--panel-raised);
+  --color-text: var(--text);
+  --color-text-title: var(--text);
+  --color-text-muted: var(--muted);
+  --color-border: var(--line);
+  --color-primary: var(--accent);
+  --color-error: var(--danger);
+
   --rail-compact: 48px;
   --rail-expanded: 176px;
   --status-height: 52px;

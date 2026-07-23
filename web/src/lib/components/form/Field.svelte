@@ -81,7 +81,7 @@
   .field-label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--color-text, #1f2937);
+    color: var(--color-text, var(--text, #e6ebef));
   }
 
   .tooltip-trigger {
@@ -89,27 +89,27 @@
     border: none;
     padding: 0;
     cursor: pointer;
-    color: var(--color-text-muted, #6b7280);
+    color: var(--color-text-muted, var(--muted, #8995a1));
     display: inline-flex;
     align-items: center;
   }
 
   .tooltip-trigger:hover {
-    color: var(--color-text, #111827);
+    color: var(--color-text, var(--text, #e6ebef));
   }
 
   .field-tooltip {
     font-size: 0.75rem;
     padding: 0.5rem 0.75rem;
-    background: var(--color-bg-secondary, #f3f4f6);
+    background: var(--color-bg-secondary, var(--panel-raised, #1d242c));
     border-radius: 4px;
-    color: var(--color-text-muted, #4b5563);
-    border: 1px solid var(--color-border, #e5e7eb);
+    color: var(--color-text-muted, var(--muted, #8995a1));
+    border: 1px solid var(--color-border, var(--line, #2d3741));
   }
 
   .field-error {
     font-size: 0.75rem;
-    color: var(--color-error, #dc2626);
+    color: var(--color-error, var(--danger, #d97878));
     font-weight: 500;
   }
 </style>

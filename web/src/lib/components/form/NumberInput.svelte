@@ -37,17 +37,17 @@
   .number-input {
     width: 100%;
     padding: 0.5rem 0.75rem;
-    border: 1px solid var(--color-border, #d1d5db);
+    border: 1px solid var(--color-border, var(--line, #2d3741));
     border-radius: 6px;
     font-size: 0.875rem;
-    background: var(--color-bg-input, #ffffff);
-    color: var(--color-text, #111827);
+    background: var(--color-bg-input, var(--control, #14191f));
+    color: var(--color-text, var(--text, #e6ebef));
     box-sizing: border-box;
   }
 
   .number-input:focus {
     outline: none;
-    border-color: var(--color-primary, #2563eb);
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+    border-color: var(--color-primary, var(--accent, #dd773b));
+    box-shadow: 0 0 0 2px rgba(221, 119, 59, 0.2);
   }
 </style>

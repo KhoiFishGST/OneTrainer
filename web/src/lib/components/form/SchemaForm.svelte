@@ -141,10 +141,10 @@
   }
 
   .form-group {
-    border: 1px solid var(--color-border, #e5e7eb);
+    border: 1px solid var(--color-border, var(--line, #2d3741));
     border-radius: 8px;
     padding: 1.25rem;
-    background: var(--color-bg-card, #ffffff);
+    background: var(--color-bg-card, var(--panel, #181e25));
   }
 
   .group-title {
@@ -152,7 +152,7 @@
     font-weight: 600;
     margin-top: 0;
     margin-bottom: 1rem;
-    color: var(--color-text-title, #111827);
+    color: var(--color-text-title, var(--text, #e6ebef));
   }
 
   .group-fields {

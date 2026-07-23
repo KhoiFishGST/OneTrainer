@@ -31,45 +31,6 @@
       </button>
     {/if}
   </div>
-
-  <div class="action-buttons">
-    <button
-      type="button"
-      class="action-btn"
-      aria-disabled="true"
-      disabled
-      title="Unavailable in Phase A"
-    >
-      Start
-    </button>
-    <button
-      type="button"
-      class="action-btn"
-      aria-disabled="true"
-      disabled
-      title="Unavailable in Phase A"
-    >
-      Sample
-    </button>
-    <button
-      type="button"
-      class="action-btn"
-      aria-disabled="true"
-      disabled
-      title="Unavailable in Phase A"
-    >
-      Backup
-    </button>
-    <button
-      type="button"
-      class="action-btn"
-      aria-disabled="true"
-      disabled
-      title="Unavailable in Phase A"
-    >
-      Save
-    </button>
-  </div>
 </footer>
 
 <style>
@@ -119,22 +80,5 @@
 
   .console-toggle-btn:hover {
     background-color: var(--line, #30363d);
-  }
-
-  .action-buttons {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .action-btn {
-    background-color: var(--control);
-    color: var(--muted);
-    border: 1px solid var(--line);
-    padding: 4px 12px;
-    border-radius: 4px;
-    font-size: 0.875rem;
-    cursor: not-allowed;
-    opacity: 0.6;
   }
 </style>
