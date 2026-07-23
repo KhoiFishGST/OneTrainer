@@ -118,13 +118,13 @@ export function validateConfig(draft: Record<string, any>, schema: ConfigSchema)
         if (typeof val === 'string') {
           const trimmed = val.trim();
           const num = Number(trimmed);
-          if (trimmed === '' || isNaN(num) || !Number.isFinite(num) || (control === 'integer' || control === 'number') && !Number.isInteger(num)) {
+          if (trimmed === '' || isNaN(num) || !Number.isFinite(num) || ((control === 'integer' || control === 'int') && !Number.isInteger(num))) {
             errors.push({ path: key, message: 'Expected integer' });
           } else {
             normalized = setPath(normalized, key, num);
           }
         } else if (typeof val === 'number') {
-          if (!Number.isFinite(val) || ((control === 'integer' || control === 'number') && !Number.isInteger(val))) {
+          if (!Number.isFinite(val) || ((control === 'integer' || control === 'int') && !Number.isInteger(val))) {
             errors.push({ path: key, message: 'Expected integer' });
           } else {
             normalized = setPath(normalized, key, val);

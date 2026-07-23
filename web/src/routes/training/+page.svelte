@@ -48,7 +48,7 @@
         class="opt-modal-btn"
         onclick={() => (modalOpen = true)}
       >
-        Optimizer / Scheduler Parameters
+        Configure Optimizer / Scheduler
       </button>
     </div>
 
