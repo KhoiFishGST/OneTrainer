@@ -459,6 +459,20 @@ TABS = (
                         "Enables circular padding for all conv layers to better train seamless images",
                         "toggle",
                     ),
+                    Field(
+                        "text-encoder-layer-skip",
+                        ("text_encoder_layer_skip",),
+                        "Text Encoder Layer Skip",
+                        "Number of layers to skip in Text Encoder",
+                        "number",
+                    ),
+                    Field(
+                        "text-encoder-sequence-length",
+                        ("text_encoder_sequence_length",),
+                        "Text Encoder Sequence Length",
+                        "Sequence length for Text Encoder",
+                        "number",
+                    ),
                 ),
             ),
         ),
@@ -505,6 +519,13 @@ TABS = (
                         "Output Destination",
                         "Output model file path",
                         "text",
+                    ),
+                    Field(
+                        "include-train-config",
+                        ("include_train_config",),
+                        "Include Config",
+                        "Save training configuration inside output model",
+                        "select",
                     ),
                     Field(
                         "compile",
@@ -796,13 +817,6 @@ TABS = (
                         "Clip Grad Norm",
                         "Maximum gradient norm for gradient clipping",
                         "number",
-                    ),
-                    Field(
-                        "include-train-config",
-                        ("include_train_config",),
-                        "Include Train Config",
-                        "Save training configuration inside output model",
-                        "select",
                     ),
                 ),
             ),
@@ -1583,6 +1597,13 @@ def build_model_tab(model_type_enum: ModelType) -> Tab:
             path_mode="file",
         ),
         Field(
+            "include-train-config",
+            ("include_train_config",),
+            "Include Config",
+            "Include the training configuration in the final model. Only supported for safetensors files",
+            "select",
+        ),
+        Field(
             "compile",
             ("compile",),
             "Compile transformer blocks",
@@ -1694,24 +1715,6 @@ def build_model_tab(model_type_enum: ModelType) -> Tab:
                 "select",
             )
         )
-        component_fields.append(
-            Field(
-                "text-encoder-layer-skip",
-                ("text_encoder_layer_skip",),
-                "Text Encoder Layer Skip",
-                "Number of layers to skip in Text Encoder",
-                "number",
-            )
-        )
-        component_fields.append(
-            Field(
-                "text-encoder-sequence-length",
-                ("text_encoder_sequence_length",),
-                "Text Encoder Sequence Length",
-                "Sequence length for Text Encoder",
-                "number",
-            )
-        )
     else:
         component_fields.append(
             Field(
@@ -1720,15 +1723,6 @@ def build_model_tab(model_type_enum: ModelType) -> Tab:
                 "Text Encoder 1 Data Type",
                 "The text encoder 1 weight data type",
                 "select",
-            )
-        )
-        component_fields.append(
-            Field(
-                "text-encoder-layer-skip",
-                ("text_encoder_layer_skip",),
-                "Text Encoder 1 Layer Skip",
-                "Number of layers to skip in Text Encoder 1",
-                "number",
             )
         )
 
@@ -1742,15 +1736,6 @@ def build_model_tab(model_type_enum: ModelType) -> Tab:
                 "select",
             )
         )
-        component_fields.append(
-            Field(
-                "text-encoder-2-layer-skip",
-                ("text_encoder_2_layer_skip",),
-                "Text Encoder 2 Layer Skip",
-                "Number of layers to skip in Text Encoder 2",
-                "number",
-            )
-        )
 
     if "text_encoder_3" in parts:
         component_fields.append(
@@ -1760,15 +1745,6 @@ def build_model_tab(model_type_enum: ModelType) -> Tab:
                 "Text Encoder 3 Data Type",
                 "The text encoder 3 weight data type",
                 "select",
-            )
-        )
-        component_fields.append(
-            Field(
-                "text-encoder-3-layer-skip",
-                ("text_encoder_3_layer_skip",),
-                "Text Encoder 3 Layer Skip",
-                "Number of layers to skip in Text Encoder 3",
-                "number",
             )
         )
 
@@ -1790,15 +1766,6 @@ def build_model_tab(model_type_enum: ModelType) -> Tab:
                 "Text Encoder 4 Data Type",
                 "The text encoder 4 weight data type",
                 "select",
-            )
-        )
-        component_fields.append(
-            Field(
-                "text-encoder-4-layer-skip",
-                ("text_encoder_4_layer_skip",),
-                "Text Encoder 4 Layer Skip",
-                "Number of layers to skip in Text Encoder 4",
-                "number",
             )
         )
 
