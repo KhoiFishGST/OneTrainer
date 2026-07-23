@@ -135,7 +135,7 @@
   </section>
 {/snippet}
 
-<div class="schema-form" class:is-model-tab={tab?.id === 'model'} class:is-training-tab={tab?.id === 'training'}>
+<div class="schema-form" class:is-model-tab={tab?.id === 'model'} class:is-training-tab={tab?.id === 'training'} class:is-general-tab={tab?.id === 'general'}>
   {#if tab?.groups}
     {#if tab.id === 'training'}
       <div class="training-column col-1">
@@ -150,6 +150,22 @@
       </div>
       <div class="training-column col-3">
         {#each tab.groups.filter((g) => ['masking_and_conditioning', 'loss', 'layer_filtering'].includes(g.id)) as group (group.id)}
+          {@render renderGroup(group)}
+        {/each}
+      </div>
+    {:else if tab.id === 'general'}
+      <div class="general-column col-1">
+        {#each tab.groups.filter((g) => ['workspace', 'debug'].includes(g.id)) as group (group.id)}
+          {@render renderGroup(group)}
+        {/each}
+      </div>
+      <div class="general-column col-2">
+        {#each tab.groups.filter((g) => ['tensorboard', 'validation'].includes(g.id)) as group (group.id)}
+          {@render renderGroup(group)}
+        {/each}
+      </div>
+      <div class="general-column col-3">
+        {#each tab.groups.filter((g) => ['execution_hardware', 'multi_gpu'].includes(g.id)) as group (group.id)}
           {@render renderGroup(group)}
         {/each}
       </div>
@@ -175,21 +191,24 @@
     align-items: start;
   }
 
-  .schema-form.is-training-tab {
+  .schema-form.is-training-tab,
+  .schema-form.is-general-tab {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1.5rem;
     align-items: start;
   }
 
-  .training-column {
+  .training-column,
+  .general-column {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
   }
 
   @media (max-width: 1280px) {
-    .schema-form.is-training-tab {
+    .schema-form.is-training-tab,
+    .schema-form.is-general-tab {
       grid-template-columns: 1fr;
     }
   }

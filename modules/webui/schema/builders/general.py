@@ -127,8 +127,8 @@ def build_general_tab(model_type: ModelType, training_method: TrainingMethod) ->
                 ),
             ),
             Group(
-                "devices",
-                "Devices",
+                "execution_hardware",
+                "Execution & Hardware Devices",
                 (
                     Field(
                         "dataloader-threads",
@@ -147,12 +147,25 @@ def build_general_tab(model_type: ModelType, training_method: TrainingMethod) ->
                         required=True,
                     ),
                     Field(
+                        "temp-device",
+                        ("temp_device",),
+                        "Temp Device",
+                        'The device used to temporarily offload models while they are not used. Default:"cpu"',
+                        "text",
+                    ),
+                    Field(
                         "async-offloading",
                         ("async_offloading",),
                         "Async Offloading",
                         "Overlaps CPU<->GPU transfers with computation using CUDA streams. Applies to every offloaded component",
                         "toggle",
                     ),
+                ),
+            ),
+            Group(
+                "multi_gpu",
+                "Multi-GPU Training",
+                (
                     Field(
                         "multi-gpu",
                         ("multi_gpu",),
@@ -194,13 +207,6 @@ def build_general_tab(model_type: ModelType, training_method: TrainingMethod) ->
                         "Buffer size (MB)",
                         'Multi-GPU: Maximum VRAM for "Async Gradient Reduce", in megabytes. A multiple of this value can be needed if combined with "Fused Back Pass" and/or "Layer offload fraction"',
                         "number",
-                    ),
-                    Field(
-                        "temp-device",
-                        ("temp_device",),
-                        "Temp Device",
-                        'The device used to temporarily offload models while they are not used. Default:"cpu"',
-                        "text",
                     ),
                 ),
             ),
