@@ -32,3 +32,8 @@ class AppState:
     version: str = "unknown"
     warnings: list[str] = field(default_factory=list)
     capture: Any | None = None
+
+    @property
+    def config_service(self) -> "ConfigService":
+        return self.config
+

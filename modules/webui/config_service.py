@@ -1,16 +1,37 @@
 import asyncio
+import json
 import logging
 import uuid
 from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
+from pathlib import Path
+
+from typing import Any
 
 from modules.util.config.config_io import load_secrets, load_train_config, save_settings
 from modules.util.config.TrainConfig import TrainConfig
+from modules.util.path_util import write_json_atomic
 from modules.webui.config_codec import decode_settings_document
 from modules.webui.state import WebUISettings
 
 logger = logging.getLogger(__name__)
+
+
+class ConceptDictWrapper:
+    def __init__(self, data: dict):
+        self._data = data
+
+    def to_dict(self) -> dict:
+        return self._data
+
+
+def _wrap_concept(item: Any) -> Any:
+    if hasattr(item, "to_dict"):
+        return item
+    if isinstance(item, dict):
+        return ConceptDictWrapper(item)
+    return item
 
 
 @dataclass(frozen=True)
@@ -38,6 +59,8 @@ class ConfigService:
         self._counter = 0
         self._lock = asyncio.Lock()
         self._change_listeners: list[Callable] = []
+        self._concepts: list | None = None
+
 
     @classmethod
     def load(cls, settings: WebUISettings) -> "ConfigService":
@@ -58,6 +81,71 @@ class ConfigService:
             except Exception as error:
                 warnings.append(f"Could not load secrets: {error}")
         return cls(settings, config, warnings)
+
+    def get_config(self) -> TrainConfig:
+        return self._config
+
+    def _resolve_concept_file_path(self) -> Path | None:
+        if not getattr(self._config, "concept_file_name", None):
+            return None
+        path = Path(self._config.concept_file_name)
+        if not path.is_absolute():
+            path = self.settings.root_dir / path
+        return path
+
+    async def get_concepts(self) -> list:
+        async with self._lock:
+            if self._concepts is None:
+                if getattr(self._config, "concepts", None) is not None:
+                    if isinstance(self._config.concepts, list):
+                        self._concepts = [
+                            c.to_dict() if hasattr(c, "to_dict") else c
+                            for c in self._config.concepts
+                        ]
+                    else:
+                        self._concepts = []
+                else:
+                    concept_path = self._resolve_concept_file_path()
+                    if concept_path and concept_path.exists():
+                        try:
+                            with open(concept_path, "r", encoding="utf-8") as f:
+                                loaded = json.load(f)
+                                self._concepts = loaded if isinstance(loaded, list) else []
+                        except Exception:
+                            self._concepts = []
+                    else:
+                        self._concepts = []
+            return deepcopy(self._concepts)
+
+    async def update_concepts(self, concepts: list) -> list:
+        async with self._lock:
+            self._concepts = [c.to_dict() if hasattr(c, "to_dict") else deepcopy(c) for c in concepts]
+            self._config.concepts = [_wrap_concept(c) for c in concepts]
+
+            concept_path = self._resolve_concept_file_path()
+            if concept_path:
+                concept_path.parent.mkdir(parents=True, exist_ok=True)
+                try:
+                    write_json_atomic(str(concept_path), self._concepts)
+                except Exception as error:
+                    logger.warning(f"Could not save concepts file: {error}")
+
+            self._counter += 1
+            snapshot = self._snapshot_unlocked()
+            listeners = list(self._change_listeners)
+
+        async def _notify(listener):
+            try:
+                res = listener(snapshot)
+                if asyncio.iscoroutine(res):
+                    await res
+            except Exception:
+                logger.exception("Error in config change listener")
+
+        for listener in listeners:
+            await _notify(listener)
+
+        return deepcopy(self._concepts)
 
     def _revision(self) -> str:
         return f"{self._instance_id}:{self._counter}"
@@ -83,6 +171,7 @@ class ConfigService:
                 raise ConfigPersistenceError(f"Could not save config: {error}") from error
 
             self._config = config
+            self._concepts = None
             self._counter += 1
             snapshot = self._snapshot_unlocked()
             listeners = list(self._change_listeners)

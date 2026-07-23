@@ -9,6 +9,7 @@ from modules.webui.config_service import ConfigService, ConfigSnapshot
 from modules.webui.directories import DirectoryService
 from modules.webui.events import EventHub
 from modules.webui.presets import PresetService
+from modules.webui.routers.concepts import router as concepts_router
 from modules.webui.routers.config import router as config_router
 from modules.webui.routers.console import router as console_router
 from modules.webui.routers.directories import router as directories_router
@@ -156,6 +157,7 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
 
     app.include_router(health_router, prefix="/api")
     app.include_router(config_router, prefix="/api")
+    app.include_router(concepts_router, prefix="/api")
     app.include_router(meta_router, prefix="/api")
     app.include_router(presets_router, prefix="/api")
     app.include_router(directories_router, prefix="/api")
