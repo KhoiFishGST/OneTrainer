@@ -190,6 +190,7 @@
 
 <header class="header">
   <div class="brand">
+    <img src="/logo.png" alt="OneTrainer Logo" class="brand-logo" />
     <span class="app-title">OneTrainer</span>
   </div>
 
@@ -435,9 +436,19 @@
   }
 
   .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-weight: 700;
     font-size: 1.125rem;
     color: var(--accent);
+  }
+
+  .brand-logo {
+    width: 26px;
+    height: 26px;
+    object-fit: contain;
+    border-radius: 4px;
   }
 
   .selectors {
