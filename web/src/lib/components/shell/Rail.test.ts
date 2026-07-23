@@ -9,13 +9,14 @@ it("persists pinned expansion and enables Phase B configuration routes", async (
   expect(screen.getByText("General")).toBeVisible();
   
   // Enabled tabs
-  for (const name of ["Model", "Concepts", "Training", "Sampling", "LoRA/Embedding"]) {
+  for (const name of ["Model", "Concepts", "Training", "Sampling", "LoRA/Embedding", "Live"]) {
     const link = screen.getByRole("link", { name });
     expect(link).not.toHaveAttribute("aria-disabled");
   }
 
   // Future tabs remain disabled
   expect(screen.getByRole("link", { name: "Cloud" })).toHaveAttribute("aria-disabled", "true");
+  expect(screen.getByRole("link", { name: "Tools" })).toHaveAttribute("aria-disabled", "true");
 });
 
 it("opens phone navigation as a modal drawer", async () => {

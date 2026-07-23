@@ -51,7 +51,7 @@
     { name: 'LoRA/Embedding', path: '/lora-embedding', icon: Cpu, disabled: false },
     { name: 'Cloud', path: '/cloud', icon: Cloud, disabled: true },
     { name: 'Tools', path: '/tools', icon: Wrench, disabled: true },
-    { name: 'Live', path: '/live', icon: Tv, disabled: true },
+    { name: 'Live', path: '/live', icon: Tv, disabled: false },
   ];
 </script>
 
