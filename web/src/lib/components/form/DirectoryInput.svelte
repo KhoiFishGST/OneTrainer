@@ -72,15 +72,18 @@
   .directory-input-wrapper {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    min-width: 280px;
-    flex: 1 1 360px;
+    gap: 0.375rem;
+    width: 100%;
+    min-width: 0;
     max-width: 100%;
+    box-sizing: border-box;
   }
 
   .directory-input {
-    flex: 1;
-    padding: 0.5rem 0.75rem;
+    flex: 1 1 0%;
+    min-width: 0;
+    width: 100%;
+    padding: 0.4rem 0.5rem;
     border: 1px solid var(--color-border, var(--line, #2d3741));
     border-radius: 6px;
     font-size: 0.875rem;
@@ -96,15 +99,17 @@
   }
 
   .directory-btn {
+    flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.5rem 0.75rem;
+    padding: 0.4rem 0.6rem;
     border: 1px solid var(--color-border, var(--line, #2d3741));
     border-radius: 6px;
     background: var(--color-bg-button, var(--control, #14191f));
     color: var(--color-text, var(--text, #e6ebef));
     cursor: pointer;
+    box-sizing: border-box;
   }
 
   .directory-btn:hover:not(:disabled) {
