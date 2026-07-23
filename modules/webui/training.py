@@ -154,6 +154,127 @@ class TrainingService:
                 return None
             return copy.deepcopy(self._config_snapshot)
 
+    def _run_training_worker(self, config_data: Dict[str, Any]):
+        has_real_config = isinstance(config_data, dict) and bool(
+            config_data.get("model_path") or (isinstance(config_data.get("model"), dict) and config_data["model"].get("name"))
+        )
+        if not has_real_config:
+            return
+
+        try:
+
+            from modules.util.config.TrainConfig import TrainConfig
+            from modules.util.config.SecretsConfig import SecretsConfig
+            from modules.util.callbacks.TrainCallbacks import TrainCallbacks
+            from modules.util.commands.TrainCommands import TrainCommands
+            from modules.util import create
+
+            train_config = TrainConfig.default_values().from_dict(config_data, migrate=True)
+
+            try:
+                import json
+                with open("secrets.json", "r") as f:
+                    secrets_dict = json.load(f)
+                    train_config.secrets = SecretsConfig.default_values().from_dict(secrets_dict)
+            except Exception:
+                pass
+
+            commands = TrainCommands()
+            with self._lock:
+                self._train_commands = commands
+
+            start_time = time.time()
+
+            def on_progress(train_progress, max_step, max_epoch):
+                now = time.time()
+                elapsed = max(0.1, now - start_time)
+                current_step = train_progress.global_step
+                speed = current_step / elapsed if current_step > 0 else 0.0
+                remaining_steps = max(0, max_step - current_step) if max_step > 0 else 0
+                eta = remaining_steps / speed if speed > 0 else 0.0
+
+                self.update_progress(
+                    step=current_step,
+                    epoch=train_progress.epoch,
+                    max_steps=max_step,
+                    max_epochs=max_epoch,
+                    speed_its=round(speed, 2),
+                    elapsed_seconds=round(elapsed, 1),
+                    eta_seconds=round(eta, 1),
+                )
+
+            def on_sample(sampler_output):
+                try:
+                    sample_info = {
+                        "id": f"sample_{len(self._samples) + 1}",
+                        "step": self._step,
+                        "epoch": self._epoch,
+                        "timestamp": time.time(),
+                    }
+                    if hasattr(sampler_output, "filepath"):
+                        sample_info["filepath"] = str(sampler_output.filepath)
+                    if hasattr(sampler_output, "prompt"):
+                        sample_info["prompt"] = str(sampler_output.prompt)
+                    if hasattr(sampler_output, "seed"):
+                        sample_info["seed"] = sampler_output.seed
+                    self.record_sample(sample_info)
+                except Exception:
+                    pass
+
+            callbacks = TrainCallbacks(
+                on_update_train_progress=on_progress,
+                on_sample_default=on_sample,
+            )
+
+            # Patch SummaryWriter to record real-time loss/learning rate metrics
+            try:
+                from torch.utils.tensorboard import SummaryWriter
+                orig_add_scalar = SummaryWriter.add_scalar
+
+                def custom_add_scalar(writer_self, tag, scalar_value, global_step=None, walltime=None):
+                    try:
+                        orig_add_scalar(writer_self, tag, scalar_value, global_step, walltime)
+                    except Exception:
+                        pass
+                    try:
+                        key = tag.replace("/", "_")
+                        val = float(scalar_value)
+                        step_val = global_step if global_step is not None else self._step
+                        self.record_metric(step=step_val, epoch=self._epoch, **{key: val})
+                        if "loss" in key.lower():
+                            self.record_metric(step=step_val, epoch=self._epoch, loss=val)
+                        if "lr" in key.lower() or "learning_rate" in key.lower():
+                            self.record_metric(step=step_val, epoch=self._epoch, lr=val)
+                    except Exception:
+                        pass
+
+                SummaryWriter.add_scalar = custom_add_scalar
+            except Exception:
+                pass
+
+            trainer = create.create_trainer(train_config, callbacks, commands)
+            trainer.start()
+
+            with self._lock:
+                self._state = TrainingState.TRAINING
+            self._emit_state_event()
+
+            trainer.train()
+
+            if not commands.get_stop_command() or train_config.backup_before_save:
+                trainer.end()
+
+            with self._lock:
+                if self._state not in (TrainingState.STOPPING, TrainingState.FAILED):
+                    self._state = TrainingState.COMPLETED
+            self._emit_state_event()
+
+        except Exception as e:
+            with self._lock:
+                self._state = TrainingState.FAILED
+                self._error_message = str(e)
+            self._emit_state_event()
+
     def start_training(self, config_data: Optional[Dict[str, Any]] = None):
         with self._lock:
             if self._state not in (TrainingState.IDLE, TrainingState.COMPLETED, TrainingState.FAILED):
@@ -169,21 +290,29 @@ class TrainingService:
             self._elapsed_seconds = 0.0
             self._eta_seconds = 0.0
             self._error_message = None
+
         self._emit_state_event()
+
+        import threading
+        thread = threading.Thread(target=self._run_training_worker, args=(copy.deepcopy(snapshot_src),), daemon=True)
+        thread.start()
 
     def stop_training(self):
         with self._lock:
             if self._state not in (TrainingState.STARTING, TrainingState.TRAINING, TrainingState.PAUSED):
                 raise RuntimeError(f"Cannot stop training from state {self._state}")
             self._state = TrainingState.STOPPING
+            if hasattr(self, "_train_commands") and self._train_commands:
+                self._train_commands.stop()
         self._emit_state_event()
 
     def pause_training(self):
         with self._lock:
-            if self._state != TrainingState.TRAINING:
+            if self._state not in (TrainingState.STARTING, TrainingState.TRAINING):
                 raise RuntimeError(f"Cannot pause training from state {self._state}")
             self._state = TrainingState.PAUSED
         self._emit_state_event()
+
 
     def resume_training(self):
         with self._lock:
