@@ -177,6 +177,15 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
     if "text_encoder_2" in parts:
         component_fields.append(
             Field(
+                "text-encoder-2-layer-skip",
+                ("text_encoder_2_layer_skip",),
+                "Text Encoder 2 Layer Skip",
+                "Number of layers to skip in Text Encoder 2",
+                "number",
+            )
+        )
+        component_fields.append(
+            Field(
                 "text-encoder-2-weight-dtype",
                 ("text_encoder_2.weight_dtype",),
                 "Text Encoder 2 Data Type",
@@ -186,6 +195,15 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
         )
 
     if "text_encoder_3" in parts:
+        component_fields.append(
+            Field(
+                "text-encoder-3-layer-skip",
+                ("text_encoder_3_layer_skip",),
+                "Text Encoder 3 Layer Skip",
+                "Number of layers to skip in Text Encoder 3",
+                "number",
+            )
+        )
         component_fields.append(
             Field(
                 "text-encoder-3-weight-dtype",
@@ -205,6 +223,15 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
                 "Filename, directory or Hugging Face repository of text encoder 4",
                 "text",
                 path_mode="file",
+            )
+        )
+        component_fields.append(
+            Field(
+                "text-encoder-4-layer-skip",
+                ("text_encoder_4_layer_skip",),
+                "Text Encoder 4 Layer Skip",
+                "Number of layers to skip in Text Encoder 4",
+                "number",
             )
         )
         component_fields.append(
