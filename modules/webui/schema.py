@@ -448,6 +448,19 @@ TABS = (
                     ),
                 ),
             ),
+            Group(
+                "training_options",
+                "Training Options",
+                (
+                    Field(
+                        "force-circular-padding",
+                        ("force_circular_padding",),
+                        "Force Circular Padding",
+                        "Enables circular padding for all conv layers to better train seamless images",
+                        "toggle",
+                    ),
+                ),
+            ),
         ),
     ),
     Tab(
@@ -494,17 +507,10 @@ TABS = (
                         "text",
                     ),
                     Field(
-                        "force-circular-padding",
-                        ("force_circular_padding",),
-                        "Force Circular Padding",
-                        "Force circular padding mode in Conv2d layers",
-                        "toggle",
-                    ),
-                    Field(
                         "compile",
                         ("compile",),
-                        "Compile Model",
-                        "Enable PyTorch model compilation",
+                        "Compile transformer blocks",
+                        "Uses torch.compile and Triton to significantly speed up training. Only applies to transformer/unet. Disable in case of compatibility issues.",
                         "toggle",
                     ),
                 ),
@@ -1577,17 +1583,10 @@ def build_model_tab(model_type_enum: ModelType) -> Tab:
             path_mode="file",
         ),
         Field(
-            "force-circular-padding",
-            ("force_circular_padding",),
-            "Force Circular Padding",
-            "Force circular padding mode in Conv2d layers",
-            "toggle",
-        ),
-        Field(
             "compile",
             ("compile",),
-            "Compile Model",
-            "Enable PyTorch model compilation",
+            "Compile transformer blocks",
+            "Uses torch.compile and Triton to significantly speed up training. Only applies to transformer/unet. Disable in case of compatibility issues.",
             "toggle",
         ),
     ]
