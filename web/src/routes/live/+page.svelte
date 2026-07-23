@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { trainingStore } from '$lib/events/training-store';
+  import { api } from '$lib/api/client';
   import MetricsChart from '$lib/components/charts/MetricsChart.svelte';
   import GpuMonitor from '$lib/components/training/GpuMonitor.svelte';
   import SampleGallery from '$lib/components/training/SampleGallery.svelte';
@@ -8,6 +10,24 @@
   const metrics = $derived($trainingStore.metrics);
   const samples = $derived($trainingStore.samples);
   const gpuStats = $derived($trainingStore.gpuStats);
+
+  onMount(async () => {
+    try {
+      const statusData = await api.getTrainingStatus();
+      if (statusData) trainingStore.setStatus(statusData);
+
+      const metricsData = await api.getTrainingMetrics();
+      if (metricsData) trainingStore.setMetrics(metricsData);
+
+      const samplesData = await api.getTrainingSamples();
+      if (samplesData) trainingStore.setSamples(samplesData);
+
+      const gpuData = await api.getGpuStats();
+      if (gpuData) trainingStore.setGpuStats(gpuData);
+    } catch (e) {
+      // ignore
+    }
+  });
 
   const stepPct = $derived(
     status.max_steps > 0

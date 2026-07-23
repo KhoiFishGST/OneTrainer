@@ -1,4 +1,5 @@
 import type { BacklogData, ConsoleEvent, ConsoleStore } from './console-store.svelte';
+import { trainingStore } from './training-store';
 
 export interface WebSocketLike {
   onopen: ((ev: any) => void) | null;
@@ -168,6 +169,10 @@ export class EventClient {
       } else if (result === 'restart') {
         this.triggerRestart();
       }
+    }
+
+    if (event.type?.startsWith('training_') || event.type === 'gpu_stat') {
+      trainingStore.applyEvent(event);
     }
   }
 
