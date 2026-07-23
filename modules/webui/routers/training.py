@@ -104,15 +104,20 @@ async def get_samples(request: Request):
 async def get_sample_image(sample_id: str, request: Request):
     app_state: AppState = request.app.state.webui
     samples = app_state.training_service.get_samples()
-    sample = next((s for s in samples if s.get("sample_id") == sample_id), None)
+    sample = next((s for s in samples if s.get("sample_id") == sample_id or s.get("id") == sample_id), None)
     if not sample:
         raise HTTPException(status_code=404, detail="Sample not found")
 
-    file_path = Path(sample["filepath"])
+    filepath = sample.get("filepath")
+    if not filepath:
+        raise HTTPException(status_code=404, detail="Sample image filepath not recorded")
+
+    file_path = Path(filepath)
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="Sample image file missing from disk")
 
     return FileResponse(file_path)
+
 
 
 @router.get("/training/gpu")
