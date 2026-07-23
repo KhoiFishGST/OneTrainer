@@ -176,7 +176,7 @@
               id="webui-password-input"
               type={showWebuiPassword ? 'text' : 'password'}
               bind:value={webuiPassword}
-              placeholder={webuiPasswordSet ? '••••••••' : 'Enter new password...'}
+              placeholder={webuiPasswordSet ? 'Enter new password to change...' : 'Enter new password...'}
               autocomplete="off"
             />
             <button
@@ -193,7 +193,7 @@
             </button>
           </div>
           <span class="status-badge" class:configured={webuiPasswordSet}>
-            {webuiPasswordSet ? 'Password Protection Enabled' : 'Password Protection Disabled (Open Access)'}
+            {webuiPasswordSet ? '✓ Password Protection Enabled' : 'Password Protection Disabled (Open Access)'}
           </span>
         </div>
 

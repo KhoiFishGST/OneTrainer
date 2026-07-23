@@ -41,6 +41,9 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
   });
 
   if (!res.ok) {
+    if (res.status === 401 && typeof window !== 'undefined' && window.location.pathname !== '/login') {
+      window.location.href = '/login';
+    }
     let detail: any;
     try {
       const data = await res.json();

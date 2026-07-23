@@ -42,8 +42,13 @@ def test_secrets_api_get_and_update(test_app_fixture):
         assert update_data["huggingface_token_set"] is True
         assert update_data["webui_password_set"] is True
 
+        # Log in after setting webui_password
+        login_resp = client.post("/api/auth/login", json={"password": "secret_password"})
+        assert login_resp.status_code == 200
+
         # Verify updated GET
         get_resp = client.get("/api/secrets")
+        assert get_resp.status_code == 200
         assert get_resp.json()["huggingface_token"] == "hf_test_token_123"
 
         # Verify secrets.json was saved on disk

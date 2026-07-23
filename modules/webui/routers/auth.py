@@ -15,19 +15,20 @@ class LoginRequest(BaseModel):
     password: str
 
 
-def is_authenticated(request: Request, state: AppState) -> bool:
+def is_authenticated(request_or_ws: Any, state: AppState) -> bool:
     password_required = bool(state.config._config.secrets.webui_password)
     if not password_required:
         return True
 
-    # Check Authorization header or Cookie
-    auth_header = request.headers.get("Authorization")
+    headers = getattr(request_or_ws, "headers", {})
+    auth_header = headers.get("Authorization") or headers.get("authorization")
     if auth_header and auth_header.startswith("Bearer "):
         token = auth_header[7:].strip()
         if token in _ACTIVE_TOKENS:
             return True
 
-    cookie_token = request.cookies.get("onetrainer_session")
+    cookies = getattr(request_or_ws, "cookies", {})
+    cookie_token = cookies.get("onetrainer_session")
     if cookie_token and cookie_token in _ACTIVE_TOKENS:
         return True
 

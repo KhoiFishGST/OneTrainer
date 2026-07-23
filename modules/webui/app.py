@@ -37,7 +37,8 @@ from modules.webui.schema import SchemaRegistry
 from modules.webui.state import AppState, WebUISettings
 from modules.webui.training import TrainingService
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
@@ -164,6 +165,39 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
 
     app = FastAPI(lifespan=lifespan)
     app.add_middleware(LimitUploadSizeMiddleware)
+
+    from fastapi.responses import JSONResponse, RedirectResponse
+    from modules.webui.routers.auth import is_authenticated
+
+    @app.middleware("http")
+    async def auth_middleware(request: Request, call_next):
+        path = request.url.path
+        public_endpoints = {
+            "/api/auth/login",
+            "/api/auth/status",
+            "/api/health",
+            "/login",
+            "/favicon.ico",
+            "/favicon.png",
+            "/logo.png",
+            "/icon.png",
+        }
+        if path in public_endpoints or path.startswith("/_app/"):
+            return await call_next(request)
+
+        state: AppState = getattr(request.app.state, "webui", None)
+        if state is not None:
+            if not is_authenticated(request, state):
+                if path.startswith("/api/"):
+                    return JSONResponse(
+                        status_code=401,
+                        content={"detail": "Authentication required"},
+                    )
+                index_file = settings.static_dir / "index.html"
+                if not settings.dev and index_file.exists():
+                    return RedirectResponse(url="/login", status_code=307)
+
+        return await call_next(request)
 
     if settings.dev:
         app.add_middleware(

@@ -30,7 +30,8 @@ def test_training_api_status_and_start(client):
     assert start_res.json()["state"] == "TRAINING"
 
 
-def test_training_api_lifecycle(client):
+def test_training_api_lifecycle(client, monkeypatch):
+    monkeypatch.setattr("modules.webui.training.TrainingService._run_training_worker", lambda self, config_data: None)
     # Initial status
     status = client.get("/api/training/status").json()
     assert status["state"] == "IDLE"

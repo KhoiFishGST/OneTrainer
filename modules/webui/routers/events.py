@@ -53,6 +53,11 @@ async def websocket_events(websocket: WebSocket):
         await websocket.close(code=1008)
         return
 
+    from modules.webui.routers.auth import is_authenticated
+    if not is_authenticated(websocket, app_state):
+        await websocket.close(code=1008)
+        return
+
     await websocket.accept()
     sub = app_state.events.subscribe()
     try:
