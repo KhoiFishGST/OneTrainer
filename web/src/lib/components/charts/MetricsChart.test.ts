@@ -61,4 +61,33 @@ describe('MetricsChart', () => {
     // Should not throw error on reset zoom click
     expect(resetBtn).toBeInTheDocument();
   });
+
+  it('observes ResizeObserver when component receives metrics after mounting with empty metrics', async () => {
+    const observeFn = vi.fn();
+    const disconnectFn = vi.fn();
+    class MockResizeObserver {
+      observe = observeFn;
+      disconnect = disconnectFn;
+      unobserve = vi.fn();
+    }
+    vi.stubGlobal('ResizeObserver', MockResizeObserver);
+
+    const { rerender } = render(MetricsChart, { props: { metrics: [], metricKey: 'loss', title: 'Loss' } });
+    expect(observeFn).not.toHaveBeenCalled();
+
+    await rerender({ metrics: [{ step: 1, loss: 0.5 }], metricKey: 'loss', title: 'Loss' });
+    expect(observeFn).toHaveBeenCalled();
+
+    vi.unstubAllGlobals();
+  });
+
+  it('handles metric stream updates without errors', async () => {
+    const initialMetrics = [{ step: 1, loss: 0.5 }];
+    const { rerender } = render(MetricsChart, { props: { metrics: initialMetrics, metricKey: 'loss', title: 'Loss' } });
+
+    const updatedMetrics = [{ step: 1, loss: 0.5 }, { step: 2, loss: 0.4 }, { step: 3, loss: 0.3 }];
+    await rerender({ metrics: updatedMetrics, metricKey: 'loss', title: 'Loss' });
+
+    expect(screen.getByTestId('metrics-chart-canvas-container')).toBeInTheDocument();
+  });
 });

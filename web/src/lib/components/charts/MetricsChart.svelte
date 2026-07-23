@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onDestroy } from 'svelte';
   import uPlot from 'uplot';
   import 'uplot/dist/uPlot.min.css';
   import type { TrainingMetric } from '../../api/types';
@@ -21,7 +21,7 @@
 
   let containerEl: HTMLDivElement | null = $state(null);
   let uplotInstance: uPlot | null = null;
-  let resizeObserver: ResizeObserver | null = null;
+  let lastLogScale: boolean | null = null;
 
   // Filter metrics containing the requested key
   const validMetrics = $derived(
@@ -108,10 +108,21 @@
 
     try {
       if (uplotInstance) {
-        uplotInstance.destroy();
-        uplotInstance = null;
+        if (lastLogScale === isLogScale && uplotInstance.series.length === series.length) {
+          try {
+            uplotInstance.setData(chartData as uPlot.AlignedData);
+            return;
+          } catch {
+            uplotInstance.destroy();
+            uplotInstance = null;
+          }
+        } else {
+          uplotInstance.destroy();
+          uplotInstance = null;
+        }
       }
       uplotInstance = new uPlot(opts, chartData as uPlot.AlignedData, containerEl);
+      lastLogScale = isLogScale;
     } catch (e) {
       // Graceful fallback for test/headless environments without full canvas context
     }
@@ -124,24 +135,26 @@
     }
   });
 
-  onMount(() => {
-    if (containerEl && typeof ResizeObserver !== 'undefined') {
-      resizeObserver = new ResizeObserver(() => {
-        if (uplotInstance && containerEl) {
-          const w = containerEl.clientWidth;
-          if (w > 0) {
-            uplotInstance.setSize({ width: w, height });
-          }
+  $effect(() => {
+    if (!containerEl || typeof ResizeObserver === 'undefined') return;
+
+    const observer = new ResizeObserver(() => {
+      if (uplotInstance && containerEl) {
+        const w = containerEl.clientWidth;
+        if (w > 0) {
+          uplotInstance.setSize({ width: w, height });
         }
-      });
-      resizeObserver.observe(containerEl);
-    }
+      }
+    });
+
+    observer.observe(containerEl);
+
+    return () => {
+      observer.disconnect();
+    };
   });
 
   onDestroy(() => {
-    if (resizeObserver) {
-      resizeObserver.disconnect();
-    }
     if (uplotInstance) {
       uplotInstance.destroy();
       uplotInstance = null;
