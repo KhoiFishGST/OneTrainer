@@ -113,18 +113,18 @@ export function validateConfig(draft: Record<string, any>, schema: ConfigSchema)
 
       const control = (field.control || '').toLowerCase();
 
-      // Number / Integer validation
-      if (control === 'number' || control === 'integer' || control === 'int') {
+      // Integer validation
+      if (control === 'integer' || control === 'int') {
         if (typeof val === 'string') {
           const trimmed = val.trim();
           const num = Number(trimmed);
-          if (trimmed === '' || isNaN(num) || !Number.isFinite(num) || ((control === 'integer' || control === 'int') && !Number.isInteger(num))) {
+          if (trimmed === '' || isNaN(num) || !Number.isFinite(num) || !Number.isInteger(num)) {
             errors.push({ path: key, message: 'Expected integer' });
           } else {
             normalized = setPath(normalized, key, num);
           }
         } else if (typeof val === 'number') {
-          if (!Number.isFinite(val) || ((control === 'integer' || control === 'int') && !Number.isInteger(val))) {
+          if (!Number.isFinite(val) || !Number.isInteger(val)) {
             errors.push({ path: key, message: 'Expected integer' });
           } else {
             normalized = setPath(normalized, key, val);
@@ -133,24 +133,24 @@ export function validateConfig(draft: Record<string, any>, schema: ConfigSchema)
           errors.push({ path: key, message: 'Expected integer' });
         }
       }
-      // Float validation
-      else if (control === 'float' || control === 'double') {
+      // General Number / Float validation
+      else if (control === 'number' || control === 'float' || control === 'double') {
         if (typeof val === 'string') {
           const trimmed = val.trim();
           const num = Number(trimmed);
           if (trimmed === '' || isNaN(num) || !Number.isFinite(num)) {
-            errors.push({ path: key, message: 'Expected float' });
+            errors.push({ path: key, message: 'Expected number' });
           } else {
             normalized = setPath(normalized, key, num);
           }
         } else if (typeof val === 'number') {
           if (!Number.isFinite(val)) {
-            errors.push({ path: key, message: 'Expected float' });
+            errors.push({ path: key, message: 'Expected number' });
           } else {
             normalized = setPath(normalized, key, val);
           }
         } else {
-          errors.push({ path: key, message: 'Expected float' });
+          errors.push({ path: key, message: 'Expected number' });
         }
       }
       // Enum / Select validation

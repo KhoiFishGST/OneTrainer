@@ -34,6 +34,8 @@
 
 <style>
   .text-input {
+    min-width: 200px;
+    max-width: 340px;
     width: 100%;
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--color-border, var(--line, #2d3741));

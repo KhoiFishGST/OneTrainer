@@ -67,11 +67,12 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    max-width: 280px;
     width: 100%;
   }
 
   .time-value-input {
-    flex: 1;
+    width: 120px;
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--color-border, var(--line, #2d3741));
     border-radius: 6px;

@@ -71,6 +71,7 @@
                 label={field.label}
                 tooltip={field.tooltip}
                 {error}
+                inline={controlType === 'toggle'}
               >
                 {#snippet children({ id, ariaDescribedBy })}
                   {#if controlType === 'toggle'}
@@ -157,7 +158,8 @@
 
   .group-fields {
     display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+    flex-wrap: wrap;
+    gap: 1rem 1.5rem;
+    align-items: flex-end;
   }
 </style>

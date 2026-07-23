@@ -73,7 +73,9 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    width: 100%;
+    min-width: 280px;
+    flex: 1 1 360px;
+    max-width: 100%;
   }
 
   .directory-input {

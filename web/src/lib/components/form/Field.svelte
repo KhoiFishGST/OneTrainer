@@ -7,12 +7,14 @@
     label,
     tooltip,
     error,
+    inline = false,
     children,
   }: {
     id: string;
     label?: string;
     tooltip?: string;
     error?: string;
+    inline?: boolean;
     children?: Snippet<[{ id: string; ariaDescribedBy?: string }]>;
   } = $props();
 
@@ -27,10 +29,17 @@
   );
 </script>
 
-<div class="form-field" class:has-error={!!error}>
-  {#if label}
-    <div class="field-label-row">
-      <label for={inputId} class="field-label">{label}</label>
+<div class="form-field" class:is-inline={inline} class:has-error={!!error}>
+  {#if inline}
+    <div class="inline-row">
+      <div class="field-control">
+        {#if children}
+          {@render children({ id: inputId, ariaDescribedBy })}
+        {/if}
+      </div>
+      {#if label}
+        <label for={inputId} class="field-label inline-label">{label}</label>
+      {/if}
       {#if tooltip}
         <button
           type="button"
@@ -43,6 +52,29 @@
         </button>
       {/if}
     </div>
+  {:else}
+    {#if label}
+      <div class="field-label-row">
+        <label for={inputId} class="field-label">{label}</label>
+        {#if tooltip}
+          <button
+            type="button"
+            class="tooltip-trigger"
+            aria-label={`Help for ${label}`}
+            aria-expanded={showTooltip}
+            onclick={() => (showTooltip = !showTooltip)}
+          >
+            <HelpCircle size={14} />
+          </button>
+        {/if}
+      </div>
+    {/if}
+
+    <div class="field-control">
+      {#if children}
+        {@render children({ id: inputId, ariaDescribedBy })}
+      {/if}
+    </div>
   {/if}
 
   {#if tooltip && showTooltip}
@@ -50,12 +82,6 @@
       {tooltip}
     </div>
   {/if}
-
-  <div class="field-control">
-    {#if children}
-      {@render children({ id: inputId, ariaDescribedBy })}
-    {/if}
-  </div>
 
   {#if error}
     <div id={errorId} class="field-error" role="alert">
@@ -69,7 +95,23 @@
     display: flex;
     flex-direction: column;
     gap: 0.375rem;
-    margin-bottom: 0.75rem;
+  }
+
+  .form-field.is-inline {
+    align-self: flex-end;
+  }
+
+  .inline-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 36px;
+  }
+
+  .inline-label {
+    cursor: pointer;
+    user-select: none;
+    margin: 0;
   }
 
   .field-label-row {

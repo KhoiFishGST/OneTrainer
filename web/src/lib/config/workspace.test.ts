@@ -20,7 +20,7 @@ const schema = {
               keys: ["tensorboard_port"],
               label: "Port",
               tooltip: "Port",
-              control: "number",
+              control: "integer",
               required: true,
               nullable: false,
               visible: true,
