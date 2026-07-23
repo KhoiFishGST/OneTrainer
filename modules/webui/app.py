@@ -9,6 +9,7 @@ from modules.webui.config_service import ConfigService, ConfigSnapshot
 from modules.webui.directories import DirectoryService
 from modules.webui.events import EventHub
 from modules.webui.presets import PresetService
+from modules.webui.routers.auth import router as auth_router
 from modules.webui.routers.concepts import router as concepts_router
 from modules.webui.routers.config import router as config_router
 from modules.webui.routers.console import router as console_router
@@ -17,6 +18,7 @@ from modules.webui.routers.events import router as events_router
 from modules.webui.routers.health import router as health_router
 from modules.webui.routers.meta import router as meta_router
 from modules.webui.routers.presets import router as presets_router
+from modules.webui.routers.secrets import router as secrets_router
 from modules.webui.routers.training import router as training_router
 from modules.webui.schema import SchemaRegistry
 from modules.webui.state import AppState, WebUISettings
@@ -168,6 +170,8 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
     app.include_router(console_router, prefix="/api")
     app.include_router(events_router, prefix="/api")
     app.include_router(training_router, prefix="/api")
+    app.include_router(secrets_router, prefix="/api")
+    app.include_router(auth_router, prefix="/api")
 
     index_file = settings.static_dir / "index.html"
     if not settings.dev and index_file.exists():

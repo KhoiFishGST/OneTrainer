@@ -16,6 +16,7 @@
     PanelLeft,
     Menu,
     X,
+    Key,
   } from 'lucide-svelte';
 
   let { currentPath = '/general', mobile = false } = $props<{
@@ -52,6 +53,7 @@
     { name: 'Cloud', path: '/cloud', icon: Cloud, disabled: true },
     { name: 'Tools', path: '/tools', icon: Wrench, disabled: true },
     { name: 'Live', path: '/live', icon: Tv, disabled: false },
+    { name: 'Secrets', path: '/secrets', icon: Key, disabled: false },
   ];
 </script>
 

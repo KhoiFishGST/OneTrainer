@@ -84,8 +84,20 @@ if (typeof window !== 'undefined') {
   }
 }
 
+if (typeof globalThis !== 'undefined' && !globalThis.localStorage) {
+  const store: Record<string, string> = {};
+  (globalThis as any).localStorage = {
+    getItem: (key: string) => store[key] ?? null,
+    setItem: (key: string, value: string) => { store[key] = String(value); },
+    removeItem: (key: string) => { delete store[key]; },
+    clear: () => { for (const k in store) delete store[k]; },
+  };
+}
+
 afterEach(() => {
   document.body.innerHTML = '';
-  localStorage.clear();
+  if (typeof localStorage !== 'undefined' && localStorage?.clear) {
+    localStorage.clear();
+  }
 });
 
