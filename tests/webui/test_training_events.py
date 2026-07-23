@@ -35,7 +35,7 @@ async def test_training_service_event_broadcasting():
     assert event1["step"] == 1
 
     # 2. Test state change event broadcasting
-    service.start_training({"max_steps": 100})
+    service.start_training({"max_steps": 100, "base_model_name": "mock"})
     event2 = await iterator.__anext__()
     assert event2["type"] == EventType.TRAINING_STATE
     assert event2["state"] == TrainingState.TRAINING

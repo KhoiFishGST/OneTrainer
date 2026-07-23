@@ -176,6 +176,27 @@ class TrainingService:
             train_config = TrainConfig.default_values().from_dict(config_data, migrate=True)
             logging.info(f"TrainingService: Base model name resolved as: {train_config.base_model_name}")
 
+            import os
+            import json
+
+            if train_config.concepts is None:
+                concept_path = train_config.concept_file_name
+                if concept_path and not os.path.exists(concept_path):
+                    if os.path.dirname(concept_path):
+                        os.makedirs(os.path.dirname(concept_path), exist_ok=True)
+                    with open(concept_path, "w", encoding="utf-8") as f:
+                        json.dump([], f)
+                    logging.info(f"TrainingService: Created default empty concepts file at {concept_path}")
+
+            if train_config.samples is None:
+                sample_path = train_config.sample_definition_file_name
+                if sample_path and not os.path.exists(sample_path):
+                    if os.path.dirname(sample_path):
+                        os.makedirs(os.path.dirname(sample_path), exist_ok=True)
+                    with open(sample_path, "w", encoding="utf-8") as f:
+                        json.dump([], f)
+                    logging.info(f"TrainingService: Created default empty samples file at {sample_path}")
+
             try:
                 import json
                 with open("secrets.json", "r") as f:
