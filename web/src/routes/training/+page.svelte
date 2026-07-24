@@ -3,6 +3,7 @@
   import SchemaForm from '$lib/components/form/SchemaForm.svelte';
   import OptimizerSchedulerModal from '$lib/components/form/OptimizerSchedulerModal.svelte';
   import type { SchemaField } from '$lib/config/validation';
+  import { SlidersHorizontal, Cpu, Activity } from 'lucide-svelte';
 
   const ctx = getRouteContext();
 
@@ -15,6 +16,7 @@
   );
 
   let modalOpen = $state(false);
+  let activeSubTab = $state<'general_opt' | 'components' | 'noise_loss'>('general_opt');
 
   const optimizerFields: SchemaField[] = [
     { id: 'learning_rate', keys: ['learning_rate'], label: 'Learning Rate', control: 'number' },
@@ -52,8 +54,40 @@
       </button>
     </div>
 
+    <!-- Training Sub-Nav Tabs -->
+    <div class="training-subnav-tabs">
+      <button
+        type="button"
+        class="subnav-btn"
+        class:active={activeSubTab === 'general_opt'}
+        onclick={() => (activeSubTab = 'general_opt')}
+      >
+        <SlidersHorizontal size={16} />
+        <span>General & Optimization</span>
+      </button>
+      <button
+        type="button"
+        class="subnav-btn"
+        class:active={activeSubTab === 'components'}
+        onclick={() => (activeSubTab = 'components')}
+      >
+        <Cpu size={16} />
+        <span>Model Components & Architecture</span>
+      </button>
+      <button
+        type="button"
+        class="subnav-btn"
+        class:active={activeSubTab === 'noise_loss'}
+        onclick={() => (activeSubTab = 'noise_loss')}
+      >
+        <Activity size={16} />
+        <span>Noise, Timesteps & Loss</span>
+      </button>
+    </div>
+
     <SchemaForm
       {tab}
+      {activeSubTab}
       values={ctx.workspace.draft}
       issues={ctx.workspace.errors}
       setRaw={(path, val) => ctx.workspace?.setRaw(path, val)}
@@ -78,7 +112,42 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .training-subnav-tabs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--line, #2d3741);
+    padding-bottom: 0.5rem;
+  }
+
+  .subnav-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.875rem;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--muted, #94a3b8);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .subnav-btn:hover {
+    color: var(--text, #f8fafc);
+    background-color: var(--panel-raised, #1d242c);
+  }
+
+  .subnav-btn.active {
+    color: var(--color-text-title, var(--accent, #dd773b));
+    background-color: var(--panel-raised, #1d242c);
+    font-weight: 600;
   }
 
   .page-title {

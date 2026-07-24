@@ -20,12 +20,14 @@
     issues = [],
     setRaw,
     openDirectory,
+    activeSubTab,
   }: {
     tab?: SchemaTab;
     values?: Record<string, any>;
     issues?: FieldError[];
     setRaw: (path: string, val: any) => void;
     openDirectory?: (path: string, onSelect?: (selectedPath: string) => void) => void;
+    activeSubTab?: string;
   } = $props();
 
   function normalizeControl(control?: string): ControlType {
@@ -50,6 +52,23 @@
   function getFieldValue(field: SchemaField, keyIndex = 0): any {
     const key = field.keys?.[keyIndex] ?? field.id;
     return getPath(values, key);
+  }
+
+  function isGroupInSubTab(groupId: string, subTab?: string): boolean {
+    if (!subTab) return true;
+    if (subTab === 'general_opt') {
+      return ['base_settings', 'execution'].includes(groupId);
+    }
+    if (subTab === 'components') {
+      return (
+        ['denoising_model', 'text_encoders', 'embeddings', 'layer_filtering'].includes(groupId) ||
+        groupId.startsWith('text_encoder')
+      );
+    }
+    if (subTab === 'noise_loss') {
+      return ['noise_and_timesteps', 'loss', 'masking_and_conditioning'].includes(groupId);
+    }
+    return true;
   }
 </script>
 
@@ -133,9 +152,13 @@
   </FormPanel>
 {/snippet}
 
-<div class="schema-form" class:is-training-tab={tab?.id === 'training'}>
+<div class="schema-form" class:is-training-tab={tab?.id === 'training' && !activeSubTab}>
   {#if tab?.groups}
-    {#if tab.id === 'training'}
+    {#if tab.id === 'training' && activeSubTab}
+      {#each tab.groups.filter((g) => isGroupInSubTab(g.id, activeSubTab)) as group (group.id)}
+        {@render renderGroup(group)}
+      {/each}
+    {:else if tab.id === 'training'}
       <div class="training-column col-1">
         {#each tab.groups.filter((g) => ['base_settings', 'text_encoders', 'embeddings'].includes(g.id)) as group (group.id)}
           {@render renderGroup(group)}
