@@ -22,6 +22,8 @@
   } = $props();
 
   let isOpen = $state(false);
+  let opensUpward = $state(false);
+  let triggerBtn = $state<HTMLButtonElement | null>(null);
 
   const parsedOptions = $derived(
     options.map((opt) =>
@@ -34,6 +36,31 @@
   const selectedOption = $derived(
     parsedOptions.find((opt) => String(opt.value) === String(value))
   );
+
+  function checkDirection() {
+    if (!triggerBtn) return;
+    const rect = triggerBtn.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const popoverHeight = Math.min(260, parsedOptions.length * 36 + 12);
+
+    if (spaceBelow < popoverHeight && spaceAbove > spaceBelow) {
+      opensUpward = true;
+    } else {
+      opensUpward = false;
+    }
+  }
+
+  function toggleOpen(e: MouseEvent) {
+    e.stopPropagation();
+    if (disabled) return;
+    if (!isOpen) {
+      checkDirection();
+      isOpen = true;
+    } else {
+      isOpen = false;
+    }
+  }
 
   function handleSelect(val: any) {
     isOpen = false;
@@ -52,20 +79,18 @@
   }
 </script>
 
-<svelte:window onclick={closePopover} />
+<svelte:window onclick={closePopover} onresize={() => { if (isOpen) checkDirection(); }} />
 
 <div class="custom-select-wrapper" class:is-disabled={disabled}>
   <button
+    bind:this={triggerBtn}
     type="button"
     id={id ? `${id}-trigger` : undefined}
     class="select-trigger"
     {disabled}
     aria-expanded={isOpen}
     aria-describedby={ariaDescribedBy}
-    onclick={(e) => {
-      e.stopPropagation();
-      if (!disabled) isOpen = !isOpen;
-    }}
+    onclick={toggleOpen}
   >
     <span class="select-trigger-label" class:is-placeholder={!selectedOption}>
       {selectedOption ? selectedOption.label : (placeholder || 'Select...')}
@@ -76,7 +101,11 @@
   </button>
 
   {#if isOpen && !disabled}
-    <div class="select-popover" role="listbox">
+    <div
+      class="select-popover"
+      class:opens-upward={opensUpward}
+      role="listbox"
+    >
       {#if placeholder && !parsedOptions.some((o) => String(o.value) === '')}
         <button
           type="button"
@@ -206,7 +235,13 @@
     flex-direction: column;
     padding: 4px;
     gap: 2px;
-    animation: fadeIn 0.12s ease-out;
+    animation: fadeInDown 0.12s ease-out;
+  }
+
+  .select-popover.opens-upward {
+    top: auto;
+    bottom: calc(100% + 6px);
+    animation: fadeInUp 0.12s ease-out;
   }
 
   .select-popover-option {
@@ -254,10 +289,21 @@
     border: 0;
   }
 
-  @keyframes fadeIn {
+  @keyframes fadeInDown {
     from {
       opacity: 0;
-      transform: translateY(-2px);
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
     }
     to {
       opacity: 1;
