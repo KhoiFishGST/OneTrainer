@@ -139,7 +139,7 @@
       'API Connection Error'
   );
 
-  const currentPath = $derived($page?.url?.pathname ?? '/general');
+  const currentPath = $derived($page?.url?.pathname ?? '/live');
 </script>
 
 {#if currentPath === '/login'}

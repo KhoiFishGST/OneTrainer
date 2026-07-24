@@ -19,7 +19,7 @@
     Key,
   } from 'lucide-svelte';
 
-  let { currentPath = '/general', mobile = false } = $props<{
+  let { currentPath = '/live', mobile = false } = $props<{
     currentPath?: string;
     mobile?: boolean;
   }>();
@@ -41,18 +41,17 @@
   }
 
   const navItems = [
+    { name: 'Live', path: '/live', icon: Tv, disabled: false },
     { name: 'General', path: '/general', icon: SlidersHorizontal, disabled: false },
-    { name: 'Data', path: '/data', icon: Database, disabled: false },
-    { name: 'Backup', path: '/backup', icon: Archive, disabled: false },
-    { name: 'Console', path: '/console', icon: Terminal, disabled: false },
     { name: 'Model', path: '/model', icon: Box, disabled: false },
+    { name: 'Data', path: '/data', icon: Database, disabled: false },
     { name: 'Concepts', path: '/concepts', icon: Layers, disabled: false },
     { name: 'Training', path: '/training', icon: Activity, disabled: false },
     { name: 'Sampling', path: '/sampling', icon: Sparkles, disabled: false },
-    { name: 'LoRA/Embedding', path: '/lora-embedding', icon: Cpu, disabled: false },
-    { name: 'Cloud', path: '/cloud', icon: Cloud, disabled: true },
+    { name: 'Backup', path: '/backup', icon: Archive, disabled: false },
     { name: 'Tools', path: '/tools', icon: Wrench, disabled: true },
-    { name: 'Live', path: '/live', icon: Tv, disabled: false },
+    { name: 'Cloud', path: '/cloud', icon: Cloud, disabled: true },
+    { name: 'LoRA/Embedding', path: '/lora-embedding', icon: Cpu, disabled: false },
     { name: 'Secrets', path: '/secrets', icon: Key, disabled: false },
   ];
 </script>
