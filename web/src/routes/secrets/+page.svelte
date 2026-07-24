@@ -297,13 +297,13 @@
   }
 
   .card-icon {
-    color: var(--accent, #6366f1);
+    color: var(--color-primary, var(--accent, #dd773b));
   }
 
   .card-title {
     font-size: 1.125rem;
     font-weight: 600;
-    color: var(--text, #f3f4f6);
+    color: var(--color-text-title, var(--accent, #dd773b));
     margin: 0;
   }
 
@@ -345,7 +345,7 @@
 
   .input-with-button input:focus {
     outline: none;
-    border-color: var(--accent, #6366f1);
+    border-color: var(--color-primary, var(--accent, #dd773b));
   }
 
   .icon-btn {
@@ -394,7 +394,7 @@
   }
 
   .btn.primary {
-    background-color: var(--accent, #6366f1);
+    background-color: var(--color-primary, var(--accent, #dd773b));
     color: white;
   }
 

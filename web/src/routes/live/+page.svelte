@@ -212,7 +212,7 @@
     margin: 0;
     font-size: 1.125rem;
     font-weight: 600;
-    color: var(--text, #f8fafc);
+    color: var(--color-text-title, var(--accent, #dd773b));
   }
 
   .progress-card {
@@ -230,7 +230,7 @@
   .stat-highlight {
     font-size: 1.25rem;
     font-weight: 700;
-    color: var(--accent, #3b82f6);
+    color: var(--color-primary, var(--accent, #dd773b));
   }
 
   .progress-bar-container {

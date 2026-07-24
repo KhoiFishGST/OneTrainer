@@ -263,7 +263,7 @@
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
-    color: var(--text, #f0f0f5);
+    color: var(--color-text-title, var(--accent, #dd773b));
   }
 
   .sample-count-badge {

@@ -249,7 +249,7 @@
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
-    color: var(--text, #f8fafc);
+    color: var(--color-text-title, var(--accent, #dd773b));
   }
 
   .chart-controls {
