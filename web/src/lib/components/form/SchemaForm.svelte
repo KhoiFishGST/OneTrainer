@@ -172,13 +172,6 @@
 
 <style>
   .schema-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-
-  .schema-form.is-model-tab,
-  .schema-form.is-general-tab {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1.5rem;
@@ -186,10 +179,7 @@
   }
 
   .schema-form.is-training-tab {
-    display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1.5rem;
-    align-items: start;
   }
 
   .training-column,
@@ -199,21 +189,19 @@
     gap: 1.5rem;
   }
 
+  .schema-form :global(.is-components-group) {
+    grid-column: 1 / -1;
+  }
+
   @media (max-width: 1280px) {
     .schema-form.is-training-tab {
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
   @media (max-width: 1024px) {
-    .schema-form.is-model-tab,
-    .schema-form.is-general-tab {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    .schema-form.is-model-tab {
+    .schema-form,
+    .schema-form.is-training-tab {
       grid-template-columns: 1fr;
     }
   }
