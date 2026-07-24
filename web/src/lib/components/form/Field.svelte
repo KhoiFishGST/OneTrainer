@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { HelpCircle } from 'lucide-svelte';
   import type { Snippet } from 'svelte';
 
   let {
@@ -21,6 +20,9 @@
   } = $props();
 
   let showTooltip = $state(false);
+  let hoverTimer: ReturnType<typeof setTimeout> | null = null;
+  let startX = 0;
+  let startY = 0;
 
   const inputId = $derived(`field-${id}`);
   const errorId = $derived(error ? `${inputId}-error` : undefined);
@@ -29,23 +31,64 @@
   const ariaDescribedBy = $derived(
     [errorId, showTooltip ? tooltipId : undefined].filter(Boolean).join(' ') || undefined
   );
+
+  function handleMouseEnter(e: MouseEvent) {
+    if (!tooltip) return;
+    startX = e.clientX;
+    startY = e.clientY;
+    if (hoverTimer) clearTimeout(hoverTimer);
+    hoverTimer = setTimeout(() => {
+      showTooltip = true;
+    }, 500);
+  }
+
+  function handleLabelClick(e: MouseEvent) {
+    if (!tooltip) return;
+    if (hoverTimer) {
+      clearTimeout(hoverTimer);
+      hoverTimer = null;
+    }
+    startX = e.clientX;
+    startY = e.clientY;
+    showTooltip = true;
+  }
+
+  function handleMouseLeave() {
+    if (hoverTimer) {
+      clearTimeout(hoverTimer);
+      hoverTimer = null;
+    }
+    showTooltip = false;
+  }
+
+  function handleMouseMove(e: MouseEvent) {
+    if (!showTooltip) return;
+    const distance = Math.hypot(e.clientX - startX, e.clientY - startY);
+    if (distance > 20) {
+      showTooltip = false;
+    }
+  }
 </script>
 
 <div class="form-field" class:is-inline={inline} class:is-full-width={fullWidth} class:has-error={!!error}>
   <div class="field-row">
     {#if label}
-      <div class="field-label-side">
+      <div
+        class="field-label-side"
+        class:has-tooltip={!!tooltip}
+        onmouseenter={handleMouseEnter}
+        onmouseleave={handleMouseLeave}
+        onmousemove={handleMouseMove}
+        onclick={handleLabelClick}
+        role={tooltip ? 'button' : undefined}
+        tabindex={tooltip ? 0 : undefined}
+      >
         <label for={inputId} class="field-label">{label}</label>
-        {#if tooltip}
-          <button
-            type="button"
-            class="tooltip-trigger"
-            aria-label={`Help for ${label}`}
-            aria-expanded={showTooltip}
-            onclick={() => (showTooltip = !showTooltip)}
-          >
-            <HelpCircle size={14} />
-          </button>
+
+        {#if tooltip && showTooltip}
+          <div id={tooltipId} class="field-tooltip" role="tooltip">
+            {tooltip}
+          </div>
         {/if}
       </div>
     {/if}
@@ -56,12 +99,6 @@
       {/if}
     </div>
   </div>
-
-  {#if tooltip && showTooltip}
-    <div id={tooltipId} class="field-tooltip" role="tooltip">
-      {tooltip}
-    </div>
-  {/if}
 
   {#if error}
     <div id={errorId} class="field-error" role="alert">
@@ -93,11 +130,26 @@
   }
 
   .field-label-side {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 0.375rem;
     flex: 1 1 auto;
     min-width: 0;
+  }
+
+  .field-label-side.has-tooltip {
+    cursor: help;
+  }
+
+  .field-label-side.has-tooltip .field-label {
+    text-decoration: underline dotted var(--color-border, var(--line, #475569));
+    text-underline-offset: 3px;
+    transition: color 0.15s ease;
+  }
+
+  .field-label-side.has-tooltip:hover .field-label {
+    color: var(--color-text-title, var(--accent, #dd773b));
   }
 
   .field-control-side {
@@ -125,45 +177,51 @@
     margin-right: 8px;
   }
 
-  .inline-label {
-    cursor: pointer;
-    user-select: none;
-    margin: 0;
-  }
-
-  .field-label-row {
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-  }
-
   .field-label {
     font-size: 0.875rem;
     font-weight: 500;
     color: var(--color-text, var(--text, #e6ebef));
   }
 
-  .tooltip-trigger {
-    background: transparent;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    color: var(--color-text-muted, var(--muted, #8995a1));
-    display: inline-flex;
-    align-items: center;
-  }
-
-  .tooltip-trigger:hover {
-    color: var(--color-text, var(--text, #e6ebef));
-  }
-
   .field-tooltip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    z-index: 100;
+    pointer-events: none;
     font-size: 0.75rem;
+    line-height: 1.4;
     padding: 0.5rem 0.75rem;
-    background: var(--color-bg-secondary, var(--panel-raised, #1d242c));
-    border-radius: 4px;
-    color: var(--color-text-muted, var(--muted, #8995a1));
-    border: 1px solid var(--color-border, var(--line, #2d3741));
+    background: var(--panel-raised, #1a212a);
+    color: var(--text, #f1f5f9);
+    border: 1px solid var(--line, #3b4754);
+    border-radius: 6px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+    max-width: 320px;
+    width: max-content;
+    white-space: normal;
+    animation: fadeIn 0.15s ease-out;
+  }
+
+  .field-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 14px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: var(--line, #3b4754) transparent transparent transparent;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .field-error {
