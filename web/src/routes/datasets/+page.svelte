@@ -3,6 +3,7 @@
   import { Plus, Trash2 } from 'lucide-svelte';
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
   import PathInput from '$lib/components/form/PathInput.svelte';
+  import { getRouteContext } from '$lib/config/context';
 
   interface DatasetItem {
     name: string;
@@ -10,6 +11,13 @@
     image_count: number;
     caption_count: number;
     thumbnail_url: string;
+  }
+
+  let ctx: any = null;
+  try {
+    ctx = getRouteContext();
+  } catch {
+    // context not available in isolated test
   }
 
   let datasets = $state<DatasetItem[]>([]);
@@ -26,13 +34,21 @@
       if (res.ok) {
         const data = await res.json();
         datasets = data.datasets || [];
-        baseDir = data.base_dir || '';
+        baseDir = data.base_dir || 'workspace/datasets';
       }
     } catch (err) {
       console.error('Failed to load datasets', err);
     } finally {
       loading = false;
     }
+  }
+
+  function handleBaseDirChange(newPath: string) {
+    baseDir = newPath;
+    if (ctx?.workspace) {
+      ctx.workspace.setRaw('datasets_dir', newPath);
+    }
+    fetchDatasets();
   }
 
   onMount(() => {
@@ -106,8 +122,9 @@
     <div class="base-dir-input-wrapper">
       <PathInput
         id="base-datasets-dir"
-        bind:value={baseDir}
+        value={baseDir}
         mode="dir"
+        onValueInput={handleBaseDirChange}
       />
     </div>
   </div>

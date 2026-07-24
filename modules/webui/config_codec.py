@@ -136,6 +136,8 @@ def _validate_config(
 def decode_settings_document(document: object, secrets: SecretsConfig) -> TrainConfig:
     issues: list[FieldIssue] = []
     template = TrainConfig.default_values()
+    if isinstance(document, dict) and "datasets_dir" not in document:
+        document["datasets_dir"] = getattr(template, "datasets_dir", "workspace/datasets")
     _validate_config(document, template, "", issues, include_secrets=False)
     if issues:
         raise SettingsDocumentError(issues)

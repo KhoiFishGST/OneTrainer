@@ -151,3 +151,19 @@ def test_get_dataset_image_and_thumbnail(client):
     res_full = c.get("/api/datasets/image?dataset=test_ds&filename=sample.png")
     assert res_full.status_code == 200
     assert res_full.headers["content-type"] == "image/png"
+
+
+def test_decode_config_with_missing_datasets_dir():
+    from modules.util.config.TrainConfig import TrainConfig
+    from modules.util.config.SecretsConfig import SecretsConfig
+    from modules.webui.config_codec import decode_settings_document
+
+    cfg = TrainConfig.default_values()
+    doc = cfg.to_settings_dict(secrets=False)
+    # Simulate legacy config dict missing datasets_dir
+    doc_missing = {k: v for k, v in doc.items() if k != "datasets_dir"}
+    assert "datasets_dir" not in doc_missing
+
+    decoded = decode_settings_document(doc_missing, SecretsConfig.default_values())
+    assert getattr(decoded, "datasets_dir", None) == "workspace/datasets"
+
