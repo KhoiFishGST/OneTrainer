@@ -1,7 +1,9 @@
 import io
+import mimetypes
 import os
 import re
 import shutil
+import urllib.parse
 from pathlib import Path
 from PIL import Image
 from fastapi import APIRouter, HTTPException, Query, Request, Response, UploadFile, File
@@ -27,6 +29,8 @@ def get_base_datasets_dir(app_state: AppState) -> Path:
 @router.get("/datasets")
 async def list_datasets(request: Request):
     app_state: AppState = request.app.state.webui
+    config = app_state.config_service.get_config()
+    raw_dir = getattr(config, "datasets_dir", "workspace/datasets") or "workspace/datasets"
     base_dir = get_base_datasets_dir(app_state)
     result = []
     if base_dir.exists() and base_dir.is_dir():
@@ -40,14 +44,15 @@ async def list_datasets(request: Request):
                         img_count += 1
                     elif ext in (".txt", ".caption"):
                         cap_count += 1
+                encoded_name = urllib.parse.quote(entry.name)
                 result.append({
                     "name": entry.name,
                     "path": str(entry),
                     "image_count": img_count,
                     "caption_count": cap_count,
-                    "thumbnail_url": f"/api/datasets/image?dataset={entry.name}&thumb=true",
+                    "thumbnail_url": f"/api/datasets/image?dataset={encoded_name}&thumb=true",
                 })
-    return {"datasets": result, "base_dir": str(base_dir)}
+    return {"datasets": result, "base_dir": raw_dir, "resolved_base_dir": str(base_dir)}
 
 
 @router.post("/datasets")
@@ -169,6 +174,8 @@ async def update_dataset_caption(name: str, request: Request):
 async def get_dataset_image(dataset: str, filename: str = "", thumb: bool = False, request: Request = None):
     app_state: AppState = request.app.state.webui
     base_dir = get_base_datasets_dir(app_state)
+    if ".." in dataset or ".." in filename:
+        raise HTTPException(status_code=400, detail="Invalid path")
     ds_dir = base_dir / dataset
 
     img_path = None
@@ -201,4 +208,8 @@ async def get_dataset_image(dataset: str, filename: str = "", thumb: bool = Fals
         except Exception:
             pass
 
-    return Response(content=img_path.read_bytes(), media_type="image/png")
+    mime_type, _ = mimetypes.guess_type(str(img_path))
+    if not mime_type or not mime_type.startswith("image/"):
+        mime_type = "image/png"
+
+    return Response(content=img_path.read_bytes(), media_type=mime_type)

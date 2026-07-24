@@ -142,15 +142,26 @@ def test_get_dataset_image_and_thumbnail(client):
     img.save(buf, format="PNG")
     c.post("/api/datasets/test_ds/upload", files=[("files", ("sample.png", buf.getvalue(), "image/png"))])
 
+    # Upload a JPEG image
+    img_jpg = Image.new("RGB", (200, 100), color="blue")
+    buf_jpg = io.BytesIO()
+    img_jpg.save(buf_jpg, format="JPEG")
+    c.post("/api/datasets/test_ds/upload", files=[("files", ("photo.jpg", buf_jpg.getvalue(), "image/jpeg"))])
+
     # Get thumbnail (cropped square)
     res_thumb = c.get("/api/datasets/image?dataset=test_ds&thumb=true")
     assert res_thumb.status_code == 200
     assert res_thumb.headers["content-type"] == "image/png"
 
-    # Get specific full image
+    # Get specific full PNG image
     res_full = c.get("/api/datasets/image?dataset=test_ds&filename=sample.png")
     assert res_full.status_code == 200
     assert res_full.headers["content-type"] == "image/png"
+
+    # Get specific full JPEG image - must return image/jpeg Content-Type header
+    res_full_jpg = c.get("/api/datasets/image?dataset=test_ds&filename=photo.jpg")
+    assert res_full_jpg.status_code == 200
+    assert res_full_jpg.headers["content-type"] == "image/jpeg"
 
 
 def test_decode_config_with_missing_datasets_dir():
