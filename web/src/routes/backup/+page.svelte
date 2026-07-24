@@ -21,7 +21,9 @@
   </div>
 {:else}
   <div class="route-page">
-    <h1 class="page-title">{tab.label || 'Backup'}</h1>
+    <div class="page-header">
+      <h1 class="page-title">{tab.label || 'Backup'}</h1>
+    </div>
     <SchemaForm
       {tab}
       values={ctx.workspace.draft}
@@ -37,10 +39,18 @@
     padding: 1.5rem;
   }
 
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
   .page-title {
     font-size: 1.5rem;
     font-weight: 700;
-    margin-bottom: 1.5rem;
+    margin: 0;
     color: var(--color-text-title, var(--accent, #dd773b));
   }
 

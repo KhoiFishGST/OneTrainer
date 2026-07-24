@@ -45,7 +45,7 @@
 </script>
 
 <div class="live-dashboard" data-testid="live-dashboard">
-  <div class="dashboard-header">
+  <div class="page-header">
     <h1 class="page-title">Live Training Dashboard</h1>
     <span class="status-badge status-{(status.state || 'IDLE').toLowerCase()}">
       {status.state || 'IDLE'}
@@ -133,15 +133,15 @@
     flex-direction: column;
     gap: 1.5rem;
     max-width: 1600px;
-    margin: 0 auto;
     width: 100%;
   }
 
-  .dashboard-header {
+  .page-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
+    margin-bottom: 0.5rem;
   }
 
   .page-title {

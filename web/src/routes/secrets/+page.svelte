@@ -83,7 +83,9 @@
 </script>
 
 <div class="secrets-page">
-  <h1 class="page-title">Secrets & Security Settings</h1>
+  <div class="page-header">
+    <h1 class="page-title">Secrets & Security Settings</h1>
+  </div>
 
   {#if isHttpInsecure}
     <div class="security-warning-banner" role="alert">
@@ -218,10 +220,18 @@
     max-width: 900px;
   }
 
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
   .page-title {
     font-size: 1.5rem;
     font-weight: 700;
-    margin-bottom: 1.5rem;
+    margin: 0;
     color: var(--color-text-title, var(--accent, #dd773b));
   }
 

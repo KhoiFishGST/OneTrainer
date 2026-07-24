@@ -41,7 +41,7 @@
   </div>
 {:else}
   <div class="route-page">
-    <div class="header-row">
+    <div class="page-header">
       <h1 class="page-title">{tab.label || 'Training'}</h1>
       <button
         type="button"
@@ -74,7 +74,7 @@
     padding: 1.5rem;
   }
 
-  .header-row {
+  .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
