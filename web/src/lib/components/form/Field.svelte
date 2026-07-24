@@ -86,9 +86,9 @@
   .field-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     width: 100%;
-    gap: 1rem;
+    gap: 0.75rem;
     min-height: 36px;
   }
 
@@ -96,14 +96,14 @@
     display: flex;
     align-items: center;
     gap: 0.375rem;
-    flex: 1 1 auto;
-    min-width: 0;
+    flex: 0 1 260px;
+    min-width: 140px;
   }
 
   .field-control-side {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: flex-start;
     flex: 0 0 340px;
     width: 340px;
     min-width: 340px;
