@@ -3,7 +3,7 @@ from modules.util.config.TrainConfig import TrainConfig
 from modules.webui.schema import SchemaRegistry
 
 DEPRECATED_OR_INTERNAL = {
-    "version", "config_version", "saved_version", "optimizer_defaults"
+    "version", "config_version", "saved_version", "optimizer_defaults", "concept_file_name", "concepts"
 }
 
 def test_all_train_config_fields_covered():

@@ -35,26 +35,5 @@ def build_data_tab(model_type: ModelType, training_method: TrainingMethod) -> Ta
                     ),
                 ),
             ),
-            Group(
-                "concepts_group",
-                "Concepts",
-                (
-                    Field(
-                        "concept-filename",
-                        ("concept_file_name",),
-                        "Concept File Name",
-                        "File path for concepts dataset configuration JSON",
-                        "file",
-                        path_mode="file",
-                    ),
-                    Field(
-                        "concepts",
-                        ("concepts",),
-                        "Concepts List",
-                        "List of training concept dataset configurations",
-                        "text",
-                    ),
-                ),
-            ),
         ),
     )
