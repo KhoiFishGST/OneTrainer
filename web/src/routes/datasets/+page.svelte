@@ -187,7 +187,7 @@
   .page-title {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--text, #f8fafc);
+    color: var(--color-text-title, var(--accent, #3b82f6));
     margin: 0;
   }
 
