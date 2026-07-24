@@ -9,7 +9,7 @@ it("persists pinned expansion and enables Phase B configuration routes", async (
   expect(screen.getByText("General")).toBeVisible();
   
   // Enabled tabs
-  for (const name of ["Model", "Concepts", "Training", "Sampling", "LoRA/Embedding", "Live"]) {
+  for (const name of ["Model", "Concepts", "Training", "Sampling", "LoRA/Embedding", "Live", "Datasets"]) {
     const link = screen.getByRole("link", { name });
     expect(link).not.toHaveAttribute("aria-disabled");
   }

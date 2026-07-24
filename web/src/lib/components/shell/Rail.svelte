@@ -3,6 +3,7 @@
   import {
     SlidersHorizontal,
     Database,
+    FolderKanban,
     Archive,
     Terminal,
     Box,
@@ -45,6 +46,7 @@
     { name: 'General', path: '/general', icon: SlidersHorizontal, disabled: false },
     { name: 'Model', path: '/model', icon: Box, disabled: false },
     { name: 'Data', path: '/data', icon: Database, disabled: false },
+    { name: 'Datasets', path: '/datasets', icon: FolderKanban, disabled: false },
     { name: 'Concepts', path: '/concepts', icon: Layers, disabled: false },
     { name: 'Training', path: '/training', icon: Activity, disabled: false },
     { name: 'Sampling', path: '/sampling', icon: Sparkles, disabled: false },
