@@ -155,16 +155,11 @@
       </div>
     {:else if tab.id === 'general'}
       <div class="general-column col-1">
-        {#each tab.groups.filter((g) => ['workspace', 'debug'].includes(g.id)) as group (group.id)}
+        {#each tab.groups.filter((g) => ['workspace', 'debug', 'tensorboard', 'validation'].includes(g.id)) as group (group.id)}
           {@render renderGroup(group)}
         {/each}
       </div>
       <div class="general-column col-2">
-        {#each tab.groups.filter((g) => ['tensorboard', 'validation'].includes(g.id)) as group (group.id)}
-          {@render renderGroup(group)}
-        {/each}
-      </div>
-      <div class="general-column col-3">
         {#each tab.groups.filter((g) => ['execution_hardware', 'multi_gpu'].includes(g.id)) as group (group.id)}
           {@render renderGroup(group)}
         {/each}
@@ -184,15 +179,15 @@
     gap: 1.5rem;
   }
 
-  .schema-form.is-model-tab {
+  .schema-form.is-model-tab,
+  .schema-form.is-general-tab {
     display: grid;
-    grid-template-columns: calc(65% - 0.75rem) calc(35% - 0.75rem);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1.5rem;
     align-items: start;
   }
 
-  .schema-form.is-training-tab,
-  .schema-form.is-general-tab {
+  .schema-form.is-training-tab {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1.5rem;
@@ -207,7 +202,13 @@
   }
 
   @media (max-width: 1280px) {
-    .schema-form.is-training-tab,
+    .schema-form.is-training-tab {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    .schema-form.is-model-tab,
     .schema-form.is-general-tab {
       grid-template-columns: 1fr;
     }
