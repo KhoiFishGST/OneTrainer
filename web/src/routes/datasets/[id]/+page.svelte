@@ -104,7 +104,7 @@
       bind:this={fileInput}
       type="file"
       multiple
-      accept="image/*,.txt,.caption"
+      accept="image/*,.jpg,.jpeg,.png,.webp,.bmp,.gif,.tiff,.txt,.caption"
       class="hidden-file-input"
       onchange={(e) => {
         const target = e.target as HTMLInputElement;
