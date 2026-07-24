@@ -1,6 +1,20 @@
-import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
+import { createQuery, createMutation, useQueryClient, QueryClient } from '@tanstack/svelte-query';
 import { api } from './client';
 import type { Concept, ConfigUpdateRequest, PresetLoadRequest, PresetSaveRequest } from './types';
+
+const defaultQueryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: false },
+  },
+});
+
+function getSafeQueryClient(): QueryClient {
+  try {
+    return useQueryClient();
+  } catch {
+    return defaultQueryClient;
+  }
+}
 
 export const queryKeys = {
   health: () => ['health'] as const,
@@ -12,6 +26,8 @@ export const queryKeys = {
   directories: (path?: string) => ['directories', path ?? ''] as const,
   backlog: () => ['backlog'] as const,
   concepts: () => ['concepts'] as const,
+  datasets: () => ['datasets'] as const,
+  datasetFiles: (name: string) => ['datasets', name, 'files'] as const,
   trainingStatus: () => ['training', 'status'] as const,
   trainingMetrics: () => ['training', 'metrics'] as const,
   trainingSamples: () => ['training', 'samples'] as const,
@@ -199,5 +215,91 @@ export function createRequestBackupMutation() {
   return createMutation({
     mutationFn: () => api.requestBackup(),
   });
+}
+
+export function createDatasetsQuery() {
+  const client = getSafeQueryClient();
+  return createQuery(
+    {
+      queryKey: queryKeys.datasets(),
+      queryFn: () => api.getDatasets(),
+    },
+    client
+  );
+}
+
+export function createDatasetFilesQuery(name: string) {
+  const client = getSafeQueryClient();
+  return createQuery(
+    {
+      queryKey: queryKeys.datasetFiles(name),
+      queryFn: () => api.getDatasetFiles(name),
+      enabled: Boolean(name),
+    },
+    client
+  );
+}
+
+export function createCreateDatasetMutation() {
+  const client = getSafeQueryClient();
+  return createMutation(
+    {
+      mutationFn: (name: string) => api.createDataset(name),
+      onSuccess: () => {
+        client.invalidateQueries({ queryKey: queryKeys.datasets() });
+      },
+    },
+    client
+  );
+}
+
+export function createDeleteDatasetMutation() {
+  const client = getSafeQueryClient();
+  return createMutation(
+    {
+      mutationFn: (name: string) => api.deleteDataset(name),
+      onSuccess: () => {
+        client.invalidateQueries({ queryKey: queryKeys.datasets() });
+      },
+    },
+    client
+  );
+}
+
+export function createUploadDatasetFilesMutation() {
+  const client = getSafeQueryClient();
+  return createMutation(
+    {
+      mutationFn: ({ name, formData }: { name: string; formData: FormData }) =>
+        api.uploadDatasetFiles(name, formData),
+      onSuccess: (_, variables) => {
+        client.invalidateQueries({ queryKey: queryKeys.datasets() });
+        client.invalidateQueries({ queryKey: queryKeys.datasetFiles(variables.name) });
+      },
+    },
+    client
+  );
+}
+
+export function createUpdateCaptionMutation() {
+  const client = getSafeQueryClient();
+  return createMutation(
+    {
+      mutationFn: ({
+        name,
+        caption_name,
+        content,
+      }: {
+        name: string;
+        caption_name: string;
+        content: string;
+      }) => api.updateCaption(name, caption_name, content),
+      onSuccess: (_, variables) => {
+        client.invalidateQueries({ queryKey: queryKeys.datasets() });
+        client.invalidateQueries({ queryKey: queryKeys.datasetFiles(variables.name) });
+      },
+    },
+    client
+  );
 }
 

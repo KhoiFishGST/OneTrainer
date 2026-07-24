@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { Check, FolderKanban, AlertCircle } from 'lucide-svelte';
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
+  import { createDatasetsQuery } from '$lib/api/queries';
 
   interface DatasetItem {
     name: string;
@@ -23,34 +23,18 @@
     onClose: () => void;
   } = $props();
 
-  let datasets = $state<DatasetItem[]>([]);
-  let loading = $state(true);
+  const datasetsQuery = createDatasetsQuery();
+
+  let datasets = $derived(datasetsQuery.data?.datasets || []);
+  let loading = $derived(datasetsQuery.isLoading);
   let selectedDataset = $state<DatasetItem | null>(null);
 
-  async function fetchDatasets() {
-    loading = true;
-    try {
-      const res = await fetch('/api/datasets');
-      if (res.ok) {
-        const data = await res.json();
-        datasets = data.datasets || [];
-        if (currentPath && datasets.length > 0) {
-          const matched = datasets.find(
-            (d) => d.path === currentPath || d.name === currentPath
-          );
-          if (matched) selectedDataset = matched;
-        }
-      }
-    } catch (err) {
-      console.error('Failed to fetch datasets for picker', err);
-    } finally {
-      loading = false;
-    }
-  }
-
   $effect(() => {
-    if (open) {
-      fetchDatasets();
+    if (currentPath && datasets.length > 0 && !selectedDataset) {
+      const matched = datasets.find(
+        (d) => d.path === currentPath || d.name === currentPath
+      );
+      if (matched) selectedDataset = matched;
     }
   });
 

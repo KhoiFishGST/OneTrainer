@@ -162,6 +162,40 @@ export function createApi(base = '') {
     getTrainingSamples: () => request<TrainingSample[]>(`${base}/api/training/samples`),
 
     getGpuStats: () => request<GpuStat>(`${base}/api/training/gpu`),
+
+    getDatasets: () => request<{ base_dir: string; datasets: any[] }>(`${base}/api/datasets`),
+
+    createDataset: (name: string) =>
+      request<{ status: string; name: string; path: string }>(`${base}/api/datasets`, {
+        method: 'POST',
+        body: JSON.stringify({ name }),
+      }),
+
+    deleteDataset: (name: string) =>
+      request<{ status: string }>(`${base}/api/datasets/${encodeURIComponent(name)}`, {
+        method: 'DELETE',
+      }),
+
+    getDatasetFiles: (name: string) =>
+      request<{ name: string; path: string; items: any[] }>(
+        `${base}/api/datasets/${encodeURIComponent(name)}/files`
+      ),
+
+    uploadDatasetFiles: (name: string, formData: FormData) =>
+      fetch(`${base}/api/datasets/${encodeURIComponent(name)}/upload`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin',
+      }).then((res) => {
+        if (!res.ok) throw new ApiError(res.status, 'Upload failed');
+        return res.json();
+      }),
+
+    updateCaption: (name: string, caption_name: string, content: string) =>
+      request<{ status: string }>(`${base}/api/datasets/${encodeURIComponent(name)}/caption`, {
+        method: 'PUT',
+        body: JSON.stringify({ caption_name, content }),
+      }),
   };
 }
 

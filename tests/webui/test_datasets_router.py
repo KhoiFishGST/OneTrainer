@@ -158,10 +158,19 @@ def test_get_dataset_image_and_thumbnail(client):
     assert res_full.status_code == 200
     assert res_full.headers["content-type"] == "image/png"
 
-    # Get specific full JPEG image - must return image/jpeg Content-Type header
+    # Get specific full JPEG image - must return image/jpeg Content-Type header and Cache-Control + ETag
     res_full_jpg = c.get("/api/datasets/image?dataset=test_ds&filename=photo.jpg")
     assert res_full_jpg.status_code == 200
     assert res_full_jpg.headers["content-type"] == "image/jpeg"
+    assert "Cache-Control" in res_full_jpg.headers
+    assert res_full_jpg.headers["Cache-Control"] == "no-cache, must-revalidate"
+    assert "ETag" in res_full_jpg.headers
+    etag = res_full_jpg.headers["ETag"]
+
+    # Test conditional 304 Not Modified request using If-None-Match
+    res_304 = c.get("/api/datasets/image?dataset=test_ds&filename=photo.jpg", headers={"If-None-Match": etag})
+    assert res_304.status_code == 304
+    assert len(res_304.content) == 0
 
 
 def test_decode_config_with_missing_datasets_dir():

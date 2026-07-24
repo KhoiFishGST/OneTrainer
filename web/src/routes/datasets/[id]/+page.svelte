@@ -1,35 +1,24 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { ArrowLeft, Upload, Image as ImageIcon, FileText, Trash2, X } from 'lucide-svelte';
+  import {
+    createDatasetFilesQuery,
+    createUploadDatasetFilesMutation,
+    createUpdateCaptionMutation,
+  } from '$lib/api/queries';
 
   let { data } = $props<{ data: { id: string } }>();
   let datasetName = $derived(data.id);
-  let datasetPath = $state('');
-  let items = $state<any[]>([]);
-  let loading = $state(true);
+
+  const filesQuery = createDatasetFilesQuery(data.id);
+  const uploadMutation = createUploadDatasetFilesMutation();
+  const captionMutation = createUpdateCaptionMutation();
+
+  let items = $derived(filesQuery.data?.items || []);
+  let datasetPath = $derived(filesQuery.data?.path || '');
+  let loading = $derived(filesQuery.isLoading);
   let fileInput = $state<HTMLInputElement | null>(null);
   let isDragging = $state(false);
   let activeLightboxImage = $state<string | null>(null);
-
-  async function fetchDatasetFiles() {
-    loading = true;
-    try {
-      const res = await fetch(`/api/datasets/${encodeURIComponent(datasetName)}/files`);
-      if (res.ok) {
-        const json = await res.json();
-        items = json.items || [];
-        datasetPath = json.path || '';
-      }
-    } catch (err) {
-      console.error('Failed to load dataset files', err);
-    } finally {
-      loading = false;
-    }
-  }
-
-  onMount(() => {
-    fetchDatasetFiles();
-  });
 
   async function handleFileUpload(files: FileList | File[]) {
     if (!files || files.length === 0) return;
@@ -38,13 +27,7 @@
       formData.append('files', files[i]);
     }
     try {
-      const res = await fetch(`/api/datasets/${encodeURIComponent(datasetName)}/upload`, {
-        method: 'POST',
-        body: formData,
-      });
-      if (res.ok) {
-        await fetchDatasetFiles();
-      }
+      await $uploadMutation.mutateAsync({ name: datasetName, formData });
     } catch (err) {
       console.error('Upload failed', err);
     }
@@ -53,10 +36,10 @@
   async function handleCaptionSave(captionName: string, content: string) {
     if (!captionName) return;
     try {
-      await fetch(`/api/datasets/${encodeURIComponent(datasetName)}/caption`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: captionName, content }),
+      await $captionMutation.mutateAsync({
+        name: datasetName,
+        caption_name: captionName,
+        content,
       });
     } catch (err) {
       console.error('Failed to save caption', err);

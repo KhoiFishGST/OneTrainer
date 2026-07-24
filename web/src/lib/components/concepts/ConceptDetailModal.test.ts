@@ -2,6 +2,7 @@ import '@testing-library/jest-dom/vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ConceptDetailModal from './ConceptDetailModal.svelte';
+import * as queries from '$lib/api/queries';
 
 describe('ConceptDetailModal Component', () => {
   beforeEach(() => {
@@ -23,9 +24,9 @@ describe('ConceptDetailModal Component', () => {
   });
 
   it('opens dataset picker modal when Select Dataset button is clicked', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
+    vi.spyOn(queries, 'createDatasetsQuery').mockReturnValue({
+      data: {
+        base_dir: '/workspace/datasets',
         datasets: [
           {
             name: 'Dataset One',
@@ -35,8 +36,9 @@ describe('ConceptDetailModal Component', () => {
             thumbnail_url: '/api/datasets/image?dataset=Dataset%20One&thumb=true',
           },
         ],
-      }),
-    } as Response);
+      },
+      isLoading: false,
+    } as any);
 
     render(ConceptDetailModal, {
       props: {

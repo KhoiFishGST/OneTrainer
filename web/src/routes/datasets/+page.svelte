@@ -1,9 +1,13 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { Plus, Trash2 } from 'lucide-svelte';
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
   import PathInput from '$lib/components/form/PathInput.svelte';
   import { getRouteContext } from '$lib/config/context';
+  import {
+    createDatasetsQuery,
+    createCreateDatasetMutation,
+    createDeleteDatasetMutation,
+  } from '$lib/api/queries';
 
   interface DatasetItem {
     name: string;
@@ -20,43 +24,25 @@
     // context not available in isolated test
   }
 
-  let datasets = $state<DatasetItem[]>([]);
-  let baseDir = $state('');
-  let loading = $state(true);
+  const datasetsQuery = createDatasetsQuery();
+  const createMutation = createCreateDatasetMutation();
+  const deleteMutation = createDeleteDatasetMutation();
+
+  let datasets = $derived(datasetsQuery.data?.datasets || []);
+  let baseDir = $derived(datasetsQuery.data?.base_dir || 'workspace/datasets');
+  let loading = $derived(datasetsQuery.isLoading);
   let showCreateModal = $state(false);
   let newDatasetName = $state('');
   let createError = $state<string | null>(null);
 
-  async function fetchDatasets() {
-    loading = true;
-    try {
-      const res = await fetch('/api/datasets');
-      if (res.ok) {
-        const data = await res.json();
-        datasets = data.datasets || [];
-        baseDir = data.base_dir || 'workspace/datasets';
-      }
-    } catch (err) {
-      console.error('Failed to load datasets', err);
-    } finally {
-      loading = false;
-    }
-  }
-
   function handleBaseDirChange(newPath: string) {
-    baseDir = newPath;
     if (ctx?.workspace) {
       ctx.workspace.setRaw('datasets_dir', newPath);
     }
-    fetchDatasets();
   }
 
-  onMount(() => {
-    fetchDatasets();
-  });
-
   function openCreateModal() {
-    const existingNames = new Set(datasets.map((d) => d.name));
+    const existingNames = new Set(datasets.map((d: DatasetItem) => d.name));
     let idx = 1;
     while (existingNames.has(`Dataset ${idx}`)) {
       idx++;
@@ -69,28 +55,19 @@
   async function handleCreateDataset() {
     createError = null;
     const nameToSubmit = newDatasetName.trim();
-    
+
     // OS safe name regex: alphanumeric, spaces, hyphens, underscores
     const safeRegex = /^[a-zA-Z0-9 _-]+$/;
     if (nameToSubmit && !safeRegex.test(nameToSubmit)) {
-      createError = 'Invalid dataset name. Use alphanumeric characters, spaces, dashes, and underscores only.';
+      createError =
+        'Invalid dataset name. Use alphanumeric characters, spaces, dashes, and underscores only.';
       return;
     }
 
     try {
-      const res = await fetch('/api/datasets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: nameToSubmit }),
-      });
-      if (res.ok) {
-        showCreateModal = false;
-        newDatasetName = '';
-        await fetchDatasets();
-      } else {
-        const err = await res.json();
-        createError = err.detail || 'Failed to create dataset';
-      }
+      await $createMutation.mutateAsync(nameToSubmit);
+      showCreateModal = false;
+      newDatasetName = '';
     } catch (err: any) {
       createError = err.message || 'Failed to create dataset';
     }
@@ -101,8 +78,7 @@
     e.preventDefault();
     if (!confirm(`Are you sure you want to delete dataset "${name}"?`)) return;
     try {
-      await fetch(`/api/datasets/${encodeURIComponent(name)}`, { method: 'DELETE' });
-      await fetchDatasets();
+      await $deleteMutation.mutateAsync(name);
     } catch (err) {
       console.error('Failed to delete dataset', err);
     }

@@ -196,6 +196,18 @@ async def get_dataset_image(dataset: str, filename: str = "", thumb: bool = Fals
         img.save(buf, format="PNG")
         return Response(content=buf.getvalue(), media_type="image/png")
 
+    stat = img_path.stat()
+    etag = f'"{int(stat.st_mtime)}-{stat.st_size}-{"thumb" if thumb else "full"}"'
+    headers = {
+        "Cache-Control": "no-cache, must-revalidate",
+        "ETag": etag,
+    }
+
+    if request:
+        if_none_match = request.headers.get("if-none-match")
+        if if_none_match and if_none_match == etag:
+            return Response(status_code=304, headers=headers)
+
     if thumb:
         try:
             image = load_image(str(img_path), convert_mode="RGBA")
@@ -204,7 +216,7 @@ async def get_dataset_image(dataset: str, filename: str = "", thumb: bool = Fals
             image = image.resize((150, 150), Image.Resampling.BILINEAR)
             buf = io.BytesIO()
             image.save(buf, format="PNG")
-            return Response(content=buf.getvalue(), media_type="image/png")
+            return Response(content=buf.getvalue(), media_type="image/png", headers=headers)
         except Exception:
             pass
 
@@ -212,4 +224,4 @@ async def get_dataset_image(dataset: str, filename: str = "", thumb: bool = Fals
     if not mime_type or not mime_type.startswith("image/"):
         mime_type = "image/png"
 
-    return Response(content=img_path.read_bytes(), media_type=mime_type)
+    return Response(content=img_path.read_bytes(), media_type=mime_type, headers=headers)

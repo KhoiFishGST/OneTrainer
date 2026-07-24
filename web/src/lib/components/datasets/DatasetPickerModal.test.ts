@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import DatasetPickerModal from './DatasetPickerModal.svelte';
+import * as queries from '$lib/api/queries';
 
 describe('DatasetPickerModal Component', () => {
   beforeEach(() => {
@@ -25,10 +26,10 @@ describe('DatasetPickerModal Component', () => {
       },
     ];
 
-    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ datasets: mockDatasets }),
-    } as Response);
+    vi.spyOn(queries, 'createDatasetsQuery').mockReturnValue({
+      data: { base_dir: '/workspace/datasets', datasets: mockDatasets },
+      isLoading: false,
+    } as any);
 
     const onSelect = vi.fn();
     const onClose = vi.fn();
@@ -66,10 +67,10 @@ describe('DatasetPickerModal Component', () => {
       },
     ];
 
-    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ datasets: mockDatasets }),
-    } as Response);
+    vi.spyOn(queries, 'createDatasetsQuery').mockReturnValue({
+      data: { base_dir: '/workspace/datasets', datasets: mockDatasets },
+      isLoading: false,
+    } as any);
 
     const onSelect = vi.fn();
     const onClose = vi.fn();
@@ -91,10 +92,10 @@ describe('DatasetPickerModal Component', () => {
   });
 
   it('triggers onClose when Cancel button is clicked', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ datasets: [] }),
-    } as Response);
+    vi.spyOn(queries, 'createDatasetsQuery').mockReturnValue({
+      data: { base_dir: '/workspace/datasets', datasets: [] },
+      isLoading: false,
+    } as any);
 
     const onSelect = vi.fn();
     const onClose = vi.fn();

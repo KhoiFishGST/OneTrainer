@@ -1,11 +1,11 @@
 import { render, screen } from '@testing-library/svelte';
 import { expect, test, vi } from 'vitest';
 import DatasetDetailPage from './+page.svelte';
+import * as queries from '$lib/api/queries';
 
 test('renders dataset detail header and upload button', async () => {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-    ok: true,
-    json: async () => ({
+  vi.spyOn(queries, 'createDatasetFilesQuery').mockReturnValue({
+    data: {
       name: 'TestDataset',
       path: '/workspace/datasets/TestDataset',
       items: [
@@ -16,8 +16,9 @@ test('renders dataset detail header and upload button', async () => {
           caption_content: 'a beautiful cat',
         },
       ],
-    }),
-  }));
+    },
+    isLoading: false,
+  } as any);
 
   render(DatasetDetailPage, { data: { id: 'TestDataset' } });
   expect(screen.getByText('Back to Datasets')).toBeInTheDocument();

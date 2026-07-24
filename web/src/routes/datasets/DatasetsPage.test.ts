@@ -1,11 +1,11 @@
 import { render, screen } from '@testing-library/svelte';
 import { expect, test, vi } from 'vitest';
 import DatasetsPage from './+page.svelte';
+import * as queries from '$lib/api/queries';
 
 test('renders Datasets title and add dataset card', async () => {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-    ok: true,
-    json: async () => ({
+  vi.spyOn(queries, 'createDatasetsQuery').mockReturnValue({
+    data: {
       datasets: [
         {
           name: 'Dataset 1',
@@ -16,12 +16,14 @@ test('renders Datasets title and add dataset card', async () => {
         },
       ],
       base_dir: 'workspace/datasets',
-    }),
-  }));
+    },
+    isLoading: false,
+  } as any);
 
   render(DatasetsPage);
   expect(screen.getByText('Datasets')).toBeInTheDocument();
   expect(screen.getByText('Add Dataset')).toBeInTheDocument();
   expect(await screen.findByText('Dataset 1')).toBeInTheDocument();
   expect(await screen.findByText('5 images')).toBeInTheDocument();
+  expect(await screen.findByText('5 captions')).toBeInTheDocument();
 });
