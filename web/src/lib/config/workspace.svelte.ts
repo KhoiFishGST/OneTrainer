@@ -152,6 +152,10 @@ export class ConfigWorkspace {
     }
   }
 
+  updateSchema(schema: ConfigSchema): void {
+    this.schema = schema;
+  }
+
   acceptRemote(envelope: ConfigResponse): void {
     if (envelope.revision === this.baseline.revision) {
       return;
@@ -160,6 +164,11 @@ export class ConfigWorkspace {
     if (this.autosaveTimer !== null) {
       clearTimeout(this.autosaveTimer);
       this.autosaveTimer = null;
+    }
+
+    if (this.activeSavePromise !== null || this.state === 'saving') {
+      this.baseline = envelope;
+      return;
     }
 
     if (!this.dirty) {

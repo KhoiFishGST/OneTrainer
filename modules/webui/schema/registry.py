@@ -21,7 +21,6 @@ from modules.webui.schema.builders import TAB_BUILDERS
 
 PHASE_A_KEYS = {
     "workspace_dir",
-    "datasets_dir",
     "cache_dir",
     "continue_last_backup",
     "only_cache",

@@ -29,7 +29,19 @@ class Field:
         from modules.webui.schema.codec import getattr_nested, issubclass_safe, serialize_val
 
         first_key = self.keys[0]
-        nullable = any(config_template.nullables.get(k, False) for k in self.keys)
+
+        def _is_key_nullable(k: str) -> bool:
+            parts = k.split(".")
+            if len(parts) == 1:
+                return config_template.nullables.get(k, True)
+            elif len(parts) == 2 and parts[0] in config_template.types:
+                sub_cls = config_template.types[parts[0]]
+                if hasattr(sub_cls, "default_values"):
+                    sub_defaults = sub_cls.default_values()
+                    return sub_defaults.nullables.get(parts[1], True)
+            return True
+
+        nullable = any(_is_key_nullable(k) for k in self.keys)
 
         if len(self.keys) == 1:
             raw_val = getattr_nested(config_template, first_key)

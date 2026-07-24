@@ -4,7 +4,6 @@ import pytest
 
 EXPECTED_KEYS = {
     "workspace_dir",
-    "datasets_dir",
     "cache_dir",
     "continue_last_backup",
     "only_cache",

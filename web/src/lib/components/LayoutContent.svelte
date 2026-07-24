@@ -48,6 +48,12 @@
   const schemaQuery = $derived(createSchemaQuery(currentModelType, currentTrainingMethod));
 
   $effect(() => {
+    if ($schemaQuery.data && workspace) {
+      workspace.updateSchema($schemaQuery.data);
+    }
+  });
+
+  $effect(() => {
     if ($configQuery.data) {
       if (!workspace) {
         if ($schemaQuery.data) {

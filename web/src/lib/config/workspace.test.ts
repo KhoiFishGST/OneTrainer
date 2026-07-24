@@ -234,6 +234,27 @@ describe("ConfigWorkspace", () => {
     expect(workspace.errors).toEqual([{ path: "tensorboard_port", message: "Invalid value on server" }]);
   });
 
+  it("updates baseline without conflict when acceptRemote fires during active save", async () => {
+    let resolveSave: (val: any) => void = () => {};
+    const savePromise = new Promise<any>((resolve) => {
+      resolveSave = resolve;
+    });
+    const put = vi.fn().mockImplementation(() => savePromise);
+    const workspace = new ConfigWorkspace({ config: { tensorboard_port: 6006 }, revision: "i:0" }, schema as any, put);
+
+    workspace.setRaw("tensorboard_port", "7000");
+    const flushPromise = workspace.flush();
+    expect(workspace.state).toBe("saving");
+
+    workspace.acceptRemote({ config: { tensorboard_port: 7000 }, revision: "i:1" });
+    expect(workspace.state).toBe("saving");
+    expect(workspace.revision).toBe("i:1");
+
+    resolveSave({ config: { tensorboard_port: 7000 }, revision: "i:1" });
+    await flushPromise;
+    expect(workspace.state).toBe("saved");
+  });
+
   it("reloadServer requires confirmation flag to discard local edits", () => {
     const put = vi.fn();
     const workspace = new ConfigWorkspace({ config: { tensorboard_port: 6006 }, revision: "i:0" }, schema as any, put);

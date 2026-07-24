@@ -13,14 +13,6 @@ def build_data_tab(model_type: ModelType, training_method: TrainingMethod) -> Ta
                 "Data & Caching",
                 (
                     Field(
-                        "datasets-dir",
-                        ("datasets_dir",),
-                        "Datasets Directory",
-                        "Base directory path for training datasets.",
-                        "directory",
-                        path_mode="directory",
-                    ),
-                    Field(
                         "aspect-ratio",
                         ("aspect_ratio_bucketing",),
                         "Aspect Ratio Bucketing",

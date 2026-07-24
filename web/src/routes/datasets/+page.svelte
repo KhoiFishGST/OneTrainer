@@ -4,6 +4,8 @@
   import PathInput from '$lib/components/form/PathInput.svelte';
   import { getRouteContext } from '$lib/config/context';
   import {
+    queryKeys,
+    getSafeQueryClient,
     createDatasetsQuery,
     createCreateDatasetMutation,
     createDeleteDatasetMutation,
@@ -24,21 +26,25 @@
     // context not available in isolated test
   }
 
+  const queryClient = getSafeQueryClient();
   const datasetsQuery = createDatasetsQuery();
   const createMutation = createCreateDatasetMutation();
   const deleteMutation = createDeleteDatasetMutation();
 
   let datasets = $derived(datasetsQuery.data?.datasets || []);
-  let baseDir = $derived(datasetsQuery.data?.base_dir || 'workspace/datasets');
-  let resolvedBaseDir = $derived(datasetsQuery.data?.resolved_base_dir || '');
+  let baseDir = $derived(
+    ctx?.workspace?.draft?.datasets_dir ?? datasetsQuery.data?.base_dir ?? 'workspace/datasets'
+  );
   let loading = $derived(datasetsQuery.isLoading);
   let showCreateModal = $state(false);
   let newDatasetName = $state('');
   let createError = $state<string | null>(null);
 
-  function handleBaseDirChange(newPath: string) {
+  async function handleBaseDirChange(newPath: string) {
     if (ctx?.workspace) {
       ctx.workspace.setRaw('datasets_dir', newPath);
+      await ctx.workspace.flush();
+      queryClient.invalidateQueries({ queryKey: queryKeys.datasets() });
     }
   }
 
@@ -104,11 +110,6 @@
         onInput={handleBaseDirChange}
         onChange={handleBaseDirChange}
       />
-      {#if resolvedBaseDir && resolvedBaseDir !== baseDir}
-        <span class="resolved-path-hint" title="Resolved server filesystem path">
-          Server path: {resolvedBaseDir}
-        </span>
-      {/if}
     </div>
   </div>
 

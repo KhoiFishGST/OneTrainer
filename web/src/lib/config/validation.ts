@@ -83,7 +83,7 @@ export function validateConfig(draft: Record<string, any>, schema: ConfigSchema)
 
       // Check null value
       if (val === null) {
-        if (field.nullable === false) {
+        if (field.nullable === false && field.required) {
           errors.push({ path: key, message: 'Value cannot be null' });
         } else {
           normalized = setPath(normalized, key, null);

@@ -8,7 +8,7 @@ const defaultQueryClient = new QueryClient({
   },
 });
 
-function getSafeQueryClient(): QueryClient {
+export function getSafeQueryClient(): QueryClient {
   try {
     return useQueryClient();
   } catch {
@@ -90,31 +90,23 @@ export function createBacklogQuery() {
 }
 
 export function createUpdateConfigMutation() {
-  const client = getSafeQueryClient();
-  return createMutation(
-    {
-      mutationFn: (data: ConfigUpdateRequest) => api.putConfig(data),
-      onSuccess: (data) => {
-        client.setQueryData(queryKeys.config(), data);
-        client.invalidateQueries({ queryKey: queryKeys.datasets() });
-      },
+  const queryClient = useQueryClient();
+  return createMutation({
+    mutationFn: (data: ConfigUpdateRequest) => api.putConfig(data),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKeys.config(), data);
     },
-    client
-  );
+  });
 }
 
 export function createLoadPresetMutation() {
-  const client = getSafeQueryClient();
-  return createMutation(
-    {
-      mutationFn: (data: PresetLoadRequest) => api.loadPreset(data),
-      onSuccess: (data) => {
-        client.setQueryData(queryKeys.config(), data);
-        client.invalidateQueries({ queryKey: queryKeys.datasets() });
-      },
+  const queryClient = useQueryClient();
+  return createMutation({
+    mutationFn: (data: PresetLoadRequest) => api.loadPreset(data),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKeys.config(), data);
     },
-    client
-  );
+  });
 }
 
 export function createSavePresetMutation() {
