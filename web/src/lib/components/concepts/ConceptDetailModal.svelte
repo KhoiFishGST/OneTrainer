@@ -382,7 +382,7 @@
   }
 
   .nav-tab.active {
-    color: var(--color-text-title, var(--accent, #dd773b));
+    color: var(--color-text-title, var(--accent, #3b82f6));
     background-color: var(--panel-raised, #1d242c);
     font-weight: 600;
   }
@@ -491,7 +491,7 @@
   .hero-info h4 {
     margin: 0;
     font-size: 1.125rem;
-    color: var(--color-text-title, var(--accent, #dd773b));
+    color: var(--color-text-title, var(--accent, #3b82f6));
   }
 
   .path-sub {
@@ -506,9 +506,9 @@
     border-radius: 4px;
     font-size: 0.75rem;
     font-weight: 600;
-    background: rgba(221, 119, 59, 0.15);
-    color: var(--color-text-title, var(--accent, #dd773b));
-    border: 1px solid rgba(221, 119, 59, 0.3);
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--color-text-title, var(--accent, #3b82f6));
+    border: 1px solid rgba(59, 130, 246, 0.3);
   }
 
   .modal-footer {
@@ -533,7 +533,7 @@
   }
 
   .btn-primary {
-    background-color: var(--color-primary, var(--accent, #dd773b));
+    background-color: var(--color-primary, var(--accent, #3b82f6));
     color: white;
   }
 

@@ -145,7 +145,7 @@
   }
 
   .subnav-btn.active {
-    color: var(--color-text-title, var(--accent, #dd773b));
+    color: var(--color-text-title, var(--accent, #3b82f6));
     background-color: var(--panel-raised, #1d242c);
     font-weight: 600;
   }
@@ -154,7 +154,7 @@
     font-size: 1.5rem;
     font-weight: 700;
     margin: 0;
-    color: var(--color-text-title, var(--accent, #dd773b));
+    color: var(--color-text-title, var(--accent, #3b82f6));
   }
 
   .opt-modal-btn {

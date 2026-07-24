@@ -149,7 +149,7 @@
   }
 
   .field-label-side.has-tooltip:hover .field-label {
-    color: var(--color-text-title, var(--accent, #dd773b));
+    color: var(--color-text-title, var(--accent, #3b82f6));
   }
 
   .field-control-side {

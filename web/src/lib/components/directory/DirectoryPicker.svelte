@@ -437,7 +437,7 @@
 
   .path-input:focus {
     outline: none;
-    border-color: var(--accent, #dd773b);
+    border-color: var(--accent, #3b82f6);
   }
 
   .nav-btn {
@@ -477,7 +477,7 @@
     border: none;
     padding: 2px 6px;
     border-radius: 4px;
-    color: var(--accent, #dd773b);
+    color: var(--accent, #3b82f6);
     font-size: 0.875rem;
     cursor: pointer;
     font-weight: 400;
@@ -536,7 +536,7 @@
   .warning-banner {
     padding: 8px 16px;
     background: rgba(242, 161, 111, 0.15);
-    color: var(--focus, #f2a16f);
+    color: var(--focus, #60a5fa);
     border-bottom: 1px solid var(--line, #2d3741);
     font-size: 0.875rem;
   }
@@ -579,7 +579,7 @@
 
   .dir-item.selected {
     background: var(--accent-soft, #2a2725);
-    border-color: var(--accent, #dd773b);
+    border-color: var(--accent, #3b82f6);
   }
 
   .file-name {
@@ -593,7 +593,7 @@
 
   .parent-item {
     font-weight: 500;
-    color: var(--accent, #dd773b);
+    color: var(--accent, #3b82f6);
   }
 
   .loading-state,
@@ -630,7 +630,7 @@
 
   .select-btn {
     padding: 8px 16px;
-    background: var(--accent, #dd773b);
+    background: var(--accent, #3b82f6);
     color: #ffffff;
     border: none;
     border-radius: 6px;
@@ -640,7 +640,7 @@
   }
 
   .select-btn:hover:not(:disabled) {
-    background: var(--focus, #f2a16f);
+    background: var(--focus, #60a5fa);
   }
 
   .select-btn:disabled {

@@ -133,7 +133,7 @@
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
-    color: var(--color-text-title, var(--accent, #dd773b));
+    color: var(--color-text-title, var(--accent, #3b82f6));
   }
 
   .status-indicator {

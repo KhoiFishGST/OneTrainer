@@ -417,7 +417,7 @@
   }
 
   .btn-primary {
-    background-color: var(--color-primary, var(--accent, #dd773b));
+    background-color: var(--color-primary, var(--accent, #3b82f6));
     color: white;
   }
 
@@ -474,7 +474,7 @@
   }
 
   .concept-card:hover {
-    border-color: var(--color-text-title, var(--accent, #dd773b));
+    border-color: var(--color-text-title, var(--accent, #3b82f6));
   }
 
   .concept-card.disabled {
@@ -504,8 +504,8 @@
     border-radius: 4px;
     text-transform: uppercase;
     background: rgba(0, 0, 0, 0.7);
-    color: var(--accent, #dd773b);
-    border: 1px solid rgba(221, 119, 59, 0.4);
+    color: var(--accent, #3b82f6);
+    border: 1px solid rgba(59, 130, 246, 0.4);
   }
 
   .card-content {
@@ -528,7 +528,7 @@
     margin: 0;
     font-size: 0.9375rem;
     font-weight: 600;
-    color: var(--color-text-title, var(--accent, #dd773b));
+    color: var(--color-text-title, var(--accent, #3b82f6));
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

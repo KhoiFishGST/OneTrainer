@@ -497,7 +497,7 @@
   }
 
   .state-unsaved {
-    background-color: rgba(221, 119, 59, 0.15);
+    background-color: rgba(59, 130, 246, 0.15);
     color: var(--accent);
   }
 

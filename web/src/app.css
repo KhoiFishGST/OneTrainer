@@ -7,11 +7,11 @@
   --line: #2d3741;
   --text: #e6ebef;
   --muted: #8995a1;
-  --accent: #dd773b;
-  --accent-soft: #2a2725;
+  --accent: #3b82f6;
+  --accent-soft: #1e293b;
   --danger: #d97878;
   --success: #65b98d;
-  --focus: #f2a16f;
+  --focus: #60a5fa;
 
   /* Theme aliases for form components */
   --color-bg-card: var(--panel);

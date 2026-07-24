@@ -94,8 +94,8 @@
 
   .directory-input:focus {
     outline: none;
-    border-color: var(--color-primary, var(--accent, #dd773b));
-    box-shadow: 0 0 0 2px rgba(221, 119, 59, 0.2);
+    border-color: var(--color-primary, var(--accent, #3b82f6));
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
   }
 
   .directory-btn {

@@ -229,7 +229,7 @@
     font-weight: 600;
     margin-top: 0;
     margin-bottom: 1rem;
-    color: var(--color-text-title, var(--accent, #dd773b));
+    color: var(--color-text-title, var(--accent, #3b82f6));
   }
 
   .group-fields {

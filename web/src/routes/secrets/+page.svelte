@@ -232,7 +232,7 @@
     font-size: 1.5rem;
     font-weight: 700;
     margin: 0;
-    color: var(--color-text-title, var(--accent, #dd773b));
+    color: var(--color-text-title, var(--accent, #3b82f6));
   }
 
   .security-warning-banner {
@@ -307,13 +307,13 @@
   }
 
   .card-icon {
-    color: var(--color-primary, var(--accent, #dd773b));
+    color: var(--color-primary, var(--accent, #3b82f6));
   }
 
   .card-title {
     font-size: 1.125rem;
     font-weight: 600;
-    color: var(--color-text-title, var(--accent, #dd773b));
+    color: var(--color-text-title, var(--accent, #3b82f6));
     margin: 0;
   }
 
@@ -355,7 +355,7 @@
 
   .input-with-button input:focus {
     outline: none;
-    border-color: var(--color-primary, var(--accent, #dd773b));
+    border-color: var(--color-primary, var(--accent, #3b82f6));
   }
 
   .icon-btn {
@@ -404,7 +404,7 @@
   }
 
   .btn.primary {
-    background-color: var(--color-primary, var(--accent, #dd773b));
+    background-color: var(--color-primary, var(--accent, #3b82f6));
     color: white;
   }
 

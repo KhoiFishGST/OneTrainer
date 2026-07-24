@@ -148,7 +148,7 @@
     font-size: 1.5rem;
     font-weight: 700;
     margin: 0;
-    color: var(--color-text-title, var(--accent, #dd773b));
+    color: var(--color-text-title, var(--accent, #3b82f6));
   }
 
   .status-badge {
@@ -212,7 +212,7 @@
     margin: 0;
     font-size: 1.125rem;
     font-weight: 600;
-    color: var(--color-text-title, var(--accent, #dd773b));
+    color: var(--color-text-title, var(--accent, #3b82f6));
   }
 
   .progress-card {
@@ -230,7 +230,7 @@
   .stat-highlight {
     font-size: 1.25rem;
     font-weight: 700;
-    color: var(--color-primary, var(--accent, #dd773b));
+    color: var(--color-primary, var(--accent, #3b82f6));
   }
 
   .progress-bar-container {

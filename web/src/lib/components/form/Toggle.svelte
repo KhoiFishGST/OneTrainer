@@ -34,7 +34,7 @@
     width: 1.125rem;
     height: 1.125rem;
     cursor: pointer;
-    accent-color: var(--color-primary, var(--accent, #dd773b));
+    accent-color: var(--color-primary, var(--accent, #3b82f6));
     margin: 0;
     vertical-align: middle;
   }
