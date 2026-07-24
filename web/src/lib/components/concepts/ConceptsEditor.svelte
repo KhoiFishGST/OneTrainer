@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Select from '../form/Select.svelte';
   import { Plus, Trash2, Edit2, Copy, Search, Layers, Folder, Eye, EyeOff } from 'lucide-svelte';
   import type { Concept } from '$lib/api/types';
   import ConceptDetailModal from './ConceptDetailModal.svelte';
@@ -154,12 +155,19 @@
       </div>
 
       <div class="filter-controls">
-        <select bind:value={typeFilter} class="filter-select">
-          <option value="ALL">All Types</option>
-          <option value="STANDARD">STANDARD</option>
-          <option value="VALIDATION">VALIDATION</option>
-          <option value="PRIOR_PREDICTION">PRIOR_PREDICTION</option>
-        </select>
+        <div class="filter-select-wrapper">
+          <Select
+            ariaLabel="Filter concept types"
+            value={typeFilter}
+            options={[
+              { value: 'ALL', label: 'All Types' },
+              { value: 'STANDARD', label: 'STANDARD' },
+              { value: 'VALIDATION', label: 'VALIDATION' },
+              { value: 'PRIOR_PREDICTION', label: 'PRIOR_PREDICTION' },
+            ]}
+            onChange={(v) => (typeFilter = v)}
+          />
+        </div>
 
         <label class="checkbox-toggle">
           <input type="checkbox" bind:checked={showDisabled} />

@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Concept } from '$lib/api/types';
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
+  import Select from '$lib/components/form/Select.svelte';
   import { Settings, Image as ImageIcon, FileText, BarChart2, Check, X } from 'lucide-svelte';
 
   let {
@@ -151,11 +152,16 @@
 
             <div class="form-row">
               <label for="concept-type">Concept Type</label>
-              <select id="concept-type" bind:value={draft.type}>
-                <option value="STANDARD">STANDARD (Finetune training target)</option>
-                <option value="VALIDATION">VALIDATION (Validation dataset)</option>
-                <option value="PRIOR_PREDICTION">PRIOR_PREDICTION (Prior preservation regularization)</option>
-              </select>
+              <Select
+                id="concept-type"
+                value={draft.type}
+                options={[
+                  { value: 'STANDARD', label: 'STANDARD (Finetune training target)' },
+                  { value: 'VALIDATION', label: 'VALIDATION (Validation dataset)' },
+                  { value: 'PRIOR_PREDICTION', label: 'PRIOR_PREDICTION (Prior preservation regularization)' },
+                ]}
+                onChange={(v) => (draft.type = v)}
+              />
             </div>
 
             <div class="form-row">
@@ -175,11 +181,16 @@
 
             <div class="form-row">
               <label for="concept-prompt-source">Prompt Source</label>
-              <select id="concept-prompt-source" bind:value={draft.text.prompt_source}>
-                <option value="sample">From text file per sample (.txt / .caption)</option>
-                <option value="concept">From single text file</option>
-                <option value="filename">From image file name</option>
-              </select>
+              <Select
+                id="concept-prompt-source"
+                value={draft.text.prompt_source}
+                options={[
+                  { value: 'sample', label: 'From text file per sample (.txt / .caption)' },
+                  { value: 'concept', label: 'From single text file' },
+                  { value: 'filename', label: 'From image file name' },
+                ]}
+                onChange={(v) => (draft.text.prompt_source = v)}
+              />
             </div>
 
             {#if draft.text.prompt_source === 'concept'}
@@ -201,10 +212,15 @@
               </div>
               <div class="form-row">
                 <label for="concept-balancing-strategy">Balancing Strategy</label>
-                <select id="concept-balancing-strategy" bind:value={draft.balancing_strategy}>
-                  <option value="REPEATS">REPEATS (Multiply dataset epoch count)</option>
-                  <option value="SAMPLES">SAMPLES (Exact sample target count)</option>
-                </select>
+                <Select
+                  id="concept-balancing-strategy"
+                  value={draft.balancing_strategy}
+                  options={[
+                    { value: 'REPEATS', label: 'REPEATS (Multiply dataset epoch count)' },
+                    { value: 'SAMPLES', label: 'SAMPLES (Exact sample target count)' },
+                  ]}
+                  onChange={(v) => (draft.balancing_strategy = v)}
+                />
               </div>
             </div>
 
@@ -302,11 +318,16 @@
               <div class="form-row-group">
                 <div class="form-row">
                   <label for="aug-dropout-mode">Dropout Mode</label>
-                  <select id="aug-dropout-mode" bind:value={draft.text.tag_dropout_mode}>
-                    <option value="FULL">FULL (Drop entire caption past kept tags)</option>
-                    <option value="RANDOM">RANDOM (Drop individual tags with set probability)</option>
-                    <option value="RANDOM WEIGHTED">RANDOM WEIGHTED (Linearly increase drop probability)</option>
-                  </select>
+                  <Select
+                    id="aug-dropout-mode"
+                    value={draft.text.tag_dropout_mode}
+                    options={[
+                      { value: 'FULL', label: 'FULL (Drop entire caption past kept tags)' },
+                      { value: 'RANDOM', label: 'RANDOM (Drop individual tags with set probability)' },
+                      { value: 'RANDOM WEIGHTED', label: 'RANDOM WEIGHTED (Linearly increase drop probability)' },
+                    ]}
+                    onChange={(v) => (draft.text.tag_dropout_mode = v)}
+                  />
                 </div>
                 <div class="form-row">
                   <label for="aug-dropout-prob">Probability (0 to 1)</label>
@@ -423,8 +444,7 @@
   }
 
   .form-row input[type='text'],
-  .form-row input[type='number'],
-  .form-row select {
+  .form-row input[type='number'] {
     padding: 0.5rem 0.75rem;
     background-color: var(--control, #14191f);
     border: 1px solid var(--line, #2d3741);

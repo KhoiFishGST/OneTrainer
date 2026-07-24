@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Select from './Select.svelte';
+
   let {
     id,
     value = '',
@@ -31,11 +33,6 @@
     const val = (e.target as HTMLInputElement).value;
     onValueInput(val);
   }
-
-  function handleUnitChange(e: Event) {
-    const u = (e.target as HTMLSelectElement).value;
-    onUnitChange(u);
-  }
 </script>
 
 <div class="time-input-group">
@@ -49,17 +46,15 @@
     oninput={handleValueInput}
     class="time-value-input"
   />
-  <select
-    value={unit ?? ''}
-    {disabled}
-    aria-label="Time unit"
-    onchange={handleUnitChange}
-    class="time-unit-select"
-  >
-    {#each parsedUnits as u}
-      <option value={u.value}>{u.label}</option>
-    {/each}
-  </select>
+  <div class="time-unit-select-wrapper">
+    <Select
+      ariaLabel="Time unit"
+      value={unit ?? ''}
+      options={parsedUnits}
+      {disabled}
+      onChange={onUnitChange}
+    />
+  </div>
 </div>
 
 <style>
@@ -83,20 +78,9 @@
     box-sizing: border-box;
   }
 
-  .time-value-input:focus,
-  .time-unit-select:focus {
+  .time-value-input:focus {
     outline: none;
     border-color: var(--color-primary, var(--accent, #3b82f6));
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-  }
-
-  .time-unit-select {
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--color-border, var(--line, #2d3741));
-    border-radius: 6px;
-    font-size: 0.875rem;
-    background: var(--color-bg-input, var(--control, #14191f));
-    color: var(--color-text, var(--text, #e6ebef));
-    box-sizing: border-box;
   }
 </style>
