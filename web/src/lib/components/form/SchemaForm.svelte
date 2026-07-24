@@ -187,8 +187,8 @@
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-    max-width: 660px;
-    width: fit-content;
+    width: 660px;
+    max-width: 100%;
   }
 
   .schema-form.is-training-tab {
