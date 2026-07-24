@@ -30,6 +30,7 @@
 
   let datasets = $derived(datasetsQuery.data?.datasets || []);
   let baseDir = $derived(datasetsQuery.data?.base_dir || 'workspace/datasets');
+  let resolvedBaseDir = $derived(datasetsQuery.data?.resolved_base_dir || '');
   let loading = $derived(datasetsQuery.isLoading);
   let showCreateModal = $state(false);
   let newDatasetName = $state('');
@@ -100,8 +101,14 @@
         id="base-datasets-dir"
         value={baseDir}
         mode="dir"
-        onValueInput={handleBaseDirChange}
+        onInput={handleBaseDirChange}
+        onChange={handleBaseDirChange}
       />
+      {#if resolvedBaseDir && resolvedBaseDir !== baseDir}
+        <span class="resolved-path-hint" title="Resolved server filesystem path">
+          Server path: {resolvedBaseDir}
+        </span>
+      {/if}
     </div>
   </div>
 
