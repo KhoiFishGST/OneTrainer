@@ -1,84 +1,72 @@
-import "@testing-library/jest-dom/vitest";
+import '@testing-library/jest-dom/vitest';
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import { describe, it, expect, vi } from 'vitest';
 import ConceptsEditor from './ConceptsEditor.svelte';
 
 describe('ConceptsEditor', () => {
-  it('renders concept list and add button', () => {
+  it('renders toolbar search, filter, and add button', () => {
     render(ConceptsEditor, { props: { concepts: [] } });
     expect(screen.getByRole('button', { name: /add concept/i })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/search concepts/i)).toBeInTheDocument();
   });
 
   it('adds a new concept when add button is clicked', async () => {
     const onChange = vi.fn();
     render(ConceptsEditor, { props: { concepts: [], onChange } });
-    
+
     const addBtn = screen.getByRole('button', { name: /add concept/i });
     await fireEvent.click(addBtn);
 
-    expect(onChange).toHaveBeenCalled();
-    const newConcepts = onChange.mock.calls[0][0];
-    expect(newConcepts.length).toBe(1);
-    expect(newConcepts[0]).toMatchObject({
-      instance_prompt: '',
-      class_prompt: '',
-      dataset_directory: '',
-    });
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
-  it('renders initial concepts and allows updating fields', async () => {
+  it('renders initial concept cards with thumbnail and details', async () => {
     const onChange = vi.fn();
     const initialConcepts = [
       {
-        instance_prompt: 'photo of a dog',
-        class_prompt: 'dog',
-        dataset_directory: '/tmp/dogs',
-        class_dataset_directory: '/tmp/class_dogs',
+        name: 'MyDogConcept',
+        path: '/tmp/dogs',
+        enabled: true,
+        type: 'STANDARD',
       },
     ];
 
     render(ConceptsEditor, { props: { concepts: initialConcepts, onChange } });
 
-    const instanceInput = screen.getByDisplayValue('photo of a dog');
-    expect(instanceInput).toBeInTheDocument();
-
-    await fireEvent.input(instanceInput, { target: { value: 'photo of a happy dog' } });
-    expect(onChange).toHaveBeenCalled();
-    expect(onChange.mock.calls[0][0][0].instance_prompt).toBe('photo of a happy dog');
+    expect(screen.getByText('MyDogConcept')).toBeInTheDocument();
+    expect(screen.getByText('/tmp/dogs')).toBeInTheDocument();
   });
 
   it('removes a concept when delete button is clicked', async () => {
     const onChange = vi.fn();
     const initialConcepts = [
-      { instance_prompt: 'cat', class_prompt: 'cat', dataset_directory: '/tmp/cats' },
-      { instance_prompt: 'dog', class_prompt: 'dog', dataset_directory: '/tmp/dogs' },
+      { name: 'Cat', path: '/tmp/cats', enabled: true },
+      { name: 'Dog', path: '/tmp/dogs', enabled: true },
     ];
 
     render(ConceptsEditor, { props: { concepts: initialConcepts, onChange } });
 
-    const deleteBtns = screen.getAllByRole('button', { name: /remove concept|delete concept/i });
+    const deleteBtns = screen.getAllByTitle(/delete concept/i);
     expect(deleteBtns.length).toBe(2);
 
     await fireEvent.click(deleteBtns[0]);
     expect(onChange).toHaveBeenCalled();
     expect(onChange.mock.calls[0][0].length).toBe(1);
-    expect(onChange.mock.calls[0][0][0].instance_prompt).toBe('dog');
+    expect(onChange.mock.calls[0][0][0].name).toBe('Dog');
   });
 
-  it('reorders concepts when move up / move down buttons are clicked', async () => {
-    const onChange = vi.fn();
+  it('filters concepts using search input', async () => {
     const initialConcepts = [
-      { instance_prompt: 'concept 1', dataset_directory: '/tmp/c1' },
-      { instance_prompt: 'concept 2', dataset_directory: '/tmp/c2' },
+      { name: 'Character_Alpha', path: '/datasets/alpha', enabled: true },
+      { name: 'Style_Beta', path: '/datasets/beta', enabled: true },
     ];
 
-    render(ConceptsEditor, { props: { concepts: initialConcepts, onChange } });
+    render(ConceptsEditor, { props: { concepts: initialConcepts } });
 
-    const moveDownBtns = screen.getAllByRole('button', { name: /move down/i });
-    await fireEvent.click(moveDownBtns[0]);
+    const searchInput = screen.getByPlaceholderText(/search concepts/i);
+    await fireEvent.input(searchInput, { target: { value: 'Alpha' } });
 
-    expect(onChange).toHaveBeenCalled();
-    expect(onChange.mock.calls[0][0][0].instance_prompt).toBe('concept 2');
-    expect(onChange.mock.calls[0][0][1].instance_prompt).toBe('concept 1');
+    expect(screen.getByText('Character_Alpha')).toBeInTheDocument();
+    expect(screen.queryByText('Style_Beta')).not.toBeInTheDocument();
   });
 });

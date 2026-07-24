@@ -1,359 +1,321 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { Plus, Trash2, ArrowUp, ArrowDown, Image as ImageIcon, Folder, ChevronDown, ChevronRight, Layers } from 'lucide-svelte';
-  import PathInput from '$lib/components/form/PathInput.svelte';
-  import { api } from '$lib/api/client';
-  import type { Concept, FileSystemEntry } from '$lib/api/types';
+  import { Plus, Trash2, Edit2, Copy, Search, Layers, Folder, Eye, EyeOff } from 'lucide-svelte';
+  import type { Concept } from '$lib/api/types';
+  import ConceptDetailModal from './ConceptDetailModal.svelte';
 
   let {
     concepts = $bindable([]),
     onChange,
     disabled = false,
+    openDirectory,
   }: {
     concepts?: Concept[];
     onChange?: (concepts: Concept[]) => void;
     disabled?: boolean;
+    openDirectory?: (mode: 'file' | 'dir', currentPath?: string) => Promise<string | null>;
   } = $props();
 
-  let activeTabMap = $state<Record<number, 'fields' | 'preview'>>({});
-  let previewCache = $state<Record<string, { loading: boolean; error: string | null; files: FileSystemEntry[] }>>({});
-  let expandedDetailsMap = $state<Record<number, boolean>>({});
+  let searchQuery = $state('');
+  let typeFilter = $state<'ALL' | 'STANDARD' | 'VALIDATION' | 'PRIOR_PREDICTION'>('ALL');
+  let showDisabled = $state(true);
 
-  const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp', '.bmp', '.gif'];
+  let editingIndex = $state<number | null>(null);
+  let isModalOpen = $state(false);
 
   function notifyChange(newConcepts: Concept[]) {
     concepts = newConcepts;
     onChange?.(newConcepts);
   }
 
-  function addConcept() {
-    const defaultConcept: Concept = {
-      instance_prompt: '',
-      class_prompt: '',
-      dataset_directory: '',
-      class_dataset_directory: '',
+  function handleAddConcept() {
+    const newConcept: Concept = {
+      name: `Concept ${concepts.length + 1}`,
+      path: '',
       enabled: true,
-      repeats: 1,
+      type: 'STANDARD',
       include_subdirectories: false,
+      balancing: 1.0,
+      balancing_strategy: 'REPEATS',
+      loss_weight: 1.0,
+      image: {
+        enable_crop_jitter: true,
+        enable_random_flip: false,
+        enable_fixed_flip: false,
+        enable_random_rotate: false,
+        enable_fixed_rotate: false,
+        random_rotate_max_angle: 0.0,
+        enable_random_brightness: false,
+        enable_fixed_brightness: false,
+        random_brightness_max_strength: 0.0,
+        enable_random_contrast: false,
+        enable_fixed_contrast: false,
+        random_contrast_max_strength: 0.0,
+        enable_random_saturation: false,
+        enable_fixed_saturation: false,
+        random_saturation_max_strength: 0.0,
+        enable_random_hue: false,
+        enable_fixed_hue: false,
+        random_hue_max_strength: 0.0,
+        enable_resolution_override: false,
+        resolution_override: '512',
+        enable_random_circular_mask_shrink: false,
+        enable_random_mask_rotate_crop: false,
+      },
+      text: {
+        prompt_source: 'sample',
+        prompt_path: '',
+        enable_tag_shuffling: false,
+        tag_delimiter: ',',
+        keep_tags_count: 1,
+        tag_dropout_enable: false,
+        tag_dropout_mode: 'FULL',
+        tag_dropout_probability: 0.0,
+        tag_dropout_special_tags_mode: 'NONE',
+        tag_dropout_special_tags: '',
+        tag_dropout_special_tags_regex: false,
+        caps_randomize_enable: false,
+        caps_randomize_mode: 'capslock, title, first, random',
+        caps_randomize_probability: 0.0,
+        caps_randomize_lowercase: false,
+      },
     };
-    const updated = [...concepts, defaultConcept];
+    editingIndex = concepts.length;
+    concepts = [...concepts, newConcept];
+    isModalOpen = true;
+  }
+
+  function handleEditConcept(index: number) {
+    editingIndex = index;
+    isModalOpen = true;
+  }
+
+  function handleCloneConcept(index: number) {
+    const original = concepts[index];
+    const clone: Concept = JSON.parse(JSON.stringify(original));
+    clone.name = `${original.name || 'Concept'} (Copy)`;
+    const updated = [...concepts, clone];
     notifyChange(updated);
   }
 
-  function removeConcept(index: number) {
+  function handleRemoveConcept(index: number) {
     const updated = concepts.filter((_, i) => i !== index);
     notifyChange(updated);
   }
 
-  function moveConcept(index: number, direction: 'up' | 'down') {
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= concepts.length) return;
+  function handleSaveConcept(updatedConcept: Concept) {
+    if (editingIndex !== null && editingIndex >= 0 && editingIndex < concepts.length) {
+      const updatedList = concepts.map((c, i) => (i === editingIndex ? updatedConcept : c));
+      notifyChange(updatedList);
+    } else {
+      notifyChange([...concepts, updatedConcept]);
+    }
+    isModalOpen = false;
+    editingIndex = null;
+  }
 
-    const updated = [...concepts];
-    const [moved] = updated.splice(index, 1);
-    updated.splice(targetIndex, 0, moved);
+  function toggleAllEnabled() {
+    const anyEnabled = concepts.some((c) => c.enabled !== false);
+    const targetState = !anyEnabled;
+    const updated = concepts.map((c) => ({ ...c, enabled: targetState }));
     notifyChange(updated);
   }
 
-  function updateConceptField(index: number, field: keyof Concept, value: any) {
-    const updated = concepts.map((c, i) => {
-      if (i === index) {
-        return { ...c, [field]: value };
-      }
-      return c;
-    });
-    notifyChange(updated);
+  const filteredConcepts = $derived(
+    concepts
+      .map((concept, originalIndex) => ({ concept, originalIndex }))
+      .filter(({ concept }) => {
+        if (!showDisabled && concept.enabled === false) return false;
 
-    if (field === 'dataset_directory' && value) {
-      loadPreviewFiles(value);
-    }
-  }
+        if (typeFilter !== 'ALL' && (concept.type || 'STANDARD') !== typeFilter) return false;
 
-  async function loadPreviewFiles(dirPath: string) {
-    if (!dirPath || previewCache[dirPath]?.loading) return;
-    
-    previewCache[dirPath] = { loading: true, error: null, files: [] };
-    try {
-      const res = await api.listDirectory(dirPath, 'file', IMAGE_EXTENSIONS);
-      const files = (res.entries || []).filter((entry) => {
-        if (entry.is_dir) return false;
-        const name = entry.name.toLowerCase();
-        return IMAGE_EXTENSIONS.some((ext) => name.endsWith(ext));
-      });
-      previewCache[dirPath] = { loading: false, error: null, files };
-    } catch (err: any) {
-      previewCache[dirPath] = {
-        loading: false,
-        error: err.message || 'Failed to load preview images',
-        files: [],
-      };
-    }
-  }
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase();
+          const name = (concept.name || '').toLowerCase();
+          const path = (concept.path || '').toLowerCase();
+          return name.includes(q) || path.includes(q);
+        }
 
-  function toggleDetails(index: number) {
-    expandedDetailsMap[index] = !expandedDetailsMap[index];
-  }
+        return true;
+      })
+  );
 </script>
 
-<div class="concepts-editor">
-  <div class="editor-header">
-    <div class="header-title">
-      <span class="icon-title"><Layers size={20} /></span>
-      <h3>Concepts ({concepts.length})</h3>
-    </div>
-    <button
-      type="button"
-      class="btn btn-primary add-concept-btn"
-      {disabled}
-      onclick={addConcept}
-    >
-      <Plus size={16} />
-      <span>Add Concept</span>
-    </button>
-  </div>
+<div class="concepts-editor" data-testid="concepts-editor">
+  <!-- Toolbar & Filter Controls Header -->
+  <div class="toolbar-header">
+    <div class="search-filter-group">
+      <div class="search-box">
+        <Search size={16} class="search-icon" />
+        <input
+          type="text"
+          placeholder="Search concepts by name or directory path..."
+          bind:value={searchQuery}
+        />
+      </div>
 
-  {#if concepts.length === 0}
-    <div class="empty-state">
-      <span class="empty-icon"><Folder size={40} /></span>
-      <p class="empty-title">No concepts configured</p>
-      <p class="empty-sub">Add a concept to define instance prompts, dataset directories, and training parameters.</p>
+      <div class="filter-controls">
+        <select bind:value={typeFilter} class="filter-select">
+          <option value="ALL">All Types</option>
+          <option value="STANDARD">STANDARD</option>
+          <option value="VALIDATION">VALIDATION</option>
+          <option value="PRIOR_PREDICTION">PRIOR_PREDICTION</option>
+        </select>
+
+        <label class="checkbox-toggle">
+          <input type="checkbox" bind:checked={showDisabled} />
+          <span>Show Disabled</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="toolbar-actions">
       <button
         type="button"
         class="btn btn-secondary"
         {disabled}
-        onclick={addConcept}
+        onclick={toggleAllEnabled}
+        title="Toggle enable/disable for all concepts"
+      >
+        {#if concepts.some((c) => c.enabled !== false)}
+          <EyeOff size={16} />
+          <span>Disable All</span>
+        {:else}
+          <Eye size={16} />
+          <span>Enable All</span>
+        {/if}
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-primary"
+        {disabled}
+        onclick={handleAddConcept}
       >
         <Plus size={16} />
-        <span>Add First Concept</span>
+        <span>Add Concept</span>
       </button>
     </div>
+  </div>
+
+  <!-- Cards Grid View -->
+  {#if filteredConcepts.length === 0}
+    <div class="empty-state">
+      <Folder size={48} class="empty-icon" />
+      <p class="empty-title">
+        {concepts.length === 0 ? 'No concepts configured' : 'No concepts match the search criteria'}
+      </p>
+      <p class="empty-sub">
+        {concepts.length === 0
+          ? 'Add a concept to define training datasets, prompts, image augmentations, and repeats.'
+          : 'Try adjusting your search filter or enabling "Show Disabled".'}
+      </p>
+      {#if concepts.length === 0}
+        <button
+          type="button"
+          class="btn btn-primary"
+          {disabled}
+          onclick={handleAddConcept}
+        >
+          <Plus size={16} />
+          <span>Add First Concept</span>
+        </button>
+      {/if}
+    </div>
   {:else}
-    <div class="concepts-list">
-      {#each concepts as concept, index (index)}
-        <div class="concept-card" class:disabled={!concept.enabled}>
-          <div class="card-header">
-            <div class="card-header-left">
-              <span class="concept-badge">#{index + 1}</span>
-              <span class="concept-title">
-                {concept.instance_prompt || concept.name || 'Untitled Concept'}
-              </span>
+    <div class="concepts-grid">
+      {#each filteredConcepts as { concept, originalIndex } (originalIndex)}
+        <div class="concept-card" class:disabled={concept.enabled === false}>
+          <!-- Preview Thumbnail -->
+          <div class="thumbnail-wrapper">
+            <img
+              src="/api/concepts/preview-image?path={encodeURIComponent(concept.path || '')}&include_subdirectories={concept.include_subdirectories}"
+              alt="Concept Thumbnail"
+              class="concept-thumbnail"
+            />
+            <span class="type-badge {concept.type || 'STANDARD'}">
+              {concept.type || 'STANDARD'}
+            </span>
+          </div>
+
+          <!-- Card Content -->
+          <div class="card-content">
+            <div class="card-title-bar">
+              <h4 class="concept-name" title={concept.name || concept.path}>
+                {concept.name || (concept.path ? concept.path.split('/').pop() : 'Untitled Concept')}
+              </h4>
+              <label class="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={concept.enabled !== false}
+                  onchange={(e) => {
+                    const updated = concepts.map((c, i) =>
+                      i === originalIndex ? { ...c, enabled: (e.target as HTMLInputElement).checked } : c
+                    );
+                    notifyChange(updated);
+                  }}
+                />
+                <span class="switch-slider"></span>
+              </label>
             </div>
 
+            <p class="concept-path" title={concept.path}>
+              {concept.path || 'No directory path set'}
+            </p>
+
+            <div class="concept-meta">
+              <span class="meta-tag">Balancing: {concept.balancing ?? 1}x ({concept.balancing_strategy || 'REPEATS'})</span>
+              <span class="meta-tag">Loss Wt: {concept.loss_weight ?? 1}</span>
+            </div>
+
+            <!-- Card Actions -->
             <div class="card-actions">
               <button
                 type="button"
-                class="icon-btn"
-                aria-label="Move Up"
-                title="Move Up"
-                disabled={disabled || index === 0}
-                onclick={() => moveConcept(index, 'up')}
+                class="btn-action edit"
+                title="Edit Concept Settings"
+                onclick={() => handleEditConcept(originalIndex)}
               >
-                <ArrowUp size={16} />
+                <Edit2 size={15} />
+                <span>Edit</span>
               </button>
+
               <button
                 type="button"
-                class="icon-btn"
-                aria-label="Move Down"
-                title="Move Down"
-                disabled={disabled || index === concepts.length - 1}
-                onclick={() => moveConcept(index, 'down')}
+                class="btn-action clone"
+                title="Duplicate Concept"
+                onclick={() => handleCloneConcept(originalIndex)}
               >
-                <ArrowDown size={16} />
+                <Copy size={15} />
+                <span>Clone</span>
               </button>
+
               <button
                 type="button"
-                class="icon-btn danger"
-                aria-label="Remove Concept"
-                title="Remove Concept"
-                {disabled}
-                onclick={() => removeConcept(index)}
+                class="btn-action delete"
+                title="Delete Concept"
+                onclick={() => handleRemoveConcept(originalIndex)}
               >
-                <Trash2 size={16} />
+                <Trash2 size={15} />
               </button>
-            </div>
-          </div>
-
-          <div class="card-body">
-            <div class="form-grid">
-              <div class="form-group">
-                <label for={`instance-prompt-${index}`} class="form-label">Instance Prompt</label>
-                <input
-                  id={`instance-prompt-${index}`}
-                  type="text"
-                  class="form-input"
-                  placeholder="e.g. photo of sks dog"
-                  value={concept.instance_prompt ?? ''}
-                  {disabled}
-                  oninput={(e) => updateConceptField(index, 'instance_prompt', (e.target as HTMLInputElement).value)}
-                />
-              </div>
-
-              <div class="form-group">
-                <label for={`class-prompt-${index}`} class="form-label">Class Prompt</label>
-                <input
-                  id={`class-prompt-${index}`}
-                  type="text"
-                  class="form-input"
-                  placeholder="e.g. photo of a dog"
-                  value={concept.class_prompt ?? ''}
-                  {disabled}
-                  oninput={(e) => updateConceptField(index, 'class_prompt', (e.target as HTMLInputElement).value)}
-                />
-              </div>
-
-              <div class="form-group full-width">
-                <PathInput
-                  id={`dataset-dir-${index}`}
-                  label="Dataset Directory"
-                  value={concept.dataset_directory ?? ''}
-                  mode="dir"
-                  {disabled}
-                  placeholder="/path/to/dataset/images"
-                  onChange={(val) => updateConceptField(index, 'dataset_directory', val)}
-                />
-              </div>
-
-              <div class="form-group full-width">
-                <PathInput
-                  id={`class-dataset-dir-${index}`}
-                  label="Class Dataset Directory (Optional)"
-                  value={concept.class_dataset_directory ?? ''}
-                  mode="dir"
-                  {disabled}
-                  placeholder="/path/to/class/images"
-                  onChange={(val) => updateConceptField(index, 'class_dataset_directory', val)}
-                />
-              </div>
-            </div>
-
-            <!-- Preview & Advanced Settings Section -->
-            <div class="card-footer">
-              {#if concept.dataset_directory}
-                <div class="dataset-preview-panel">
-                  <div class="preview-header">
-                    <div class="preview-info">
-                      <ImageIcon size={16} />
-                      <span class="preview-title">Dataset Preview</span>
-                      {#if previewCache[concept.dataset_directory]}
-                        {#if previewCache[concept.dataset_directory].loading}
-                          <span class="status-badge loading">Scanning...</span>
-                        {:else if previewCache[concept.dataset_directory].error}
-                          <span class="status-badge error">{previewCache[concept.dataset_directory].error}</span>
-                        {:else}
-                          <span class="status-badge count">
-                            {previewCache[concept.dataset_directory].files.length} images found
-                          </span>
-                        {/if}
-                      {:else}
-                        <button
-                          type="button"
-                          class="btn-link"
-                          onclick={() => loadPreviewFiles(concept.dataset_directory!)}
-                        >
-                          Load preview
-                        </button>
-                      {/if}
-                    </div>
-                  </div>
-
-                  {#if previewCache[concept.dataset_directory]?.files?.length}
-                    <div class="preview-grid">
-                      {#each previewCache[concept.dataset_directory].files.slice(0, 8) as file}
-                        <div class="thumbnail-card" title={file.name}>
-                          <div class="thumb-icon-wrapper">
-                            <ImageIcon size={20} class="thumb-icon" />
-                          </div>
-                          <span class="thumb-name">{file.name}</span>
-                        </div>
-                      {/each}
-                      {#if previewCache[concept.dataset_directory].files.length > 8}
-                        <div class="more-images-card">
-                          +{previewCache[concept.dataset_directory].files.length - 8} more
-                        </div>
-                      {/if}
-                    </div>
-                  {/if}
-                </div>
-              {/if}
-
-              <!-- Advanced options toggle -->
-              <div class="advanced-toggle">
-                <button
-                  type="button"
-                  class="toggle-btn"
-                  onclick={() => toggleDetails(index)}
-                >
-                  {#if expandedDetailsMap[index]}
-                    <ChevronDown size={16} />
-                  {:else}
-                    <ChevronRight size={16} />
-                  {/if}
-                  <span>Advanced Parameters</span>
-                </button>
-              </div>
-
-              {#if expandedDetailsMap[index]}
-                <div class="advanced-options">
-                  <div class="form-grid compact">
-                    <div class="form-group">
-                      <label for={`repeats-${index}`} class="form-label">Repeats / Balancing</label>
-                      <input
-                        id={`repeats-${index}`}
-                        type="number"
-                        step="1"
-                        min="1"
-                        class="form-input"
-                        value={concept.repeats ?? 1}
-                        {disabled}
-                        oninput={(e) => updateConceptField(index, 'repeats', Number((e.target as HTMLInputElement).value))}
-                      />
-                    </div>
-
-                    <div class="form-group">
-                      <label for={`loss-weight-${index}`} class="form-label">Loss Weight</label>
-                      <input
-                        id={`loss-weight-${index}`}
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        class="form-input"
-                        value={concept.loss_weight ?? 1.0}
-                        {disabled}
-                        oninput={(e) => updateConceptField(index, 'loss_weight', Number((e.target as HTMLInputElement).value))}
-                      />
-                    </div>
-
-                    <div class="form-group checkbox-group">
-                      <label class="checkbox-label">
-                        <input
-                          type="checkbox"
-                          checked={concept.include_subdirectories ?? false}
-                          {disabled}
-                          onchange={(e) => updateConceptField(index, 'include_subdirectories', (e.target as HTMLInputElement).checked)}
-                        />
-                        <span>Include Subdirectories</span>
-                      </label>
-                    </div>
-
-                    <div class="form-group checkbox-group">
-                      <label class="checkbox-label">
-                        <input
-                          type="checkbox"
-                          checked={concept.enabled ?? true}
-                          {disabled}
-                          onchange={(e) => updateConceptField(index, 'enabled', (e.target as HTMLInputElement).checked)}
-                        />
-                        <span>Enabled</span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              {/if}
             </div>
           </div>
         </div>
       {/each}
     </div>
+  {/if}
+
+  <!-- Concept Edit Modal -->
+  {#if editingIndex !== null}
+    <ConceptDetailModal
+      concept={concepts[editingIndex] || null}
+      isOpen={isModalOpen}
+      onSave={handleSaveConcept}
+      onClose={() => {
+        isModalOpen = false;
+        editingIndex = null;
+      }}
+      {openDirectory}
+    />
   {/if}
 </div>
 
@@ -361,33 +323,84 @@
   .concepts-editor {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.5rem;
     width: 100%;
   }
 
-  .editor-header {
+  .toolbar-header {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--line, #e5e7eb);
+    gap: 1rem;
+    background: var(--panel, #181e25);
+    border: 1px solid var(--line, #2d3741);
+    padding: 1rem 1.25rem;
+    border-radius: 8px;
   }
 
-  .header-title {
+  .search-filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+    min-width: 280px;
+  }
+
+  .search-box {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    background: var(--control, #14191f);
+    border: 1px solid var(--line, #2d3741);
+    border-radius: 6px;
+    padding: 0.4rem 0.75rem;
+    flex: 1;
+    min-width: 220px;
   }
 
-  .header-title h3 {
-    margin: 0;
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--text, #111827);
+  .search-icon {
+    color: var(--muted, #94a3b8);
   }
 
-  .icon-title {
-    color: var(--accent, #2563eb);
+  .search-box input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text, #f8fafc);
+    font-size: 0.875rem;
+    width: 100%;
+  }
+
+  .filter-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+  }
+
+  .filter-select {
+    padding: 0.4rem 0.75rem;
+    background: var(--control, #14191f);
+    border: 1px solid var(--line, #2d3741);
+    border-radius: 6px;
+    color: var(--text, #f8fafc);
+    font-size: 0.875rem;
+  }
+
+  .checkbox-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8125rem;
+    color: var(--muted, #94a3b8);
+    cursor: pointer;
+  }
+
+  .toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
   }
 
   .btn {
@@ -404,27 +417,14 @@
   }
 
   .btn-primary {
-    background: var(--accent, #2563eb);
-    color: #ffffff;
-  }
-
-  .btn-primary:hover:not(:disabled) {
-    filter: brightness(1.1);
+    background-color: var(--color-primary, var(--accent, #dd773b));
+    color: white;
   }
 
   .btn-secondary {
-    background: var(--panel-raised, #f3f4f6);
-    color: var(--text, #374151);
-    border-color: var(--line, #d1d5db);
-  }
-
-  .btn-secondary:hover:not(:disabled) {
-    background: var(--line, #e5e7eb);
-  }
-
-  .btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+    background-color: var(--panel-raised, #1d242c);
+    border: 1px solid var(--line, #2d3741);
+    color: var(--text, #f8fafc);
   }
 
   .empty-state {
@@ -432,317 +432,167 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 3rem 1.5rem;
-    border: 2px dashed var(--line, #e5e7eb);
+    padding: 4rem 1.5rem;
+    border: 2px dashed var(--line, #2d3741);
     border-radius: 8px;
-    background: var(--panel, #ffffff);
+    background: var(--panel, #181e25);
     text-align: center;
   }
 
   .empty-icon {
-    color: var(--muted, #9ca3af);
-    margin-bottom: 0.75rem;
+    color: var(--muted, #94a3b8);
+    margin-bottom: 1rem;
   }
 
   .empty-title {
+    font-size: 1.125rem;
     font-weight: 600;
-    font-size: 1rem;
-    color: var(--text, #111827);
+    color: var(--text, #f8fafc);
     margin: 0 0 0.25rem 0;
   }
 
   .empty-sub {
     font-size: 0.875rem;
-    color: var(--muted, #6b7280);
-    margin: 0 0 1.25rem 0;
-    max-width: 400px;
+    color: var(--muted, #94a3b8);
+    margin: 0 0 1.5rem 0;
+    max-width: 420px;
   }
 
-  .concepts-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+  .concepts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
   }
 
   .concept-card {
-    border: 1px solid var(--line, #e5e7eb);
+    display: flex;
+    background: var(--panel, #181e25);
+    border: 1px solid var(--line, #2d3741);
     border-radius: 8px;
-    background: var(--panel, #ffffff);
     overflow: hidden;
     transition: border-color 0.15s ease;
   }
 
+  .concept-card:hover {
+    border-color: var(--color-text-title, var(--accent, #dd773b));
+  }
+
   .concept-card.disabled {
-    opacity: 0.65;
+    opacity: 0.6;
   }
 
-  .card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.75rem 1rem;
-    background: var(--panel-raised, #f9fafb);
-    border-bottom: 1px solid var(--line, #e5e7eb);
+  .thumbnail-wrapper {
+    width: 130px;
+    position: relative;
+    background: var(--control, #14191f);
+    flex-shrink: 0;
   }
 
-  .card-header-left {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-  }
-
-  .concept-badge {
-    font-size: 0.75rem;
-    font-weight: 700;
-    padding: 0.125rem 0.5rem;
-    border-radius: 9999px;
-    background: var(--accent-soft, #dbeafe);
-    color: var(--accent, #2563eb);
-  }
-
-  .concept-title {
-    font-weight: 600;
-    font-size: 0.9375rem;
-    color: var(--text, #111827);
-  }
-
-  .card-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-
-  .icon-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.375rem;
-    border-radius: 4px;
-    border: 1px solid transparent;
-    background: transparent;
-    color: var(--muted, #6b7280);
-    cursor: pointer;
-  }
-
-  .icon-btn:hover:not(:disabled) {
-    background: var(--panel, #e5e7eb);
-    color: var(--text, #111827);
-  }
-
-  .icon-btn.danger:hover:not(:disabled) {
-    background: #fee2e2;
-    color: #dc2626;
-  }
-
-  .icon-btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
-
-  .card-body {
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-  }
-
-  .form-grid.compact {
-    grid-template-columns: repeat(2, 1fr);
-    align-items: center;
-  }
-
-  .full-width {
-    grid-column: span 2;
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
-  }
-
-  .form-label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--text, #374151);
-  }
-
-  .form-input {
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--line, #d1d5db);
-    border-radius: 6px;
-    font-size: 0.875rem;
-    background: var(--panel, #ffffff);
-    color: var(--text, #111827);
-  }
-
-  .form-input:focus {
-    outline: none;
-    border-color: var(--accent, #2563eb);
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
-  }
-
-  .checkbox-group {
-    justify-content: flex-end;
-  }
-
-  .checkbox-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-    color: var(--text, #374151);
-    cursor: pointer;
-  }
-
-  .card-footer {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    padding-top: 0.5rem;
-    border-top: 1px dashed var(--line, #e5e7eb);
-  }
-
-  .dataset-preview-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 0.625rem;
-    padding: 0.75rem;
-    background: var(--panel-raised, #f9fafb);
-    border-radius: 6px;
-    border: 1px solid var(--line, #e5e7eb);
-  }
-
-  .preview-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .preview-info {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-    color: var(--text, #374151);
-  }
-
-  .preview-title {
-    font-weight: 500;
-  }
-
-  .status-badge {
-    font-size: 0.75rem;
-    padding: 0.125rem 0.5rem;
-    border-radius: 4px;
-    font-weight: 500;
-  }
-
-  .status-badge.count {
-    background: #dcfce7;
-    color: #166534;
-  }
-
-  .status-badge.loading {
-    background: #fef9c3;
-    color: #854d0e;
-  }
-
-  .status-badge.error {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-
-  .btn-link {
-    background: none;
-    border: none;
-    color: var(--accent, #2563eb);
-    font-size: 0.75rem;
-    text-decoration: underline;
-    cursor: pointer;
-    padding: 0;
-  }
-
-  .preview-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-    gap: 0.5rem;
-  }
-
-  .thumbnail-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.5rem;
-    background: var(--panel, #ffffff);
-    border: 1px solid var(--line, #e5e7eb);
-    border-radius: 4px;
-    text-align: center;
-  }
-
-  .thumb-icon-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    background: var(--panel-raised, #f3f4f6);
-    border-radius: 4px;
-    color: var(--muted, #6b7280);
-  }
-
-  .thumb-name {
-    font-size: 0.6875rem;
-    color: var(--muted, #6b7280);
+  .concept-thumbnail {
     width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .type-badge {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    background: rgba(0, 0, 0, 0.7);
+    color: var(--accent, #dd773b);
+    border: 1px solid rgba(221, 119, 59, 0.4);
+  }
+
+  .card-content {
+    flex: 1;
+    padding: 0.875rem 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .card-title-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .concept-name {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-text-title, var(--accent, #dd773b));
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .more-images-card {
+  .toggle-switch input {
+    cursor: pointer;
+  }
+
+  .concept-path {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--muted, #94a3b8);
+    word-break: break-all;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .concept-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .meta-tag {
+    font-size: 0.6875rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    background: var(--panel-raised, #1d242c);
+    color: var(--text, #f8fafc);
+    border: 1px solid var(--line, #2d3741);
+  }
+
+  .card-actions {
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--accent, #2563eb);
-    background: var(--accent-soft, #dbeafe);
-    border-radius: 4px;
-    padding: 0.5rem;
+    gap: 0.35rem;
+    padding-top: 0.35rem;
+    border-top: 1px solid var(--line, #2d3741);
   }
 
-  .advanced-toggle {
-    display: flex;
-  }
-
-  .toggle-btn {
+  .btn-action {
     display: inline-flex;
     align-items: center;
-    gap: 0.375rem;
-    background: none;
-    border: none;
-    color: var(--muted, #6b7280);
-    font-size: 0.8125rem;
+    gap: 0.35rem;
+    padding: 0.3rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--line, #2d3741);
+    background: var(--panel-raised, #1d242c);
+    color: var(--text, #f8fafc);
+    font-size: 0.75rem;
     cursor: pointer;
-    padding: 0.25rem 0;
+    transition: background 0.15s ease;
   }
 
-  .toggle-btn:hover {
-    color: var(--text, #111827);
+  .btn-action:hover {
+    background: var(--line, #2d3741);
   }
 
-  .advanced-options {
-    padding: 0.75rem;
-    background: var(--panel-raised, #f9fafb);
-    border-radius: 6px;
-    border: 1px solid var(--line, #e5e7eb);
+  .btn-action.delete:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border-color: #ef4444;
   }
 </style>
