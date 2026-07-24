@@ -10,6 +10,8 @@
   import DirectoryInput from './DirectoryInput.svelte';
   import TimeInput from './TimeInput.svelte';
 
+  import FormPanel from './FormPanel.svelte';
+
   export type ControlType = 'toggle' | 'text' | 'number' | 'select' | 'directory' | 'time';
 
   let {
@@ -54,11 +56,7 @@
 {#snippet renderGroup(group: any)}
   {@const visibleFields = (group.fields || []).filter((f: any) => f.visible !== false)}
 
-  <section class="form-group" class:is-components-group={group.id === 'model_components'}>
-    {#if group.title || group.label}
-      <h3 class="group-title">{group.title || group.label}</h3>
-    {/if}
-
+  <FormPanel title={group.title || group.label} isComponentsGroup={group.id === 'model_components'}>
     {#if visibleFields.length > 0}
       <div class="group-fields" class:components-table={group.id === 'model_components'}>
         {#each visibleFields as field (field.id)}
@@ -132,7 +130,7 @@
         {/each}
       </div>
     {/if}
-  </section>
+  </FormPanel>
 {/snippet}
 
 <div class="schema-form" class:is-model-tab={tab?.id === 'model'} class:is-training-tab={tab?.id === 'training'} class:is-general-tab={tab?.id === 'general'}>

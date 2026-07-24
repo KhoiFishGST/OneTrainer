@@ -122,6 +122,7 @@
 
   .field-control-side :global(.toggle-input) {
     margin-left: auto;
+    margin-right: 8px;
   }
 
   .inline-label {
