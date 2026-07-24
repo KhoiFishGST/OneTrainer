@@ -122,7 +122,6 @@
     flex-direction: column;
     gap: 1.25rem;
     max-width: 1200px;
-    margin: 0 auto;
     width: 100%;
     box-sizing: border-box;
   }
