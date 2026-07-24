@@ -35,7 +35,7 @@
 
 <style>
   .number-input {
-    width: 140px;
+    width: 180px;
     max-width: 100%;
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--color-border, var(--line, #2d3741));
