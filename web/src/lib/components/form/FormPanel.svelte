@@ -34,7 +34,7 @@
     flex-direction: column;
     gap: 1rem;
     box-sizing: border-box;
-    width: 660px;
+    width: 740px;
     max-width: 100%;
   }
 

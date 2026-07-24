@@ -104,9 +104,9 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    flex: 0 0 340px;
-    width: 340px;
-    min-width: 340px;
+    flex: 0 0 420px;
+    width: 420px;
+    min-width: 420px;
   }
 
   .field-control-side :global(.select-input),

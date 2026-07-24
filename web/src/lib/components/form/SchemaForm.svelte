@@ -187,7 +187,7 @@
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-    width: 660px;
+    width: 740px;
     max-width: 100%;
   }
 
