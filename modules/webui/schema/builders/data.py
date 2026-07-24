@@ -10,7 +10,7 @@ def build_data_tab(model_type: ModelType, training_method: TrainingMethod) -> Ta
         (
             Group(
                 "caching",
-                "Data and caching",
+                "Data & Caching",
                 (
                     Field(
                         "aspect-ratio",

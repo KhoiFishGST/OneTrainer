@@ -133,7 +133,7 @@
   </FormPanel>
 {/snippet}
 
-<div class="schema-form" class:is-model-tab={tab?.id === 'model'} class:is-training-tab={tab?.id === 'training'} class:is-general-tab={tab?.id === 'general'}>
+<div class="schema-form" class:is-training-tab={tab?.id === 'training'}>
   {#if tab?.groups}
     {#if tab.id === 'training'}
       <div class="training-column col-1">
@@ -151,17 +151,6 @@
           {@render renderGroup(group)}
         {/each}
       </div>
-    {:else if tab.id === 'general'}
-      <div class="general-column col-1">
-        {#each tab.groups.filter((g) => ['workspace', 'debug', 'tensorboard', 'validation'].includes(g.id)) as group (group.id)}
-          {@render renderGroup(group)}
-        {/each}
-      </div>
-      <div class="general-column col-2">
-        {#each tab.groups.filter((g) => ['execution_hardware', 'multi_gpu'].includes(g.id)) as group (group.id)}
-          {@render renderGroup(group)}
-        {/each}
-      </div>
     {:else}
       {#each tab.groups as group (group.id)}
         {@render renderGroup(group)}
@@ -172,25 +161,25 @@
 
 <style>
   .schema-form {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.5rem;
-    align-items: start;
-  }
-
-  .schema-form.is-training-tab {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .training-column,
-  .general-column {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    max-width: 900px;
+    width: 100%;
   }
 
-  .schema-form :global(.is-components-group) {
-    grid-column: 1 / -1;
+  .schema-form.is-training-tab {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+    max-width: 100%;
+    align-items: start;
+  }
+
+  .training-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
   }
 
   @media (max-width: 1280px) {
@@ -200,7 +189,6 @@
   }
 
   @media (max-width: 1024px) {
-    .schema-form,
     .schema-form.is-training-tab {
       grid-template-columns: 1fr;
     }
