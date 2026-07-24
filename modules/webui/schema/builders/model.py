@@ -6,6 +6,7 @@ from modules.webui.schema.types import Field, Group, Tab
 def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> Tab:
     parts = model_type.model_parts()
 
+    # 1. Base Model & Output Format
     base_fields = [
         Field(
             "base-model-name",
@@ -60,11 +61,10 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
         ),
     ]
 
-    component_fields = []
-
-    # UNet
+    # 2. Primary Backbone Model
+    backbone_fields = []
     if "unet" in parts:
-        component_fields.append(
+        backbone_fields.append(
             Field(
                 "unet-weight-dtype",
                 ("unet.weight_dtype",),
@@ -73,11 +73,9 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
                 "select",
             )
         )
-
-    # Prior
     if "prior" in parts:
         if model_type.is_stable_cascade():
-            component_fields.append(
+            backbone_fields.append(
                 Field(
                     "prior-model-name",
                     ("prior.model_name",),
@@ -87,7 +85,7 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
                     path_mode="file",
                 )
             )
-        component_fields.append(
+        backbone_fields.append(
             Field(
                 "prior-weight-dtype",
                 ("prior.weight_dtype",),
@@ -96,10 +94,8 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
                 "select",
             )
         )
-
-    # Transformer
     if "transformer" in parts:
-        component_fields.append(
+        backbone_fields.append(
             Field(
                 "transformer-model-name",
                 ("transformer.model_name",),
@@ -109,7 +105,7 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
                 path_mode="file",
             )
         )
-        component_fields.append(
+        backbone_fields.append(
             Field(
                 "transformer-weight-dtype",
                 ("transformer.weight_dtype",),
@@ -118,10 +114,8 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
                 "select",
             )
         )
-
-    # Unconditional Transformer
     if "unconditional_transformer" in parts:
-        component_fields.append(
+        backbone_fields.append(
             Field(
                 "unconditional-transformer-weight-dtype",
                 ("unconditional_transformer.weight_dtype",),
@@ -131,30 +125,29 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
             )
         )
 
-    # Quantization
-    component_fields.append(
+    # 3. Quantization & SVD
+    quantization_fields = [
         Field(
             "quantization-svd-dtype",
             ("quantization.svd_dtype",),
             "SVDQuant Data Type",
             "Datatype to use for SVDQuant weights decomposition",
             "select",
-        )
-    )
-    component_fields.append(
+        ),
         Field(
             "quantization-svd-rank",
             ("quantization.svd_rank",),
             "SVDQuant Rank",
             "Rank for SVDQuant weights decomposition",
             "number",
-        )
-    )
+        ),
+    ]
 
-    # Text Encoders
+    # 4. Text Encoders
+    text_encoder_fields = []
     has_multiple = model_type.has_multiple_text_encoders()
     if not has_multiple:
-        component_fields.append(
+        text_encoder_fields.append(
             Field(
                 "text-encoder-weight-dtype",
                 ("text_encoder.weight_dtype",),
@@ -164,7 +157,7 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
             )
         )
     else:
-        component_fields.append(
+        text_encoder_fields.append(
             Field(
                 "text-encoder-1-weight-dtype",
                 ("text_encoder.weight_dtype",),
@@ -175,7 +168,7 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
         )
 
     if "text_encoder_2" in parts:
-        component_fields.append(
+        text_encoder_fields.append(
             Field(
                 "text-encoder-2-layer-skip",
                 ("text_encoder_2_layer_skip",),
@@ -184,7 +177,7 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
                 "number",
             )
         )
-        component_fields.append(
+        text_encoder_fields.append(
             Field(
                 "text-encoder-2-weight-dtype",
                 ("text_encoder_2.weight_dtype",),
@@ -195,7 +188,7 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
         )
 
     if "text_encoder_3" in parts:
-        component_fields.append(
+        text_encoder_fields.append(
             Field(
                 "text-encoder-3-layer-skip",
                 ("text_encoder_3_layer_skip",),
@@ -204,7 +197,7 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
                 "number",
             )
         )
-        component_fields.append(
+        text_encoder_fields.append(
             Field(
                 "text-encoder-3-weight-dtype",
                 ("text_encoder_3.weight_dtype",),
@@ -215,7 +208,7 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
         )
 
     if "text_encoder_4" in parts:
-        component_fields.append(
+        text_encoder_fields.append(
             Field(
                 "text-encoder-4-model-name",
                 ("text_encoder_4.model_name",),
@@ -225,7 +218,7 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
                 path_mode="file",
             )
         )
-        component_fields.append(
+        text_encoder_fields.append(
             Field(
                 "text-encoder-4-layer-skip",
                 ("text_encoder_4_layer_skip",),
@@ -234,7 +227,7 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
                 "number",
             )
         )
-        component_fields.append(
+        text_encoder_fields.append(
             Field(
                 "text-encoder-4-weight-dtype",
                 ("text_encoder_4.weight_dtype",),
@@ -244,9 +237,10 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
             )
         )
 
-    # VAE
+    # 5. VAE & Image Autoencoders
+    vae_fields = []
     if "vae" in parts:
-        component_fields.append(
+        vae_fields.append(
             Field(
                 "vae-model-name",
                 ("vae.model_name",),
@@ -256,7 +250,7 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
                 path_mode="file",
             )
         )
-        component_fields.append(
+        vae_fields.append(
             Field(
                 "vae-weight-dtype",
                 ("vae.weight_dtype",),
@@ -266,9 +260,8 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
             )
         )
 
-    # EffNet Encoder
     if "effnet_encoder" in parts:
-        component_fields.append(
+        vae_fields.append(
             Field(
                 "effnet-encoder-model-name",
                 ("effnet_encoder.model_name",),
@@ -278,7 +271,7 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
                 path_mode="file",
             )
         )
-        component_fields.append(
+        vae_fields.append(
             Field(
                 "effnet-encoder-weight-dtype",
                 ("effnet_encoder.weight_dtype",),
@@ -288,9 +281,8 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
             )
         )
 
-    # Decoder
     if "decoder" in parts:
-        component_fields.append(
+        vae_fields.append(
             Field(
                 "decoder-model-name",
                 ("decoder.model_name",),
@@ -300,7 +292,7 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
                 path_mode="file",
             )
         )
-        component_fields.append(
+        vae_fields.append(
             Field(
                 "decoder-weight-dtype",
                 ("decoder.weight_dtype",),
@@ -311,8 +303,19 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
         )
 
     groups = [
-        Group("base_model", "Base Model", tuple(base_fields)),
-        Group("model_components", "Model Components", tuple(component_fields)),
+        Group("base_model", "Base Model & Output", tuple(base_fields)),
     ]
+
+    if backbone_fields:
+        groups.append(Group("primary_backbone", "Primary Backbone Model", tuple(backbone_fields)))
+
+    if quantization_fields:
+        groups.append(Group("quantization", "Quantization & SVD", tuple(quantization_fields)))
+
+    if text_encoder_fields:
+        groups.append(Group("text_encoders", "Text Encoders", tuple(text_encoder_fields)))
+
+    if vae_fields:
+        groups.append(Group("vae_autoencoders", "VAE & Image Autoencoders", tuple(vae_fields)))
 
     return Tab("model", "Model", tuple(groups))
