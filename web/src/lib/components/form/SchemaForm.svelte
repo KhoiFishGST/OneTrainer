@@ -133,7 +133,7 @@
   </FormPanel>
 {/snippet}
 
-<div class="schema-form" class:is-model-tab={tab?.id === 'model'} class:is-training-tab={tab?.id === 'training'} class:is-general-tab={tab?.id === 'general'} class:is-data-tab={tab?.id === 'data'}>
+<div class="schema-form" class:is-model-tab={tab?.id === 'model'} class:is-training-tab={tab?.id === 'training'} class:is-general-tab={tab?.id === 'general'}>
   {#if tab?.groups}
     {#if tab.id === 'training'}
       <div class="training-column col-1">
@@ -180,10 +180,6 @@
 
   .schema-form.is-training-tab {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .schema-form.is-data-tab {
-    grid-template-columns: 1fr;
   }
 
   .training-column,
