@@ -25,6 +25,7 @@ from modules.webui.presets import PresetService
 from modules.webui.routers.auth import router as auth_router
 from modules.webui.routers.concepts import router as concepts_router
 from modules.webui.routers.config import router as config_router
+from modules.webui.routers.datasets import router as datasets_router
 from modules.webui.routers.console import router as console_router
 from modules.webui.routers.directories import router as directories_router
 from modules.webui.routers.events import router as events_router
@@ -58,6 +59,10 @@ class LimitUploadSizeMiddleware:
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        if scope.get("path", "").startswith("/api/datasets/"):
             await self.app(scope, receive, send)
             return
 
@@ -211,6 +216,7 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
     app.include_router(health_router, prefix="/api")
     app.include_router(config_router, prefix="/api")
     app.include_router(concepts_router, prefix="/api")
+    app.include_router(datasets_router, prefix="/api")
     app.include_router(meta_router, prefix="/api")
     app.include_router(presets_router, prefix="/api")
     app.include_router(directories_router, prefix="/api")
