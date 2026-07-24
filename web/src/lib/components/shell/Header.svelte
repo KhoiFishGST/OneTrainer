@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { ChevronDown } from 'lucide-svelte';
   import {
     createMetaQuery,
     createPresetsQuery,
@@ -39,6 +40,7 @@
   let showSaveDialog = $state(false);
   let presetName = $state('');
   let saveError = $state<string | null>(null);
+  let activeDropdown = $state<'model' | 'method' | 'preset' | null>(null);
 
   const modelTypes = $derived(meta?.model_types ?? []);
 
@@ -58,24 +60,43 @@
     workspace?.draft?.training_method ?? trainingMethods[0]?.value ?? ''
   );
 
-  function handleModelTypeChange(e: Event) {
-    const newType = (e.target as HTMLSelectElement).value;
+  function toggleDropdown(name: 'model' | 'method' | 'preset', e?: MouseEvent) {
+    if (e) e.stopPropagation();
+    activeDropdown = activeDropdown === name ? null : name;
+  }
+
+  function closeDropdowns() {
+    activeDropdown = null;
+  }
+
+  function selectModelValue(val: string) {
+    activeDropdown = null;
     if (!workspace) return;
 
-    const mtObj = modelTypes.find((m: any) => m.value === newType);
+    const mtObj = modelTypes.find((m: any) => m.value === val);
     const validMethods = mtObj?.training_methods?.map((tm: any) => tm.value) ?? [];
     const curMethod = workspace.draft?.training_method;
 
     if (validMethods.length > 0 && !validMethods.includes(curMethod)) {
       workspace.setRaw('training_method', validMethods[0]);
     }
-    workspace.setRaw('model_type', newType);
+    workspace.setRaw('model_type', val);
+  }
+
+  function selectMethodValue(val: string) {
+    activeDropdown = null;
+    if (!workspace) return;
+    workspace.setRaw('training_method', val);
+  }
+
+  function handleModelTypeChange(e: Event) {
+    const newType = (e.target as HTMLSelectElement).value;
+    selectModelValue(newType);
   }
 
   function handleTrainingMethodChange(e: Event) {
     const newMethod = (e.target as HTMLSelectElement).value;
-    if (!workspace) return;
-    workspace.setRaw('training_method', newMethod);
+    selectMethodValue(newMethod);
   }
 
   function flattenPresetTree(nodes: any[], prefix = ''): { id: string; label: string }[] {
@@ -93,8 +114,8 @@
 
   const flattenedPresets = $derived(flattenPresetTree(presets ?? []));
 
-  async function handleSelectPreset(e: Event) {
-    const presetId = (e.target as HTMLSelectElement).value;
+  async function selectPresetValue(presetId: string) {
+    activeDropdown = null;
     if (!presetId || !workspace) return;
 
     try {
@@ -110,6 +131,11 @@
         workspace.state = 'conflict';
       }
     }
+  }
+
+  async function handleSelectPreset(e: Event) {
+    const presetId = (e.target as HTMLSelectElement).value;
+    await selectPresetValue(presetId);
   }
 
   async function openSavePresetModal() {
@@ -188,6 +214,8 @@
   }
 </script>
 
+<svelte:window onclick={closeDropdowns} />
+
 <header class="header">
   <div class="brand">
     <img src="/logo.png" alt="OneTrainer Logo" class="brand-logo" />
@@ -195,45 +223,127 @@
   </div>
 
   <div class="selectors">
-    <label class="selector-field">
+    <div class="selector-field">
       <span class="label-text">Model</span>
-      <select
-        aria-label="Model Type"
-        value={currentModelType}
-        onchange={handleModelTypeChange}
-      >
-        {#each modelTypes as mt}
-          <option value={mt.value}>{mt.label}</option>
-        {/each}
-      </select>
-    </label>
+      <div class="custom-dropdown-container">
+        <button
+          type="button"
+          class="dropdown-trigger"
+          onclick={(e) => toggleDropdown('model', e)}
+        >
+          <span class="trigger-label">{selectedModelTypeObj?.label ?? 'Select Model'}</span>
+          <ChevronDown size={14} class="chevron-icon" />
+        </button>
 
-    <label class="selector-field">
+        {#if activeDropdown === 'model'}
+          <div class="dropdown-popover">
+            {#each modelTypes as mt}
+              <button
+                type="button"
+                class="popover-option"
+                class:is-active={mt.value === currentModelType}
+                onclick={() => selectModelValue(mt.value)}
+              >
+                {mt.label}
+              </button>
+            {/each}
+          </div>
+        {/if}
+
+        <select
+          aria-label="Model Type"
+          value={currentModelType}
+          onchange={handleModelTypeChange}
+          class="sr-only-select"
+        >
+          {#each modelTypes as mt}
+            <option value={mt.value}>{mt.label}</option>
+          {/each}
+        </select>
+      </div>
+    </div>
+
+    <div class="selector-field">
       <span class="label-text">Method</span>
-      <select
-        aria-label="Training Method"
-        value={currentTrainingMethod}
-        onchange={handleTrainingMethodChange}
-      >
-        {#each trainingMethods as tm}
-          <option value={tm.value}>{tm.label}</option>
-        {/each}
-      </select>
-    </label>
+      <div class="custom-dropdown-container">
+        <button
+          type="button"
+          class="dropdown-trigger"
+          onclick={(e) => toggleDropdown('method', e)}
+        >
+          <span class="trigger-label">
+            {trainingMethods.find((tm: any) => tm.value === currentTrainingMethod)?.label ?? 'Select Method'}
+          </span>
+          <ChevronDown size={14} class="chevron-icon" />
+        </button>
 
-    <label class="selector-field">
+        {#if activeDropdown === 'method'}
+          <div class="dropdown-popover">
+            {#each trainingMethods as tm}
+              <button
+                type="button"
+                class="popover-option"
+                class:is-active={tm.value === currentTrainingMethod}
+                onclick={() => selectMethodValue(tm.value)}
+              >
+                {tm.label}
+              </button>
+            {/each}
+          </div>
+        {/if}
+
+        <select
+          aria-label="Training Method"
+          value={currentTrainingMethod}
+          onchange={handleTrainingMethodChange}
+          class="sr-only-select"
+        >
+          {#each trainingMethods as tm}
+            <option value={tm.value}>{tm.label}</option>
+          {/each}
+        </select>
+      </div>
+    </div>
+
+    <div class="selector-field">
       <span class="label-text">Preset</span>
-      <select
-        aria-label="Presets"
-        value=""
-        onchange={handleSelectPreset}
-      >
-        <option value="" disabled selected>Select preset...</option>
-        {#each flattenedPresets as p}
-          <option value={p.id}>{p.label}</option>
-        {/each}
-      </select>
-    </label>
+      <div class="custom-dropdown-container">
+        <button
+          type="button"
+          class="dropdown-trigger"
+          onclick={(e) => toggleDropdown('preset', e)}
+        >
+          <span class="trigger-label">Select preset...</span>
+          <ChevronDown size={14} class="chevron-icon" />
+        </button>
+
+        {#if activeDropdown === 'preset'}
+          <div class="dropdown-popover">
+            {#each flattenedPresets as p}
+              <button
+                type="button"
+                class="popover-option"
+                onclick={() => selectPresetValue(p.id)}
+              >
+                {p.label}
+              </button>
+            {/each}
+          </div>
+        {/if}
+
+        <select
+          aria-label="Presets"
+          value=""
+          onchange={handleSelectPreset}
+          class="sr-only-select"
+        >
+          <option value="" disabled selected>Select preset...</option>
+          {#each flattenedPresets as p}
+            <option value={p.id}>{p.label}</option>
+          {/each}
+        </select>
+      </div>
+    </div>
 
     <button
       type="button"
@@ -634,5 +744,92 @@
     background-color: rgba(239, 68, 68, 0.2);
     color: #ef4444;
     border: 1px solid rgba(239, 68, 68, 0.4);
+  }
+
+  .custom-dropdown-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .dropdown-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background-color: var(--control);
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    min-width: 140px;
+    white-space: nowrap;
+    transition: border-color 0.15s ease;
+  }
+
+  .dropdown-trigger:hover {
+    border-color: var(--accent);
+  }
+
+  .dropdown-popover {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 100%;
+    width: max-content;
+    max-width: 320px;
+    max-height: 280px;
+    overflow-y: auto;
+    background-color: var(--panel-raised, #1d242c);
+    border: 1px solid var(--line, #2d3741);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    z-index: 250;
+    display: flex;
+    flex-direction: column;
+    padding: 4px;
+    gap: 2px;
+    animation: fadeIn 0.12s ease-out;
+  }
+
+  .popover-option {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 6px 12px;
+    font-size: 0.875rem;
+    color: var(--text, #e6ebef);
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: left;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .popover-option:hover {
+    background-color: var(--accent-soft, #1e293b);
+    color: var(--accent, #3b82f6);
+  }
+
+  .popover-option.is-active {
+    background-color: var(--accent, #3b82f6);
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  .sr-only-select {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 </style>
