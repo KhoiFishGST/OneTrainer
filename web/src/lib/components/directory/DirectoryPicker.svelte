@@ -372,15 +372,16 @@
   }
 
   .picker-modal {
-    background: var(--color-bg-card, #ffffff);
-    color: var(--color-text, #111827);
+    background: var(--panel, #181e25);
+    color: var(--text, #e6ebef);
+    border: 1px solid var(--line, #2d3741);
     border-radius: 8px;
     width: 100%;
-    max-width: 600px;
+    max-width: 650px;
     max-height: 85vh;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
     overflow: hidden;
   }
 
@@ -389,20 +390,22 @@
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
-    border-bottom: 1px solid var(--color-border, #e5e7eb);
+    border-bottom: 1px solid var(--line, #2d3741);
+    background: var(--panel, #181e25);
   }
 
   .picker-title {
     margin: 0;
     font-size: 1.125rem;
     font-weight: 600;
+    color: var(--text, #e6ebef);
   }
 
   .close-btn {
     background: transparent;
     border: none;
     cursor: pointer;
-    color: var(--color-text-muted, #6b7280);
+    color: var(--muted, #8995a1);
     padding: 4px;
     border-radius: 4px;
     display: flex;
@@ -410,31 +413,45 @@
   }
 
   .close-btn:hover {
-    background: var(--color-bg-hover, #f3f4f6);
+    background: var(--panel-raised, #1d242c);
+    color: var(--text, #e6ebef);
   }
 
   .picker-path-bar {
     display: flex;
     gap: 8px;
     padding: 12px 16px;
-    border-bottom: 1px solid var(--color-border, #e5e7eb);
+    border-bottom: 1px solid var(--line, #2d3741);
+    background: var(--panel, #181e25);
   }
 
   .path-input {
     flex: 1;
     padding: 6px 12px;
-    border: 1px solid var(--color-border, #d1d5db);
+    background: var(--control, #14191f);
+    color: var(--text, #e6ebef);
+    border: 1px solid var(--line, #2d3741);
     border-radius: 6px;
     font-size: 0.875rem;
   }
 
+  .path-input:focus {
+    outline: none;
+    border-color: var(--accent, #dd773b);
+  }
+
   .nav-btn {
     padding: 6px 16px;
-    background: var(--color-bg-button, #f3f4f6);
-    border: 1px solid var(--color-border, #d1d5db);
+    background: var(--control, #14191f);
+    color: var(--text, #e6ebef);
+    border: 1px solid var(--line, #2d3741);
     border-radius: 6px;
     font-size: 0.875rem;
     cursor: pointer;
+  }
+
+  .nav-btn:hover:not(:disabled) {
+    background: var(--panel-raised, #1d242c);
   }
 
   .breadcrumb-bar {
@@ -442,15 +459,15 @@
     align-items: center;
     gap: 4px;
     padding: 8px 16px;
-    background: var(--color-bg-subtle, #f9fafb);
-    border-bottom: 1px solid var(--color-border, #e5e7eb);
+    background: var(--panel-raised, #1d242c);
+    border-bottom: 1px solid var(--line, #2d3741);
     font-size: 0.875rem;
     overflow-x: auto;
     white-space: nowrap;
   }
 
   .crumb-separator {
-    color: var(--color-text-muted, #9ca3af);
+    color: var(--muted, #8995a1);
     font-size: 0.75rem;
     user-select: none;
   }
@@ -460,20 +477,20 @@
     border: none;
     padding: 2px 6px;
     border-radius: 4px;
-    color: var(--color-primary, #2563eb);
+    color: var(--accent, #dd773b);
     font-size: 0.875rem;
     cursor: pointer;
     font-weight: 400;
   }
 
   .crumb-btn:hover {
-    background: var(--color-bg-hover, #e5e7eb);
+    background: var(--control, #14191f);
     text-decoration: underline;
   }
 
   .crumb-btn.active {
     font-weight: 600;
-    color: var(--color-text, #111827);
+    color: var(--text, #e6ebef);
     cursor: default;
   }
 
@@ -487,21 +504,22 @@
     align-items: center;
     gap: 8px;
     padding: 8px 16px;
-    background: var(--color-bg-subtle, #f9fafb);
-    border-bottom: 1px solid var(--color-border, #e5e7eb);
+    background: var(--panel-raised, #1d242c);
+    border-bottom: 1px solid var(--line, #2d3741);
     font-size: 0.875rem;
     overflow-x: auto;
   }
 
   .roots-label {
     font-weight: 500;
-    color: var(--color-text-muted, #6b7280);
+    color: var(--muted, #8995a1);
   }
 
   .root-btn {
     padding: 2px 8px;
-    background: var(--color-bg-card, #ffffff);
-    border: 1px solid var(--color-border, #d1d5db);
+    background: var(--control, #14191f);
+    color: var(--text, #e6ebef);
+    border: 1px solid var(--line, #2d3741);
     border-radius: 4px;
     font-size: 0.75rem;
     cursor: pointer;
@@ -509,15 +527,17 @@
 
   .error-banner {
     padding: 8px 16px;
-    background: #fee2e2;
-    color: #991b1b;
+    background: rgba(217, 120, 120, 0.15);
+    color: var(--danger, #d97878);
+    border-bottom: 1px solid var(--line, #2d3741);
     font-size: 0.875rem;
   }
 
   .warning-banner {
     padding: 8px 16px;
-    background: #fef3c7;
-    color: #92400e;
+    background: rgba(242, 161, 111, 0.15);
+    color: var(--focus, #f2a16f);
+    border-bottom: 1px solid var(--line, #2d3741);
     font-size: 0.875rem;
   }
 
@@ -529,6 +549,7 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+    background: var(--panel, #181e25);
   }
 
   .dir-list {
@@ -547,18 +568,18 @@
     border-radius: 6px;
     text-align: left;
     font-size: 0.875rem;
-    color: var(--color-text, #111827);
+    color: var(--text, #e6ebef);
     cursor: pointer;
     width: 100%;
   }
 
   .dir-item:hover {
-    background: var(--color-bg-hover, #f3f4f6);
+    background: var(--panel-raised, #1d242c);
   }
 
   .dir-item.selected {
-    background: var(--color-bg-selected, #e0e7ff);
-    border-color: var(--color-primary, #2563eb);
+    background: var(--accent-soft, #2a2725);
+    border-color: var(--accent, #dd773b);
   }
 
   .file-name {
@@ -567,19 +588,19 @@
 
   .file-size {
     font-size: 0.75rem;
-    color: var(--color-text-muted, #6b7280);
+    color: var(--muted, #8995a1);
   }
 
   .parent-item {
     font-weight: 500;
-    color: var(--color-primary, #2563eb);
+    color: var(--accent, #dd773b);
   }
 
   .loading-state,
   .empty-state {
     padding: 24px;
     text-align: center;
-    color: var(--color-text-muted, #6b7280);
+    color: var(--muted, #8995a1);
     font-size: 0.875rem;
   }
 
@@ -589,28 +610,37 @@
     justify-content: flex-end;
     gap: 8px;
     padding: 12px 16px;
-    border-top: 1px solid var(--color-border, #e5e7eb);
-    background: var(--color-bg-subtle, #f9fafb);
+    border-top: 1px solid var(--line, #2d3741);
+    background: var(--control, #14191f);
   }
 
   .cancel-btn {
     padding: 8px 16px;
     background: transparent;
-    border: 1px solid var(--color-border, #d1d5db);
+    border: 1px solid var(--line, #2d3741);
+    color: var(--text, #e6ebef);
     border-radius: 6px;
     font-size: 0.875rem;
     cursor: pointer;
   }
 
+  .cancel-btn:hover {
+    background: var(--panel-raised, #1d242c);
+  }
+
   .select-btn {
     padding: 8px 16px;
-    background: var(--color-primary, #2563eb);
+    background: var(--accent, #dd773b);
     color: #ffffff;
     border: none;
     border-radius: 6px;
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
+  }
+
+  .select-btn:hover:not(:disabled) {
+    background: var(--focus, #f2a16f);
   }
 
   .select-btn:disabled {
