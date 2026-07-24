@@ -13,9 +13,9 @@
   const uploadMutation = createUploadDatasetFilesMutation();
   const captionMutation = createUpdateCaptionMutation();
 
-  let items = $derived(filesQuery.data?.items || []);
-  let datasetPath = $derived(filesQuery.data?.path || '');
-  let loading = $derived(filesQuery.isLoading);
+  let items = $derived($filesQuery.data?.items || []);
+  let datasetPath = $derived($filesQuery.data?.path || '');
+  let loading = $derived($filesQuery.isLoading);
   let fileInput = $state<HTMLInputElement | null>(null);
   let isDragging = $state(false);
   let activeLightboxImage = $state<string | null>(null);

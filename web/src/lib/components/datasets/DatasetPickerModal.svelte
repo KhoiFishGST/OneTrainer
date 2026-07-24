@@ -25,8 +25,8 @@
 
   const datasetsQuery = createDatasetsQuery();
 
-  let datasets = $derived(datasetsQuery.data?.datasets || []);
-  let loading = $derived(datasetsQuery.isLoading);
+  let datasets = $derived($datasetsQuery.data?.datasets || []);
+  let loading = $derived($datasetsQuery.isLoading);
   let selectedDataset = $state<DatasetItem | null>(null);
 
   $effect(() => {

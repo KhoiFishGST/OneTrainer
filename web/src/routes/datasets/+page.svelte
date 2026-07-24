@@ -31,11 +31,11 @@
   const createMutation = createCreateDatasetMutation();
   const deleteMutation = createDeleteDatasetMutation();
 
-  let datasets = $derived(datasetsQuery.data?.datasets || []);
+  let datasets = $derived($datasetsQuery.data?.datasets || []);
   let baseDir = $derived(
-    ctx?.workspace?.draft?.datasets_dir ?? datasetsQuery.data?.base_dir ?? 'workspace/datasets'
+    ctx?.workspace?.draft?.datasets_dir ?? $datasetsQuery.data?.base_dir ?? 'workspace/datasets'
   );
-  let loading = $derived(datasetsQuery.isLoading);
+  let loading = $derived($datasetsQuery.isLoading);
   let showCreateModal = $state(false);
   let newDatasetName = $state('');
   let createError = $state<string | null>(null);

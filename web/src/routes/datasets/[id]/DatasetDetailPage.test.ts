@@ -1,24 +1,27 @@
 import { render, screen } from '@testing-library/svelte';
 import { expect, test, vi } from 'vitest';
+import { readable } from 'svelte/store';
 import DatasetDetailPage from './+page.svelte';
 import * as queries from '$lib/api/queries';
 
 test('renders dataset detail header and upload button', async () => {
-  vi.spyOn(queries, 'createDatasetFilesQuery').mockReturnValue({
-    data: {
-      name: 'TestDataset',
-      path: '/workspace/datasets/TestDataset',
-      items: [
-        {
-          id: 'sample_01',
-          image_name: 'sample_01.png',
-          caption_name: 'sample_01.txt',
-          caption_content: 'a beautiful cat',
-        },
-      ],
-    },
-    isLoading: false,
-  } as any);
+  vi.spyOn(queries, 'createDatasetFilesQuery').mockReturnValue(
+    readable({
+      data: {
+        name: 'TestDataset',
+        path: '/workspace/datasets/TestDataset',
+        items: [
+          {
+            id: 'sample_01',
+            image_name: 'sample_01.png',
+            caption_name: 'sample_01.txt',
+            caption_content: 'a beautiful cat',
+          },
+        ],
+      },
+      isLoading: false,
+    }) as any
+  );
 
   render(DatasetDetailPage, { data: { id: 'TestDataset' } });
   expect(screen.getByText('Back to Datasets')).toBeInTheDocument();
