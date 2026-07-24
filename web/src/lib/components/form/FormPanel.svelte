@@ -40,7 +40,7 @@
     font-size: 1rem;
     font-weight: 600;
     margin: 0;
-    color: var(--color-text, var(--text, #e6ebef));
+    color: var(--color-text-title, var(--accent, #dd773b));
   }
 
   .panel-body {

@@ -137,8 +137,8 @@
   .page-title {
     font-size: 1.5rem;
     font-weight: 700;
-    margin: 0 0 0.25rem 0;
-    color: var(--text, #111827);
+    margin: 0;
+    color: var(--color-text-title, var(--accent, #dd773b));
   }
 
   .page-subtitle {

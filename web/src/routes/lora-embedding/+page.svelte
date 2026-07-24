@@ -41,7 +41,7 @@
     font-size: 1.5rem;
     font-weight: 700;
     margin-bottom: 1.5rem;
-    color: var(--color-text, #111827);
+    color: var(--color-text-title, var(--accent, #dd773b));
   }
 
   .skeleton-container {

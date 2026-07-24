@@ -148,7 +148,7 @@
     font-size: 1.5rem;
     font-weight: 700;
     margin: 0;
-    color: var(--text, #f8fafc);
+    color: var(--color-text-title, var(--accent, #dd773b));
   }
 
   .status-badge {

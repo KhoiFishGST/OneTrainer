@@ -222,7 +222,7 @@
     font-size: 1.5rem;
     font-weight: 700;
     margin-bottom: 1.5rem;
-    color: var(--text, #f3f4f6);
+    color: var(--color-text-title, var(--accent, #dd773b));
   }
 
   .security-warning-banner {

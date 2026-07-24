@@ -20,7 +20,7 @@
   --color-bg-button: var(--control);
   --color-bg-button-hover: var(--panel-raised);
   --color-text: var(--text);
-  --color-text-title: var(--text);
+  --color-text-title: var(--accent);
   --color-text-muted: var(--muted);
   --color-border: var(--line);
   --color-primary: var(--accent);
