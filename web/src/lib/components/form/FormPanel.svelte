@@ -34,6 +34,9 @@
     flex-direction: column;
     gap: 1rem;
     box-sizing: border-box;
+    align-self: flex-start;
+    width: fit-content;
+    max-width: 100%;
   }
 
   .panel-title {
