@@ -2,7 +2,8 @@
   import type { Concept } from '$lib/api/types';
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
   import Select from '$lib/components/form/Select.svelte';
-  import { Settings, Image as ImageIcon, FileText, BarChart2, Check, X } from 'lucide-svelte';
+  import DatasetPickerModal from '$lib/components/datasets/DatasetPickerModal.svelte';
+  import { Settings, Image as ImageIcon, FileText, BarChart2, Check, X, FolderKanban } from 'lucide-svelte';
 
   let {
     concept,
@@ -20,6 +21,7 @@
 
   let activeTab = $state<'general' | 'image' | 'text' | 'stats'>('general');
   let draft = $state<Concept | null>(null);
+  let showDatasetPicker = $state(false);
 
   $effect(() => {
     if (concept && isOpen) {
@@ -168,6 +170,14 @@
               <label for="concept-path">Dataset Directory Path</label>
               <div class="path-input-group">
                 <input id="concept-path" type="text" bind:value={draft.path} placeholder="/path/to/dataset/images" />
+                <button
+                  type="button"
+                  class="btn-select-dataset"
+                  onclick={() => (showDatasetPicker = true)}
+                >
+                  <FolderKanban size={14} />
+                  <span>Select Dataset</span>
+                </button>
                 {#if openDirectory}
                   <button type="button" class="btn-browse" onclick={handleBrowsePath}>Browse</button>
                 {/if}
@@ -365,6 +375,16 @@
       </div>
     </div>
   </ModalDialog>
+
+  <DatasetPickerModal
+    open={showDatasetPicker}
+    currentPath={draft?.path}
+    onSelect={(selectedPath) => {
+      if (draft) draft.path = selectedPath;
+      showDatasetPicker = false;
+    }}
+    onClose={() => (showDatasetPicker = false)}
+  />
 {/if}
 
 <style>
@@ -460,6 +480,25 @@
 
   .path-input-group input {
     flex: 1;
+  }
+
+  .btn-select-dataset {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--panel-raised, #1d242c);
+    border: 1px solid var(--line, #2d3741);
+    border-radius: 6px;
+    color: var(--color-text-title, var(--accent, #3b82f6));
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .btn-select-dataset:hover {
+    background: var(--line, #2d3741);
   }
 
   .btn-browse {
