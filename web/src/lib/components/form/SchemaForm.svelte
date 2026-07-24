@@ -164,7 +164,7 @@
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-    max-width: 760px;
+    max-width: 640px;
     width: 100%;
   }
 
