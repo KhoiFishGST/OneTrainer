@@ -429,7 +429,7 @@
   }
 
   .tab-content {
-    min-height: 320px;
+    min-height: 380px;
     padding: 0.5rem 0;
   }
 
