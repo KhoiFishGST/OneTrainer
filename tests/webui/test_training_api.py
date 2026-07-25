@@ -1,9 +1,19 @@
 import pytest
+from unittest.mock import MagicMock
 from fastapi.testclient import TestClient
 
 from modules.webui.app import create_app
 from modules.webui.state import WebUISettings
 from modules.webui.training import TrainingState
+
+
+@pytest.fixture
+def mock_training_service(client):
+    mock = MagicMock()
+    client.app.state.webui.training = mock
+    return mock
+
+
 
 
 @pytest.fixture
@@ -96,3 +106,18 @@ def test_training_api_invalid_transitions(client):
     # Stop when IDLE is idempotent (200) or fails (400, 409)
     res = client.post("/api/training/stop")
     assert res.status_code in (200, 400, 409)
+
+
+def test_training_api_request_save(client, mock_training_service):
+    # When training is idle, returning 409
+    mock_training_service.request_save.side_effect = RuntimeError("Cannot request save from state IDLE")
+    response = client.post("/api/training/save")
+    assert response.status_code == 409
+
+    # When training is running, returning 200 ok
+    mock_training_service.request_save.side_effect = None
+    mock_training_service.request_save.return_value = None
+    response = client.post("/api/training/save")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+

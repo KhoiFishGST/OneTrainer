@@ -87,6 +87,17 @@ async def request_backup(request: Request):
         raise HTTPException(status_code=409, detail=str(e))
 
 
+@router.post("/training/save")
+async def request_save(request: Request):
+    app_state: AppState = request.app.state.webui
+    try:
+        app_state.training_service.request_save()
+        return {"status": "ok"}
+    except RuntimeError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+
+
+
 
 @router.get("/training/metrics")
 async def get_metrics(request: Request):

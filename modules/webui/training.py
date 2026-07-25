@@ -72,6 +72,7 @@ class TrainingService:
         self._config_snapshot: Optional[Dict[str, Any]] = None
         self._sample_requested: bool = False
         self._backup_requested: bool = False
+        self._save_requested: bool = False
         self._metrics: deque = deque(maxlen=10000)
         self._samples: list = []
 
@@ -108,6 +109,13 @@ class TrainingService:
             if self._state not in (TrainingState.TRAINING, TrainingState.PAUSED):
                 raise RuntimeError(f"Cannot request backup from state {self._state}")
             self._backup_requested = True
+
+    def request_save(self):
+        with self._lock:
+            if self._state not in (TrainingState.TRAINING, TrainingState.PAUSED):
+                raise RuntimeError(f"Cannot request save from state {self._state}")
+            self._save_requested = True
+
 
     def record_metric(self, metric_data: Optional[Dict[str, Any]] = None, **kwargs) -> Dict[str, Any]:
         data: Dict[str, Any] = {}
