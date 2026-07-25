@@ -2,6 +2,7 @@
   import { Plus, Trash2 } from 'lucide-svelte';
   import { getRouteContext } from '$lib/config/context';
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
+  import AddCard from '$lib/components/ui/AddCard.svelte';
   import PathInput from '$lib/components/form/PathInput.svelte';
   import Toggle from '$lib/components/form/Toggle.svelte';
   import {
@@ -143,12 +144,7 @@
   </div>
 
   <div class="datasets-grid">
-    <button type="button" class="card add-card" onclick={openCreateModal}>
-      <div class="add-icon-wrapper">
-        <Plus size={32} />
-      </div>
-      <span class="add-label">Add Dataset</span>
-    </button>
+    <AddCard label="Add Dataset" onClick={openCreateModal} />
 
     {#each datasets as ds (ds.name)}
       <a href="/datasets/{encodeURIComponent(ds.name)}" class="card dataset-card">
@@ -298,29 +294,6 @@
     transform: translateY(-2px);
   }
 
-  .add-card {
-    min-height: 200px;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    border: 2px dashed var(--line, #2d3741);
-    background: transparent;
-    cursor: pointer;
-  }
-
-  .add-card:hover {
-    border-color: var(--accent, #3b82f6);
-    background: rgba(59, 130, 246, 0.05);
-  }
-
-  .add-icon-wrapper {
-    color: var(--accent, #3b82f6);
-  }
-
-  .add-label {
-    font-weight: 600;
-    color: var(--text, #f8fafc);
-  }
 
   .dataset-card {
     height: 220px;

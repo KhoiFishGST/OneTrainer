@@ -6,7 +6,7 @@ import ConceptsEditor from './ConceptsEditor.svelte';
 describe('ConceptsEditor', () => {
   it('renders toolbar search, filter, and add button', () => {
     render(ConceptsEditor, { props: { concepts: [] } });
-    expect(screen.getByRole('button', { name: /add concept/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /add first concept/i })).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/search concepts/i)).toBeInTheDocument();
   });
 
@@ -14,7 +14,7 @@ describe('ConceptsEditor', () => {
     const onChange = vi.fn();
     render(ConceptsEditor, { props: { concepts: [], onChange } });
 
-    const addBtn = screen.getByRole('button', { name: /add concept/i });
+    const addBtn = screen.getByRole('button', { name: /add first concept/i });
     await fireEvent.click(addBtn);
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();

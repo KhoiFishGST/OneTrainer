@@ -1,5 +1,6 @@
 <script lang="ts">
   import Select from '../form/Select.svelte';
+  import AddCard from '../ui/AddCard.svelte';
   import { Plus, Trash2, Edit2, Copy, Search, Layers, Folder, Eye, EyeOff } from 'lucide-svelte';
   import type { Concept } from '$lib/api/types';
   import ConceptDetailModal from './ConceptDetailModal.svelte';
@@ -192,16 +193,6 @@
           <span>Enable All</span>
         {/if}
       </button>
-
-      <button
-        type="button"
-        class="btn btn-primary"
-        {disabled}
-        onclick={handleAddConcept}
-      >
-        <Plus size={16} />
-        <span>Add Concept</span>
-      </button>
     </div>
   </div>
 
@@ -231,17 +222,7 @@
     </div>
   {:else}
     <div class="concepts-grid">
-      <button
-        type="button"
-        class="concept-card add-card"
-        {disabled}
-        onclick={handleAddConcept}
-      >
-        <div class="add-icon-wrapper">
-          <Plus size={32} />
-        </div>
-        <span class="add-label">Add Concept</span>
-      </button>
+      <AddCard label="Add Concept" {disabled} onClick={handleAddConcept} />
 
       {#each filteredConcepts as { concept, originalIndex } (originalIndex)}
         <div
@@ -513,32 +494,6 @@
     gap: 1.25rem;
   }
 
-  .add-card {
-    min-height: 220px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    border: 2px dashed var(--line, #2d3741);
-    background: transparent;
-    cursor: pointer;
-  }
-
-  .add-card:hover:not(:disabled) {
-    border-color: var(--accent, #3b82f6);
-    background: rgba(59, 130, 246, 0.05);
-    transform: translateY(-2px);
-  }
-
-  .add-icon-wrapper {
-    color: var(--accent, #3b82f6);
-  }
-
-  .add-label {
-    font-weight: 600;
-    color: var(--text, #f8fafc);
-  }
 
   .concept-card {
     display: flex;
