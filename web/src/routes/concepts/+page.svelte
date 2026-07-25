@@ -3,17 +3,14 @@
   import { createConceptsQuery, createUpdateConceptsMutation } from '$lib/api/queries';
   import type { Concept } from '$lib/api/types';
   import ConceptsEditor from '$lib/components/concepts/ConceptsEditor.svelte';
-  import { Save, Check, AlertCircle, RefreshCw } from 'lucide-svelte';
+  import { AlertCircle } from 'lucide-svelte';
 
   const conceptsQuery = createConceptsQuery();
   const updateConceptsMutation = createUpdateConceptsMutation();
 
   let concepts = $state<Concept[]>([]);
   let isInitialized = $state(false);
-  let saveSuccess = $state(false);
-
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-  let saveSuccessTimer: ReturnType<typeof setTimeout> | null = null;
 
   $effect(() => {
     if ($conceptsQuery.data && !isInitialized) {
@@ -28,15 +25,7 @@
       clearTimeout(debounceTimer);
       debounceTimer = null;
     }
-    $updateConceptsMutation.mutate(listToSave, {
-      onSuccess: () => {
-        saveSuccess = true;
-        if (saveSuccessTimer) clearTimeout(saveSuccessTimer);
-        saveSuccessTimer = setTimeout(() => {
-          saveSuccess = false;
-        }, 3000);
-      },
-    });
+    $updateConceptsMutation.mutate(listToSave);
   }
 
   function handleConceptsChange(newConcepts: Concept[]) {
@@ -47,13 +36,8 @@
     }, 1000);
   }
 
-  function handleSaveClick() {
-    performSave(concepts);
-  }
-
   onDestroy(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
-    if (saveSuccessTimer) clearTimeout(saveSuccessTimer);
   });
 
   const errorMessage = $derived(
@@ -66,29 +50,6 @@
 <div class="concepts-page">
   <div class="page-header">
     <h1 class="page-title">Concepts</h1>
-
-    <div class="header-actions">
-      {#if saveSuccess}
-        <span class="status-indicator success">
-          <Check size={16} />
-          Saved
-        </span>
-      {/if}
-      <button
-        type="button"
-        class="btn btn-primary"
-        disabled={$conceptsQuery.isLoading || $updateConceptsMutation.isPending}
-        onclick={handleSaveClick}
-      >
-        {#if $updateConceptsMutation.isPending}
-          <span class="spinning"><RefreshCw size={16} /></span>
-          <span>Saving...</span>
-        {:else}
-          <Save size={16} />
-          <span>Save Changes</span>
-        {/if}
-      </button>
-    </div>
   </div>
 
   {#if errorMessage}
@@ -125,9 +86,8 @@
 
   .page-header {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-    gap: 1rem;
   }
 
   .page-title {
@@ -135,64 +95,6 @@
     font-weight: 700;
     margin: 0;
     color: var(--color-text-title, var(--accent, #3b82f6));
-  }
-
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .status-indicator {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-  }
-
-  .status-indicator.success {
-    color: #16a34a;
-  }
-
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5625rem 1rem;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    border: 1px solid transparent;
-    transition: all 0.15s ease;
-  }
-
-  .btn-primary {
-    background: var(--accent, #2563eb);
-    color: #ffffff;
-  }
-
-  .btn-primary:hover:not(:disabled) {
-    filter: brightness(1.1);
-  }
-
-  .btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .spinning {
-    animation: spin 1s linear infinite;
-  }
-
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
   }
 
   .alert {
