@@ -153,6 +153,31 @@ export function validateConfig(draft: Record<string, any>, schema: ConfigSchema)
           errors.push({ path: key, message: 'Expected number' });
         }
       }
+      // Time / Duration validation
+      else if (control === 'time' || control === 'duration') {
+        const isValueKey = key === field.keys[0];
+        if (isValueKey) {
+          if (typeof val === 'string') {
+            const trimmed = val.trim();
+            const num = Number(trimmed);
+            if (trimmed === '' || isNaN(num) || !Number.isFinite(num)) {
+              errors.push({ path: key, message: 'Expected number' });
+            } else {
+              normalized = setPath(normalized, key, num);
+            }
+          } else if (typeof val === 'number') {
+            if (!Number.isFinite(val)) {
+              errors.push({ path: key, message: 'Expected number' });
+            } else {
+              normalized = setPath(normalized, key, val);
+            }
+          } else {
+            errors.push({ path: key, message: 'Expected number' });
+          }
+        } else {
+          normalized = setPath(normalized, key, val);
+        }
+      }
       // Enum / Select validation
       else if ((control === 'select' || control === 'dropdown' || control === 'enum') && field.options) {
         const allowed = field.options.map((opt) => (typeof opt === 'object' && opt !== null ? opt.value : opt));

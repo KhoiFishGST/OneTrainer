@@ -37,10 +37,29 @@ def _validate_scalar(value: object, expected: type, nullable: bool, path: str, i
             issues.append(FieldIssue(path, "Expected boolean"))
     elif expected is int:
         if type(value) is not int:
-            issues.append(FieldIssue(path, "Expected integer"))
+            if isinstance(value, float) and math.isfinite(value) and value.is_integer():
+                pass
+            elif isinstance(value, str):
+                try:
+                    num = float(value.trim() if hasattr(value, "trim") else value.strip())
+                    if not math.isfinite(num) or not num.is_integer():
+                        issues.append(FieldIssue(path, "Expected integer"))
+                except ValueError:
+                    issues.append(FieldIssue(path, "Expected integer"))
+            else:
+                issues.append(FieldIssue(path, "Expected integer"))
     elif expected is float:
         if type(value) not in (int, float):
-            if value not in ("inf", "-inf"):
+            if value in ("inf", "-inf"):
+                pass
+            elif isinstance(value, str):
+                try:
+                    num = float(value.strip() if isinstance(value, str) else value)
+                    if not math.isfinite(num):
+                        issues.append(FieldIssue(path, "Expected finite number"))
+                except ValueError:
+                    issues.append(FieldIssue(path, "Expected number"))
+            else:
                 issues.append(FieldIssue(path, "Expected number"))
         elif not math.isfinite(float(value)):
             issues.append(FieldIssue(path, "Expected finite number"))
