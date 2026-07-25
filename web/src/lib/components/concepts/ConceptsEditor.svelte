@@ -231,8 +231,32 @@
     </div>
   {:else}
     <div class="concepts-grid">
+      <button
+        type="button"
+        class="concept-card add-card"
+        {disabled}
+        onclick={handleAddConcept}
+      >
+        <div class="add-icon-wrapper">
+          <Plus size={32} />
+        </div>
+        <span class="add-label">Add Concept</span>
+      </button>
+
       {#each filteredConcepts as { concept, originalIndex } (originalIndex)}
-        <div class="concept-card" class:disabled={concept.enabled === false}>
+        <div
+          class="concept-card"
+          class:disabled={concept.enabled === false}
+          role="button"
+          tabindex="0"
+          onclick={() => handleEditConcept(originalIndex)}
+          onkeydown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleEditConcept(originalIndex);
+            }
+          }}
+        >
           <!-- Preview Thumbnail -->
           <div class="thumbnail-wrapper">
             <img
@@ -251,19 +275,27 @@
               <h4 class="concept-name" title={concept.name || concept.path}>
                 {concept.name || (concept.path ? concept.path.split('/').pop() : 'Untitled Concept')}
               </h4>
-              <label class="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={concept.enabled !== false}
-                  onchange={(e) => {
-                    const updated = concepts.map((c, i) =>
-                      i === originalIndex ? { ...c, enabled: (e.target as HTMLInputElement).checked } : c
-                    );
-                    notifyChange(updated);
-                  }}
-                />
-                <span class="switch-slider"></span>
-              </label>
+              <div
+                class="toggle-wrapper"
+                role="presentation"
+                onclick={(e) => e.stopPropagation()}
+                onkeydown={(e) => e.stopPropagation()}
+              >
+                <label class="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={concept.enabled !== false}
+                    onchange={(e) => {
+                      e.stopPropagation();
+                      const updated = concepts.map((c, i) =>
+                        i === originalIndex ? { ...c, enabled: (e.target as HTMLInputElement).checked } : c
+                      );
+                      notifyChange(updated);
+                    }}
+                  />
+                  <span class="switch-slider"></span>
+                </label>
+              </div>
             </div>
 
             <p class="concept-path" title={concept.path}>
@@ -281,7 +313,10 @@
                 type="button"
                 class="btn-action edit"
                 title="Edit Concept Settings"
-                onclick={() => handleEditConcept(originalIndex)}
+                onclick={(e) => {
+                  e.stopPropagation();
+                  handleEditConcept(originalIndex);
+                }}
               >
                 <Edit2 size={15} />
                 <span>Edit</span>
@@ -291,7 +326,10 @@
                 type="button"
                 class="btn-action clone"
                 title="Duplicate Concept"
-                onclick={() => handleCloneConcept(originalIndex)}
+                onclick={(e) => {
+                  e.stopPropagation();
+                  handleCloneConcept(originalIndex);
+                }}
               >
                 <Copy size={15} />
                 <span>Clone</span>
@@ -301,7 +339,10 @@
                 type="button"
                 class="btn-action delete"
                 title="Delete Concept"
-                onclick={() => handleRemoveConcept(originalIndex)}
+                onclick={(e) => {
+                  e.stopPropagation();
+                  handleRemoveConcept(originalIndex);
+                }}
               >
                 <Trash2 size={15} />
               </button>
@@ -472,13 +513,41 @@
     gap: 1.25rem;
   }
 
+  .add-card {
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    border: 2px dashed var(--line, #2d3741);
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .add-card:hover:not(:disabled) {
+    border-color: var(--accent, #3b82f6);
+    background: rgba(59, 130, 246, 0.05);
+    transform: translateY(-2px);
+  }
+
+  .add-icon-wrapper {
+    color: var(--accent, #3b82f6);
+  }
+
+  .add-label {
+    font-weight: 600;
+    color: var(--text, #f8fafc);
+  }
+
   .concept-card {
     display: flex;
     background: var(--panel, #181e25);
     border: 1px solid var(--line, #2d3741);
     border-radius: 8px;
     overflow: hidden;
-    transition: border-color 0.15s ease;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+    cursor: pointer;
   }
 
   .concept-card:hover {

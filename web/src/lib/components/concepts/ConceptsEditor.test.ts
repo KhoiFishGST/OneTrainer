@@ -69,4 +69,18 @@ describe('ConceptsEditor', () => {
     expect(screen.getByText('Character_Alpha')).toBeInTheDocument();
     expect(screen.queryByText('Style_Beta')).not.toBeInTheDocument();
   });
+
+  it('renders Add Concept card in grid and opens edit modal on card click', async () => {
+    const concepts = [
+      { name: 'Concept Alpha', path: '/path/a', enabled: true, type: 'STANDARD' as const },
+    ];
+    render(ConceptsEditor, { props: { concepts } });
+
+    const addCards = screen.getAllByRole('button', { name: /add concept/i });
+    expect(addCards.length).toBeGreaterThanOrEqual(1);
+
+    const conceptName = screen.getByText('Concept Alpha');
+    await fireEvent.click(conceptName);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
 });
