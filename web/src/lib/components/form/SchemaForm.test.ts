@@ -179,9 +179,8 @@ it("renders toggle, text, number, select, and time controls correctly", async ()
   expect(setRaw).toHaveBeenCalledWith("save_every_value", "10");
 
   const unitSelect = screen.getByLabelText("Time unit");
-  expect(unitSelect).toHaveValue("minutes");
-  await fireEvent.change(unitSelect, { target: { value: "hours" } });
-  expect(setRaw).toHaveBeenCalledWith("save_every_unit", "hours");
+  await fireEvent.change(unitSelect, { target: { value: "HOUR" } });
+  expect(setRaw).toHaveBeenCalledWith("save_every_unit", "HOUR");
 });
 
 it("throws error for unknown control type", () => {

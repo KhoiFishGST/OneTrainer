@@ -54,17 +54,37 @@ class Field:
 
         options = None
         key_type = None
-        parts = first_key.split(".")
-        if len(parts) == 2 and parts[0] in config_template.types:
-            sub_cls = config_template.types[parts[0]]
-            if hasattr(sub_cls, "default_values"):
-                sub_defaults = sub_cls.default_values()
-                key_type = sub_defaults.types.get(parts[1])
-        else:
-            key_type = config_template.types.get(first_key)
+        for k in self.keys:
+            parts = k.split(".")
+            if len(parts) == 2 and parts[0] in config_template.types:
+                sub_cls = config_template.types[parts[0]]
+                if hasattr(sub_cls, "default_values"):
+                    sub_defaults = sub_cls.default_values()
+                    kt = sub_defaults.types.get(parts[1])
+                else:
+                    kt = None
+            else:
+                kt = config_template.types.get(k)
+
+            if kt is not None and isinstance(kt, type) and issubclass_safe(kt, Enum):
+                key_type = kt
+                break
 
         if key_type is not None and isinstance(key_type, type) and issubclass_safe(key_type, Enum):
-            options = [{"value": e.value, "label": e.value} for e in key_type]
+            from modules.util.enum.TimeUnit import TimeUnit
+            if issubclass_safe(key_type, TimeUnit):
+                unit_labels = {
+                    "SECOND": "Seconds",
+                    "MINUTE": "Minutes",
+                    "HOUR": "Hours",
+                    "EPOCH": "Epochs",
+                    "STEP": "Steps",
+                    "NEVER": "Never",
+                    "ALWAYS": "Always",
+                }
+                options = [{"value": e.value, "label": unit_labels.get(e.value, e.value.capitalize())} for e in key_type]
+            else:
+                options = [{"value": e.value, "label": e.value} for e in key_type]
 
         res: dict[str, object] = {
             "id": self.id,

@@ -4,8 +4,15 @@
   let {
     id,
     value = '',
-    unit = 'seconds',
-    unitOptions = ['seconds', 'minutes', 'hours', 'epochs', 'steps'],
+    unit = 'MINUTE',
+    unitOptions = [
+      { value: 'EPOCH', label: 'Epochs' },
+      { value: 'STEP', label: 'Steps' },
+      { value: 'SECOND', label: 'Seconds' },
+      { value: 'MINUTE', label: 'Minutes' },
+      { value: 'HOUR', label: 'Hours' },
+      { value: 'NEVER', label: 'Never' },
+    ],
     disabled = false,
     ariaDescribedBy,
     onValueInput,

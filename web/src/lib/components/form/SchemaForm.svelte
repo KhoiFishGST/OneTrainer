@@ -133,7 +133,7 @@
                 />
               {:else if controlType === 'time'}
                 {@const unitKey = field.keys?.[1] ?? `${primaryKey}_unit`}
-                {@const unitValue = getFieldValue(field, 1) ?? 'seconds'}
+                {@const unitValue = getFieldValue(field, 1) ?? 'MINUTE'}
                 <TimeInput
                   {id}
                   value={fieldValue}
