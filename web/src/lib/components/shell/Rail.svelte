@@ -53,7 +53,7 @@
     { name: 'Backup', path: '/backup', icon: Archive, disabled: false },
     { name: 'Tools', path: '/tools', icon: Wrench, disabled: true },
     { name: 'Cloud', path: '/cloud', icon: Cloud, disabled: true },
-    { name: 'LoRA/Embedding', path: '/lora-embedding', icon: Cpu, disabled: false },
+    { name: 'LoRA', path: '/lora', icon: Cpu, disabled: false },
     { name: 'Secrets', path: '/secrets', icon: Key, disabled: false },
   ];
 </script>

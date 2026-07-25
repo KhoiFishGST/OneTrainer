@@ -5,9 +5,9 @@
   const ctx = getRouteContext();
 
   const tab = $derived(
-    ctx.schema?.tabs?.find((t) => t.id === 'lora_embedding' || t.id === 'lora-embedding') ?? {
+    ctx.schema?.tabs?.find((t) => t.id === 'lora_embedding' || t.id === 'lora' || t.id === 'lora-embedding') ?? {
       id: 'lora_embedding',
-      label: 'LoRA / Embedding',
+      label: 'LoRA',
       groups: [],
     }
   );
@@ -22,7 +22,7 @@
 {:else}
   <div class="route-page">
     <div class="page-header">
-      <h1 class="page-title">{tab.label || 'LoRA / Embedding'}</h1>
+      <h1 class="page-title">{tab.label || 'LoRA'}</h1>
     </div>
     <SchemaForm
       {tab}

@@ -39,9 +39,9 @@ test.describe("Phase B Configuration Surface", () => {
     await expect(page).toHaveURL(/.*\/sampling$/);
     await expect(page.locator("h1.page-title")).toContainText(/sampling/i);
 
-    // Navigate to LoRA / Embedding tab
-    await page.click('a[href="/lora-embedding"]');
-    await expect(page).toHaveURL(/.*\/lora-embedding$/);
+    // Navigate to LoRA tab
+    await page.click('a[href="/lora"]');
+    await expect(page).toHaveURL(/.*\/lora$/);
     await expect(page.locator("h1.page-title")).toContainText(/lora/i);
 
     // Navigate to Concepts tab
