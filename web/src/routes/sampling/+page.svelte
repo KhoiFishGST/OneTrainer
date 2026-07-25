@@ -42,7 +42,7 @@
   async function handleSample() {
     try {
       await $sampleMutation.mutateAsync();
-      triggerToast('Sample generation requested successfully');
+      triggerToast('Sample generation requested successfully', 'success');
     } catch (err: any) {
       triggerToast(err?.message || 'Failed to request sample', 'error');
     }
@@ -74,7 +74,7 @@
     </div>
 
     {#if toast}
-      <div class="toast-banner {toast.type}" role="status">
+      <div class="toast-banner {toast.type} toast-{toast.type}" role="status">
         {toast.message}
       </div>
     {/if}
@@ -152,13 +152,15 @@
     margin-bottom: 1rem;
   }
 
-  .toast-banner.success {
+  .toast-banner.success,
+  .toast-success {
     background-color: rgba(16, 185, 129, 0.15);
     border: 1px solid rgba(16, 185, 129, 0.3);
     color: #34d399;
   }
 
-  .toast-banner.error {
+  .toast-banner.error,
+  .toast-error {
     background-color: rgba(239, 68, 68, 0.15);
     border: 1px solid rgba(239, 68, 68, 0.3);
     color: #fca5a5;

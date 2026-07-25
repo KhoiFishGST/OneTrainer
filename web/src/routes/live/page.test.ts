@@ -1,7 +1,8 @@
-import { render, screen } from '@testing-library/svelte';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/svelte';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import LivePage from './+page.svelte';
 import { trainingStore } from '$lib/events/training-store';
+import { api } from '$lib/api/client';
 
 describe('Live Dashboard Page', () => {
   beforeEach(() => {
@@ -72,4 +73,25 @@ describe('Live Dashboard Page', () => {
     expect(screen.getByText(/3\.50 it\/s/i)).toBeInTheDocument();
     expect(screen.getByText(/15\.0%/i)).toBeInTheDocument();
   });
+
+  it('displays error toast when sample generation fails', async () => {
+    trainingStore.setStatus({
+      state: 'TRAINING',
+      step: 10,
+      max_steps: 100,
+    });
+
+    const errorMessage = 'Cannot request sample: No sample prompts configured in sample definitions file';
+    vi.spyOn(api, 'requestSample').mockRejectedValueOnce(new Error(errorMessage));
+
+    render(LivePage);
+
+    const sampleBtn = screen.getByRole('button', { name: /sample now/i });
+    await fireEvent.click(sampleBtn);
+
+    const toast = await screen.findByText(errorMessage);
+    expect(toast).toBeInTheDocument();
+    expect(toast).toHaveClass('toast-error');
+  });
 });
+

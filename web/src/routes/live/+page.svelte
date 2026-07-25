@@ -67,7 +67,7 @@
   async function handleSample() {
     try {
       await $sampleMutation.mutateAsync();
-      triggerToast('Sample generation requested successfully');
+      triggerToast('Sample generation requested successfully', 'success');
     } catch (err: any) {
       triggerToast(err?.message || 'Failed to request sample', 'error');
     }
@@ -76,7 +76,7 @@
   async function handleBackup() {
     try {
       await $backupMutation.mutateAsync();
-      triggerToast('Model backup requested successfully');
+      triggerToast('Model backup requested successfully', 'success');
     } catch (err: any) {
       triggerToast(err?.message || 'Failed to request backup', 'error');
     }
@@ -85,7 +85,7 @@
   async function handleSave() {
     try {
       await $saveMutation.mutateAsync();
-      triggerToast('Model save requested successfully');
+      triggerToast('Model save requested successfully', 'success');
     } catch (err: any) {
       triggerToast(err?.message || 'Failed to request model save', 'error');
     }
@@ -138,7 +138,7 @@
   </div>
 
   {#if toast}
-    <div class="toast-banner {toast.type}" role="status">
+    <div class="toast-banner {toast.type} toast-{toast.type}" role="status">
       {toast.message}
     </div>
   {/if}
@@ -283,13 +283,15 @@
     font-weight: 500;
   }
 
-  .toast-banner.success {
+  .toast-banner.success,
+  .toast-success {
     background-color: rgba(16, 185, 129, 0.15);
     border: 1px solid rgba(16, 185, 129, 0.3);
     color: #34d399;
   }
 
-  .toast-banner.error {
+  .toast-banner.error,
+  .toast-error {
     background-color: rgba(239, 68, 68, 0.15);
     border: 1px solid rgba(239, 68, 68, 0.3);
     color: #fca5a5;
