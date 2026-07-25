@@ -2,7 +2,9 @@ import asyncio
 import copy
 from collections import deque
 from enum import Enum
-from threading import Lock
+import json
+from pathlib import Path
+from threading import Lock, RLock
 import time
 from typing import Any, Dict, Optional
 
@@ -58,7 +60,7 @@ class TrainingState(str, Enum):
 
 class TrainingService:
     def __init__(self, event_bus: Optional[Any] = None):
-        self._lock = Lock()
+        self._lock = RLock()
         self._event_bus = event_bus
         self._state = TrainingState.IDLE
         self._step = 0
@@ -75,6 +77,9 @@ class TrainingService:
         self._save_requested: bool = False
         self._metrics: deque = deque(maxlen=10000)
         self._samples: list = []
+        self._active_train_config: Optional[Any] = None
+        self._active_workspace: Optional[str] = None
+        self._train_commands: Optional[Any] = None
 
     def _emit_event(self, event_type: Any, data: Dict[str, Any]) -> None:
         if self._event_bus is None:
@@ -98,23 +103,49 @@ class TrainingService:
         status = self.get_status()
         self._emit_event(EventType.TRAINING_STATE, status)
 
+    def _has_sample_definitions(self) -> bool:
+        with self._lock:
+            if not self._active_train_config:
+                return False
+            if getattr(self._active_train_config, "samples", None):
+                return True
+            sample_file = getattr(self._active_train_config, "sample_definition_file_name", None)
+            if not sample_file:
+                return False
+            path = Path(sample_file)
+            if not path.is_absolute() and self._active_workspace:
+                path = Path(self._active_workspace) / path
+            if path.exists() and path.is_file():
+                try:
+                    with open(path, "r", encoding="utf-8") as f:
+                        content = json.load(f)
+                        return isinstance(content, list) and len(content) > 0
+                except Exception:
+                    return False
+            return False
+
     def request_sample(self):
         with self._lock:
             if self._state not in (TrainingState.TRAINING, TrainingState.PAUSED):
                 raise RuntimeError(f"Cannot request sample from state {self._state}")
-            self._sample_requested = True
+            if not self._has_sample_definitions():
+                raise RuntimeError("No sample prompts configured in sample definitions file (training_samples/samples.json)")
+            if hasattr(self, "_train_commands") and self._train_commands:
+                self._train_commands.sample_default()
 
     def request_backup(self):
         with self._lock:
             if self._state not in (TrainingState.TRAINING, TrainingState.PAUSED):
                 raise RuntimeError(f"Cannot request backup from state {self._state}")
-            self._backup_requested = True
+            if hasattr(self, "_train_commands") and self._train_commands:
+                self._train_commands.backup()
 
     def request_save(self):
         with self._lock:
             if self._state not in (TrainingState.TRAINING, TrainingState.PAUSED):
                 raise RuntimeError(f"Cannot request save from state {self._state}")
-            self._save_requested = True
+            if hasattr(self, "_train_commands") and self._train_commands:
+                self._train_commands.save()
 
 
     def record_metric(self, metric_data: Optional[Dict[str, Any]] = None, **kwargs) -> Dict[str, Any]:
@@ -274,6 +305,7 @@ class TrainingService:
             commands = TrainCommands()
             with self._lock:
                 self._train_commands = commands
+                self._active_train_config = train_config
 
             start_time = time.time()
             last_step_time = [start_time]

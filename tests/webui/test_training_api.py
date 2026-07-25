@@ -30,7 +30,8 @@ def client(tmp_path):
         yield c
 
 
-def test_training_api_status_and_start(client):
+def test_training_api_status_and_start(client, monkeypatch):
+    monkeypatch.setattr("modules.webui.training.TrainingService._run_training_worker", lambda self, config_data: None)
     res = client.get("/api/training/status")
     assert res.status_code == 200
     assert res.json()["state"] == "IDLE"
@@ -68,7 +69,11 @@ def test_training_api_lifecycle(client, monkeypatch):
 
 
 def test_training_api_sample_and_backup(client):
-    client.app.state.webui.training_service.set_state(TrainingState.TRAINING)
+    service = client.app.state.webui.training_service
+    service.set_state(TrainingState.TRAINING)
+    mock_config = MagicMock()
+    mock_config.samples = [{"prompt": "test"}]
+    service._active_train_config = mock_config
 
     res_sample = client.post("/api/training/sample")
     assert res_sample.status_code == 200
@@ -77,6 +82,16 @@ def test_training_api_sample_and_backup(client):
     res_backup = client.post("/api/training/backup")
     assert res_backup.status_code == 200
     assert res_backup.json()["status"] == "ok"
+
+
+def test_training_api_sample_no_definitions(client):
+    service = client.app.state.webui.training_service
+    service.set_state(TrainingState.TRAINING)
+    service._active_train_config = None
+
+    res_sample = client.post("/api/training/sample")
+    assert res_sample.status_code == 409
+
 
 
 def test_training_api_metrics_samples_gpu(client):

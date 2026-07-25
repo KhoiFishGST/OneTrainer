@@ -1,6 +1,11 @@
 import pytest
 from modules.webui.training import TrainingService, TrainingState
 
+@pytest.fixture(autouse=True)
+def mock_worker(monkeypatch):
+    monkeypatch.setattr("modules.webui.training.TrainingService._run_training_worker", lambda self, config_data: None)
+
+
 def test_training_service_initial_state_and_snapshot():
     service = TrainingService()
     status = service.get_status()
@@ -138,3 +143,87 @@ def test_update_progress_and_status():
     assert status["speed_its"] == 2.5
     assert status["elapsed_seconds"] == 20.0
     assert status["eta_seconds"] == 380.0
+
+
+def test_has_sample_definitions(tmp_path):
+    from unittest.mock import MagicMock
+    service = TrainingService()
+    
+    # 1. No active train config -> False
+    assert service._has_sample_definitions() is False
+
+    # 2. Config with samples in memory -> True
+    config = MagicMock()
+    config.samples = [{"prompt": "test"}]
+    service._active_train_config = config
+    assert service._has_sample_definitions() is True
+
+    # 3. Config with empty sample_definition_file_name or missing file -> False
+    config.samples = None
+    config.sample_definition_file_name = None
+    assert service._has_sample_definitions() is False
+
+    non_existent = tmp_path / "non_existent.json"
+    config.sample_definition_file_name = str(non_existent)
+    assert service._has_sample_definitions() is False
+
+    # 4. File contains empty list -> False
+    empty_file = tmp_path / "samples_empty.json"
+    empty_file.write_text("[]", encoding="utf-8")
+    config.sample_definition_file_name = str(empty_file)
+    assert service._has_sample_definitions() is False
+
+    # 5. File contains valid non-empty list -> True
+    valid_file = tmp_path / "samples_valid.json"
+    valid_file.write_text('[{"prompt": "photo of a cat"}]', encoding="utf-8")
+    config.sample_definition_file_name = str(valid_file)
+    assert service._has_sample_definitions() is True
+
+
+def test_request_sample_validation_and_dispatch():
+    from unittest.mock import MagicMock
+    service = TrainingService()
+    service._state = TrainingState.TRAINING
+
+    mock_commands = MagicMock()
+    service._train_commands = mock_commands
+
+    # _has_sample_definitions returns False -> raises RuntimeError
+    config = MagicMock()
+    config.samples = None
+    config.sample_definition_file_name = None
+    service._active_train_config = config
+
+    with pytest.raises(RuntimeError, match="No sample prompts configured in sample definitions file"):
+        service.request_sample()
+    mock_commands.sample_default.assert_not_called()
+
+    # _has_sample_definitions returns True -> calls sample_default
+    config.samples = [{"prompt": "test"}]
+    service.request_sample()
+    mock_commands.sample_default.assert_called_once()
+
+
+def test_request_backup_dispatch():
+    from unittest.mock import MagicMock
+    service = TrainingService()
+    service._state = TrainingState.TRAINING
+
+    mock_commands = MagicMock()
+    service._train_commands = mock_commands
+
+    service.request_backup()
+    mock_commands.backup.assert_called_once()
+
+
+def test_request_save_dispatch():
+    from unittest.mock import MagicMock
+    service = TrainingService()
+    service._state = TrainingState.TRAINING
+
+    mock_commands = MagicMock()
+    service._train_commands = mock_commands
+
+    service.request_save()
+    mock_commands.save.assert_called_once()
+
