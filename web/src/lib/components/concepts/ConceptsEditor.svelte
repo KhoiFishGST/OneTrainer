@@ -145,7 +145,7 @@
 <div class="concepts-editor" data-testid="concepts-editor">
   <!-- Toolbar & Filter Controls Header -->
   <div class="toolbar-header">
-    <div class="search-filter-group">
+    <div class="toolbar-row main-row">
       <div class="search-box">
         <Search size={16} class="search-icon" />
         <input
@@ -155,29 +155,29 @@
         />
       </div>
 
-      <div class="filter-controls">
-        <div class="filter-select-wrapper">
-          <Select
-            ariaLabel="Filter concept types"
-            value={typeFilter}
-            options={[
-              { value: 'ALL', label: 'All Types' },
-              { value: 'STANDARD', label: 'STANDARD' },
-              { value: 'VALIDATION', label: 'VALIDATION' },
-              { value: 'PRIOR_PREDICTION', label: 'PRIOR_PREDICTION' },
-            ]}
-            onChange={(v) => (typeFilter = v)}
-          />
-        </div>
-
-        <label class="checkbox-toggle">
-          <input type="checkbox" bind:checked={showDisabled} />
-          <span>Show Disabled</span>
-        </label>
+      <div class="filter-select-wrapper">
+        <Select
+          ariaLabel="Filter concept types"
+          value={typeFilter}
+          options={[
+            { value: 'ALL', label: 'All Types' },
+            { value: 'STANDARD', label: 'STANDARD' },
+            { value: 'VALIDATION', label: 'VALIDATION' },
+            { value: 'PRIOR_PREDICTION', label: 'PRIOR_PREDICTION' },
+          ]}
+          onChange={(v) => (typeFilter = v)}
+        />
       </div>
     </div>
 
-    <div class="toolbar-actions">
+    <div class="toolbar-divider"></div>
+
+    <div class="toolbar-row controls-row">
+      <label class="checkbox-toggle">
+        <input type="checkbox" bind:checked={showDisabled} />
+        <span>Show Disabled</span>
+      </label>
+
       <button
         type="button"
         class="btn btn-secondary"
@@ -359,23 +359,37 @@
 
   .toolbar-header {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
     gap: 1rem;
     background: var(--panel, #181e25);
     border: 1px solid var(--line, #2d3741);
-    padding: 1rem 1.25rem;
+    padding: 1.25rem;
     border-radius: 8px;
+    width: 740px;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
-  .search-filter-group {
+  .toolbar-row {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     gap: 1rem;
-    flex: 1;
-    min-width: 280px;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .main-row {
+    justify-content: space-between;
+  }
+
+  .controls-row {
+    justify-content: space-between;
+  }
+
+  .toolbar-divider {
+    height: 1px;
+    background: var(--line, #2d3741);
+    width: 100%;
   }
 
   .search-box {
@@ -403,34 +417,17 @@
     width: 100%;
   }
 
-  .filter-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.875rem;
-  }
-
-  .filter-select {
-    padding: 0.4rem 0.75rem;
-    background: var(--control, #14191f);
-    border: 1px solid var(--line, #2d3741);
-    border-radius: 6px;
-    color: var(--text, #f8fafc);
-    font-size: 0.875rem;
+  .filter-select-wrapper {
+    min-width: 150px;
   }
 
   .checkbox-toggle {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
-    font-size: 0.8125rem;
-    color: var(--muted, #94a3b8);
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text, #e6ebef);
     cursor: pointer;
-  }
-
-  .toolbar-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
   }
 
   .btn {
