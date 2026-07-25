@@ -65,10 +65,7 @@
 
 <div class="concepts-page">
   <div class="page-header">
-    <div>
-      <h1 class="page-title">Concepts</h1>
-      <p class="page-subtitle">Manage dataset concepts, prompts, and directories for training.</p>
-    </div>
+    <h1 class="page-title">Concepts</h1>
 
     <div class="header-actions">
       {#if saveSuccess}
@@ -138,12 +135,6 @@
     font-weight: 700;
     margin: 0;
     color: var(--color-text-title, var(--accent, #3b82f6));
-  }
-
-  .page-subtitle {
-    font-size: 0.875rem;
-    color: var(--muted, #6b7280);
-    margin: 0;
   }
 
   .header-actions {

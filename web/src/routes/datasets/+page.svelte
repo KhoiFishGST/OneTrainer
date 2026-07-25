@@ -94,10 +94,7 @@
 
 <div class="datasets-page">
   <div class="page-header">
-    <div>
-      <h1 class="page-title">Datasets</h1>
-      <p class="page-subtitle">Create and manage image & caption datasets</p>
-    </div>
+    <h1 class="page-title">Datasets</h1>
   </div>
 
   <div class="base-dir-bar">
@@ -189,12 +186,6 @@
     font-weight: 700;
     color: var(--color-text-title, var(--accent, #3b82f6));
     margin: 0;
-  }
-
-  .page-subtitle {
-    color: var(--muted, #8995a1);
-    font-size: 0.875rem;
-    margin: 0.25rem 0 0 0;
   }
 
   .base-dir-bar {
