@@ -10,7 +10,6 @@
     Activity,
     Sparkles,
     Cpu,
-    Cloud,
     Wrench,
     Tv,
     PanelLeft,
@@ -50,7 +49,6 @@
     { name: 'Sampling', path: '/sampling', icon: Sparkles, disabled: false },
     { name: 'Backup', path: '/backup', icon: Archive, disabled: false },
     { name: 'Tools', path: '/tools', icon: Wrench, disabled: true },
-    { name: 'Cloud', path: '/cloud', icon: Cloud, disabled: true },
     { name: 'LoRA', path: '/lora', icon: Cpu, disabled: false },
     { name: 'Secrets', path: '/secrets', icon: Key, disabled: false },
   ];

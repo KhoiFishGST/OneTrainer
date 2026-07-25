@@ -14,6 +14,7 @@ it("persists pinned expansion and enables configuration routes", async () => {
   }
 
   expect(screen.queryByRole("link", { name: "Data" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "Cloud" })).not.toBeInTheDocument();
 });
 
 it("opens phone navigation as a modal drawer", async () => {

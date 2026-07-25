@@ -8,7 +8,6 @@ from modules.webui.schema.builders.training import build_training_tab
 from modules.webui.schema.builders.sampling import build_sampling_tab
 from modules.webui.schema.builders.lora_embedding import build_lora_embedding_tab
 from modules.webui.schema.builders.data import build_data_tab
-from modules.webui.schema.builders.cloud import build_cloud_tab
 from modules.webui.schema.builders.backup import build_backup_tab
 from modules.webui.schema.builders.secrets import build_secrets_tab
 
@@ -19,7 +18,6 @@ TAB_BUILDERS: list[tuple[str, Callable[[ModelType, TrainingMethod], Tab]]] = [
     ("sampling", build_sampling_tab),
     ("lora_embedding", build_lora_embedding_tab),
     ("data", build_data_tab),
-    ("cloud", build_cloud_tab),
     ("backup", build_backup_tab),
     ("secrets", build_secrets_tab),
 ]
