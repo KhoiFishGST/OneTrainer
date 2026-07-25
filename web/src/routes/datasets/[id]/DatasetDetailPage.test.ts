@@ -24,7 +24,7 @@ test('renders dataset detail header and upload button', async () => {
   );
 
   render(DatasetDetailPage, { data: { id: 'TestDataset' } });
-  expect(screen.getByText('Back to Datasets')).toBeInTheDocument();
+  expect(screen.getByText('Back to Data')).toBeInTheDocument();
   expect(screen.getByText('Add Files')).toBeInTheDocument();
   expect(await screen.findByText('TestDataset')).toBeInTheDocument();
   expect(await screen.findByText('sample_01')).toBeInTheDocument();
