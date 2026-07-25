@@ -206,15 +206,33 @@ export function createResumeTrainingMutation() {
 }
 
 export function createRequestSampleMutation() {
-  return createMutation({
-    mutationFn: () => api.requestSample(),
-  });
+  const client = getSafeQueryClient();
+  return createMutation(
+    {
+      mutationFn: () => api.requestSample(),
+    },
+    client
+  );
 }
 
 export function createRequestBackupMutation() {
-  return createMutation({
-    mutationFn: () => api.requestBackup(),
-  });
+  const client = getSafeQueryClient();
+  return createMutation(
+    {
+      mutationFn: () => api.requestBackup(),
+    },
+    client
+  );
+}
+
+export function createRequestSaveMutation() {
+  const client = getSafeQueryClient();
+  return createMutation(
+    {
+      mutationFn: () => api.requestSave(),
+    },
+    client
+  );
 }
 
 export function createDatasetsQuery() {

@@ -157,6 +157,11 @@ export function createApi(base = '') {
         method: 'POST',
       }),
 
+    requestSave: () =>
+      request<{ status: string }>(`${base}/api/training/save`, {
+        method: 'POST',
+      }),
+
     getTrainingMetrics: () => request<TrainingMetric[]>(`${base}/api/training/metrics`),
 
     getTrainingSamples: () => request<TrainingSample[]>(`${base}/api/training/samples`),

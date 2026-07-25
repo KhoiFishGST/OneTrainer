@@ -18,6 +18,40 @@ describe('Live Dashboard Page', () => {
     expect(screen.getByTestId('sample-gallery')).toBeInTheDocument();
   });
 
+  it('renders action buttons and disables them when not training', () => {
+    render(LivePage);
+
+    const sampleBtn = screen.getByRole('button', { name: /sample now/i });
+    const backupBtn = screen.getByRole('button', { name: /backup now/i });
+    const saveBtn = screen.getByRole('button', { name: /save model now/i });
+
+    expect(sampleBtn).toBeInTheDocument();
+    expect(backupBtn).toBeInTheDocument();
+    expect(saveBtn).toBeInTheDocument();
+
+    expect(sampleBtn).toBeDisabled();
+    expect(backupBtn).toBeDisabled();
+    expect(saveBtn).toBeDisabled();
+  });
+
+  it('enables action buttons when training status is active', () => {
+    trainingStore.setStatus({
+      state: 'TRAINING',
+      step: 10,
+      max_steps: 100,
+    });
+
+    render(LivePage);
+
+    const sampleBtn = screen.getByRole('button', { name: /sample now/i });
+    const backupBtn = screen.getByRole('button', { name: /backup now/i });
+    const saveBtn = screen.getByRole('button', { name: /save model now/i });
+
+    expect(sampleBtn).not.toBeDisabled();
+    expect(backupBtn).not.toBeDisabled();
+    expect(saveBtn).not.toBeDisabled();
+  });
+
   it('displays training telemetry from trainingStore', () => {
     trainingStore.setStatus({
       state: 'TRAINING',

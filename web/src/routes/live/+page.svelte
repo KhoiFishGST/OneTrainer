@@ -1,10 +1,31 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { Sparkles, Archive, Save } from 'lucide-svelte';
   import { trainingStore } from '$lib/events/training-store';
   import { api } from '$lib/api/client';
+  import {
+    createRequestSampleMutation,
+    createRequestBackupMutation,
+    createRequestSaveMutation,
+  } from '$lib/api/queries';
   import MetricsChart from '$lib/components/charts/MetricsChart.svelte';
   import GpuMonitor from '$lib/components/training/GpuMonitor.svelte';
   import SampleGallery from '$lib/components/training/SampleGallery.svelte';
+
+  const sampleMutation = createRequestSampleMutation();
+  const backupMutation = createRequestBackupMutation();
+  const saveMutation = createRequestSaveMutation();
+
+  let toast = $state<{ message: string; type: 'success' | 'error' } | null>(null);
+  let toastTimeout: any;
+
+  function triggerToast(message: string, type: 'success' | 'error' = 'success') {
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toast = { message, type };
+    toastTimeout = setTimeout(() => {
+      toast = null;
+    }, 4000);
+  }
 
   const status = $derived($trainingStore.status);
   const metrics = $derived($trainingStore.metrics);
@@ -42,15 +63,85 @@
     const secs = Math.floor(seconds % 60);
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
+
+  async function handleSample() {
+    try {
+      await $sampleMutation.mutateAsync();
+      triggerToast('Sample generation requested successfully');
+    } catch (err: any) {
+      triggerToast(err?.message || 'Failed to request sample', 'error');
+    }
+  }
+
+  async function handleBackup() {
+    try {
+      await $backupMutation.mutateAsync();
+      triggerToast('Model backup requested successfully');
+    } catch (err: any) {
+      triggerToast(err?.message || 'Failed to request backup', 'error');
+    }
+  }
+
+  async function handleSave() {
+    try {
+      await $saveMutation.mutateAsync();
+      triggerToast('Model save requested successfully');
+    } catch (err: any) {
+      triggerToast(err?.message || 'Failed to request model save', 'error');
+    }
+  }
 </script>
 
 <div class="live-dashboard" data-testid="live-dashboard">
   <div class="page-header">
-    <h1 class="page-title">Live Training Dashboard</h1>
-    <span class="status-badge status-{(status.state || 'IDLE').toLowerCase()}">
-      {status.state || 'IDLE'}
-    </span>
+    <div class="header-title-group">
+      <h1 class="page-title">Live Training Dashboard</h1>
+      <span class="status-badge status-{(status.state || 'IDLE').toLowerCase()}">
+        {status.state || 'IDLE'}
+      </span>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        disabled={status.state !== 'RUNNING' && status.state !== 'TRAINING' || $sampleMutation.isPending}
+        onclick={handleSample}
+        title={status.state === 'RUNNING' || status.state === 'TRAINING' ? 'Trigger immediate sample image generation' : 'Active training run required to sample now'}
+      >
+        <Sparkles size={16} />
+        <span>Sample Now</span>
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-secondary"
+        disabled={status.state !== 'RUNNING' && status.state !== 'TRAINING' || $backupMutation.isPending}
+        onclick={handleBackup}
+        title={status.state === 'RUNNING' || status.state === 'TRAINING' ? 'Trigger immediate model backup checkpoint' : 'Active training run required to backup now'}
+      >
+        <Archive size={16} />
+        <span>Backup Now</span>
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-secondary"
+        disabled={status.state !== 'RUNNING' && status.state !== 'TRAINING' || $saveMutation.isPending}
+        onclick={handleSave}
+        title={status.state === 'RUNNING' || status.state === 'TRAINING' ? 'Trigger immediate model save' : 'Active training run required to save model now'}
+      >
+        <Save size={16} />
+        <span>Save Model Now</span>
+      </button>
+    </div>
   </div>
+
+  {#if toast}
+    <div class="toast-banner {toast.type}" role="status">
+      {toast.message}
+    </div>
+  {/if}
 
   {#if status.error_message}
     <div class="error-banner" role="alert">
@@ -142,6 +233,66 @@
     justify-content: space-between;
     gap: 1rem;
     margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .header-title-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background-color 0.15s ease, opacity 0.15s ease;
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    background-color: var(--panel-raised, var(--control, #14191f));
+    color: var(--text, #e6ebef);
+    border-color: var(--line, #2d3741);
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background-color: var(--line, #2d3741);
+  }
+
+  .toast-banner {
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    font-weight: 500;
+  }
+
+  .toast-banner.success {
+    background-color: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #34d399;
+  }
+
+  .toast-banner.error {
+    background-color: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
   }
 
   .page-title {
