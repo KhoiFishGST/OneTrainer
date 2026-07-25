@@ -71,9 +71,9 @@
   {/if}
 
   <div class="detail-header">
-    <a href="/data" class="btn-back">
+    <a href="/datasets" class="btn-back">
       <ArrowLeft size={16} />
-      <span>Back to Data</span>
+      <span>Back to Datasets</span>
     </a>
     <div class="header-info">
       <h1 class="dataset-title">{datasetName}</h1>

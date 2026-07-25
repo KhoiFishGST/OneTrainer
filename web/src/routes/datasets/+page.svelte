@@ -94,7 +94,7 @@
 
 <div class="route-page">
   <div class="page-header">
-    <h1 class="page-title">Data</h1>
+    <h1 class="page-title">Datasets</h1>
   </div>
 
   <div class="options-panel">

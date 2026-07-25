@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/svelte';
 import { expect, test, vi } from 'vitest';
 import { readable } from 'svelte/store';
-import DataPage from './+page.svelte';
+import DatasetsPage from './+page.svelte';
 import * as queries from '$lib/api/queries';
 
 test('renders Data page title, base directory input, and dataset cards', async () => {
@@ -23,8 +23,8 @@ test('renders Data page title, base directory input, and dataset cards', async (
     }) as any
   );
 
-  render(DataPage);
-  expect(screen.getByText('Data')).toBeInTheDocument();
+  render(DatasetsPage);
+  expect(screen.getByText('Datasets')).toBeInTheDocument();
   expect(screen.getByText('Base Directory:')).toBeInTheDocument();
   expect(await screen.findByText('Dataset Alpha')).toBeInTheDocument();
 });

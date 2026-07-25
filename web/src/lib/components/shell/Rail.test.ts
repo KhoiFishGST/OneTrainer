@@ -8,12 +8,12 @@ it("persists pinned expansion and enables configuration routes", async () => {
   expect(localStorage.getItem("webui.railExpanded")).toBe("true");
   expect(screen.getByText("General")).toBeVisible();
   
-  for (const name of ["Model", "Concepts", "Training", "Sampling", "LoRA", "Data", "Live"]) {
+  for (const name of ["Model", "Concepts", "Training", "Sampling", "LoRA", "Datasets", "Live"]) {
     const link = screen.getByRole("link", { name });
     expect(link).not.toHaveAttribute("aria-disabled");
   }
 
-  expect(screen.queryByRole("link", { name: "Datasets" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "Data" })).not.toBeInTheDocument();
 });
 
 it("opens phone navigation as a modal drawer", async () => {
