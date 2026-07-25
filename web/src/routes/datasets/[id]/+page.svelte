@@ -71,14 +71,17 @@
   {/if}
 
   <div class="detail-header">
-    <a href="/datasets" class="btn-back">
-      <ArrowLeft size={16} />
-      <span>Back to Datasets</span>
-    </a>
-    <div class="header-info">
+    <div class="header-left">
       <h1 class="dataset-title">{datasetName}</h1>
-      <span class="dataset-path">{datasetPath}</span>
+      {#if datasetPath}
+        <span class="dataset-path">{datasetPath}</span>
+      {/if}
+      <a href="/datasets" class="btn-back">
+        <ArrowLeft size={16} />
+        <span>Back to Datasets</span>
+      </a>
     </div>
+
     <button type="button" class="btn-upload" onclick={() => fileInput?.click()}>
       <Upload size={18} />
       <span>Add Files</span>
@@ -164,20 +167,27 @@
   }
   .detail-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
   }
-  .btn-back {
+  .header-left {
     display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .btn-back {
+    display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    color: var(--muted);
+    gap: 0.375rem;
+    color: var(--muted, #8995a1);
     text-decoration: none;
     font-size: 0.875rem;
+    margin-top: 0.25rem;
+    transition: color 0.15s ease;
   }
   .btn-back:hover {
-    color: var(--text);
+    color: var(--text, #e6ebef);
   }
   .dataset-title {
     font-size: 1.5rem;
@@ -187,7 +197,7 @@
   }
   .dataset-path {
     font-size: 0.8125rem;
-    color: var(--muted);
+    color: var(--muted, #8995a1);
   }
   .btn-upload {
     display: flex;
