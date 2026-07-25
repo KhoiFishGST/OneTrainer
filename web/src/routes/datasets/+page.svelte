@@ -230,6 +230,9 @@
     padding: 1rem 1.25rem;
     border-radius: 8px;
     border: 1px solid var(--line, #2d3741);
+    width: 740px;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .base-dir-row {
