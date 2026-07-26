@@ -26,6 +26,7 @@ export const queryKeys = {
   directories: (path?: string) => ['directories', path ?? ''] as const,
   backlog: () => ['backlog'] as const,
   concepts: () => ['concepts'] as const,
+  samples: () => ['samples'] as const,
   datasets: () => ['datasets'] as const,
   datasetFiles: (name: string) => ['datasets', name, 'files'] as const,
   trainingStatus: () => ['training', 'status'] as const,
@@ -320,4 +321,36 @@ export function createUpdateCaptionMutation() {
     client
   );
 }
+
+export function createSamplesQuery() {
+  const client = getSafeQueryClient();
+  return createQuery(
+    {
+      queryKey: queryKeys.samples(),
+      queryFn: async () => {
+        const data = await api.getSamples();
+        return data.samples;
+      },
+    },
+    client
+  );
+}
+
+export function createUpdateSamplesMutation() {
+  const client = getSafeQueryClient();
+  return createMutation(
+    {
+      mutationFn: async (samples: any[]) => {
+        const data = await api.updateSamples(samples);
+        return data.samples;
+      },
+      onSuccess: (samples) => {
+        client.setQueryData(queryKeys.samples(), samples);
+        client.invalidateQueries({ queryKey: queryKeys.samples() });
+      },
+    },
+    client
+  );
+}
+
 

@@ -201,6 +201,14 @@ export function createApi(base = '') {
         method: 'PUT',
         body: JSON.stringify({ caption_name, content }),
       }),
+
+    getSamples: () => request<{ samples: any[] }>(`${base}/api/samples`),
+
+    updateSamples: (samples: any[]) =>
+      request<{ samples: any[] }>(`${base}/api/samples`, {
+        method: 'PUT',
+        body: JSON.stringify({ samples }),
+      }),
   };
 }
 
