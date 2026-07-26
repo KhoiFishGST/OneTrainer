@@ -369,5 +369,25 @@ def test_handle_default_sample_exception_handled_gracefully():
     coordinator.on_default_sample.assert_called_once()
 
 
+def test_auto_create_default_samples_when_concepts_not_none(tmp_path, monkeypatch):
+    training_service = TrainingService()
+
+    def fake_create_trainer(train_config, callbacks, commands):
+        return FakeTrainer(callbacks, commands)
+
+    mock_create = MagicMock(create_trainer=fake_create_trainer)
+    monkeypatch.setitem(sys.modules, "modules.util.create", mock_create)
+
+    config = valid_config_dict()
+    config["concepts"] = [{"name": "concept1"}]
+    config["samples"] = None
+    sample_file = tmp_path / "sub" / "samples.json"
+    config["sample_definition_file_name"] = str(sample_file)
+
+    _original_run_training_worker(training_service, config)
+    assert sample_file.exists()
+
+
+
 
 
