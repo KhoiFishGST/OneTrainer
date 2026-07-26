@@ -121,7 +121,7 @@
           >
             {#if item.image_name}
               <img
-                src="/api/datasets/image?dataset={encodeURIComponent(datasetName)}&filename={encodeURIComponent(item.image_name)}"
+                src="/api/datasets/image?dataset={encodeURIComponent(datasetName)}&filename={encodeURIComponent(item.image_name)}&thumb=true"
                 alt={item.id}
                 class="item-img"
               />

@@ -28,4 +28,10 @@ test('renders dataset detail header and upload button', async () => {
   expect(screen.getByText('Add Files')).toBeInTheDocument();
   expect(await screen.findByText('TestDataset')).toBeInTheDocument();
   expect(await screen.findByText('sample_01')).toBeInTheDocument();
+
+  const img = await screen.findByRole('img', { name: 'sample_01' });
+  expect(img).toHaveAttribute(
+    'src',
+    '/api/datasets/image?dataset=TestDataset&filename=sample_01.png&thumb=true'
+  );
 });
