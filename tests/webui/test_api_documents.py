@@ -80,7 +80,7 @@ def test_schema_requires_supported_pair(tmp_path):
             "/api/config/schema", params={"model_type": "STABLE_DIFFUSION_15", "training_method": "FINE_TUNE"}
         )
         assert response.status_code == 200
-        assert set(["general", "data", "backup"]).issubset({tab["id"] for tab in response.json()["tabs"]})
+        assert {"general", "data", "backup"}.issubset({tab["id"] for tab in response.json()["tabs"]})
 
 
 def test_directory_errors_are_mapped(tmp_path):

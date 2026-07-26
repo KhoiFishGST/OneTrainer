@@ -36,6 +36,7 @@ BG_MAP = {
 CSI_RE = re.compile(r"^\x1b\[([\d;]*)([\x40-\x7e])")
 INCOMPLETE_CSI_RE = re.compile(r"^\x1b\[[\d;]*$")
 OSC_RE = re.compile(r"^\x1b\].*?(\x07|\x1b\\)", re.DOTALL)
+INCOMPLETE_OSC_RE = re.compile(r"^\x1b\].*$", re.DOTALL)
 WEB_LOG_RE = re.compile(
     r'(?:INFO|DEBUG|WARNING|ERROR|CRITICAL):\s+(?:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+\s+-\s+)?"[A-Z]+\s+/|\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+\s+-\s+"|\b(?:GET|POST|PUT|DELETE|PATCH)\s+/api/'
 )

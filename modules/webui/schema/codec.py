@@ -27,10 +27,7 @@ def getattr_nested(obj: object, path: str) -> object:
             return None
         if isinstance(curr, Enum):
             return curr.value if hasattr(curr, "value") else str(curr)
-        if isinstance(curr, dict):
-            curr = curr.get(part)
-        else:
-            curr = getattr(curr, part, None)
+        curr = curr.get(part) if isinstance(curr, dict) else getattr(curr, part, None)
     if isinstance(curr, Enum):
         return curr.value if hasattr(curr, "value") else str(curr)
     return curr

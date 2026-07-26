@@ -1,8 +1,7 @@
 from modules.webui.gallery import GalleryImage, GalleryNotFound
 from modules.webui.state import AppState
 
-from fastapi import APIRouter, HTTPException, Request, Response
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, HTTPException, Request
 
 router = APIRouter()
 
@@ -29,25 +28,14 @@ def get_gallery_run(run_key: str, request: Request):
 
 
 @router.get("/gallery/runs/{run_key}/images/{filename}")
-def get_gallery_image(run_key: str, filename: str, request: Request):
+async def get_gallery_image(run_key: str, filename: str, request: Request):
     app_state: AppState = request.app.state.webui
     try:
         image_info: GalleryImage = app_state.gallery_service.get_image(run_key, filename)
     except GalleryNotFound as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
 
-    cache_headers = {
-        "ETag": image_info.etag,
-        "Cache-Control": "public, max-age=31536000, immutable",
-        "X-Content-Type-Options": "nosniff",
-    }
-
-    if_none_match = request.headers.get("if-none-match")
-    if if_none_match and if_none_match == image_info.etag:
-        return Response(status_code=304, headers=cache_headers)
-
-    return FileResponse(
-        path=image_info.path,
-        media_type=image_info.media_type,
-        headers=cache_headers,
+    return await app_state.media_service.serve_image(
+        request, image_info.path, thumb=False
     )
+

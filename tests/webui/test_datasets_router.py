@@ -150,22 +150,25 @@ def test_get_dataset_image_and_thumbnail(client):
     img_jpg.save(buf_jpg, format="JPEG")
     c.post("/api/datasets/test_ds/upload", files=[("files", ("photo.jpg", buf_jpg.getvalue(), "image/jpeg"))])
 
-    # Get thumbnail (cropped square)
+    # Get thumbnail (cropped square) - returns WebP from MediaService
     res_thumb = c.get("/api/datasets/image?dataset=test_ds&thumb=true")
     assert res_thumb.status_code == 200
-    assert res_thumb.headers["content-type"] == "image/png"
+    assert res_thumb.headers["content-type"] == "image/webp"
+    assert "ETag" in res_thumb.headers
+    assert "Cache-Control" in res_thumb.headers
 
     # Get specific full PNG image
     res_full = c.get("/api/datasets/image?dataset=test_ds&filename=sample.png")
     assert res_full.status_code == 200
     assert res_full.headers["content-type"] == "image/png"
+    assert "ETag" in res_full.headers
+    assert "Cache-Control" in res_full.headers
 
     # Get specific full JPEG image - must return image/jpeg Content-Type header and Cache-Control + ETag
     res_full_jpg = c.get("/api/datasets/image?dataset=test_ds&filename=photo.jpg")
     assert res_full_jpg.status_code == 200
     assert res_full_jpg.headers["content-type"] == "image/jpeg"
     assert "Cache-Control" in res_full_jpg.headers
-    assert res_full_jpg.headers["Cache-Control"] == "no-cache, must-revalidate"
     assert "ETag" in res_full_jpg.headers
     etag = res_full_jpg.headers["ETag"]
 

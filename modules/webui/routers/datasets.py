@@ -1,5 +1,3 @@
-import io
-import mimetypes
 import os
 import re
 import shutil
@@ -7,15 +5,14 @@ import urllib.parse
 from pathlib import Path
 
 from modules.util import path_util
-from modules.util.image_util import load_image
 from modules.webui.state import AppState
 
-from fastapi import APIRouter, File, HTTPException, Request, Response, UploadFile
-from PIL import Image
+from fastapi import APIRouter, File, HTTPException, Request, UploadFile
 
 router = APIRouter()
 
 SAFE_NAME_REGEX = re.compile(r"^[a-zA-Z0-9 _-]+$")
+
 
 
 def get_base_datasets_dir(app_state: AppState) -> Path:
@@ -128,7 +125,9 @@ async def get_dataset_files(name: str, request: Request):
 
 
 @router.post("/datasets/{name}/upload")
-async def upload_dataset_files(name: str, request: Request, files: list[UploadFile] = File(...)):
+async def upload_dataset_files(
+    name: str, request: Request, files: list[UploadFile] = File(...)  # noqa: B008
+):
     app_state: AppState = request.app.state.webui
     base_dir = get_base_datasets_dir(app_state)
     ds_dir = base_dir / name
@@ -173,11 +172,13 @@ async def update_dataset_caption(name: str, request: Request):
 
 
 @router.get("/datasets/image")
-async def get_dataset_image(dataset: str, filename: str = "", thumb: bool = False, request: Request = None):
+async def get_dataset_image(
+    dataset: str, filename: str = "", thumb: bool = False, request: Request = None
+):
     app_state: AppState = request.app.state.webui
-    base_dir = get_base_datasets_dir(app_state)
     if ".." in dataset or ".." in filename:
         raise HTTPException(status_code=400, detail="Invalid path")
+    base_dir = get_base_datasets_dir(app_state)
     ds_dir = base_dir / dataset
 
     img_path = None
@@ -192,38 +193,6 @@ async def get_dataset_image(dataset: str, filename: str = "", thumb: bool = Fals
                     img_path = f
                     break
 
-    if not img_path:
-        img = Image.new("RGBA", (150, 150), (30, 40, 50, 255))
-        buf = io.BytesIO()
-        img.save(buf, format="PNG")
-        return Response(content=buf.getvalue(), media_type="image/png")
-
-    stat = img_path.stat()
-    etag = f'"{int(stat.st_mtime)}-{stat.st_size}-{"thumb" if thumb else "full"}"'
-    headers = {
-        "Cache-Control": "no-cache, must-revalidate",
-        "ETag": etag,
-    }
-
-    if request:
-        if_none_match = request.headers.get("if-none-match")
-        if if_none_match and if_none_match == etag:
-            return Response(status_code=304, headers=headers)
-
-    if thumb:
-        try:
-            image = load_image(str(img_path), convert_mode="RGBA")
-            size = min(image.width, image.height)
-            image = image.crop(((image.width - size) // 2, (image.height - size) // 2, (image.width - size) // 2 + size, (image.height - size) // 2 + size))
-            image = image.resize((150, 150), Image.Resampling.BILINEAR)
-            buf = io.BytesIO()
-            image.save(buf, format="PNG")
-            return Response(content=buf.getvalue(), media_type="image/png", headers=headers)
-        except Exception:
-            pass
-
-    mime_type, _ = mimetypes.guess_type(str(img_path))
-    if not mime_type or not mime_type.startswith("image/"):
-        mime_type = "image/png"
-
-    return Response(content=img_path.read_bytes(), media_type=mime_type, headers=headers)
+    return await app_state.media_service.serve_image(
+        request, img_path or Path(""), thumb=thumb
+    )

@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Query, Request
-from fastapi.responses import JSONResponse
-
 from modules.webui.directories import DirectoryDenied, DirectoryMissing
 from modules.webui.state import AppState
+
+from fastapi import APIRouter, Query, Request
+from fastapi.responses import JSONResponse
 
 router = APIRouter()
 
@@ -12,7 +12,7 @@ async def fs_list(
     request: Request,
     path: str = "",
     mode: str = "both",
-    extensions: str | list[str] | None = Query(None),
+    extensions: str | list[str] | None = Query(None),  # noqa: B008
     show_hidden: bool = False,
 ):
     app_state: AppState = request.app.state.webui

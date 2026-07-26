@@ -1,8 +1,10 @@
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
+
+from modules.webui.state import AppState
+
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
-from modules.webui.state import AppState
 
 router = APIRouter()
 
@@ -14,7 +16,7 @@ async def get_status(request: Request):
 
 
 @router.post("/training/start")
-async def start_training(request: Request, body: Optional[dict[str, Any]] = None):
+async def start_training(request: Request, body: dict[str, Any] | None = None):
     app_state: AppState = request.app.state.webui
     config_data = None
     if body and "config" in body and isinstance(body["config"], dict):
@@ -31,7 +33,7 @@ async def start_training(request: Request, body: Optional[dict[str, Any]] = None
         app_state.training_service.start_training(config_data)
         return app_state.training_service.get_status()
     except RuntimeError as e:
-        raise HTTPException(status_code=409, detail=str(e))
+        raise HTTPException(status_code=409, detail=str(e)) from e
 
 
 @router.post("/training/stop")
@@ -41,7 +43,7 @@ async def stop_training(request: Request):
         app_state.training_service.stop_training()
         return app_state.training_service.get_status()
     except RuntimeError as e:
-        raise HTTPException(status_code=409, detail=str(e))
+        raise HTTPException(status_code=409, detail=str(e)) from e
 
 
 
@@ -52,7 +54,7 @@ async def pause_training(request: Request):
         app_state.training_service.pause_training()
         return app_state.training_service.get_status()
     except RuntimeError as e:
-        raise HTTPException(status_code=409, detail=str(e))
+        raise HTTPException(status_code=409, detail=str(e)) from e
 
 
 
@@ -63,7 +65,7 @@ async def resume_training(request: Request):
         app_state.training_service.resume_training()
         return app_state.training_service.get_status()
     except RuntimeError as e:
-        raise HTTPException(status_code=409, detail=str(e))
+        raise HTTPException(status_code=409, detail=str(e)) from e
 
 
 
@@ -74,7 +76,7 @@ async def request_sample(request: Request):
         app_state.training_service.request_sample()
         return {"status": "ok"}
     except RuntimeError as e:
-        raise HTTPException(status_code=409, detail=str(e))
+        raise HTTPException(status_code=409, detail=str(e)) from e
 
 
 
@@ -85,7 +87,7 @@ async def request_backup(request: Request):
         app_state.training_service.request_backup()
         return {"status": "ok"}
     except RuntimeError as e:
-        raise HTTPException(status_code=409, detail=str(e))
+        raise HTTPException(status_code=409, detail=str(e)) from e
 
 
 @router.post("/training/save")
@@ -95,7 +97,7 @@ async def request_save(request: Request):
         app_state.training_service.request_save()
         return {"status": "ok"}
     except RuntimeError as e:
-        raise HTTPException(status_code=409, detail=str(e))
+        raise HTTPException(status_code=409, detail=str(e)) from e
 
 
 

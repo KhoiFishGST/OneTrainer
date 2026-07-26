@@ -1,9 +1,10 @@
 import secrets
 from typing import Any
-from pydantic import BaseModel
-from fastapi import APIRouter, HTTPException, Response, Request
 
 from modules.webui.state import AppState
+
+from fastapi import APIRouter, HTTPException, Request, Response
+from pydantic import BaseModel
 
 router = APIRouter(tags=["auth"])
 
@@ -29,10 +30,7 @@ def is_authenticated(request_or_ws: Any, state: AppState) -> bool:
 
     cookies = getattr(request_or_ws, "cookies", {})
     cookie_token = cookies.get("onetrainer_session")
-    if cookie_token and cookie_token in _ACTIVE_TOKENS:
-        return True
-
-    return False
+    return bool(cookie_token and cookie_token in _ACTIVE_TOKENS)
 
 
 @router.get("/auth/status")
