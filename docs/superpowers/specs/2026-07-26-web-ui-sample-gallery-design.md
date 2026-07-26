@@ -32,6 +32,7 @@ All implementation changes are limited to `modules/webui`, `web/src`, and their 
 - Showing the actual randomized seed when core does not expose it.
 - Gallery deletion, retention policies, ratings, or comparison sliders.
 - Reconciliation scanning of core output after missed callbacks.
+- Coordinating prompt-file edits made outside the Web UI during an active sampling batch.
 
 ## Existing Behavior And Constraints
 
@@ -39,6 +40,7 @@ All implementation changes are limited to `modules/webui`, `web/src`, and their 
 - Core saves default samples below `<workspace>/samples/<source-index> - <safe-prompt>/`.
 - `GenericTrainer.__sample_during_training` reloads `sample_definition_file_name` for each default batch when `config.samples` is `None`.
 - `GenericTrainer` calls `on_update_status("Sampling ...")` immediately before loading those definitions.
+- Core normalizes each definition through `SampleConfig` and applies `SampleConfig.from_train_config` before generation.
 - The Web UI receives each successful default output through `TrainCallbacks.on_sample_default` after core saves it.
 - `ModelSamplerOutput` exposes file type, data, and filepath, but not reliable prompt or actual random-seed metadata.
 - The core sample directory name exposes the source prompt index. The ` - no-ema` postfix distinguishes non-EMA output.
@@ -63,13 +65,13 @@ When status changes to `Sampling ...`, the coordinator:
 2. Marks sampling active before another Web UI request can write the definition file.
 3. Reads the currently applied definitions.
 4. Backfills missing stable Web UI prompt IDs and atomically writes them before core reads the same file.
-5. Captures or reuses the content-addressed prompt revision.
+5. Normalizes the definitions with the active model defaults and train-config overlays, then captures or reuses the content-addressed prompt revision.
 6. Opens a new batch with the current training progress and expected enabled prompt IDs.
 7. Releases the lock while keeping writes gated for the duration of the batch.
 
 When status leaves `Sampling ...`, or training cleanup runs, the coordinator atomically applies the latest queued definitions and clears the sampling state. Multiple mid-batch edits collapse to the latest submitted set.
 
-Queued definitions are also written atomically to a transient Web UI pending file in the active run directory. The pending file is removed after application. On Web UI startup, an unapplied pending file is applied before another Web UI training run can start, so an acknowledged prompt edit is not lost to a process interruption.
+Queued definitions are also written atomically to a transient sibling of the configured definition file named `<sample-definition-file>.webui-pending`. The pending file is removed after application. On Web UI startup, an unapplied pending file for the currently configured definition file is applied before another Web UI training run can start, so an acknowledged prompt edit is not lost to a process interruption.
 
 The sampling endpoint and the periodic core schedule use the same coordinator lifecycle. An edit completed before the next `Sampling ...` transition is used by that batch. An edit submitted after the transition is explicitly queued for the following batch.
 
@@ -114,7 +116,7 @@ workspace/run/web/samples/2026-07-26_11-17-26/
   000002-step-000000100-prompt-000-ema-thumb.webp
 ```
 
-The full-size file is copied from `sampler_output.filepath`, preserving exact bytes and extension. It is never re-encoded. A bounded WebP thumbnail is generated for card display. Both are finalized with a temporary file and atomic rename.
+The example assumes EMA is active. When EMA is off, primary filenames use `base` instead of `ema`. The full-size file is copied from `sampler_output.filepath`, preserving exact bytes and extension. It is never re-encoded. A bounded WebP thumbnail is generated for card display. Both are finalized with a temporary file and atomic rename.
 
 The monotonic batch number prevents collisions when `Sample Now` is invoked repeatedly at the same progress. The prompt number is the source index for readability only; `webui_id` in the manifest is authoritative. Non-EMA filenames use `non-ema` instead of `ema`.
 
@@ -148,7 +150,7 @@ The monotonic batch number prevents collisions when `Sample Now` is invoked repe
 }
 ```
 
-The revision hash uses canonical JSON for the complete ordered definition list after ID normalization. Disabled definitions remain in the revision so source indexes and historical state are exact. A batch's `expected_prompt_ids` contains only enabled definitions.
+The revision hash uses canonical JSON for the complete ordered effective definition list after ID normalization. Known fields are normalized through the existing `SampleConfig` defaults and `from_train_config` behavior so inherited settings match core generation. Stable IDs, source indexes, and unknown source fields are retained as Web UI metadata. Disabled definitions remain in the revision so source indexes and historical state are exact. A batch's `expected_prompt_ids` contains only enabled definitions.
 
 The schema preserves all sample-definition fields, not only the fields shown above. Unknown fields survive capture so model-specific settings are not discarded.
 
@@ -173,6 +175,7 @@ The schema preserves all sample-definition fields, not only the fields shown abo
       "global_step": 0,
       "prompt_revision_id": "sha256:<canonical-json-hash>",
       "expected_prompt_ids": ["prompt_<uuid>"],
+      "expected_variants": ["ema", "non_ema"],
       "samples": [
         {
           "webui_prompt_id": "prompt_<uuid>",
@@ -190,9 +193,11 @@ The schema preserves all sample-definition fields, not only the fields shown abo
 }
 ```
 
-Sample status is `pending`, `ready`, `unavailable`, or `error`. A new batch begins at the status transition rather than being inferred from step values, so repeated same-step samples are always separate. EMA and non-EMA callbacks join the same batch as separate variants.
+Variant is `base` when EMA is off, `ema` for the primary pass when EMA is active, and `non_ema` for the optional additional pass. `expected_variants` is derived from the active training config, allowing the frontend to infer every expected prompt/variant slot before callbacks arrive.
 
-The configured seed comes from the prompt revision. A negative or otherwise random sentinel is displayed as `Random`; the design does not claim an actual generated seed that core did not expose.
+Sample status is `pending`, `ready`, `unavailable`, or `error`. A new batch begins at the status transition rather than being inferred from step values, so repeated same-step samples are always separate. At the end of sampling, expected slots that received no successful callback become `unavailable`; gallery persistence failures become `error`. EMA and non-EMA callbacks join the same batch as separate variants.
+
+The configured seed comes from the prompt revision. When `random_seed` is enabled or the configured value is a random sentinel, the UI displays `Random`; the design does not claim an actual generated seed that core did not expose.
 
 `prompts.json` and `manifest.json` are replaced atomically under a per-run lock. Prompt revision persistence precedes any manifest reference to that revision. Image and thumbnail finalization precede a sample's transition to `ready`.
 
@@ -204,7 +209,7 @@ Web UI/core status: Sampling ...
   -> core reloads the same definition file
   -> core generates and saves original sample
   -> Web UI default-sample callback receives filepath
-  -> parse source index and EMA variant from existing core path
+  -> parse source index from the core path and resolve variant from the path plus active config
   -> resolve stable prompt ID from batch revision
   -> mirror exact image and create thumbnail
   -> atomically update manifest
@@ -243,7 +248,7 @@ One shared gallery component receives a normalized run model. It owns checkpoint
 
 - Checkpoints are ordered chronologically from top to bottom.
 - The left label shows epoch, global step, and sampling time.
-- EMA and non-EMA are labeled sub-rows when both exist.
+- EMA and non-EMA are labeled sub-rows when both exist; a lone base or EMA row needs no redundant label.
 - On wide screens, each variant row has one column per enabled prompt in that batch.
 - On narrow screens, cards wrap within their checkpoint group, normally to two columns and then one at the smallest width.
 - A generating Live batch shows completed cards immediately and pending placeholders for expected outputs.
@@ -254,9 +259,9 @@ Cards use lazy-loaded thumbnails. Rows use `content-visibility` to avoid eager l
 
 ### Image Viewer
 
-Selecting a card opens an accessible modal with the full mirrored image and exact historical metadata, including prompt, negative prompt, scheduler, dimensions, steps, CFG, configured seed, epoch, step, timestamp, and EMA variant.
+Selecting a card opens an accessible modal with the full mirrored image and exact historical metadata, including prompt, negative prompt, scheduler, dimensions, steps, CFG, configured seed, epoch, step, timestamp, and model variant.
 
-The modal timeline is filtered by `webui_id` and variant. It continues across prompt edits, skips checkpoints where that prompt has no ready image while showing those gaps in its timeline, and never mixes EMA with non-EMA.
+The modal timeline is filtered by `webui_id` and variant. It continues across prompt edits, skips checkpoints where that prompt has no ready image while showing those gaps in its timeline, and never mixes base, EMA, or non-EMA output.
 
 - Left/right buttons and keyboard arrows move to the previous/next available checkpoint.
 - Controls disable at the first and latest available image; navigation does not wrap.
@@ -290,13 +295,15 @@ Warnings are concise user-facing toasts for active-run failures and detailed ser
 - Reject ambiguous or missing config identity without affecting training.
 - Backfill, preserve, and de-duplicate `webui_id` values.
 - Create and reuse canonical prompt revisions.
+- Normalize effective prompt settings with model defaults and active train-config overlays.
 - Preserve unknown prompt fields and disabled definitions.
 - Apply edits before sampling to the next batch.
 - Queue edits during sampling and flush only after the batch.
 - Recover and apply a durable pending edit after service restart.
 - Keep one revision across EMA and non-EMA callbacks.
 - Create separate batches for repeated same-step sampling.
-- Map source indexes and variants from core paths.
+- Transition unresolved expected prompt/variant slots from pending to unavailable when sampling ends.
+- Map source indexes from core paths and resolve base/EMA/non-EMA variants from the path plus active config.
 - Copy exact source bytes and atomically create thumbnails/manifests.
 - Record random seed as configured `Random`, not an invented seed.
 - Handle concurrent callbacks, copy failures, invalid paths, and unsupported media.
@@ -346,6 +353,6 @@ Warnings are concise user-facing toasts for active-run failures and detailed ser
 - `/gallery` browses current and previous Web UI runs by config key.
 - `/live` uses the same component and remains fixed to the current run.
 - Rows display progress labels and progressive sample states.
-- EMA and non-EMA outputs appear as separate sub-rows.
+- EMA and non-EMA outputs appear as separate sub-rows when both are configured.
 - Modal navigation follows one stable prompt and variant across checkpoints, stops at both ends, and supports accessible controls.
 - Gallery persistence failures do not interrupt training.
