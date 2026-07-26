@@ -219,8 +219,8 @@ class ConfigService:
             return None
         file_name = getattr(self._config, "sample_definition_file_name", None) or "training_samples/samples.json"
         path = Path(file_name)
-        if not path.is_absolute() and self.settings.config_path:
-            path = self.settings.config_path.parent / path
+        if not path.is_absolute():
+            path = self.settings.root_dir / path
         return path
 
     async def get_sample_definitions(self) -> list:
