@@ -81,15 +81,18 @@ class SamplingCoordinator:
         with self._lock:
             path = self._resolve_prompt_path()
             samples: list[dict[str, Any]] = []
+            loaded_from_file = False
             if path is not None:
                 pending_path = Path(f"{path}.webui-pending")
                 target_path = pending_path if pending_path.exists() else path
                 if target_path.exists():
+                    loaded_from_file = True
                     with contextlib.suppress(Exception), target_path.open("r", encoding="utf-8") as f:
                         data = json.load(f)
                         if isinstance(data, list):
                             samples = data
-            elif self._active_config is not None and getattr(self._active_config, "samples", None):
+
+            if not loaded_from_file and self._active_config is not None and getattr(self._active_config, "samples", None):
                 samples = [s.to_dict() if hasattr(s, "to_dict") else dict(s) for s in self._active_config.samples]
 
             normalized = _normalize_ids(samples)
@@ -137,7 +140,8 @@ class SamplingCoordinator:
         with self._lock:
             self._active_config = config
             self.recover_pending()
-            self._gallery.begin_training(config)
+            with contextlib.suppress(Exception):
+                self._gallery.begin_training(config)
 
     def on_status(self, status: str, progress: TrainingProgressSnapshot) -> None:
         with self._lock:
@@ -160,17 +164,21 @@ class SamplingCoordinator:
                             with contextlib.suppress(OSError):
                                 write_json_atomic(path, defs)
 
-                    self._gallery.begin_batch(defs, self._active_config, progress)
+                    with contextlib.suppress(Exception):
+                        self._gallery.begin_batch(defs, self._active_config, progress)
             else:
                 if self._batch_open:
-                    self._gallery.finish_batch()
+                    with contextlib.suppress(Exception):
+                        self._gallery.finish_batch()
                     self._batch_open = False
                     self.recover_pending()
                     self._sampling_active = False
 
     def on_default_sample(self, sampler_output: ModelSamplerOutput) -> dict[str, Any] | None:
         with self._lock:
-            return self._gallery.record_default_sample(sampler_output)
+            with contextlib.suppress(Exception):
+                return self._gallery.record_default_sample(sampler_output)
+            return None
 
     def finish_training(self) -> None:
         with self._lock:
@@ -179,9 +187,10 @@ class SamplingCoordinator:
                     with contextlib.suppress(Exception):
                         self._gallery.finish_batch()
                     self._batch_open = False
-                    with contextlib.suppress(Exception):
-                        self.recover_pending()
                     self._sampling_active = False
-                self._gallery.finish_training()
+                with contextlib.suppress(Exception):
+                    self.recover_pending()
+                with contextlib.suppress(Exception):
+                    self._gallery.finish_training()
             finally:
                 self._active_config = None

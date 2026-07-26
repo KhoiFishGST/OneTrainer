@@ -159,3 +159,54 @@ def test_on_default_sample_delegates_to_gallery(coordinator: SamplingCoordinator
 def test_put_definitions_validates_object_structure(coordinator: SamplingCoordinator) -> None:
     with pytest.raises(PromptDefinitionsError, match="Each sample definition must be an object"):
         coordinator.put_definitions(["not a dict"])  # type: ignore[arg-type]
+
+
+def test_gallery_errors_are_suppressed(
+    coordinator: SamplingCoordinator, gallery: Mock, train_config: TrainConfig, image_output: Mock
+) -> None:
+    gallery.begin_training.side_effect = RuntimeError("gallery fail")
+    gallery.begin_batch.side_effect = RuntimeError("gallery fail")
+    gallery.finish_batch.side_effect = RuntimeError("gallery fail")
+    gallery.finish_training.side_effect = RuntimeError("gallery fail")
+    gallery.record_default_sample.side_effect = RuntimeError("gallery fail")
+
+    coordinator.begin_training(train_config)
+    coordinator.on_status("Sampling ...", progress(step=0))
+    coordinator.on_status("Training ...", progress(step=0))
+    assert coordinator.on_default_sample(image_output) is None
+    coordinator.finish_training()
+
+
+def test_recover_pending_on_finish_training_when_batch_not_open(
+    coordinator: SamplingCoordinator, prompt_file: Path, train_config: TrainConfig
+) -> None:
+    train_config.samples = [SampleConfig.default_values(train_config.model_type)]
+    coordinator.begin_training(train_config)
+    coordinator.on_status("Sampling ...", progress(step=0))
+    coordinator.on_status("Training ...", progress(step=0))
+    # batch is now closed (batch_open is False)
+    coordinator.put_definitions([{"webui_id": "prompt_a", "prompt": "edited_while_training"}])
+    assert Path(f"{prompt_file}.webui-pending").exists()
+
+    coordinator.finish_training()
+    assert not Path(f"{prompt_file}.webui-pending").exists()
+    assert json.loads(prompt_file.read_text(encoding="utf-8"))[0]["prompt"] == "edited_while_training"
+
+
+
+def test_get_definitions_falls_back_to_inline_config_samples_when_file_missing(
+    tmp_path: Path, gallery: Mock, train_config: TrainConfig
+) -> None:
+    missing_file = tmp_path / "non_existent" / "samples.json"
+    coord = SamplingCoordinator(
+        root_dir=tmp_path,
+        sample_path_provider=lambda: missing_file,
+        gallery=gallery,
+    )
+    train_config.samples = [SampleConfig.default_values(train_config.model_type)]
+    coord.begin_training(train_config)
+
+    state = coord.get_definitions()
+    assert len(state.samples) == 1
+    assert state.samples[0]["prompt"] == train_config.samples[0].prompt
+
