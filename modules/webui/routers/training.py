@@ -123,10 +123,15 @@ async def get_sample_image(sample_id: str, request: Request):
     if not filepath:
         raise HTTPException(status_code=404, detail="Sample image filepath not recorded")
 
-    file_path = Path(filepath)
+    try:
+        file_path = Path(str(filepath))
+    except Exception as error:
+        raise HTTPException(status_code=400, detail=f"Invalid sample image filepath: {error}")
+
     if not file_path.is_absolute():
         file_path = Path.cwd() / file_path
-    if not file_path.exists():
+
+    if not file_path.exists() or not file_path.is_file():
         raise HTTPException(status_code=404, detail="Sample image file missing from disk")
 
     ext = file_path.suffix.lower()
