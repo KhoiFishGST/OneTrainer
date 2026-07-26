@@ -45,14 +45,23 @@
     }
   });
 
-  const status = $derived($trainingStore.status);
-  const tab = $derived(
+  const rawTab = $derived(
     ctx.schema?.tabs?.find((t) => t.id === 'sampling') ?? {
       id: 'sampling',
       label: 'Sampling',
       groups: [],
     }
   );
+
+  const tab = $derived({
+    ...rawTab,
+    groups: (rawTab.groups || []).map((group: any) => ({
+      ...group,
+      fields: (group.fields || []).filter((f: any) => f.id !== 'samples'),
+    })),
+  });
+
+  const status = $derived($trainingStore.status);
 
   async function handleSample() {
     try {
@@ -342,8 +351,10 @@
   }
 
   .options-panel {
-    max-width: 740px;
-    margin: 0 auto 2rem;
+    width: 740px;
+    max-width: 100%;
+    margin-bottom: 2rem;
+    box-sizing: border-box;
   }
 
   .section-divider {
