@@ -179,6 +179,9 @@
   showFooter={false}
   {onClose}
   onKeyDown={handleViewerKeyDown}
+  data-batch-id={selection?.batchId}
+  data-prompt-id={selection?.promptId}
+  data-variant={selection?.variant}
 >
   {#if activeEntry}
     <div class="viewer-container">

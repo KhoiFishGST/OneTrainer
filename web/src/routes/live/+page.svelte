@@ -7,6 +7,7 @@
     createRequestSampleMutation,
     createRequestBackupMutation,
     createRequestSaveMutation,
+    createGalleryCurrentQuery,
   } from '$lib/api/queries';
   import MetricsChart from '$lib/components/charts/MetricsChart.svelte';
   import GpuMonitor from '$lib/components/training/GpuMonitor.svelte';
@@ -15,6 +16,7 @@
   const sampleMutation = createRequestSampleMutation();
   const backupMutation = createRequestBackupMutation();
   const saveMutation = createRequestSaveMutation();
+  const galleryQuery = createGalleryCurrentQuery();
 
   let toast = $state<{ message: string; type: 'success' | 'error' } | null>(null);
   let toastTimeout: any;
@@ -29,8 +31,10 @@
 
   const status = $derived($trainingStore.status);
   const metrics = $derived($trainingStore.metrics);
-  const samples = $derived($trainingStore.samples);
   const gpuStats = $derived($trainingStore.gpuStats);
+  const gallery = $derived($galleryQuery.data);
+  const galleryLoading = $derived($galleryQuery.isLoading);
+  const galleryError = $derived($galleryQuery.error);
 
   onMount(async () => {
     try {
@@ -213,7 +217,7 @@
 
   <!-- Live Sample Gallery -->
   <section class="gallery-section">
-    <SampleGallery {samples} />
+    <SampleGallery {gallery} loading={galleryLoading} error={galleryError} title="Live Sample Gallery" />
   </section>
 </div>
 

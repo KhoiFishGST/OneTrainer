@@ -1,602 +1,402 @@
 <script lang="ts">
-  import { X, Image as ImageIcon, ZoomIn } from 'lucide-svelte';
-  import type { TrainingSample } from '../../api/types';
+  import type { GalleryRunModel, GalleryVariant } from '../../api/types';
+  import { galleryImageUrl } from '../../api/client';
+  import GalleryImageViewer, { type GallerySelection } from './GalleryImageViewer.svelte';
 
   let {
-    samples = [],
-  } = $props<{
-    samples?: TrainingSample[];
-  }>();
+    gallery = null,
+    loading = false,
+    error = null,
+    title,
+  }: {
+    gallery?: GalleryRunModel | null;
+    loading?: boolean;
+    error?: Error | string | null;
+    title?: string;
+  } = $props();
 
-  let selectedStepLimit = $state<number | null>(null);
-  let selectedSample = $state<TrainingSample | null>(null);
+  let selection = $state<GallerySelection | null>(null);
+  let isViewerOpen = $state(false);
 
-  const maxStep = $derived(
-    samples.length > 0 ? Math.max(...samples.map((s: TrainingSample) => s.step ?? 0)) : 0
-  );
-  const minStep = $derived(
-    samples.length > 0 ? Math.min(...samples.map((s: TrainingSample) => s.step ?? 0)) : 0
-  );
+  const sortedBatches = $derived.by(() => {
+    if (!gallery || !gallery.batches) return [];
+    return gallery.batches.slice().sort((a, b) => a.id - b.id);
+  });
 
-  const currentScrubberVal = $derived(
-    selectedStepLimit !== null ? selectedStepLimit : maxStep
-  );
+  const errorMessage = $derived.by(() => {
+    if (!error) return null;
+    return typeof error === 'string' ? error : error.message;
+  });
 
-  const filteredSamples = $derived(
-    samples.filter((s: TrainingSample) => (s.step ?? 0) <= currentScrubberVal)
-  );
-
-  function handleScrubberInput(e: Event) {
-    const target = e.target as HTMLInputElement;
-    selectedStepLimit = Number(target.value);
+  function formatVariant(variant: GalleryVariant): string {
+    if (variant === 'ema') return 'EMA';
+    if (variant === 'non_ema') return 'Non-EMA';
+    if (variant === 'base') return 'Base';
+    return variant;
   }
 
-  function handleResetScrubber() {
-    selectedStepLimit = maxStep;
+  function getSeedLabel(promptDef: any): string {
+    if (!promptDef) return '';
+    if (promptDef.random_seed === true) return 'Random';
+    if (promptDef.seed !== undefined && promptDef.seed !== null) return String(promptDef.seed);
+    return '';
   }
 
-  function openLightbox(sample: TrainingSample) {
-    selectedSample = sample;
+  function openViewer(batchId: number, promptId: string, variant: GalleryVariant) {
+    selection = { batchId, promptId, variant };
+    isViewerOpen = true;
   }
 
-  function closeLightbox() {
-    selectedSample = null;
-  }
-
-  function handleKeyDown(e: KeyboardEvent) {
-    if (e.key === 'Escape' && selectedSample) {
-      closeLightbox();
-    }
+  function closeViewer() {
+    isViewerOpen = false;
+    selection = null;
   }
 </script>
 
-<svelte:window onkeydown={handleKeyDown} />
+<div class="sample-gallery-container" data-testid="sample-gallery">
+  {#if title}
+    <h2 class="gallery-title">{title}</h2>
+  {/if}
 
-<div class="sample-gallery-panel" data-testid="sample-gallery">
-  <div class="gallery-header">
-    <div class="header-left">
-      <h3 class="panel-title">Live Sample Gallery</h3>
-      {#if samples.length > 0}
-        <span class="sample-count-badge">{filteredSamples.length} / {samples.length} samples</span>
-      {/if}
+  {#if loading}
+    <div class="gallery-state loading-state">
+      <p class="state-text">Loading sample gallery...</p>
     </div>
-
-    {#if samples.length > 0}
-      <div class="scrubber-container">
-        <label for="step-scrubber-input" class="scrubber-label">
-          Step Timeline: <span class="scrubber-value">{currentScrubberVal}</span> / {maxStep}
-        </label>
-        <div class="scrubber-controls">
-          <span class="step-limit-min">{minStep}</span>
-          <input
-            id="step-scrubber-input"
-            type="range"
-            aria-label="Timeline step scrubber"
-            min={minStep}
-            max={maxStep}
-            value={currentScrubberVal}
-            oninput={handleScrubberInput}
-            class="timeline-scrubber"
-          />
-          <span class="step-limit-max">{maxStep}</span>
-          {#if selectedStepLimit !== null && selectedStepLimit !== maxStep}
-            <button
-              type="button"
-              class="reset-scrubber-btn"
-              onclick={handleResetScrubber}
-              title="Reset scrubber to latest"
-            >
-              Latest
-            </button>
-          {/if}
-        </div>
-      </div>
-    {/if}
-  </div>
-
-  {#if samples.length === 0}
-    <div class="empty-gallery">
-      <ImageIcon size={48} class="empty-icon" />
-      <p class="empty-text">No samples generated yet</p>
-      <p class="empty-subtext">Generated preview images during training will appear here automatically.</p>
+  {:else if errorMessage}
+    <div class="gallery-state error-state">
+      <p class="state-text">{errorMessage}</p>
     </div>
-  {:else if filteredSamples.length === 0}
-    <div class="empty-gallery">
-      <p class="empty-text">No samples match the selected step filter ({currentScrubberVal})</p>
-      <button type="button" class="btn reset-btn" onclick={handleResetScrubber}>
-        Reset Filter
-      </button>
+  {:else if !gallery || !sortedBatches || sortedBatches.length === 0}
+    <div class="gallery-state empty-state">
+      <p class="state-text">No samples yet</p>
     </div>
   {:else}
-    <div class="samples-grid">
-      {#each filteredSamples as sample (sample.id || sample.sample_id || `step-${sample.step}-${sample.seed}`)}
-        {@const sampleUrl = sample.url || (sample.id || sample.sample_id ? `/api/training/samples/${sample.id || sample.sample_id}/image` : '')}
-        <div
-          class="sample-card"
-          onclick={() => openLightbox(sample)}
-          onkeydown={(e) => e.key === 'Enter' && openLightbox(sample)}
-          role="button"
-          tabindex="0"
-        >
-          <div class="image-wrapper">
-            {#if sampleUrl}
-              <img
-                src={sampleUrl}
-                alt={sample.prompt || `Sample at step ${sample.step}`}
-                loading="lazy"
-                class="sample-img"
-              />
-            {:else}
-              <div class="placeholder-img">
-                <ImageIcon size={32} />
+    <div class="checkpoints-list">
+      {#each sortedBatches as batch (batch.id)}
+        {@const revision = gallery.revisions ? gallery.revisions[batch.prompt_revision_id] : null}
+        <div class="checkpoint-row" data-testid="checkpoint-row">
+          <div class="checkpoint-header">
+            <span class="checkpoint-label">
+              Epoch {batch.epoch} {'\u00b7'} Step {batch.global_step}
+            </span>
+          </div>
+
+          {#each batch.expected_variants as variant (variant)}
+            <div class="variant-subrow">
+              {#if batch.expected_variants.length > 1}
+                <h4 class="variant-label">{formatVariant(variant)}</h4>
+              {/if}
+
+              <div
+                class="variant-grid"
+                data-testid="variant-grid"
+                style={`--prompt-columns: ${Math.max(batch.expected_prompt_ids.length, 1)}`}
+              >
+                {#each batch.expected_prompt_ids as promptId (promptId)}
+                  {@const promptDef = revision?.prompts?.find((p) => p.webui_id === promptId)}
+                  {@const sample = batch.samples?.find((s) => s.webui_prompt_id === promptId && s.variant === variant)}
+                  {@const status = sample ? sample.status : 'unavailable'}
+
+                  <div class="sample-slot-container">
+                    {#if status === 'ready' && sample}
+                      {@const thumbUrl = gallery.run?.key ? galleryImageUrl(gallery.run.key, sample.thumbnail_filename || sample.filename || '') : ''}
+                      <button
+                        type="button"
+                        class="sample-card ready-card"
+                        aria-label={`Open sample ${promptDef?.prompt || promptId}`}
+                        onclick={() => openViewer(batch.id, promptId, variant)}
+                      >
+                        <div class="thumbnail-wrapper">
+                          {#if thumbUrl}
+                            <img
+                              src={thumbUrl}
+                              alt={promptDef?.prompt || 'sample prompt'}
+                              loading="lazy"
+                              class="thumbnail-img"
+                            />
+                          {/if}
+                          <div class="card-overlay">
+                            {#if promptDef}
+                              <div class="overlay-meta">
+                                {#if promptDef.width && promptDef.height}
+                                  <span class="meta-tag">{promptDef.width}{'\u00d7'}{promptDef.height}</span>
+                                {/if}
+                                {#if promptDef.diffusion_steps !== undefined}
+                                  <span class="meta-tag">{promptDef.diffusion_steps} steps</span>
+                                {/if}
+                                {#if promptDef.cfg_scale !== undefined}
+                                  <span class="meta-tag">CFG {promptDef.cfg_scale}</span>
+                                {/if}
+                                {#if getSeedLabel(promptDef)}
+                                  <span class="meta-tag">Seed {getSeedLabel(promptDef)}</span>
+                                {/if}
+                              </div>
+                            {/if}
+                          </div>
+                        </div>
+                        {#if promptDef?.prompt}
+                          <p class="prompt-caption" title={promptDef.prompt}>
+                            {promptDef.prompt}
+                          </p>
+                        {/if}
+                      </button>
+                    {:else}
+                      <div class="sample-card non-ready-card status-{status}">
+                        <div class="status-placeholder">
+                          {#if status === 'pending'}
+                            <span class="status-text">Generating...</span>
+                          {:else if status === 'error'}
+                            <span class="status-text">{sample?.error || sample?.thumbnail_error || 'Gallery error'}</span>
+                          {:else}
+                            <span class="status-text">Unavailable</span>
+                          {/if}
+                        </div>
+                        {#if promptDef?.prompt}
+                          <p class="prompt-caption" title={promptDef.prompt}>
+                            {promptDef.prompt}
+                          </p>
+                        {/if}
+                      </div>
+                    {/if}
+                  </div>
+                {/each}
               </div>
-            {/if}
-            <div class="zoom-overlay">
-              <ZoomIn size={24} />
             </div>
-            <div class="step-tag">
-              Step {sample.step ?? 'N/A'}
-            </div>
-          </div>
-          <div class="sample-info">
-            {#if sample.prompt}
-              <p class="sample-prompt" title={sample.prompt}>{sample.prompt}</p>
-            {/if}
-            <div class="sample-meta">
-              {#if sample.epoch !== undefined}
-                <span>Epoch {sample.epoch}</span>
-              {/if}
-              {#if sample.seed !== undefined}
-                <span>Seed: {sample.seed}</span>
-              {/if}
-            </div>
-          </div>
+          {/each}
         </div>
       {/each}
     </div>
   {/if}
+
+  {#if isViewerOpen && selection && gallery}
+    <GalleryImageViewer
+      open={isViewerOpen}
+      {gallery}
+      {selection}
+      onClose={closeViewer}
+    />
+  {/if}
 </div>
 
-<!-- Lightbox Modal -->
-{#if selectedSample}
-  {@const selectedSampleUrl = selectedSample.url || (selectedSample.id || selectedSample.sample_id ? `/api/training/samples/${selectedSample.id || selectedSample.sample_id}/image` : '')}
-  <div
-    class="lightbox-backdrop"
-    data-testid="sample-lightbox-modal"
-    onclick={closeLightbox}
-    role="presentation"
-  >
-    <div
-      class="lightbox-dialog"
-      onclick={(e) => e.stopPropagation()}
-      onkeydown={(e) => {
-        if (e.key === 'Escape') closeLightbox();
-      }}
-      tabindex="-1"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="lightbox-title-id"
-    >
-      <div class="lightbox-header">
-        <div id="lightbox-title-id" class="lightbox-title">
-          <span class="badge step">Step {selectedSample.step ?? 'N/A'}</span>
-          {#if selectedSample.epoch !== undefined}
-            <span class="badge epoch">Epoch {selectedSample.epoch}</span>
-          {/if}
-        </div>
-        <button
-          type="button"
-          class="close-btn"
-          aria-label="Close"
-          onclick={closeLightbox}
-        >
-          <X size={20} />
-        </button>
-      </div>
-
-      <div class="lightbox-body">
-        {#if selectedSampleUrl}
-          <img
-            src={selectedSampleUrl}
-            alt={selectedSample.prompt || 'Full resolution sample'}
-            class="lightbox-img"
-          />
-        {:else}
-          <div class="lightbox-placeholder">
-            <ImageIcon size={64} />
-            <span>Image URL unavailable</span>
-          </div>
-        {/if}
-      </div>
-
-      <div class="lightbox-footer">
-        {#if selectedSample.prompt}
-          <div class="lightbox-field">
-            <span class="field-label">Prompt:</span>
-            <p class="field-value prompt">{selectedSample.prompt}</p>
-          </div>
-        {/if}
-        <div class="lightbox-meta-row">
-          {#if selectedSample.seed !== undefined}
-            <span class="meta-item"><strong>Seed:</strong> {selectedSample.seed}</span>
-          {/if}
-          {#if selectedSample.url}
-            <a
-              href={selectedSample.url}
-              target="_blank"
-              rel="noreferrer"
-              class="open-link"
-            >
-              Open Image in New Tab
-            </a>
-          {/if}
-        </div>
-      </div>
-    </div>
-  </div>
-{/if}
-
 <style>
-  .sample-gallery-panel {
-    background: var(--panel, #1e1e24);
-    border: 1px solid var(--line, #2e2e38);
-    border-radius: 8px;
-    padding: 1.25rem;
+  .sample-gallery-container {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1.5rem;
+    width: 100%;
   }
 
-  .gallery-header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-
-  .header-left {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .panel-title {
+  .gallery-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text);
     margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--color-text-title, var(--accent, #3b82f6));
   }
 
-  .sample-count-badge {
-    font-size: 0.75rem;
-    font-weight: 500;
-    padding: 0.2rem 0.6rem;
-    border-radius: 12px;
-    background: var(--control, #15151a);
-    color: var(--muted, #8a8a9a);
-    border: 1px solid var(--line, #2e2e38);
-  }
-
-  .scrubber-container {
+  .gallery-state {
     display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    min-width: 260px;
-  }
-
-  .scrubber-label {
-    font-size: 0.8125rem;
-    color: var(--muted, #8a8a9a);
-  }
-
-  .scrubber-value {
-    color: var(--accent, #6366f1);
-    font-weight: 600;
-  }
-
-  .scrubber-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.75rem;
-    color: var(--muted, #8a8a9a);
-  }
-
-  .timeline-scrubber {
-    flex: 1;
-    accent-color: var(--accent, #6366f1);
-    cursor: pointer;
-  }
-
-  .reset-scrubber-btn {
-    background: var(--control, #262630);
-    border: 1px solid var(--line, #2e2e38);
-    color: var(--text, #f0f0f5);
-    font-size: 0.6875rem;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-
-  .reset-scrubber-btn:hover {
-    background: var(--line, #2e2e38);
-  }
-
-  .empty-gallery {
-    padding: 3rem 1.5rem;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
+    padding: 3rem 1.5rem;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--muted);
+  }
+
+  .error-state {
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.05);
+  }
+
+  .state-text {
+    font-size: 0.95rem;
+    margin: 0;
+  }
+
+  .checkpoints-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+  }
+
+  .checkpoint-row {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1rem;
+  }
+
+  .checkpoint-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .checkpoint-label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .variant-subrow {
+    display: flex;
+    flex-direction: column;
     gap: 0.5rem;
-    color: var(--muted, #8a8a9a);
-    background: var(--panel-raised, #262630);
-    border: 1px dashed var(--line, #2e2e38);
-    border-radius: 6px;
   }
 
-  .empty-gallery :global(.empty-icon) {
-    color: var(--muted, #8a8a9a);
-    opacity: 0.5;
+  .variant-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    margin: 0.25rem 0 0 0;
   }
 
-  .empty-text {
-    font-size: 0.9375rem;
-    font-weight: 500;
-    color: var(--text, #f0f0f5);
-    margin: 0;
-  }
-
-  .empty-subtext {
-    font-size: 0.8125rem;
-    margin: 0;
-  }
-
-  .samples-grid {
+  .variant-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(var(--prompt-columns, 1), minmax(0, 1fr));
     gap: 1rem;
+  }
+
+  .sample-slot-container {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
   }
 
   .sample-card {
-    background: var(--panel-raised, #262630);
-    border: 1px solid var(--line, #2e2e38);
-    border-radius: 6px;
-    overflow: hidden;
-    cursor: pointer;
-    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
     display: flex;
     flex-direction: column;
+    background: var(--control);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+    text-align: left;
+    width: 100%;
+    padding: 0;
   }
 
-  .sample-card:hover {
+  .ready-card {
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .ready-card:hover {
     transform: translateY(-2px);
-    border-color: var(--accent, #6366f1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border-color: var(--accent);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   }
 
-  .image-wrapper {
+  .thumbnail-wrapper {
     position: relative;
     aspect-ratio: 1;
-    background: var(--control, #15151a);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 100%;
+    background: #000000;
     overflow: hidden;
   }
 
-  .sample-img {
+  .thumbnail-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
 
-  .placeholder-img {
-    color: var(--muted, #8a8a9a);
-  }
-
-  .zoom-overlay {
+  .card-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 50%);
     display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #ffffff;
-    opacity: 0;
+    align-items: flex-end;
+    padding: 0.5rem;
+    opacity: 0.9;
     transition: opacity 0.15s ease;
   }
 
-  .sample-card:hover .zoom-overlay {
+  .ready-card:hover .card-overlay {
     opacity: 1;
   }
 
-  .step-tag {
-    position: absolute;
-    bottom: 0.5rem;
-    left: 0.5rem;
+  .overlay-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .meta-tag {
+    font-size: 0.7rem;
+    font-weight: 500;
     background: rgba(0, 0, 0, 0.7);
     color: #ffffff;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    padding: 0.2rem 0.4rem;
+    padding: 0.15rem 0.4rem;
     border-radius: 4px;
     backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
   }
 
-  .sample-info {
-    padding: 0.75rem;
+  .non-ready-card {
+    opacity: 0.85;
+  }
+
+  .status-placeholder {
+    aspect-ratio: 1;
+    width: 100%;
     display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
+    align-items: center;
+    justify-content: center;
+    background: var(--control);
+    border-bottom: 1px solid var(--line);
+    padding: 0.5rem;
+    text-align: center;
   }
 
-  .sample-prompt {
+  .status-text {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--muted);
+  }
+
+  .status-error .status-text {
+    color: #ef4444;
+  }
+
+  .status-pending .status-text {
+    color: var(--accent);
+  }
+
+  .prompt-caption {
     font-size: 0.8125rem;
-    color: var(--text, #f0f0f5);
+    color: var(--text);
+    padding: 0.6rem 0.75rem;
     margin: 0;
+    line-height: 1.3;
     display: -webkit-box;
     line-clamp: 2;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.3;
+    word-break: break-word;
   }
 
-  .sample-meta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 0.75rem;
-    color: var(--muted, #8a8a9a);
+  @media (max-width: 768px) {
+    .variant-grid {
+      grid-template-columns: repeat(min(var(--prompt-columns, 1), 2), minmax(0, 1fr));
+    }
   }
 
-  /* Lightbox Modal */
-  .lightbox-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(6px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem;
-  }
-
-  .lightbox-dialog {
-    background: var(--panel-raised, #262630);
-    border: 1px solid var(--line, #2e2e38);
-    border-radius: 10px;
-    max-width: 900px;
-    width: 100%;
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-  }
-
-  .lightbox-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--line, #2e2e38);
-  }
-
-  .lightbox-title {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .badge {
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0.25rem 0.6rem;
-    border-radius: 4px;
-  }
-
-  .badge.step {
-    background: var(--accent, #6366f1);
-    color: #ffffff;
-  }
-
-  .badge.epoch {
-    background: var(--control, #15151a);
-    color: var(--text, #f0f0f5);
-    border: 1px solid var(--line, #2e2e38);
-  }
-
-  .close-btn {
-    background: transparent;
-    border: none;
-    color: var(--muted, #8a8a9a);
-    padding: 0.25rem;
-    border-radius: 4px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .close-btn:hover {
-    background: var(--control, #15151a);
-    color: var(--text, #f0f0f5);
-  }
-
-  .lightbox-body {
-    flex: 1;
-    background: #000000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    min-height: 300px;
-  }
-
-  .lightbox-img {
-    max-width: 100%;
-    max-height: 60vh;
-    object-fit: contain;
-  }
-
-  .lightbox-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--muted, #8a8a9a);
-  }
-
-  .lightbox-footer {
-    padding: 1rem 1.25rem;
-    border-top: 1px solid var(--line, #2e2e38);
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .lightbox-field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .field-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--muted, #8a8a9a);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .field-value.prompt {
-    font-size: 0.875rem;
-    color: var(--text, #f0f0f5);
-    margin: 0;
-    line-height: 1.4;
-  }
-
-  .lightbox-meta-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 0.8125rem;
-    color: var(--muted, #8a8a9a);
-  }
-
-  .open-link {
-    color: var(--accent, #6366f1);
-    text-decoration: none;
-    font-weight: 500;
-  }
-
-  .open-link:hover {
-    text-decoration: underline;
+  @media (max-width: 520px) {
+    .variant-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

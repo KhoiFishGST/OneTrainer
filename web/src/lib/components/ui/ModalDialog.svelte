@@ -14,6 +14,9 @@
     onApply,
     onKeyDown,
     children,
+    'data-batch-id': dataBatchId,
+    'data-prompt-id': dataPromptId,
+    'data-variant': dataVariant,
   }: {
     open?: boolean;
     title?: string;
@@ -26,6 +29,9 @@
     onApply?: () => void;
     onKeyDown?: (event: KeyboardEvent) => void;
     children?: Snippet;
+    'data-batch-id'?: number | string;
+    'data-prompt-id'?: string;
+    'data-variant'?: string;
   } = $props();
 
   let modalEl = $state<HTMLDivElement | null>(null);
@@ -115,6 +121,9 @@
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
+      data-batch-id={dataBatchId}
+      data-prompt-id={dataPromptId}
+      data-variant={dataVariant}
       tabindex="-1"
       onkeydown={handleKeyDown}
       bind:this={modalEl}
