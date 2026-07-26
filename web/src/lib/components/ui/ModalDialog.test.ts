@@ -59,4 +59,14 @@ describe('ModalDialog', () => {
       expect(onClose).toHaveBeenCalled();
     }
   });
+
+  it('supports wide footerless modal and delegates arrow keys', async () => {
+    const onKeyDown = vi.fn();
+    render(ModalDialog, { props: { open: true, width: 'wide', showFooter: false, onKeyDown, onClose: vi.fn() } });
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveClass('modal-wide');
+    expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();
+    await fireEvent.keyDown(dialog, { key: 'ArrowRight' });
+    expect(onKeyDown).toHaveBeenCalledWith(expect.objectContaining({ key: 'ArrowRight' }));
+  });
 });

@@ -8,8 +8,11 @@
     applyText = 'Apply',
     cancelText = 'Cancel',
     align = 'top',
+    width = 'default',
+    showFooter = true,
     onClose,
     onApply,
+    onKeyDown,
     children,
   }: {
     open?: boolean;
@@ -17,8 +20,11 @@
     applyText?: string;
     cancelText?: string;
     align?: 'top' | 'center';
+    width?: 'default' | 'wide';
+    showFooter?: boolean;
     onClose?: () => void;
     onApply?: () => void;
+    onKeyDown?: (event: KeyboardEvent) => void;
     children?: Snippet;
   } = $props();
 
@@ -89,7 +95,10 @@
           e.preventDefault();
         }
       }
+      return;
     }
+
+    onKeyDown?.(e);
   }
 </script>
 
@@ -102,6 +111,7 @@
   >
     <div
       class="modal-dialog"
+      class:modal-wide={width === 'wide'}
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
@@ -127,24 +137,26 @@
         {/if}
       </div>
 
-      <div class="modal-footer">
-        <button
-          type="button"
-          class="btn cancel-btn"
-          onclick={handleClose}
-        >
-          {cancelText}
-        </button>
-        {#if onApply}
+      {#if showFooter}
+        <div class="modal-footer">
           <button
             type="button"
-            class="btn apply-btn"
-            onclick={handleApply}
+            class="btn cancel-btn"
+            onclick={handleClose}
           >
-            {applyText}
+            {cancelText}
           </button>
-        {/if}
-      </div>
+          {#if onApply}
+            <button
+              type="button"
+              class="btn apply-btn"
+              onclick={handleApply}
+            >
+              {applyText}
+            </button>
+          {/if}
+        </div>
+      {/if}
     </div>
   </div>
 {/if}
@@ -179,6 +191,10 @@
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
     border: 1px solid var(--line);
     overflow: hidden;
+  }
+
+  .modal-dialog.modal-wide {
+    max-width: 1100px;
   }
 
   .modal-dialog:focus {
