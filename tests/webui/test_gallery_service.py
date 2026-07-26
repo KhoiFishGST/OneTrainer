@@ -373,3 +373,31 @@ def test_missing_referenced_image_becomes_unavailable(active_gallery, source_png
         active_gallery.get_image(active_gallery.active_run_key, image.path.name)
     assert active_gallery.get_run_model(active_gallery.active_run_key)["batches"][0]["samples"][0]["status"] == "unavailable"
 
+
+def test_get_run_model_rejects_invalid_run_key(gallery):
+    with pytest.raises(GalleryNotFound):
+        gallery.get_run_model("../outside")
+    with pytest.raises(GalleryNotFound):
+        gallery.get_run_model("foo/bar")
+    with pytest.raises(GalleryNotFound):
+        gallery.get_run_model("foo\\bar")
+
+
+def test_record_sample_converts_image_mode_for_webp_thumbnail(active_gallery, workspace):
+    sample_dir = workspace / "samples" / "0 - a portrait of a cat"
+    sample_dir.mkdir(parents=True, exist_ok=True)
+    file_path = sample_dir / "sample-la.png"
+    img = Image.new("LA", (100, 100), color=(128, 255))
+    img.save(file_path, format="PNG")
+
+    output = ModelSamplerOutput(FileType.IMAGE, img)
+    output.filepath = str(file_path)
+    event = active_gallery.record_default_sample(output)
+    assert event is not None
+    manifest = read_manifest(active_gallery)
+    sample = manifest["batches"][0]["samples"][0]
+    thumbnail = active_gallery.active_run_dir / sample["thumbnail_filename"]
+    assert thumbnail.exists()
+
+
+

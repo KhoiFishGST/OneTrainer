@@ -123,13 +123,17 @@ class GalleryService:
         with self._lock:
             return self._active_run_dir
 
+    def _get_workspace_dir(self) -> Path:
+        if self._active_workspace is not None:
+            return self._active_workspace
+        raw_ws = self._workspace_provider()
+        ws_path = Path(raw_ws)
+        return (self._root_dir / ws_path).resolve() if not ws_path.is_absolute() else ws_path.resolve()
+
     def begin_training(self, config: TrainConfig, *, started_at: datetime | None = None) -> None:
         with self._lock:
             self._active_config = config
-            raw_ws = self._workspace_provider()
-            ws_path = Path(raw_ws)
-            ws_path = (self._root_dir / ws_path).resolve() if not ws_path.is_absolute() else ws_path.resolve()
-            self._active_workspace = ws_path
+            self._active_workspace = self._get_workspace_dir()
             self._active_run_key = None
             self._active_run_dir = None
             self._active_batch_id = None
@@ -143,7 +147,7 @@ class GalleryService:
             self._started_at_str = now.isoformat()
 
             self._config_signatures.clear()
-            config_dir = ws_path / "config"
+            config_dir = self._active_workspace / "config"
             if config_dir.is_dir():
                 for item in config_dir.iterdir():
                     if item.is_file() and item.suffix.lower() == ".json":
@@ -489,6 +493,8 @@ class GalleryService:
             try:
                 with Image.open(source) as img:
                     img.thumbnail(self._thumbnail_max_size)
+                    if img.mode not in ("RGB", "RGBA"):
+                        img = img.convert("RGBA" if "A" in img.mode or "transparency" in img.info else "RGB")
                     thumb_etag = save_pil_atomic(img, thumb_path, image_format="WEBP")
                     actual_thumb_filename = thumbnail_filename
             except Exception as e:
@@ -516,12 +522,7 @@ class GalleryService:
 
     def list_runs(self) -> list[dict[str, Any]]:
         with self._lock:
-            ws = self._active_workspace
-            if ws is None:
-                raw_ws = self._workspace_provider()
-                ws_path = Path(raw_ws)
-                ws = (self._root_dir / ws_path).resolve() if not ws_path.is_absolute() else ws_path.resolve()
-
+            ws = self._get_workspace_dir()
             samples_dir = ws / "web" / "samples"
             if not samples_dir.is_dir():
                 return []
@@ -563,12 +564,10 @@ class GalleryService:
 
     def get_run_model(self, run_key: str) -> dict[str, Any]:
         with self._lock:
-            ws = self._active_workspace
-            if ws is None:
-                raw_ws = self._workspace_provider()
-                ws_path = Path(raw_ws)
-                ws = (self._root_dir / ws_path).resolve() if not ws_path.is_absolute() else ws_path.resolve()
+            if Path(run_key).name != run_key or ".." in run_key or "/" in run_key or "\\" in run_key:
+                raise GalleryNotFound(f"Invalid run key '{run_key}'")
 
+            ws = self._get_workspace_dir()
             run_dir = ws / "web" / "samples" / run_key
             manifest_path = run_dir / "manifest.json"
             if not run_dir.is_dir() or not manifest_path.exists():
@@ -640,15 +639,12 @@ class GalleryService:
 
     def get_image(self, run_key: str, filename: str) -> GalleryImage:
         with self._lock:
+            if Path(run_key).name != run_key or ".." in run_key or "/" in run_key or "\\" in run_key:
+                raise GalleryNotFound(f"Invalid run key '{run_key}'")
             if Path(filename).name != filename or ".." in filename or "/" in filename or "\\" in filename:
                 raise GalleryNotFound("Invalid filename traversal")
 
-            ws = self._active_workspace
-            if ws is None:
-                raw_ws = self._workspace_provider()
-                ws_path = Path(raw_ws)
-                ws = (self._root_dir / ws_path).resolve() if not ws_path.is_absolute() else ws_path.resolve()
-
+            ws = self._get_workspace_dir()
             run_dir = (ws / "web" / "samples" / run_key).resolve()
             expected_parent = (ws / "web" / "samples").resolve()
             try:
