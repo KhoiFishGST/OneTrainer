@@ -54,16 +54,20 @@ export function createConfigQuery() {
 }
 
 export function createSchemaQuery(modelType?: string, trainingMethod?: string) {
-  return createQuery({
-    queryKey: queryKeys.schema(modelType, trainingMethod),
-    queryFn: () =>
-      api.getSchema(
-        modelType && trainingMethod
-          ? { model_type: modelType, training_method: trainingMethod }
-          : undefined
-      ),
-    enabled: Boolean(modelType && trainingMethod),
-  });
+  const client = getSafeQueryClient();
+  return createQuery(
+    {
+      queryKey: queryKeys.schema(modelType, trainingMethod),
+      queryFn: () =>
+        api.getSchema(
+          modelType && trainingMethod
+            ? { model_type: modelType, training_method: trainingMethod }
+            : undefined
+        ),
+      enabled: Boolean(modelType && trainingMethod),
+    },
+    client
+  );
 }
 
 export function createMetaQuery() {
@@ -351,17 +355,14 @@ export function createUpdateSamplesMutation() {
   );
 }
 
-export function createGalleryRunQuery(getRunKey: () => string | null) {
+export function createGalleryRunQuery(runKey?: string | null) {
   const client = getSafeQueryClient();
   return createQuery(
-    (() => {
-      const runKey = getRunKey();
-      return {
-        queryKey: queryKeys.galleryRun(runKey ?? ''),
-        queryFn: () => api.getGalleryRun(runKey as string),
-        enabled: Boolean(runKey),
-      };
-    }) as any,
+    {
+      queryKey: queryKeys.galleryRun(runKey ?? ''),
+      queryFn: () => api.getGalleryRun(runKey as string),
+      enabled: Boolean(runKey),
+    },
     client
   );
 }

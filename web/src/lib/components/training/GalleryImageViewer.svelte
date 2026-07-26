@@ -39,8 +39,8 @@
     return gallery.batches
       .filter(
         (b) =>
-          b.expected_prompt_ids.includes(promptId) &&
-          b.expected_variants.includes(variant)
+          (b.expected_prompt_ids || []).includes(promptId) &&
+          (b.expected_variants || []).includes(variant)
       )
       .map((b) => {
         const sample =
@@ -187,7 +187,7 @@
     <div class="viewer-container">
       <div class="viewer-header-info">
         <span class="checkpoint-title">
-          Epoch {activeEntry.batch.epoch} {'\u00b7'} Step {activeEntry.batch.global_step}
+          Epoch {activeEntry.batch.epoch ?? activeEntry.batch.progress?.epoch ?? 0} {'\u00b7'} Step {activeEntry.batch.global_step ?? activeEntry.batch.progress?.global_step ?? 0}
         </span>
         {#if isRevisionBoundary}
           <span class="revision-boundary-badge">
@@ -207,7 +207,7 @@
           {#if currentImageUrl}
             <img
               src={currentImageUrl}
-              alt="Sample Epoch {activeEntry.batch.epoch} Step {activeEntry.batch.global_step}"
+              alt="Sample Epoch {activeEntry.batch.epoch ?? activeEntry.batch.progress?.epoch ?? 0} Step {activeEntry.batch.global_step ?? activeEntry.batch.progress?.global_step ?? 0}"
               class="viewer-image"
             />
           {:else}

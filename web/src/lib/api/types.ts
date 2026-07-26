@@ -201,10 +201,12 @@ export interface GallerySample {
 
 export interface GalleryBatch {
   id: number;
+  batch_id?: number;
   sampled_at: string;
   epoch: number;
   epoch_step: number;
   global_step: number;
+  progress?: { epoch?: number; epoch_step?: number; global_step?: number };
   prompt_revision_id: string;
   expected_prompt_ids: string[];
   expected_variants: GalleryVariant[];

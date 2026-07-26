@@ -308,15 +308,23 @@ class GalleryService:
                         for var in exp_variants
                     )
 
+            exp_prompt_ids = [p["webui_id"] for p in normalized_defs if p.get("enabled", True)]
+
             new_batch = {
+                "id": batch_id,
                 "batch_id": batch_id,
+                "epoch": progress.epoch,
+                "epoch_step": progress.epoch_step,
+                "global_step": progress.global_step,
                 "prompt_revision_id": rev_id,
                 "created_at": datetime.now(timezone.utc).isoformat(),
+                "sampled_at": datetime.now(timezone.utc).isoformat(),
                 "progress": {
                     "epoch": progress.epoch,
                     "epoch_step": progress.epoch_step,
                     "global_step": progress.global_step,
                 },
+                "expected_prompt_ids": exp_prompt_ids,
                 "expected_variants": exp_variants,
                 "samples": sample_slots,
                 "unassigned_errors": [],
@@ -388,137 +396,165 @@ class GalleryService:
 
     def record_default_sample(self, sampler_output: ModelSamplerOutput) -> dict[str, Any] | None:
         with self._lock:
-            if self._active_run_dir is None or self._active_batch_id is None:
-                return None
+            active_run_dir = self._active_run_dir
+            active_batch_id = self._active_batch_id
+            active_workspace = self._active_workspace
+            active_run_key = self._active_run_key
+            active_config = self._active_config
 
-            if getattr(sampler_output, "file_type", None) != FileType.IMAGE:
-                return None
+        if active_run_dir is None or active_batch_id is None or active_workspace is None or active_run_key is None:
+            return None
 
-            filepath = getattr(sampler_output, "filepath", None)
-            if not filepath or not isinstance(filepath, str):
-                return None
+        if getattr(sampler_output, "file_type", None) != FileType.IMAGE:
+            return None
 
-            source = Path(filepath).resolve()
-            if not source.exists() or not source.is_file():
-                return None
+        filepath = getattr(sampler_output, "filepath", None)
+        if not filepath or not isinstance(filepath, str):
+            return None
 
-            if self._active_workspace is None:
-                return None
+        source = Path(filepath).resolve()
+        if not source.exists() or not source.is_file():
+            return None
 
-            ws_samples = (self._active_workspace / "samples").resolve()
-            try:
-                source.relative_to(ws_samples)
-            except ValueError:
-                return None
+        ws_samples = (active_workspace / "samples").resolve()
+        try:
+            source.relative_to(ws_samples)
+        except ValueError:
+            return None
 
-            manifest_path = self._active_run_dir / "manifest.json"
-            prompts_path = self._active_run_dir / "prompts.json"
-            if not manifest_path.exists() or not prompts_path.exists():
-                return None
+        manifest_path = active_run_dir / "manifest.json"
+        prompts_path = active_run_dir / "prompts.json"
+        if not manifest_path.exists() or not prompts_path.exists():
+            return None
 
+        try:
+            manifest_doc = json.loads(manifest_path.read_text(encoding="utf-8"))
+            prompts_doc = json.loads(prompts_path.read_text(encoding="utf-8"))
+        except Exception:
+            return None
+
+        active_batch = None
+        for b in manifest_doc.get("batches", []):
+            if b.get("batch_id") == active_batch_id:
+                active_batch = b
+                break
+
+        if not active_batch:
+            return None
+
+        rev_id = active_batch.get("prompt_revision_id")
+        revisions = prompts_doc.get("revisions", {})
+        rev = revisions.get(rev_id, {})
+        prompt_defs = rev.get("prompts", [])
+
+        matched_prompt = None
+        matched_variant: SampleVariant | None = None
+        for prompt_def in prompt_defs:
+            source_index = prompt_def.get("source_index", 0)
+            safe_text = path_util.safe_filename(prompt_def.get("prompt", ""))
+            primary_parent = f"{source_index} - {safe_text}"
+            non_ema_parent = f"{primary_parent} - no-ema"
+
+            if source.parent.name == non_ema_parent:
+                matched_prompt = prompt_def
+                matched_variant = "non_ema"
+                break
+            if source.parent.name == primary_parent:
+                matched_prompt = prompt_def
+                matched_variant = "base" if (active_config and active_config.ema == EMAMode.OFF) else "ema"
+                break
+
+        if matched_prompt is None or matched_variant is None:
+            self._record_unassigned_error(source.name, "source directory did not match captured prompt")
+            return None
+
+        matched_slot = None
+        for slot in active_batch.get("samples", []):
+            if (
+                slot.get("webui_prompt_id") == matched_prompt["webui_id"]
+                and slot.get("variant") == matched_variant
+                and slot.get("status") == "pending"
+            ):
+                matched_slot = slot
+                break
+
+        if matched_slot is None:
+            return None
+
+        batch_id = active_batch["batch_id"]
+        global_step = active_batch.get("progress", {}).get("global_step", 0)
+        source_index = matched_prompt.get("source_index", 0)
+        variant_slug = matched_variant.replace("_", "-")
+        stem = f"{batch_id:06d}-step-{global_step:09d}-prompt-{source_index:03d}-{variant_slug}"
+        filename = f"{stem}{source.suffix.lower()}"
+        thumbnail_filename = f"{stem}-thumb.webp"
+
+        target_path = active_run_dir / filename
+        thumb_path = active_run_dir / thumbnail_filename
+
+        try:
+            full_etag = copy_file_atomic(source, target_path)
+        except Exception as e:
+            with self._lock, contextlib.suppress(Exception):
+                m_doc = json.loads(manifest_path.read_text(encoding="utf-8"))
+                for b in m_doc.get("batches", []):
+                    if b.get("batch_id") == active_batch_id:
+                        for slot in b.get("samples", []):
+                            if (
+                                slot.get("webui_prompt_id") == matched_prompt["webui_id"]
+                                and slot.get("variant") == matched_variant
+                                and slot.get("status") == "pending"
+                            ):
+                                slot["status"] = "error"
+                                slot["error"] = str(e)
+                                write_json_atomic(manifest_path, m_doc)
+                                break
+            return None
+
+        thumbnail_error = None
+        try:
+            with Image.open(source) as img:
+                img.thumbnail(self._thumbnail_max_size)
+                if img.mode not in ("RGB", "RGBA"):
+                    img = img.convert("RGBA" if "A" in img.mode or "transparency" in img.info else "RGB")
+                thumb_etag = save_pil_atomic(img, thumb_path, image_format="WEBP")
+                actual_thumb_filename = thumbnail_filename
+        except Exception as e:
+            actual_thumb_filename = filename
+            thumb_etag = full_etag
+            thumbnail_error = str(e)
+
+        with self._lock:
             try:
                 manifest_doc = json.loads(manifest_path.read_text(encoding="utf-8"))
-                prompts_doc = json.loads(prompts_path.read_text(encoding="utf-8"))
+                for b in manifest_doc.get("batches", []):
+                    if b.get("batch_id") == active_batch_id:
+                        for slot in b.get("samples", []):
+                            if (
+                                slot.get("webui_prompt_id") == matched_prompt["webui_id"]
+                                and slot.get("variant") == matched_variant
+                                and slot.get("status") == "pending"
+                            ):
+                                slot["status"] = "ready"
+                                slot["filename"] = filename
+                                slot["thumbnail_filename"] = actual_thumb_filename
+                                slot["etag"] = full_etag
+                                slot["thumbnail_etag"] = thumb_etag
+                                if thumbnail_error:
+                                    slot["thumbnail_error"] = thumbnail_error
+                                break
+                        break
+                write_json_atomic(manifest_path, manifest_doc)
             except Exception:
                 return None
 
-            active_batch = None
-            for b in manifest_doc.get("batches", []):
-                if b.get("batch_id") == self._active_batch_id:
-                    active_batch = b
-                    break
-
-            if not active_batch:
-                return None
-
-            rev_id = active_batch.get("prompt_revision_id")
-            revisions = prompts_doc.get("revisions", {})
-            rev = revisions.get(rev_id, {})
-            prompt_defs = rev.get("prompts", [])
-
-            matched_prompt = None
-            matched_variant: SampleVariant | None = None
-            for prompt_def in prompt_defs:
-                source_index = prompt_def.get("source_index", 0)
-                safe_text = path_util.safe_filename(prompt_def.get("prompt", ""))
-                primary_parent = f"{source_index} - {safe_text}"
-                non_ema_parent = f"{primary_parent} - no-ema"
-
-                if source.parent.name == non_ema_parent:
-                    matched_prompt = prompt_def
-                    matched_variant = "non_ema"
-                    break
-                if source.parent.name == primary_parent:
-                    matched_prompt = prompt_def
-                    matched_variant = "base" if (self._active_config and self._active_config.ema == EMAMode.OFF) else "ema"
-                    break
-
-            if matched_prompt is None or matched_variant is None:
-                self._record_unassigned_error(source.name, "source directory did not match captured prompt")
-                return None
-
-            matched_slot = None
-            for slot in active_batch.get("samples", []):
-                if (
-                    slot.get("webui_prompt_id") == matched_prompt["webui_id"]
-                    and slot.get("variant") == matched_variant
-                    and slot.get("status") == "pending"
-                ):
-                    matched_slot = slot
-                    break
-
-            if matched_slot is None:
-                return None
-
-            batch_id = active_batch["batch_id"]
-            global_step = active_batch.get("progress", {}).get("global_step", 0)
-            source_index = matched_prompt.get("source_index", 0)
-            variant_slug = matched_variant.replace("_", "-")
-            stem = f"{batch_id:06d}-step-{global_step:09d}-prompt-{source_index:03d}-{variant_slug}"
-            filename = f"{stem}{source.suffix.lower()}"
-            thumbnail_filename = f"{stem}-thumb.webp"
-
-            target_path = self._active_run_dir / filename
-            thumb_path = self._active_run_dir / thumbnail_filename
-
-            try:
-                full_etag = copy_file_atomic(source, target_path)
-            except Exception as e:
-                matched_slot["status"] = "error"
-                matched_slot["error"] = str(e)
-                write_json_atomic(manifest_path, manifest_doc)
-                return None
-
-            thumbnail_error = None
-            try:
-                with Image.open(source) as img:
-                    img.thumbnail(self._thumbnail_max_size)
-                    if img.mode not in ("RGB", "RGBA"):
-                        img = img.convert("RGBA" if "A" in img.mode or "transparency" in img.info else "RGB")
-                    thumb_etag = save_pil_atomic(img, thumb_path, image_format="WEBP")
-                    actual_thumb_filename = thumbnail_filename
-            except Exception as e:
-                actual_thumb_filename = filename
-                thumb_etag = full_etag
-                thumbnail_error = str(e)
-
-            matched_slot["status"] = "ready"
-            matched_slot["filename"] = filename
-            matched_slot["thumbnail_filename"] = actual_thumb_filename
-            matched_slot["etag"] = full_etag
-            matched_slot["thumbnail_etag"] = thumb_etag
-            if thumbnail_error:
-                matched_slot["thumbnail_error"] = thumbnail_error
-
-            write_json_atomic(manifest_path, manifest_doc)
-
-            return {
-                "run_key": self._active_run_key,
-                "batch_id": batch_id,
-                "webui_prompt_id": matched_prompt["webui_id"],
-                "variant": matched_variant,
-                "status": "ready",
-            }
+        return {
+            "run_key": active_run_key,
+            "batch_id": batch_id,
+            "webui_prompt_id": matched_prompt["webui_id"],
+            "variant": matched_variant,
+            "status": "ready",
+        }
 
     def list_runs(self) -> list[dict[str, Any]]:
         with self._lock:
@@ -593,6 +629,33 @@ class GalleryService:
             manifest_dirty = False
             batches = manifest_doc.get("batches", [])
             for batch in batches:
+                if "id" not in batch:
+                    batch["id"] = batch.get("batch_id", 1)
+                if "sampled_at" not in batch:
+                    batch["sampled_at"] = batch.get("created_at", "")
+                if "expected_prompt_ids" not in batch:
+                    samples = batch.get("samples", [])
+                    extracted_ids: list[str] = []
+                    for s in samples:
+                        pid = s.get("webui_prompt_id")
+                        if pid and pid not in extracted_ids:
+                            extracted_ids.append(pid)
+                    batch["expected_prompt_ids"] = extracted_ids
+                if "epoch" not in batch:
+                    batch["epoch"] = batch.get("progress", {}).get("epoch", 0)
+                if "epoch_step" not in batch:
+                    batch["epoch_step"] = batch.get("progress", {}).get("epoch_step", 0)
+                if "global_step" not in batch:
+                    batch["global_step"] = batch.get("progress", {}).get("global_step", 0)
+                if "expected_variants" not in batch:
+                    samples = batch.get("samples", [])
+                    extracted_vars: list[str] = []
+                    for s in samples:
+                        v = s.get("variant")
+                        if v and v not in extracted_vars:
+                            extracted_vars.append(v)
+                    batch["expected_variants"] = extracted_vars or ["ema"]
+
                 for sample in batch.get("samples", []):
                     if sample.get("status") == "ready":
                         filename = sample.get("filename")

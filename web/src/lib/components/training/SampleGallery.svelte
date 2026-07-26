@@ -72,27 +72,29 @@
     </div>
   {:else}
     <div class="checkpoints-list">
-      {#each sortedBatches as batch (batch.id)}
+      {#each sortedBatches as batch (batch.id ?? batch.batch_id ?? 1)}
         {@const revision = gallery.revisions ? gallery.revisions[batch.prompt_revision_id] : null}
+        {@const promptIds = batch.expected_prompt_ids ?? (batch.samples ? Array.from(new Set(batch.samples.map((s) => s.webui_prompt_id).filter(Boolean))) : [])}
+        {@const expectedVariants = batch.expected_variants ?? ['ema']}
         <div class="checkpoint-row" data-testid="checkpoint-row">
           <div class="checkpoint-header">
             <span class="checkpoint-label">
-              Epoch {batch.epoch} {'\u00b7'} Step {batch.global_step}
+              Epoch {batch.epoch ?? batch.progress?.epoch ?? 0} {'\u00b7'} Step {batch.global_step ?? batch.progress?.global_step ?? 0}
             </span>
           </div>
 
-          {#each batch.expected_variants as variant (variant)}
+          {#each expectedVariants as variant (variant)}
             <div class="variant-subrow">
-              {#if batch.expected_variants.length > 1}
+              {#if expectedVariants.length > 1}
                 <h4 class="variant-label">{formatVariant(variant)}</h4>
               {/if}
 
               <div
                 class="variant-grid"
                 data-testid="variant-grid"
-                style={`--prompt-columns: ${Math.max(batch.expected_prompt_ids.length, 1)}`}
+                style={`--prompt-columns: ${Math.max(promptIds.length, 1)}`}
               >
-                {#each batch.expected_prompt_ids as promptId (promptId)}
+                {#each promptIds as promptId (promptId)}
                   {@const promptDef = revision?.prompts?.find((p) => p.webui_id === promptId)}
                   {@const sample = batch.samples?.find((s) => s.webui_prompt_id === promptId && s.variant === variant)}
                   {@const status = sample ? sample.status : 'unavailable'}
@@ -264,14 +266,15 @@
 
   .variant-grid {
     display: grid;
-    grid-template-columns: repeat(var(--prompt-columns, 1), minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 280px));
     gap: 1rem;
   }
 
   .sample-slot-container {
     display: flex;
     flex-direction: column;
-    min-width: 0;
+    width: 100%;
+    max-width: 280px;
   }
 
   .sample-card {

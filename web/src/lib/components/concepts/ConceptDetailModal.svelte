@@ -162,7 +162,7 @@
                   { value: 'VALIDATION', label: 'VALIDATION (Validation dataset)' },
                   { value: 'PRIOR_PREDICTION', label: 'PRIOR_PREDICTION (Prior preservation regularization)' },
                 ]}
-                onChange={(v) => (draft.type = v)}
+                onChange={(v) => { if (draft) draft.type = v; }}
               />
             </div>
 
@@ -199,7 +199,7 @@
                   { value: 'concept', label: 'From single text file' },
                   { value: 'filename', label: 'From image file name' },
                 ]}
-                onChange={(v) => (draft.text.prompt_source = v)}
+                onChange={(v) => { if (draft) draft.text.prompt_source = v; }}
               />
             </div>
 
@@ -229,7 +229,7 @@
                     { value: 'REPEATS', label: 'REPEATS (Multiply dataset epoch count)' },
                     { value: 'SAMPLES', label: 'SAMPLES (Exact sample target count)' },
                   ]}
-                  onChange={(v) => (draft.balancing_strategy = v)}
+                  onChange={(v) => { if (draft) draft.balancing_strategy = v; }}
                 />
               </div>
             </div>
@@ -336,7 +336,7 @@
                       { value: 'RANDOM', label: 'RANDOM (Drop individual tags with set probability)' },
                       { value: 'RANDOM WEIGHTED', label: 'RANDOM WEIGHTED (Linearly increase drop probability)' },
                     ]}
-                    onChange={(v) => (draft.text.tag_dropout_mode = v)}
+                    onChange={(v) => { if (draft) draft.text.tag_dropout_mode = v; }}
                   />
                 </div>
                 <div class="form-row">
