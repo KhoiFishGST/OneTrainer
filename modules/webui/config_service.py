@@ -6,8 +6,7 @@ from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-
-from typing import Any, Optional
+from typing import Any
 
 from modules.util.config.config_io import load_secrets, load_train_config, save_settings
 from modules.util.config.TrainConfig import TrainConfig
@@ -206,6 +205,10 @@ class ConfigService:
     def current_workspace(self) -> str:
         return self._config.workspace_dir
 
+    @property
+    def sample_definition_path(self) -> Path | None:
+        return self._resolve_sample_file_path()
+
     def add_change_listener(self, listener: Callable) -> None:
         if listener not in self._change_listeners:
             self._change_listeners.append(listener)
@@ -214,7 +217,7 @@ class ConfigService:
         if listener in self._change_listeners:
             self._change_listeners.remove(listener)
 
-    def _resolve_sample_file_path(self) -> Optional[Path]:
+    def _resolve_sample_file_path(self) -> Path | None:
         if not self._config:
             return None
         file_name = getattr(self._config, "sample_definition_file_name", None) or "training_samples/samples.json"
