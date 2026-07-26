@@ -1,6 +1,7 @@
-import pytest
 from modules.webui.events import EventBus, EventType
 from modules.webui.training import TrainingService, TrainingState
+
+import pytest
 
 
 @pytest.fixture
@@ -67,3 +68,9 @@ def test_metric_ring_buffer_limit():
     assert len(metrics) == 10000
     assert metrics[0]["step"] == 6
     assert metrics[-1]["step"] == 10005
+
+
+def test_event_type_gallery_warning():
+    assert EventType.GALLERY_WARNING == "gallery_warning"
+    assert str(EventType.GALLERY_WARNING) == "gallery_warning"
+

@@ -1,15 +1,16 @@
 import asyncio
+import contextlib
 import copy
+import json
+import time
 from collections import deque
 from enum import Enum
-import json
 from pathlib import Path
-from threading import Lock, RLock
-import time
-from PIL import Image
-from typing import Any, Dict, Optional
+from threading import RLock
+from typing import Any, Optional
 
 from modules.webui.events import EventType
+from modules.webui.gallery import TrainingProgressSnapshot
 
 _active_training_service: Optional["TrainingService"] = None
 
@@ -18,10 +19,8 @@ try:
     _orig_add_scalar = SummaryWriter.add_scalar
 
     def _global_add_scalar(writer_self, tag, scalar_value, global_step=None, walltime=None):
-        try:
+        with contextlib.suppress(Exception):
             _orig_add_scalar(writer_self, tag, scalar_value, global_step, walltime)
-        except Exception:
-            pass
         if _active_training_service is not None:
             try:
                 tag_lower = tag.lower()
@@ -60,29 +59,50 @@ class TrainingState(str, Enum):
 
 
 class TrainingService:
-    def __init__(self, event_bus: Optional[Any] = None):
+    def __init__(
+        self,
+        event_bus: Any | None = None,
+        sampling_coordinator: Any | None = None,
+    ):
         self._lock = RLock()
         self._event_bus = event_bus
+        self._sampling_coordinator = sampling_coordinator
         self._state = TrainingState.IDLE
         self._step = 0
         self._max_steps = 0
         self._epoch = 0
+        self._epoch_step = 0
         self._max_epochs = 0
         self._speed_its = 0.0
         self._elapsed_seconds = 0.0
         self._eta_seconds = 0.0
-        self._error_message: Optional[str] = None
-        self._config_snapshot: Optional[Dict[str, Any]] = None
+        self._error_message: str | None = None
+        self._config_snapshot: dict[str, Any] | None = None
         self._sample_requested: bool = False
         self._backup_requested: bool = False
         self._save_requested: bool = False
         self._metrics: deque = deque(maxlen=10000)
         self._samples: list = []
-        self._active_train_config: Optional[Any] = None
-        self._active_workspace: Optional[str] = None
-        self._train_commands: Optional[Any] = None
+        self._active_train_config: Any | None = None
+        self._active_workspace: str | None = None
+        self._train_commands: Any | None = None
 
-    def _emit_event(self, event_type: Any, data: Dict[str, Any]) -> None:
+    def _progress_snapshot(self) -> TrainingProgressSnapshot:
+        with self._lock:
+            return TrainingProgressSnapshot(
+                epoch=self._epoch,
+                epoch_step=self._epoch_step,
+                global_step=self._step,
+            )
+
+    def _handle_default_sample(self, sampler_output: Any) -> None:
+        if self._sampling_coordinator is None:
+            return
+        payload = self._sampling_coordinator.on_default_sample(sampler_output)
+        if payload is not None:
+            self.record_sample(payload)
+
+    def _emit_event(self, event_type: Any, data: dict[str, Any]) -> None:
         if self._event_bus is None:
             return
         evt_str = str(event_type.value) if hasattr(event_type, "value") else str(event_type)
@@ -149,8 +169,8 @@ class TrainingService:
                 self._train_commands.save()
 
 
-    def record_metric(self, metric_data: Optional[Dict[str, Any]] = None, **kwargs) -> Dict[str, Any]:
-        data: Dict[str, Any] = {}
+    def record_metric(self, metric_data: dict[str, Any] | None = None, **kwargs) -> dict[str, Any]:
+        data: dict[str, Any] = {}
         if metric_data is not None:
             data.update(metric_data)
         data.update(kwargs)
@@ -163,8 +183,8 @@ class TrainingService:
         self._emit_event(EventType.TRAINING_METRIC, data)
         return data
 
-    def record_sample(self, sample_data: Optional[Dict[str, Any]] = None, **kwargs) -> Dict[str, Any]:
-        data: Dict[str, Any] = {}
+    def record_sample(self, sample_data: dict[str, Any] | None = None, **kwargs) -> dict[str, Any]:
+        data: dict[str, Any] = {}
         if sample_data is not None:
             data.update(sample_data)
         data.update(kwargs)
@@ -175,7 +195,7 @@ class TrainingService:
         self._emit_event(EventType.TRAINING_SAMPLE, data)
         return data
 
-    def emit_gpu_stat(self, stat_data: Optional[Dict[str, Any]] = None, **kwargs) -> Dict[str, Any]:
+    def emit_gpu_stat(self, stat_data: dict[str, Any] | None = None, **kwargs) -> dict[str, Any]:
         data = self.get_gpu_stats()
         if stat_data is not None:
             data.update(stat_data)
@@ -192,7 +212,7 @@ class TrainingService:
         with self._lock:
             return list(self._samples)
 
-    def get_gpu_stats(self) -> Dict[str, Any]:
+    def get_gpu_stats(self) -> dict[str, Any]:
         with self._lock:
             vram_used = 0
             vram_total = 0
@@ -228,7 +248,7 @@ class TrainingService:
                 "temperature": gpu_temp,
             }
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         with self._lock:
             return {
                 "state": self._state,
@@ -243,13 +263,13 @@ class TrainingService:
                 "has_snapshot": self._config_snapshot is not None,
             }
 
-    def get_config_snapshot(self) -> Optional[Dict[str, Any]]:
+    def get_config_snapshot(self) -> dict[str, Any] | None:
         with self._lock:
             if self._config_snapshot is None:
                 return None
             return copy.deepcopy(self._config_snapshot)
 
-    def _run_training_worker(self, config_data: Dict[str, Any]):
+    def _run_training_worker(self, config_data: dict[str, Any]):
         has_real_config = isinstance(config_data, dict) and bool(
             config_data.get("base_model_name") or config_data.get("model_path") or (isinstance(config_data.get("model"), dict) and config_data["model"].get("name"))
         )
@@ -265,185 +285,167 @@ class TrainingService:
         try:
             import logging
             logging.info("TrainingService: Initializing TrainConfig from dictionary.")
-            from modules.util.config.TrainConfig import TrainConfig
-            from modules.util.config.SecretsConfig import SecretsConfig
+            from modules.util import create
             from modules.util.callbacks.TrainCallbacks import TrainCallbacks
             from modules.util.commands.TrainCommands import TrainCommands
-            from modules.util import create
+            from modules.util.config.SecretsConfig import SecretsConfig
+            from modules.util.config.TrainConfig import TrainConfig
 
             train_config = TrainConfig.default_values().from_dict(config_data, migrate=True)
             logging.info(f"TrainingService: Base model name resolved as: {train_config.base_model_name}")
 
-            import os
-            import json
-
-            if train_config.concepts is None:
-                concept_path = train_config.concept_file_name
-                if concept_path and not os.path.exists(concept_path):
-                    if os.path.dirname(concept_path):
-                        os.makedirs(os.path.dirname(concept_path), exist_ok=True)
-                    with open(concept_path, "w", encoding="utf-8") as f:
-                        json.dump([], f)
-                    logging.info(f"TrainingService: Created default empty concepts file at {concept_path}")
-
-            if train_config.samples is None:
-                sample_path = train_config.sample_definition_file_name
-                if sample_path and not os.path.exists(sample_path):
-                    if os.path.dirname(sample_path):
-                        os.makedirs(os.path.dirname(sample_path), exist_ok=True)
-                    with open(sample_path, "w", encoding="utf-8") as f:
-                        json.dump([], f)
-                    logging.info(f"TrainingService: Created default empty samples file at {sample_path}")
+            if self._sampling_coordinator is not None:
+                try:
+                    self._sampling_coordinator.begin_training(train_config)
+                except Exception as e:
+                    logging.exception(f"TrainingService: Error in sampling_coordinator.begin_training: {e}")
 
             try:
                 import json
-                with open("secrets.json", "r") as f:
-                    secrets_dict = json.load(f)
-                    train_config.secrets = SecretsConfig.default_values().from_dict(secrets_dict)
-            except Exception:
-                pass
+                import os
 
-            commands = TrainCommands()
-            with self._lock:
-                self._train_commands = commands
-                self._active_train_config = train_config
+                if train_config.concepts is None:
+                    concept_path = train_config.concept_file_name
+                    if concept_path and not os.path.exists(concept_path):
+                        if os.path.dirname(concept_path):
+                            os.makedirs(os.path.dirname(concept_path), exist_ok=True)
+                        with open(concept_path, "w", encoding="utf-8") as f:
+                            json.dump([], f)
+                        logging.info(f"TrainingService: Created default empty concepts file at {concept_path}")
 
-            start_time = time.time()
-            last_step_time = [start_time]
-            last_step_count = [0]
+                if train_config.samples is None:
+                    sample_path = train_config.sample_definition_file_name
+                    if sample_path and not os.path.exists(sample_path):
+                        if os.path.dirname(sample_path):
+                            os.makedirs(os.path.dirname(sample_path), exist_ok=True)
+                        with open(sample_path, "w", encoding="utf-8") as f:
+                            json.dump([], f)
+                        logging.info(f"TrainingService: Created default empty samples file at {sample_path}")
 
-            import threading
-            def gpu_monitor_loop():
-                while self._state in (TrainingState.TRAINING, TrainingState.PAUSED):
-                    try:
-                        self.emit_gpu_stat()
-                    except Exception:
-                        pass
-                    time.sleep(1.0)
-            threading.Thread(target=gpu_monitor_loop, daemon=True).start()
-
-            def on_progress(train_progress, epoch_length, max_epoch):
-                now = time.time()
-                current_step = train_progress.global_step
-                total_steps = (epoch_length * max_epoch) if (epoch_length and max_epoch) else (self._max_steps or 0)
-
-                dt = now - last_step_time[0]
-                ds = current_step - last_step_count[0]
-                if ds > 0 and dt > 0:
-                    instant_speed = ds / dt
-                    last_step_time[0] = now
-                    last_step_count[0] = current_step
-                else:
-                    elapsed = max(0.1, now - start_time)
-                    instant_speed = current_step / elapsed if current_step > 0 else 0.0
-
-                remaining_steps = max(0, total_steps - current_step) if total_steps > 0 else 0
-                eta = remaining_steps / instant_speed if instant_speed > 0 else 0.0
-
-                self.update_progress(
-                    step=current_step,
-                    epoch=train_progress.epoch + 1,
-                    max_steps=total_steps,
-                    max_epochs=max_epoch,
-                    speed_its=round(instant_speed, 2),
-                    elapsed_seconds=round(now - start_time, 1),
-                    eta_seconds=round(eta, 1),
-                )
-
-            def on_sample(sampler_output):
                 try:
-                    sample_id = f"sample_{len(self._samples) + 1}"
-                    sample_info = {
-                        "id": sample_id,
-                        "sample_id": sample_id,
-                        "step": self._step,
-                        "epoch": self._epoch,
-                        "timestamp": time.time(),
-                    }
-                    if hasattr(sampler_output, "data") and isinstance(sampler_output.data, Image.Image):
-                        samples_dir = (Path(self._active_workspace) if self._active_workspace else Path.cwd()) / "training_samples"
-                        samples_dir.mkdir(parents=True, exist_ok=True)
-                        img_filename = f"{sample_id}_step{self._step}_{int(time.time())}.png"
-                        img_path = samples_dir / img_filename
-                        sampler_output.data.save(img_path, format="PNG")
-                        sample_info["filepath"] = str(img_path)
-                        sample_info["url"] = f"/api/training/samples/{sample_id}/image"
-                    elif hasattr(sampler_output, "filepath"):
-                        sample_info["filepath"] = str(sampler_output.filepath)
-                        sample_info["url"] = f"/api/training/samples/{sample_id}/image"
-
-                    if hasattr(sampler_output, "prompt"):
-                        sample_info["prompt"] = str(sampler_output.prompt)
-                    if hasattr(sampler_output, "seed"):
-                        sample_info["seed"] = sampler_output.seed
-
-                    self.record_sample(sample_info)
+                    import json
+                    with open("secrets.json", "r") as f:
+                        secrets_dict = json.load(f)
+                        train_config.secrets = SecretsConfig.default_values().from_dict(secrets_dict)
                 except Exception:
                     pass
 
-            callbacks = TrainCallbacks(
-                on_update_train_progress=on_progress,
-                on_sample_default=on_sample,
-            )
+                commands = TrainCommands()
+                with self._lock:
+                    self._train_commands = commands
+                    self._active_train_config = train_config
 
-            # Patch SummaryWriter to record real-time loss/learning rate metrics
-            try:
-                from torch.utils.tensorboard import SummaryWriter
-                orig_add_scalar = SummaryWriter.add_scalar
+                start_time = time.time()
+                last_step_time = [start_time]
+                last_step_count = [0]
 
-                def custom_add_scalar(writer_self, tag, scalar_value, global_step=None, walltime=None):
+                import threading
+                def gpu_monitor_loop():
+                    while self._state in (TrainingState.TRAINING, TrainingState.PAUSED):
+                        with contextlib.suppress(Exception):
+                            self.emit_gpu_stat()
+                        time.sleep(1.0)
+                threading.Thread(target=gpu_monitor_loop, daemon=True).start()
+
+                def on_progress(train_progress, epoch_length, max_epoch):
+                    now = time.time()
+                    current_step = train_progress.global_step
+                    total_steps = (epoch_length * max_epoch) if (epoch_length and max_epoch) else (self._max_steps or 0)
+
+                    dt = now - last_step_time[0]
+                    ds = current_step - last_step_count[0]
+                    if ds > 0 and dt > 0:
+                        instant_speed = ds / dt
+                        last_step_time[0] = now
+                        last_step_count[0] = current_step
+                    else:
+                        elapsed = max(0.1, now - start_time)
+                        instant_speed = current_step / elapsed if current_step > 0 else 0.0
+
+                    remaining_steps = max(0, total_steps - current_step) if total_steps > 0 else 0
+                    eta = remaining_steps / instant_speed if instant_speed > 0 else 0.0
+
+                    self.update_progress(
+                        step=current_step,
+                        epoch=train_progress.epoch + 1,
+                        epoch_step=getattr(train_progress, "epoch_step", 0),
+                        max_steps=total_steps,
+                        max_epochs=max_epoch,
+                        speed_its=round(instant_speed, 2),
+                        elapsed_seconds=round(now - start_time, 1),
+                        eta_seconds=round(eta, 1),
+                    )
+
+                callbacks = TrainCallbacks(
+                    on_update_status=lambda status: self._sampling_coordinator.on_status(status, self._progress_snapshot())
+                    if self._sampling_coordinator
+                    else None,
+                    on_update_train_progress=on_progress,
+                    on_sample_default=self._handle_default_sample,
+                )
+
+                # Patch SummaryWriter to record real-time loss/learning rate metrics
+                try:
+                    from torch.utils.tensorboard import SummaryWriter
+                    orig_add_scalar = SummaryWriter.add_scalar
+
+                    def custom_add_scalar(writer_self, tag, scalar_value, global_step=None, walltime=None):
+                        with contextlib.suppress(Exception):
+                            orig_add_scalar(writer_self, tag, scalar_value, global_step, walltime)
+                        try:
+                            tag_lower = tag.lower()
+                            val = float(scalar_value)
+                            step_val = global_step if global_step is not None else self._step
+
+                            metric_payload = {
+                                "step": step_val,
+                                "epoch": self._epoch,
+                            }
+                            key = tag.replace("/", "_")
+                            metric_payload[key] = val
+
+                            if "loss" in tag_lower:
+                                metric_payload["loss"] = val
+                            if "lr" in tag_lower or "learning_rate" in tag_lower:
+                                metric_payload["lr"] = val
+
+                            self.record_metric(metric_payload)
+                        except Exception:
+                            pass
+
+                    SummaryWriter.add_scalar = custom_add_scalar
+                except Exception:
+                    pass
+
+                logging.info("TrainingService: Instantiating PyTorch trainer...")
+                trainer = create.create_trainer(train_config, callbacks, commands)
+                logging.info(f"TrainingService: Trainer instantiated successfully: {type(trainer).__name__}")
+
+                trainer.start()
+                logging.info("TrainingService: trainer.start() completed.")
+
+                with self._lock:
+                    self._state = TrainingState.TRAINING
+                self._emit_state_event()
+
+                logging.info("TrainingService: Beginning trainer.train() loop...")
+                trainer.train()
+                logging.info("TrainingService: trainer.train() loop exited normally.")
+
+                if not commands.get_stop_command() or train_config.backup_before_save:
+                    logging.info("TrainingService: Finalizing training (trainer.end())...")
+                    trainer.end()
+
+                with self._lock:
+                    self._state = TrainingState.COMPLETED
+                self._emit_state_event()
+                logging.info("TrainingService: Training completed successfully.")
+            finally:
+                if self._sampling_coordinator is not None:
                     try:
-                        orig_add_scalar(writer_self, tag, scalar_value, global_step, walltime)
-                    except Exception:
-                        pass
-                    try:
-                        tag_lower = tag.lower()
-                        val = float(scalar_value)
-                        step_val = global_step if global_step is not None else self._step
-                        
-                        metric_payload = {
-                            "step": step_val,
-                            "epoch": self._epoch,
-                        }
-                        key = tag.replace("/", "_")
-                        metric_payload[key] = val
-
-                        if "loss" in tag_lower:
-                            metric_payload["loss"] = val
-                        if "lr" in tag_lower or "learning_rate" in tag_lower:
-                            metric_payload["lr"] = val
-
-                        self.record_metric(metric_payload)
-                    except Exception:
-                        pass
-
-                SummaryWriter.add_scalar = custom_add_scalar
-            except Exception:
-                pass
-
-            logging.info("TrainingService: Instantiating PyTorch trainer...")
-            trainer = create.create_trainer(train_config, callbacks, commands)
-            logging.info(f"TrainingService: Trainer instantiated successfully: {type(trainer).__name__}")
-            
-            trainer.start()
-            logging.info("TrainingService: trainer.start() completed.")
-
-            with self._lock:
-                self._state = TrainingState.TRAINING
-            self._emit_state_event()
-
-            logging.info("TrainingService: Beginning trainer.train() loop...")
-            trainer.train()
-            logging.info("TrainingService: trainer.train() loop exited normally.")
-
-            if not commands.get_stop_command() or train_config.backup_before_save:
-                logging.info("TrainingService: Finalizing training (trainer.end())...")
-                trainer.end()
-
-            with self._lock:
-                self._state = TrainingState.COMPLETED
-            self._emit_state_event()
-            logging.info("TrainingService: Training completed successfully.")
+                        self._sampling_coordinator.finish_training()
+                    except Exception as e:
+                        logging.exception(f"TrainingService: Error in sampling_coordinator.finish_training: {e}")
 
         except Exception as e:
             import logging
@@ -453,7 +455,7 @@ class TrainingService:
                 self._error_message = str(e)
             self._emit_state_event()
 
-    def start_training(self, config_data: Optional[Dict[str, Any]] = None):
+    def start_training(self, config_data: dict[str, Any] | None = None):
         with self._lock:
             if self._state not in (TrainingState.IDLE, TrainingState.COMPLETED, TrainingState.FAILED):
                 raise RuntimeError(f"Cannot start training from state {self._state}")
@@ -517,19 +519,22 @@ class TrainingService:
 
     def update_progress(
         self,
-        step: Optional[int] = None,
-        epoch: Optional[int] = None,
-        max_steps: Optional[int] = None,
-        max_epochs: Optional[int] = None,
-        speed_its: Optional[float] = None,
-        elapsed_seconds: Optional[float] = None,
-        eta_seconds: Optional[float] = None,
+        step: int | None = None,
+        epoch: int | None = None,
+        epoch_step: int | None = None,
+        max_steps: int | None = None,
+        max_epochs: int | None = None,
+        speed_its: float | None = None,
+        elapsed_seconds: float | None = None,
+        eta_seconds: float | None = None,
     ):
         with self._lock:
             if step is not None:
                 self._step = step
             if epoch is not None:
                 self._epoch = epoch
+            if epoch_step is not None:
+                self._epoch_step = epoch_step
             if max_steps is not None:
                 self._max_steps = max_steps
             if max_epochs is not None:
