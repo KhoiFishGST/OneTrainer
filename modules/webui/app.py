@@ -33,6 +33,7 @@ from modules.webui.routers.health import router as health_router
 from modules.webui.routers.meta import router as meta_router
 from modules.webui.routers.presets import router as presets_router
 from modules.webui.routers.secrets import router as secrets_router
+from modules.webui.routers.samples import router as samples_router
 from modules.webui.routers.training import router as training_router
 from modules.webui.schema import SchemaRegistry
 from modules.webui.state import AppState, WebUISettings
@@ -224,6 +225,7 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
     app.include_router(events_router, prefix="/api")
     app.include_router(training_router, prefix="/api")
     app.include_router(secrets_router, prefix="/api")
+    app.include_router(samples_router, prefix="/api")
     app.include_router(auth_router, prefix="/api")
 
     index_file = settings.static_dir / "index.html"

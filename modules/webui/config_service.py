@@ -7,7 +7,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 
-from typing import Any
+from typing import Any, Optional
 
 from modules.util.config.config_io import load_secrets, load_train_config, save_settings
 from modules.util.config.TrainConfig import TrainConfig
@@ -213,3 +213,39 @@ class ConfigService:
     def remove_change_listener(self, listener: Callable) -> None:
         if listener in self._change_listeners:
             self._change_listeners.remove(listener)
+
+    def _resolve_sample_file_path(self) -> Optional[Path]:
+        if not self._config:
+            return None
+        file_name = getattr(self._config, "sample_definition_file_name", None) or "training_samples/samples.json"
+        path = Path(file_name)
+        if not path.is_absolute() and self.settings.config_path:
+            path = self.settings.config_path.parent / path
+        return path
+
+    async def get_sample_definitions(self) -> list:
+        async with self._lock:
+            if self._config and getattr(self._config, "samples", None):
+                return [s.to_dict() if hasattr(s, "to_dict") else deepcopy(s) for s in self._config.samples]
+            sample_path = self._resolve_sample_file_path()
+            if sample_path and sample_path.exists():
+                try:
+                    with open(sample_path, "r", encoding="utf-8") as f:
+                        loaded = json.load(f)
+                        return loaded if isinstance(loaded, list) else []
+                except Exception:
+                    return []
+            return []
+
+    async def update_sample_definitions(self, samples: list) -> list:
+        async with self._lock:
+            clean_samples = [s.to_dict() if hasattr(s, "to_dict") else deepcopy(s) for s in samples]
+            sample_path = self._resolve_sample_file_path()
+            if sample_path:
+                sample_path.parent.mkdir(parents=True, exist_ok=True)
+                try:
+                    write_json_atomic(str(sample_path), clean_samples)
+                except Exception as error:
+                    logger.warning(f"Could not save samples file: {error}")
+            return clean_samples
+
