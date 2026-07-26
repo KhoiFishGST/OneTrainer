@@ -20,29 +20,31 @@ logging.getLogger("uvicorn.access").addFilter(QuietPollFilter())
 
 from modules.webui.config_service import ConfigService, ConfigSnapshot
 from modules.webui.directories import DirectoryService
-from modules.webui.events import EventHub
+from modules.webui.events import EventHub, EventType
+from modules.webui.gallery import GalleryService
 from modules.webui.presets import PresetService
 from modules.webui.routers.auth import router as auth_router
 from modules.webui.routers.concepts import router as concepts_router
 from modules.webui.routers.config import router as config_router
-from modules.webui.routers.datasets import router as datasets_router
 from modules.webui.routers.console import router as console_router
+from modules.webui.routers.datasets import router as datasets_router
 from modules.webui.routers.directories import router as directories_router
 from modules.webui.routers.events import router as events_router
+from modules.webui.routers.gallery import router as gallery_router
 from modules.webui.routers.health import router as health_router
 from modules.webui.routers.meta import router as meta_router
 from modules.webui.routers.presets import router as presets_router
-from modules.webui.routers.secrets import router as secrets_router
 from modules.webui.routers.samples import router as samples_router
+from modules.webui.routers.secrets import router as secrets_router
 from modules.webui.routers.training import router as training_router
+from modules.webui.sampling_coordinator import SamplingCoordinator
 from modules.webui.schema import SchemaRegistry
 from modules.webui.state import AppState, WebUISettings
 from modules.webui.training import TrainingService
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 
@@ -112,9 +114,24 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
         preset_svc = PresetService(settings.presets_dir, settings.secrets_path)
         directory_svc = DirectoryService()
         event_hub = EventHub()
-        training_svc = TrainingService(event_bus=event_hub)
 
         await event_hub.start()
+
+        gallery_svc = GalleryService(
+            root_dir=settings.root_dir,
+            workspace_provider=lambda: config_svc.current_workspace,
+            warning_sink=lambda message, payload: event_hub.publish_from_thread(
+                EventType.GALLERY_WARNING.value,
+                {"message": message, **payload},
+            ),
+        )
+        sampling_svc = SamplingCoordinator(
+            root_dir=settings.root_dir,
+            sample_path_provider=lambda: config_svc.sample_definition_path,
+            gallery=gallery_svc,
+        )
+        sampling_svc.recover_pending()
+        training_svc = TrainingService(event_bus=event_hub, sampling_coordinator=sampling_svc)
 
         version = "unknown"
         try:
@@ -161,19 +178,23 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
             warnings=warnings,
             capture=capture,
             training=training_svc,
+            gallery=gallery_svc,
+            sampling=sampling_svc,
         )
 
         try:
             yield
         finally:
             config_svc.remove_change_listener(on_config_change)
+            sampling_svc.finish_training()
             await event_hub.close()
 
     app = FastAPI(lifespan=lifespan)
     app.add_middleware(LimitUploadSizeMiddleware)
 
-    from fastapi.responses import JSONResponse, RedirectResponse
     from modules.webui.routers.auth import is_authenticated
+
+    from fastapi.responses import JSONResponse
 
     @app.middleware("http")
     async def auth_middleware(request: Request, call_next):
@@ -218,6 +239,7 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
     app.include_router(config_router, prefix="/api")
     app.include_router(concepts_router, prefix="/api")
     app.include_router(datasets_router, prefix="/api")
+    app.include_router(gallery_router, prefix="/api")
     app.include_router(meta_router, prefix="/api")
     app.include_router(presets_router, prefix="/api")
     app.include_router(directories_router, prefix="/api")
