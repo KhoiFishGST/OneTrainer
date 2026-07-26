@@ -128,3 +128,30 @@ it("notifies onConfigChanged on config_changed events", async () => {
   socketInstance!.triggerMessage({ type: "config_changed", revision: "v2", seq: 2, stream_id: "s" });
   expect(onConfigChanged).toHaveBeenCalledWith("v2");
 });
+
+it("notifies training sample and gallery warning callbacks", async () => {
+  const onTrainingSample = vi.fn();
+  const onGalleryWarning = vi.fn();
+  let socketInstance: FakeWebSocket | null = null;
+  const store = new ConsoleStore();
+  const client = new EventClient({
+    store,
+    getBacklog: async () => ({ stream_id: "s", cursor: 1, revision: "v1", lines: [], transient: null }),
+    onTrainingSample,
+    onGalleryWarning,
+    createSocket: (url) => {
+      socketInstance = new FakeWebSocket(url);
+      return socketInstance as any;
+    },
+  });
+  client.start();
+  socketInstance!.triggerOpen();
+  await new Promise((r) => setTimeout(r, 0));
+
+  socketInstance!.triggerMessage({ type: "training_sample", run_key: "run", batch_id: 1 });
+  socketInstance!.triggerMessage({ type: "gallery_warning", message: "thumbnail failed", run_key: "run" });
+  expect(onTrainingSample).toHaveBeenCalledWith(expect.objectContaining({ run_key: "run" }));
+  expect(onGalleryWarning).toHaveBeenCalledWith(expect.objectContaining({ message: "thumbnail failed" }));
+  client.stop();
+});
+

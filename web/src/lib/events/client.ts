@@ -1,3 +1,4 @@
+import type { GalleryVariant, GallerySampleStatus } from '../api/types';
 import type { BacklogData, ConsoleEvent, ConsoleStore } from './console-store.svelte';
 import { trainingStore } from './training-store';
 
@@ -9,11 +10,30 @@ export interface WebSocketLike {
   close(): void;
 }
 
+export interface GalleryTrainingSampleEvent {
+  type: 'training_sample';
+  run_key?: string;
+  batch_id?: number;
+  webui_prompt_id?: string;
+  variant?: GalleryVariant;
+  status?: GallerySampleStatus;
+  [key: string]: unknown;
+}
+
+export interface GalleryWarningEvent {
+  type: 'gallery_warning';
+  message: string;
+  run_key?: string;
+  [key: string]: unknown;
+}
+
 export interface EventClientOptions {
   store: ConsoleStore;
   getBacklog: () => Promise<BacklogData>;
   onConfigChanged?: (revision: string) => void;
   onRestart?: () => void;
+  onTrainingSample?: (event: GalleryTrainingSampleEvent) => void;
+  onGalleryWarning?: (event: GalleryWarningEvent) => void;
   wsUrl?: string;
   createSocket?: (url: string) => WebSocketLike;
   setTimeout?: (fn: (...args: any[]) => void, ms?: number, ...args: any[]) => any;
@@ -27,7 +47,10 @@ export class EventClient {
   private getBacklog: () => Promise<BacklogData>;
   private onConfigChanged?: (revision: string) => void;
   private onRestart?: () => void;
+  private onTrainingSample?: (event: GalleryTrainingSampleEvent) => void;
+  private onGalleryWarning?: (event: GalleryWarningEvent) => void;
   private wsUrl: string;
+
   private createSocket: (url: string) => WebSocketLike;
   private customSetTimeout: (fn: (...args: any[]) => void, ms?: number, ...args: any[]) => any;
   private customClearTimeout: (id: any) => void;
@@ -44,6 +67,8 @@ export class EventClient {
     this.getBacklog = options.getBacklog;
     this.onConfigChanged = options.onConfigChanged;
     this.onRestart = options.onRestart;
+    this.onTrainingSample = options.onTrainingSample;
+    this.onGalleryWarning = options.onGalleryWarning;
 
     let defaultWsUrl = '/api/events';
     if (typeof window !== 'undefined') {
@@ -157,9 +182,21 @@ export class EventClient {
     }
   }
 
-  private processEvent(event: ConsoleEvent) {
+  emit(event: ConsoleEvent | any) {
+    this.processEvent(event);
+  }
+
+  private processEvent(event: ConsoleEvent | any) {
     if (event.type === 'config_changed' && event.revision) {
       this.onConfigChanged?.(event.revision);
+    }
+
+    if (event.type === 'training_sample') {
+      this.onTrainingSample?.(event);
+    }
+
+    if (event.type === 'gallery_warning') {
+      this.onGalleryWarning?.(event);
     }
 
     if (event.type === 'console') {

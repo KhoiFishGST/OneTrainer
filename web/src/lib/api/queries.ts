@@ -1,6 +1,6 @@
-import { createQuery, createMutation, useQueryClient, QueryClient } from '@tanstack/svelte-query';
+import { createQuery, createMutation, useQueryClient, QueryClient, type CreateQueryOptions } from '@tanstack/svelte-query';
 import { api } from './client';
-import type { Concept, ConfigUpdateRequest, PresetLoadRequest, PresetSaveRequest } from './types';
+import type { Concept, ConfigUpdateRequest, PresetLoadRequest, PresetSaveRequest, SampleDefinition, GalleryRunModel } from './types';
 
 const defaultQueryClient = new QueryClient({
   defaultOptions: {
@@ -33,6 +33,10 @@ export const queryKeys = {
   trainingMetrics: () => ['training', 'metrics'] as const,
   trainingSamples: () => ['training', 'samples'] as const,
   gpuStats: () => ['training', 'gpu'] as const,
+  gallery: () => ['gallery'] as const,
+  galleryRuns: () => ['gallery', 'runs'] as const,
+  galleryRun: (runKey: string) => ['gallery', 'runs', runKey] as const,
+  galleryCurrent: () => ['gallery', 'current'] as const,
 };
 
 export function createHealthQuery() {
@@ -327,10 +331,7 @@ export function createSamplesQuery() {
   return createQuery(
     {
       queryKey: queryKeys.samples(),
-      queryFn: async () => {
-        const data = await api.getSamples();
-        return data.samples;
-      },
+      queryFn: () => api.getSamples(),
     },
     client
   );
@@ -340,17 +341,52 @@ export function createUpdateSamplesMutation() {
   const client = getSafeQueryClient();
   return createMutation(
     {
-      mutationFn: async (samples: any[]) => {
-        const data = await api.updateSamples(samples);
-        return data.samples;
-      },
-      onSuccess: (samples) => {
-        client.setQueryData(queryKeys.samples(), samples);
+      mutationFn: (samples: SampleDefinition[]) => api.updateSamples(samples),
+      onSuccess: (data) => {
+        client.setQueryData(queryKeys.samples(), data);
         client.invalidateQueries({ queryKey: queryKeys.samples() });
       },
     },
     client
   );
 }
+
+export function createGalleryRunQuery(getRunKey: () => string | null) {
+  const client = getSafeQueryClient();
+  return createQuery(
+    (() => {
+      const runKey = getRunKey();
+      return {
+        queryKey: queryKeys.galleryRun(runKey ?? ''),
+        queryFn: () => api.getGalleryRun(runKey as string),
+        enabled: Boolean(runKey),
+      };
+    }) as any,
+    client
+  );
+}
+
+export function createGalleryRunsQuery() {
+  const client = getSafeQueryClient();
+  return createQuery(
+    {
+      queryKey: queryKeys.galleryRuns(),
+      queryFn: () => api.getGalleryRuns(),
+    },
+    client
+  );
+}
+
+export function createGalleryCurrentQuery() {
+  const client = getSafeQueryClient();
+  return createQuery(
+    {
+      queryKey: queryKeys.galleryCurrent(),
+      queryFn: () => api.getCurrentGallery(),
+    },
+    client
+  );
+}
+
 
 

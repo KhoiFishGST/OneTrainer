@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ApiError, createApi } from "./client";
+import { ApiError, createApi, galleryImageUrl } from "./client";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -29,4 +29,17 @@ describe("api client", () => {
       })
     );
   });
+
+  it("encodes gallery run keys and filenames", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ active: false, run: null, batches: [], revisions: {} }), { status: 200 })
+    );
+    const api = createApi("/root");
+    await (api as any).getGalleryRun("prefix run");
+    expect(fetchSpy).toHaveBeenCalledWith("/root/api/gallery/runs/prefix%20run", expect.anything());
+    expect(galleryImageUrl("prefix run", "sample one.png", "/root")).toBe(
+      "/root/api/gallery/runs/prefix%20run/images/sample%20one.png"
+    );
+  });
 });
+

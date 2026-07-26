@@ -18,7 +18,7 @@
   const samplesQuery = createSamplesQuery();
   const updateSamplesMutation = createUpdateSamplesMutation();
 
-  const samples = $derived($samplesQuery.data ?? []);
+  const samples = $derived(Array.isArray($samplesQuery.data) ? $samplesQuery.data : ($samplesQuery.data?.samples ?? []));
 
   let isModalOpen = $state(false);
   let editingSample = $state<any>(null);

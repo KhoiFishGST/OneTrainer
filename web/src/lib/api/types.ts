@@ -147,4 +147,97 @@ export interface GpuStat {
   [key: string]: any;
 }
 
+export type GalleryVariant = 'base' | 'ema' | 'non_ema';
+export type GallerySampleStatus = 'pending' | 'ready' | 'unavailable' | 'error';
+
+export interface GalleryRunInfo {
+  key: string;
+  config_filename: string;
+  started_at: string;
+}
+
+export interface GalleryRunSummary extends GalleryRunInfo {
+  batch_count: number;
+  latest_sampled_at?: string | null;
+  active?: boolean;
+}
+
+export interface GalleryRunsResponse {
+  runs: GalleryRunSummary[];
+}
+
+export interface GalleryPrompt extends Record<string, unknown> {
+  webui_id: string;
+  source_index: number;
+  enabled: boolean;
+  prompt: string;
+  negative_prompt?: string;
+  width: number;
+  height: number;
+  diffusion_steps: number;
+  cfg_scale: number;
+  seed?: number;
+  random_seed?: boolean;
+  noise_scheduler?: string;
+}
+
+export interface GalleryPromptRevision {
+  captured_at: string;
+  prompts: GalleryPrompt[];
+}
+
+export interface GallerySample {
+  webui_prompt_id: string;
+  source_index: number;
+  variant: GalleryVariant;
+  status: GallerySampleStatus;
+  filename?: string | null;
+  thumbnail_filename?: string | null;
+  width?: number | null;
+  height?: number | null;
+  error?: string | null;
+  thumbnail_error?: string | null;
+}
+
+export interface GalleryBatch {
+  id: number;
+  sampled_at: string;
+  epoch: number;
+  epoch_step: number;
+  global_step: number;
+  prompt_revision_id: string;
+  expected_prompt_ids: string[];
+  expected_variants: GalleryVariant[];
+  samples: GallerySample[];
+  unassigned_errors: Array<{ source_filename: string; message: string }>;
+}
+
+export interface GalleryRunModel {
+  active: boolean;
+  run: GalleryRunInfo | null;
+  batches: GalleryBatch[];
+  revisions: Record<string, GalleryPromptRevision>;
+  warning?: string | null;
+}
+
+export interface SampleDefinition extends Record<string, unknown> {
+  webui_id?: string;
+  enabled?: boolean;
+  prompt?: string;
+  negative_prompt?: string;
+  width?: number;
+  height?: number;
+  diffusion_steps?: number;
+  cfg_scale?: number;
+  seed?: number;
+  random_seed?: boolean;
+  noise_scheduler?: string;
+}
+
+export interface SamplesResponse {
+  samples: SampleDefinition[];
+  queued: boolean;
+}
+
+
 

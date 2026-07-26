@@ -37,6 +37,8 @@
   let isMobile = $state(false);
   let drawerOpen = $state(false);
   let eventClient = $state<EventClient | null>(null);
+  let galleryWarningMessage = $state<string | null>(null);
+  let galleryWarningTimeout: any = null;
 
   const currentModelType = $derived(
     workspace?.draft?.model_type ?? $configQuery.data?.config?.model_type
@@ -99,6 +101,20 @@
       onRestart: () => {
         queryClient.invalidateQueries({ queryKey: ['config'] });
       },
+      onTrainingSample: (event) => {
+        queryClient.invalidateQueries({ queryKey: ['gallery', 'current'] });
+        queryClient.invalidateQueries({ queryKey: ['gallery', 'runs'] });
+        if (event.run_key) {
+          queryClient.invalidateQueries({ queryKey: ['gallery', 'runs', event.run_key] });
+        }
+      },
+      onGalleryWarning: (event) => {
+        galleryWarningMessage = event.message;
+        if (galleryWarningTimeout) clearTimeout(galleryWarningTimeout);
+        galleryWarningTimeout = setTimeout(() => {
+          galleryWarningMessage = null;
+        }, 4000);
+      },
     });
     eventClient.start();
 
@@ -158,6 +174,11 @@
     {#if isApiError}
       <ErrorBanner message={errorMessage} />
     {/if}
+    {#if galleryWarningMessage}
+      <div class="warning-banner" role="status">
+        {galleryWarningMessage}
+      </div>
+    {/if}
 
     <div class="shell-body">
       <Rail {currentPath} mobile={isMobile} />
@@ -196,6 +217,15 @@
     overflow: hidden;
     background-color: var(--bg);
     color: var(--text);
+  }
+
+  .warning-banner {
+    padding: 8px 16px;
+    background-color: rgba(234, 179, 8, 0.15);
+    border-bottom: 1px solid rgba(234, 179, 8, 0.3);
+    color: #facc15;
+    font-size: 0.875rem;
+    text-align: center;
   }
 
   .shell-body {

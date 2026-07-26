@@ -16,6 +16,10 @@ import type {
   TrainingMetric,
   TrainingSample,
   GpuStat,
+  GalleryRunModel,
+  GalleryRunsResponse,
+  SampleDefinition,
+  SamplesResponse,
 } from './types';
 
 export class ApiError extends Error {
@@ -202,14 +206,26 @@ export function createApi(base = '') {
         body: JSON.stringify({ caption_name, content }),
       }),
 
-    getSamples: () => request<{ samples: any[] }>(`${base}/api/samples`),
+    getGalleryRuns: () => request<GalleryRunsResponse>(`${base}/api/gallery/runs`),
 
-    updateSamples: (samples: any[]) =>
-      request<{ samples: any[] }>(`${base}/api/samples`, {
+    getGalleryRun: (runKey: string) =>
+      request<GalleryRunModel>(`${base}/api/gallery/runs/${encodeURIComponent(runKey)}`),
+
+    getCurrentGallery: () => request<GalleryRunModel>(`${base}/api/gallery/current`),
+
+    getSamples: () => request<SamplesResponse>(`${base}/api/samples`),
+
+    updateSamples: (samples: SampleDefinition[]) =>
+      request<SamplesResponse>(`${base}/api/samples`, {
         method: 'PUT',
         body: JSON.stringify({ samples }),
       }),
   };
 }
 
+export function galleryImageUrl(runKey: string, filename: string, base = ''): string {
+  return `${base}/api/gallery/runs/${encodeURIComponent(runKey)}/images/${encodeURIComponent(filename)}`;
+}
+
 export const api = createApi();
+
