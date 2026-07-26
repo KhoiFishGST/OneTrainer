@@ -93,5 +93,11 @@ describe('Live Dashboard Page', () => {
     expect(toast).toBeInTheDocument();
     expect(toast).toHaveClass('toast-error');
   });
+
+  it('renders current gallery on Live without a run selector', async () => {
+    render(LivePage);
+    expect(await screen.findByText('Live Sample Gallery')).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Gallery run' })).not.toBeInTheDocument();
+  });
 });
 

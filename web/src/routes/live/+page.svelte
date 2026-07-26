@@ -44,9 +44,6 @@
       const metricsData = await api.getTrainingMetrics();
       if (metricsData) trainingStore.setMetrics(metricsData);
 
-      const samplesData = await api.getTrainingSamples();
-      if (samplesData) trainingStore.setSamples(samplesData);
-
       const gpuData = await api.getGpuStats();
       if (gpuData) trainingStore.setGpuStats(gpuData);
     } catch (e) {
@@ -171,12 +168,12 @@
     <div class="metrics-summary-grid">
       <div class="stat-item">
         <span class="stat-label">Steps</span>
-        <span class="stat-value">{status.step} / {status.max_steps || '∞'}</span>
+        <span class="stat-value">{status.step} / {status.max_steps || '\u221e'}</span>
       </div>
 
       <div class="stat-item">
         <span class="stat-label">Epoch</span>
-        <span class="stat-value">{status.epoch} / {status.max_epochs || '∞'}</span>
+        <span class="stat-value">{status.epoch} / {status.max_epochs || '\u221e'}</span>
       </div>
 
       <div class="stat-item">

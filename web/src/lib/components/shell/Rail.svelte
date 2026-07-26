@@ -12,6 +12,7 @@
     Cpu,
     Wrench,
     Tv,
+    Images,
     PanelLeft,
     Menu,
     X,
@@ -41,6 +42,7 @@
 
   const navItems = [
     { name: 'Live', path: '/live', icon: Tv, disabled: false },
+    { name: 'Gallery', path: '/gallery', icon: Images, disabled: false },
     { name: 'General', path: '/general', icon: SlidersHorizontal, disabled: false },
     { name: 'Model', path: '/model', icon: Box, disabled: false },
     { name: 'Datasets', path: '/datasets', icon: Database, disabled: false },
@@ -129,9 +131,7 @@
             onclick={(e) => e.preventDefault()}
           >
             <item.icon size={20} class="nav-icon" />
-            {#if expanded}
-              <span class="nav-label">{item.name}</span>
-            {/if}
+            <span class="nav-label">{item.name}</span>
           </a>
         {:else}
           <a
@@ -140,9 +140,7 @@
             class:active={currentPath === item.path}
           >
             <item.icon size={20} class="nav-icon" />
-            {#if expanded}
-              <span class="nav-label">{item.name}</span>
-            {/if}
+            <span class="nav-label">{item.name}</span>
           </a>
         {/if}
       {/each}
@@ -151,6 +149,9 @@
 {/if}
 
 <style>
+  .rail:not(.expanded) .nav-label {
+    display: none;
+  }
   .rail {
     width: var(--rail-width);
     background-color: var(--panel);

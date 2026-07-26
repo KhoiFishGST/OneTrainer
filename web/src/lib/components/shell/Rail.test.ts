@@ -22,3 +22,12 @@ it("opens phone navigation as a modal drawer", async () => {
   await fireEvent.click(screen.getByRole("button", { name: "Open navigation" }));
   expect(screen.getByRole("dialog", { name: "Navigation" })).toBeVisible();
 });
+
+it('places enabled Gallery navigation directly after Live', () => {
+  render(Rail, { props: { currentPath: '/live', mobile: false } });
+  const links = screen.getAllByRole('link');
+  const liveIndex = links.findIndex((link) => link.textContent?.includes('Live'));
+  expect(links[liveIndex + 1]).toHaveTextContent('Gallery');
+  expect(links[liveIndex + 1]).toHaveAttribute('href', '/gallery');
+  expect(links[liveIndex + 1]).not.toHaveAttribute('aria-disabled', 'true');
+});
