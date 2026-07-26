@@ -127,4 +127,77 @@ describe('SamplingPage', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByText('Edit Sample Prompt')).toBeInTheDocument();
   });
+
+  it('shows durable queued feedback when queued is true', async () => {
+    vi.mocked(createSamplesQuery).mockReturnValue(
+      readable({
+        data: {
+          samples: [
+            {
+              webui_id: 'prompt_a',
+              prompt: 'a cute shiba inu dog',
+              enabled: true,
+            },
+          ],
+          queued: true,
+        },
+        isLoading: false,
+        isError: false,
+      }) as any
+    );
+    vi.mocked(createUpdateSamplesMutation).mockReturnValue(
+      readable({
+        mutateAsync: vi.fn(),
+        isPending: false,
+      }) as any
+    );
+
+    render(SamplingPage);
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Sample prompt changes are queued for the next sampling batch.'
+    );
+  });
+
+  it('preserves identity on edit but removes it on clone', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({});
+    vi.mocked(createSamplesQuery).mockReturnValue(
+      readable({
+        data: {
+          samples: [
+            {
+              webui_id: 'prompt_a',
+              prompt: 'source prompt',
+              enabled: true,
+              width: 512,
+              height: 512,
+              diffusion_steps: 30,
+              cfg_scale: 7.5,
+              seed: 12345,
+            },
+          ],
+          queued: false,
+        },
+        isLoading: false,
+        isError: false,
+      }) as any
+    );
+    vi.mocked(createUpdateSamplesMutation).mockReturnValue(
+      readable({
+        mutateAsync,
+        isPending: false,
+      }) as any
+    );
+
+    render(SamplingPage);
+
+    const cloneBtn = screen.getByTitle('Clone sample prompt');
+    await fireEvent.click(cloneBtn);
+
+    expect(mutateAsync).toHaveBeenCalled();
+    const updatedSamples = mutateAsync.mock.calls[0][0];
+    expect(updatedSamples).toHaveLength(2);
+    expect(updatedSamples[0].webui_id).toBe('prompt_a');
+    expect(updatedSamples[1]).not.toHaveProperty('webui_id');
+  });
 });

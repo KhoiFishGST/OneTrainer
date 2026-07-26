@@ -135,4 +135,27 @@ describe('SampleDetailModal Component', () => {
       })
     );
   });
+
+  it('preserves webui_id when editing sample', async () => {
+    const onSave = vi.fn();
+    const sampleWithId = { ...sampleConfig, webui_id: 'prompt_a' };
+    render(SampleDetailModal, {
+      props: {
+        open: true,
+        sample: sampleWithId,
+        mode: 'edit',
+        onSave,
+        onClose: vi.fn(),
+      },
+    });
+
+    const applyBtn = screen.getByRole('button', { name: /save/i });
+    await fireEvent.click(applyBtn);
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        webui_id: 'prompt_a',
+      })
+    );
+  });
 });

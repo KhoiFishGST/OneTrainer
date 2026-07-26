@@ -19,6 +19,7 @@
   const updateSamplesMutation = createUpdateSamplesMutation();
 
   const samples = $derived(Array.isArray($samplesQuery.data) ? $samplesQuery.data : ($samplesQuery.data?.samples ?? []));
+  const queued = $derived(!Array.isArray($samplesQuery.data) && Boolean($samplesQuery.data?.queued));
 
   let isModalOpen = $state(false);
   let editingSample = $state<any>(null);
@@ -101,8 +102,8 @@
   async function handleCloneSample(index: number, event: Event) {
     event.stopPropagation();
     const target = samples[index];
-    const cloned = { ...target };
-    const updated = [...samples, cloned];
+    const { webui_id: _discardedWebuiId, ...clone } = structuredClone(target);
+    const updated = [...samples, clone];
     try {
       await $updateSamplesMutation.mutateAsync(updated);
       triggerToast('Sample cloned', 'success');
@@ -125,7 +126,8 @@
   async function handleSaveSample(savedSample: any) {
     let updated: any[];
     if (modalMode === 'add' || editingIndex === -1) {
-      updated = [...samples, savedSample];
+      const { webui_id: _, ...newSample } = savedSample;
+      updated = [...samples, newSample];
     } else {
       updated = samples.map((s: any, i: number) => (i === editingIndex ? savedSample : s));
     }
@@ -137,6 +139,7 @@
       triggerToast(err?.message || 'Failed to save sample', 'error');
     }
   }
+
 </script>
 
 {#if !ctx.workspace}
@@ -182,6 +185,13 @@
     <div class="section-divider">
       <h2 class="section-title">Sample Prompts ({samples.length})</h2>
     </div>
+
+    {#if queued}
+      <div class="queued-banner" role="status">
+        Sample prompt changes are queued for the next sampling batch.
+      </div>
+    {/if}
+
 
     <div class="samples-grid">
       <AddCard label="Add Sample Prompt" onClick={handleAddSample} />
@@ -349,6 +359,18 @@
     border: 1px solid rgba(239, 68, 68, 0.3);
     color: #fca5a5;
   }
+
+  .queued-banner {
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    background-color: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: var(--accent, #60a5fa);
+  }
+
 
   .options-panel {
     width: 740px;
