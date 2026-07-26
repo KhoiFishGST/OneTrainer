@@ -136,3 +136,23 @@ def test_training_api_request_save(client, mock_training_service):
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
+
+def test_training_api_get_sample_image(client, tmp_path):
+    service = client.app.state.webui.training_service
+    test_img = tmp_path / "test_sample.png"
+    test_img.write_bytes(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82")
+    
+    sample_info = {
+        "id": "sample_999",
+        "sample_id": "sample_999",
+        "step": 100,
+        "filepath": str(test_img),
+        "url": "/api/training/samples/sample_999/image",
+    }
+    service.record_sample(sample_info)
+
+    res = client.get("/api/training/samples/sample_999/image")
+    assert res.status_code == 200
+    assert res.content == test_img.read_bytes()
+
+

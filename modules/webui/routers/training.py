@@ -1,10 +1,9 @@
-import logging
+from pathlib import Path
 from typing import Any, Optional
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
 from modules.webui.state import AppState
 
-logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -125,27 +124,11 @@ async def get_sample_image(sample_id: str, request: Request):
     if not filepath:
         raise HTTPException(status_code=404, detail="Sample image filepath not recorded")
 
-    try:
-        file_path = Path(str(filepath))
-    except Exception as error:
-        logger.error(f"Failed to parse sample filepath '{filepath}': {error}")
-        raise HTTPException(status_code=400, detail=f"Invalid sample image filepath: {error}")
-
-    if not file_path.is_absolute():
-        file_path = Path.cwd() / file_path
-
-    if not file_path.exists() or not file_path.is_file():
-        logger.warning(f"Sample image file missing on disk at '{file_path}' (original raw: '{filepath}')")
+    file_path = Path(filepath)
+    if not file_path.exists():
         raise HTTPException(status_code=404, detail="Sample image file missing from disk")
 
-    ext = file_path.suffix.lower()
-    media_type = "image/png"
-    if ext in (".jpg", ".jpeg"):
-        media_type = "image/jpeg"
-    elif ext == ".webp":
-        media_type = "image/webp"
-
-    return FileResponse(file_path, media_type=media_type)
+    return FileResponse(file_path)
 
 
 
