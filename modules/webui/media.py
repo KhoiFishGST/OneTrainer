@@ -97,6 +97,22 @@ class MediaService:
         except Exception:
             return self._get_fallback_placeholder_file(width, height)
 
+    def _get_full_image_info(
+        self, source_path: Path, target_size: int = 150
+    ) -> tuple[Path, str, str]:
+        try:
+            if source_path.exists() and source_path.is_file():
+                guessed_mime, _ = mimetypes.guess_type(source_path)
+                mime_type = guessed_mime or "image/jpeg"
+                stat = source_path.stat()
+                etag = self._compute_cache_key(
+                    source_path, stat.st_mtime, stat.st_size, 0, 0, False
+                )
+                return source_path, mime_type, etag
+        except OSError:
+            pass
+        return self._get_fallback_placeholder_file(target_size, target_size)
+
     async def serve_image(
         self,
         request: Request,
@@ -113,18 +129,10 @@ class MediaService:
                 True,
             )
         else:
-            if source_path.exists() and source_path.is_file():
-                file_path = source_path
-                guessed_mime, _ = mimetypes.guess_type(source_path)
-                mime_type = guessed_mime or "image/jpeg"
-                stat = source_path.stat()
-                etag = self._compute_cache_key(
-                    source_path, stat.st_mtime, stat.st_size, 0, 0, False
-                )
-            else:
-                file_path, mime_type, etag = await run_in_threadpool(
-                    self._get_fallback_placeholder_file, target_size, target_size
-                )
+            file_path, mime_type, etag = await run_in_threadpool(
+                self._get_full_image_info, source_path, target_size
+            )
+
 
         if_none_match = request.headers.get("if-none-match")
         if if_none_match and if_none_match.strip('"') == etag.strip('"'):

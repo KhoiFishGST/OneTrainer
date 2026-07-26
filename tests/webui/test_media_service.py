@@ -144,3 +144,37 @@ def test_app_state_media_service_registration(tmp_path: Path):
         media_service=media_svc,
     )
     assert state.media_service == media_svc
+
+
+@pytest.mark.asyncio
+async def test_serve_image_full_image_handles_unreadable_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    service = MediaService(root_dir=tmp_path)
+    req = Request({"type": "http", "headers": []})
+
+    # Non-existent path
+    missing_path = tmp_path / "does_not_exist.jpg"
+    resp = await service.serve_image(req, missing_path, thumb=False)
+    assert isinstance(resp, FileResponse)
+    assert resp.media_type == "image/png"
+    assert Path(resp.path).name.startswith("placeholder_")
+
+    # Path that raises OSError during stat
+    unreadable_path = tmp_path / "unreadable.jpg"
+    unreadable_path.write_bytes(b"dummy")
+
+    orig_stat = Path.stat
+
+    def mock_stat(self, *args, **kwargs):
+        if self == unreadable_path:
+            raise OSError("Permission denied")
+        return orig_stat(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "stat", mock_stat)
+
+    resp_oserror = await service.serve_image(req, unreadable_path, thumb=False)
+    assert isinstance(resp_oserror, FileResponse)
+    assert resp_oserror.media_type == "image/png"
+    assert Path(resp_oserror.path).name.startswith("placeholder_")
+
+
+
