@@ -124,10 +124,19 @@ async def get_sample_image(sample_id: str, request: Request):
         raise HTTPException(status_code=404, detail="Sample image filepath not recorded")
 
     file_path = Path(filepath)
+    if not file_path.is_absolute():
+        file_path = Path.cwd() / file_path
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="Sample image file missing from disk")
 
-    return FileResponse(file_path)
+    ext = file_path.suffix.lower()
+    media_type = "image/png"
+    if ext in (".jpg", ".jpeg"):
+        media_type = "image/jpeg"
+    elif ext == ".webp":
+        media_type = "image/webp"
+
+    return FileResponse(file_path, media_type=media_type)
 
 
 

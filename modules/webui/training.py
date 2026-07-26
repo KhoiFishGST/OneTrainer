@@ -351,13 +351,16 @@ class TrainingService:
 
             def on_sample(sampler_output):
                 try:
+                    sample_id = f"sample_{len(self._samples) + 1}"
                     sample_info = {
-                        "id": f"sample_{len(self._samples) + 1}",
+                        "id": sample_id,
+                        "sample_id": sample_id,
                         "step": self._step,
                         "epoch": self._epoch,
                         "timestamp": time.time(),
+                        "url": f"/api/training/samples/{sample_id}/image",
                     }
-                    if hasattr(sampler_output, "filepath"):
+                    if hasattr(sampler_output, "filepath") and getattr(sampler_output, "filepath", None):
                         sample_info["filepath"] = str(sampler_output.filepath)
                     if hasattr(sampler_output, "prompt"):
                         sample_info["prompt"] = str(sampler_output.prompt)
