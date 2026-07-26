@@ -5,11 +5,13 @@ import re
 import shutil
 import urllib.parse
 from pathlib import Path
-from PIL import Image
-from fastapi import APIRouter, HTTPException, Query, Request, Response, UploadFile, File
+
 from modules.util import path_util
 from modules.util.image_util import load_image
 from modules.webui.state import AppState
+
+from fastapi import APIRouter, File, HTTPException, Request, Response, UploadFile
+from PIL import Image
 
 router = APIRouter()
 
@@ -18,7 +20,7 @@ SAFE_NAME_REGEX = re.compile(r"^[a-zA-Z0-9 _-]+$")
 
 def get_base_datasets_dir(app_state: AppState) -> Path:
     config = app_state.config_service.get_config()
-    raw_dir = getattr(config, "datasets_dir", "workspace/datasets") or "workspace/datasets"
+    raw_dir = getattr(config, "datasets_dir", "training_datasets") or "training_datasets"
     p = Path(raw_dir)
     if not p.is_absolute():
         p = (app_state.settings.root_dir / p).resolve()
@@ -30,7 +32,7 @@ def get_base_datasets_dir(app_state: AppState) -> Path:
 async def list_datasets(request: Request):
     app_state: AppState = request.app.state.webui
     config = app_state.config_service.get_config()
-    raw_dir = getattr(config, "datasets_dir", "workspace/datasets") or "workspace/datasets"
+    raw_dir = getattr(config, "datasets_dir", "training_datasets") or "training_datasets"
     base_dir = get_base_datasets_dir(app_state)
     result = []
     if base_dir.exists() and base_dir.is_dir():

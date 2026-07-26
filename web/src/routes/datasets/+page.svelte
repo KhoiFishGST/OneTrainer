@@ -36,7 +36,7 @@
 
   let datasets = $derived($datasetsQuery.data?.datasets || []);
   let baseDir = $derived(
-    ctx?.workspace?.draft?.datasets_dir ?? $datasetsQuery.data?.base_dir ?? 'workspace/datasets'
+    ctx?.workspace?.draft?.datasets_dir ?? $datasetsQuery.data?.base_dir ?? 'training_datasets'
   );
   let showCreateModal = $state(false);
   let newDatasetName = $state('');

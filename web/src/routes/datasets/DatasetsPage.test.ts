@@ -17,7 +17,7 @@ test('renders Data page title, base directory input, and dataset cards', async (
             thumbnail_url: '/api/datasets/image?dataset=Dataset%20Alpha&thumb=true',
           },
         ],
-        base_dir: 'workspace/datasets',
+        base_dir: 'training_datasets',
       },
       isLoading: false,
     }) as any

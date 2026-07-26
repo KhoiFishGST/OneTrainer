@@ -1,9 +1,11 @@
 import io
-import pytest
-from PIL import Image
-from fastapi.testclient import TestClient
+
 from modules.webui.app import create_app
 from modules.webui.state import WebUISettings
+
+import pytest
+from fastapi.testclient import TestClient
+from PIL import Image
 
 
 @pytest.fixture
@@ -174,8 +176,8 @@ def test_get_dataset_image_and_thumbnail(client):
 
 
 def test_decode_config_with_missing_datasets_dir():
-    from modules.util.config.TrainConfig import TrainConfig
     from modules.util.config.SecretsConfig import SecretsConfig
+    from modules.util.config.TrainConfig import TrainConfig
     from modules.webui.config_codec import decode_settings_document
 
     cfg = TrainConfig.default_values()
@@ -185,5 +187,5 @@ def test_decode_config_with_missing_datasets_dir():
     assert "datasets_dir" not in doc_missing
 
     decoded = decode_settings_document(doc_missing, SecretsConfig.default_values())
-    assert getattr(decoded, "datasets_dir", None) == "workspace/datasets"
+    assert getattr(decoded, "datasets_dir", None) == "training_datasets"
 

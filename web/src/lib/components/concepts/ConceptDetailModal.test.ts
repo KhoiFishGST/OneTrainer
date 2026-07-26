@@ -28,11 +28,11 @@ describe('ConceptDetailModal Component', () => {
     vi.spyOn(queries, 'createDatasetsQuery').mockReturnValue(
       readable({
         data: {
-          base_dir: '/workspace/datasets',
+          base_dir: '/training_datasets',
           datasets: [
             {
               name: 'Dataset One',
-              path: '/workspace/datasets/Dataset One',
+              path: '/training_datasets/Dataset One',
               image_count: 8,
               caption_count: 8,
               thumbnail_url: '/api/datasets/image?dataset=Dataset%20One&thumb=true',

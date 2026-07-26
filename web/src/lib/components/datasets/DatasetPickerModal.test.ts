@@ -13,14 +13,14 @@ describe('DatasetPickerModal Component', () => {
     const mockDatasets = [
       {
         name: 'Dataset Alpha',
-        path: '/workspace/datasets/Dataset Alpha',
+        path: '/training_datasets/Dataset Alpha',
         image_count: 10,
         caption_count: 10,
         thumbnail_url: '/api/datasets/image?dataset=Dataset%20Alpha&thumb=true',
       },
       {
         name: 'Dataset Beta',
-        path: '/workspace/datasets/Dataset Beta',
+        path: '/training_datasets/Dataset Beta',
         image_count: 5,
         caption_count: 5,
         thumbnail_url: '/api/datasets/image?dataset=Dataset%20Beta&thumb=true',
@@ -29,7 +29,7 @@ describe('DatasetPickerModal Component', () => {
 
     vi.spyOn(queries, 'createDatasetsQuery').mockReturnValue(
       readable({
-        data: { base_dir: '/workspace/datasets', datasets: mockDatasets },
+        data: { base_dir: '/training_datasets', datasets: mockDatasets },
         isLoading: false,
       }) as any
     );
@@ -56,14 +56,14 @@ describe('DatasetPickerModal Component', () => {
 
     const confirmBtn = screen.getByRole('button', { name: 'Select Dataset' });
     await fireEvent.click(confirmBtn);
-    expect(onSelect).toHaveBeenCalledWith('/workspace/datasets/Dataset Alpha');
+    expect(onSelect).toHaveBeenCalledWith('/training_datasets/Dataset Alpha');
   });
 
   it('confirms immediately on double click', async () => {
     const mockDatasets = [
       {
         name: 'Dataset Gamma',
-        path: '/workspace/datasets/Dataset Gamma',
+        path: '/training_datasets/Dataset Gamma',
         image_count: 3,
         caption_count: 3,
         thumbnail_url: '/api/datasets/image?dataset=Dataset%20Gamma&thumb=true',
@@ -72,7 +72,7 @@ describe('DatasetPickerModal Component', () => {
 
     vi.spyOn(queries, 'createDatasetsQuery').mockReturnValue(
       readable({
-        data: { base_dir: '/workspace/datasets', datasets: mockDatasets },
+        data: { base_dir: '/training_datasets', datasets: mockDatasets },
         isLoading: false,
       }) as any
     );
@@ -93,13 +93,13 @@ describe('DatasetPickerModal Component', () => {
     const gammaCard = screen.getByText('Dataset Gamma').closest('button');
     await fireEvent.dblClick(gammaCard!);
 
-    expect(onSelect).toHaveBeenCalledWith('/workspace/datasets/Dataset Gamma');
+    expect(onSelect).toHaveBeenCalledWith('/training_datasets/Dataset Gamma');
   });
 
   it('triggers onClose when Cancel button is clicked', async () => {
     vi.spyOn(queries, 'createDatasetsQuery').mockReturnValue(
       readable({
-        data: { base_dir: '/workspace/datasets', datasets: [] },
+        data: { base_dir: '/training_datasets', datasets: [] },
         isLoading: false,
       }) as any
     );

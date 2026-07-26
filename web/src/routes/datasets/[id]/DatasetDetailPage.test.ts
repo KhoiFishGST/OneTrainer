@@ -9,7 +9,7 @@ test('renders dataset detail header and upload button', async () => {
     readable({
       data: {
         name: 'TestDataset',
-        path: '/workspace/datasets/TestDataset',
+        path: '/training_datasets/TestDataset',
         items: [
           {
             id: 'sample_01',
