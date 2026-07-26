@@ -110,6 +110,7 @@
   {:else}
     <div class="samples-grid">
       {#each filteredSamples as sample (sample.id || sample.sample_id || `step-${sample.step}-${sample.seed}`)}
+        {@const sampleUrl = sample.url || (sample.id || sample.sample_id ? `/api/training/samples/${sample.id || sample.sample_id}/image` : '')}
         <div
           class="sample-card"
           onclick={() => openLightbox(sample)}
@@ -118,9 +119,9 @@
           tabindex="0"
         >
           <div class="image-wrapper">
-            {#if sample.url}
+            {#if sampleUrl}
               <img
-                src={sample.url}
+                src={sampleUrl}
                 alt={sample.prompt || `Sample at step ${sample.step}`}
                 loading="lazy"
                 class="sample-img"
@@ -158,6 +159,7 @@
 
 <!-- Lightbox Modal -->
 {#if selectedSample}
+  {@const selectedSampleUrl = selectedSample.url || (selectedSample.id || selectedSample.sample_id ? `/api/training/samples/${selectedSample.id || selectedSample.sample_id}/image` : '')}
   <div
     class="lightbox-backdrop"
     data-testid="sample-lightbox-modal"
@@ -193,9 +195,9 @@
       </div>
 
       <div class="lightbox-body">
-        {#if selectedSample.url}
+        {#if selectedSampleUrl}
           <img
-            src={selectedSample.url}
+            src={selectedSampleUrl}
             alt={selectedSample.prompt || 'Full resolution sample'}
             class="lightbox-img"
           />

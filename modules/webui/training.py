@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from threading import Lock, RLock
 import time
+from PIL import Image
 from typing import Any, Dict, Optional
 
 from modules.webui.events import EventType
@@ -358,14 +359,24 @@ class TrainingService:
                         "step": self._step,
                         "epoch": self._epoch,
                         "timestamp": time.time(),
-                        "url": f"/api/training/samples/{sample_id}/image",
                     }
-                    if hasattr(sampler_output, "filepath") and getattr(sampler_output, "filepath", None):
+                    if hasattr(sampler_output, "data") and isinstance(sampler_output.data, Image.Image):
+                        samples_dir = (Path(self._active_workspace) if self._active_workspace else Path.cwd()) / "training_samples"
+                        samples_dir.mkdir(parents=True, exist_ok=True)
+                        img_filename = f"{sample_id}_step{self._step}_{int(time.time())}.png"
+                        img_path = samples_dir / img_filename
+                        sampler_output.data.save(img_path, format="PNG")
+                        sample_info["filepath"] = str(img_path)
+                        sample_info["url"] = f"/api/training/samples/{sample_id}/image"
+                    elif hasattr(sampler_output, "filepath"):
                         sample_info["filepath"] = str(sampler_output.filepath)
+                        sample_info["url"] = f"/api/training/samples/{sample_id}/image"
+
                     if hasattr(sampler_output, "prompt"):
                         sample_info["prompt"] = str(sampler_output.prompt)
                     if hasattr(sampler_output, "seed"):
                         sample_info["seed"] = sampler_output.seed
+
                     self.record_sample(sample_info)
                 except Exception:
                     pass
