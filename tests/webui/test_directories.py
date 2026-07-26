@@ -79,7 +79,7 @@ def test_list_directories_mode_filtering(client, tmp_path):
 
     resp_dir = client.get(f"/api/fs/list?path={tmp_path}&mode=dir")
     assert resp_dir.status_code == 200
-    entries_dir = resp_dir.json()["entries"]
+    entries_dir = [e for e in resp_dir.json()["entries"] if e["name"] != "workspace-cache"]
     assert len(entries_dir) == 1
     assert entries_dir[0]["name"] == "subfolder"
     assert entries_dir[0]["is_dir"] is True

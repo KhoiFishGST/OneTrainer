@@ -1,0 +1,146 @@
+import os
+from pathlib import Path
+
+from modules.webui.media import MediaService
+from modules.webui.state import AppState, WebUISettings
+
+import pytest
+from PIL import Image
+from starlette.requests import Request
+from starlette.responses import FileResponse
+
+
+def test_media_service_init_creates_cache_dir(tmp_path: Path):
+    service = MediaService(root_dir=tmp_path)
+    expected_cache_dir = tmp_path / "workspace-cache" / "thumbnails"
+    assert service.cache_dir == expected_cache_dir
+    assert expected_cache_dir.is_dir()
+
+
+def test_get_thumbnail_file_generates_webp_and_caches(tmp_path: Path):
+    service = MediaService(root_dir=tmp_path)
+
+    # Create test source image (300x200)
+    source_path = tmp_path / "source.jpg"
+    img = Image.new("RGB", (300, 200), color="blue")
+    img.save(source_path, format="JPEG")
+
+    thumb_path, mime_type, etag = service.get_thumbnail_file(
+        source_path, width=150, height=150, crop_square=True
+    )
+
+    assert mime_type == "image/webp"
+    assert thumb_path.exists()
+    assert thumb_path.parent == service.cache_dir
+    assert etag is not None and len(etag) > 0
+
+    with Image.open(thumb_path) as thumb_img:
+        assert thumb_img.format == "WEBP"
+        assert thumb_img.size == (150, 150)
+
+    # Calling again should return same cached file
+    thumb_path_2, mime_type_2, etag_2 = service.get_thumbnail_file(
+        source_path, width=150, height=150, crop_square=True
+    )
+    assert thumb_path_2 == thumb_path
+    assert etag_2 == etag
+
+
+def test_cache_invalidation_on_mtime_change(tmp_path: Path):
+    service = MediaService(root_dir=tmp_path)
+
+    source_path = tmp_path / "photo.png"
+    img = Image.new("RGB", (100, 100), color="red")
+    img.save(source_path, format="PNG")
+
+    thumb_1, _, etag_1 = service.get_thumbnail_file(source_path, width=50, height=50)
+
+    # Update mtime into future
+    current_mtime = source_path.stat().st_mtime
+    new_mtime = current_mtime + 10.0
+    os.utime(source_path, (new_mtime, new_mtime))
+
+    thumb_2, _, etag_2 = service.get_thumbnail_file(source_path, width=50, height=50)
+
+    assert etag_1 != etag_2
+    assert thumb_1 != thumb_2
+
+
+@pytest.mark.asyncio
+async def test_serve_image_full_and_thumbnail(tmp_path: Path):
+    service = MediaService(root_dir=tmp_path)
+
+    source_path = tmp_path / "photo.png"
+    img = Image.new("RGB", (200, 100), color="green")
+    img.save(source_path, format="PNG")
+
+    # Serve full image
+    req = Request({"type": "http", "headers": []})
+    resp = await service.serve_image(req, source_path, thumb=False)
+    assert isinstance(resp, FileResponse)
+    assert resp.headers.get("Cache-Control") == "public, max-age=86400"
+    etag = resp.headers.get("ETag")
+    assert etag is not None
+
+    # Serve thumbnail
+    resp_thumb = await service.serve_image(req, source_path, thumb=True, target_size=100)
+    assert isinstance(resp_thumb, FileResponse)
+    assert resp_thumb.headers.get("Cache-Control") == "public, max-age=86400"
+
+
+@pytest.mark.asyncio
+async def test_serve_image_if_none_match_304(tmp_path: Path):
+    service = MediaService(root_dir=tmp_path)
+
+    source_path = tmp_path / "photo.png"
+    img = Image.new("RGB", (100, 100), color="red")
+    img.save(source_path, format="PNG")
+
+    req1 = Request({"type": "http", "headers": []})
+    resp1 = await service.serve_image(req1, source_path, thumb=True)
+    etag = resp1.headers.get("ETag")
+
+    # Request with matching If-None-Match
+    headers = [(b"if-none-match", etag.encode("utf-8"))]
+    req2 = Request({"type": "http", "headers": headers})
+    resp2 = await service.serve_image(req2, source_path, thumb=True)
+    assert resp2.status_code == 304
+
+
+def test_missing_and_corrupt_files_fallback(tmp_path: Path):
+    service = MediaService(root_dir=tmp_path)
+
+    # Non-existent file
+    missing_path = tmp_path / "does_not_exist.jpg"
+    thumb_path, mime_type, etag = service.get_thumbnail_file(missing_path)
+    assert thumb_path.exists()
+    assert mime_type == "image/png"
+    with Image.open(thumb_path) as fallback_img:
+        assert fallback_img.size == (150, 150)
+
+    # Corrupt image file
+    corrupt_path = tmp_path / "corrupt.jpg"
+    corrupt_path.write_bytes(b"not a real image payload")
+    thumb_path_c, mime_type_c, _ = service.get_thumbnail_file(corrupt_path)
+    assert thumb_path_c.exists()
+    assert mime_type_c == "image/png"
+
+
+def test_app_state_media_service_registration(tmp_path: Path):
+    media_svc = MediaService(root_dir=tmp_path)
+    settings = WebUISettings(
+        root_dir=tmp_path,
+        config_path=tmp_path / "config.json",
+        secrets_path=tmp_path / "secrets.json",
+        presets_dir=tmp_path / "presets",
+        static_dir=tmp_path / "static",
+    )
+    state = AppState(
+        settings=settings,
+        config=None,  # type: ignore
+        schema=None,  # type: ignore
+        presets=None,  # type: ignore
+        directories=None,  # type: ignore
+        media_service=media_svc,
+    )
+    assert state.media_service == media_svc

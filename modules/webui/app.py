@@ -22,6 +22,7 @@ from modules.webui.config_service import ConfigService, ConfigSnapshot
 from modules.webui.directories import DirectoryService
 from modules.webui.events import EventHub, EventType
 from modules.webui.gallery import GalleryService
+from modules.webui.media import MediaService
 from modules.webui.presets import PresetService
 from modules.webui.routers.auth import router as auth_router
 from modules.webui.routers.concepts import router as concepts_router
@@ -132,6 +133,7 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
         )
         sampling_svc.recover_pending()
         training_svc = TrainingService(event_bus=event_hub, sampling_coordinator=sampling_svc)
+        media_svc = MediaService(root_dir=settings.root_dir)
 
         version = "unknown"
         try:
@@ -180,6 +182,8 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
             training=training_svc,
             gallery=gallery_svc,
             sampling=sampling_svc,
+            media=media_svc,
+            media_service=media_svc,
         )
 
         try:

@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from modules.webui.directories import DirectoryService
     from modules.webui.events import EventHub
     from modules.webui.gallery import GalleryService
+    from modules.webui.media import MediaService
     from modules.webui.presets import PresetService
     from modules.webui.sampling_coordinator import SamplingCoordinator
     from modules.webui.schema import SchemaRegistry
@@ -38,6 +39,14 @@ class AppState:
     training: "TrainingService | None" = None
     gallery: "GalleryService | None" = None
     sampling: "SamplingCoordinator | None" = None
+    media: "MediaService | None" = None
+    media_service: "MediaService | None" = None
+
+    def __post_init__(self) -> None:
+        if self.media_service is None and self.media is not None:
+            self.media_service = self.media
+        elif self.media is None and self.media_service is not None:
+            self.media = self.media_service
 
     @property
     def config_service(self) -> "ConfigService":
@@ -60,3 +69,4 @@ class AppState:
         if self.sampling is None:
             raise RuntimeError("SamplingCoordinator is not initialized on AppState")
         return self.sampling
+
