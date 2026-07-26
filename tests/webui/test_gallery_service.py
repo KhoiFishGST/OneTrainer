@@ -1,17 +1,28 @@
 import json
+import sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
+from unittest.mock import MagicMock, Mock
 
+sys.modules.setdefault("av", MagicMock())
+
+from modules.modelSampler.BaseModelSampler import ModelSamplerOutput
 from modules.util.config.SampleConfig import SampleConfig
 from modules.util.config.TrainConfig import TrainConfig
 from modules.util.enum.EMAMode import EMAMode
+from modules.util.enum.FileType import FileType
 from modules.webui.atomic_io import write_json_atomic
 from modules.webui.gallery import (
+    GalleryNotFound,
     GalleryService,
     TrainingProgressSnapshot,
 )
 
+import torch
+
 import pytest
+from PIL import Image
 
 
 @pytest.fixture
@@ -166,3 +177,199 @@ def test_resolves_changed_same_name_config(gallery, train_config, workspace):
     config.write_text('{"after": true}', encoding="utf-8")
     gallery.begin_batch([sample_definition("prompt_a")], train_config, progress(step=0))
     assert gallery.active_run_key == config.stem
+
+
+def ready_samples(manifest: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        s
+        for b in manifest.get("batches", [])
+        for s in b.get("samples", [])
+        if s.get("status") == "ready"
+    ]
+
+
+def image_output(source_path: Path) -> ModelSamplerOutput:
+    output = ModelSamplerOutput(FileType.IMAGE, Image.open(source_path))
+    output.filepath = str(source_path)
+    return output
+
+
+@pytest.fixture
+def active_gallery(gallery: GalleryService, train_config: TrainConfig, core_config: Any) -> GalleryService:
+    train_config.ema = EMAMode.GPU
+    train_config.non_ema_sampling = True
+    gallery.begin_training(train_config)
+    core_config()
+    definitions = [
+        sample_definition("prompt_a", prompt="a portrait of a cat"),
+    ]
+    gallery.begin_batch(definitions, train_config, progress(step=0))
+    return gallery
+
+
+@pytest.fixture
+def source_png(workspace: Path) -> Path:
+    sample_dir = workspace / "samples" / "0 - a portrait of a cat"
+    sample_dir.mkdir(parents=True, exist_ok=True)
+    file_path = sample_dir / "sample-000000.png"
+    img = Image.new("RGB", (100, 100), color="blue")
+    img.save(file_path, format="PNG")
+    return file_path
+
+
+@pytest.fixture
+def non_ema_source(workspace: Path) -> Path:
+    sample_dir = workspace / "samples" / "0 - a portrait of a cat - no-ema"
+    sample_dir.mkdir(parents=True, exist_ok=True)
+    file_path = sample_dir / "sample-000000-no-ema.png"
+    img = Image.new("RGB", (100, 100), color="red")
+    img.save(file_path, format="PNG")
+    return file_path
+
+
+@pytest.fixture
+def output_for_kind(workspace: Path, tmp_path: Path, source_png: Path) -> Any:
+    def _create(kind: str) -> ModelSamplerOutput:
+        if kind == "outside_workspace":
+            outside_file = tmp_path / "outside.png"
+            img = Image.new("RGB", (50, 50), "green")
+            img.save(outside_file)
+            out = ModelSamplerOutput(FileType.IMAGE, img)
+            out.filepath = str(outside_file)
+            return out
+        elif kind == "wrong_parent":
+            wrong_dir = workspace / "samples" / "wrong_parent_dir"
+            wrong_dir.mkdir(parents=True, exist_ok=True)
+            wrong_file = wrong_dir / "sample.png"
+            img = Image.new("RGB", (50, 50), "yellow")
+            img.save(wrong_file)
+            out = ModelSamplerOutput(FileType.IMAGE, img)
+            out.filepath = str(wrong_file)
+            return out
+        elif kind == "non_image":
+            out = ModelSamplerOutput(FileType.VIDEO, torch.zeros((10, 10, 10, 3)))
+            out.filepath = str(source_png)
+            return out
+        raise ValueError(f"Unknown kind: {kind}")
+
+    return _create
+
+
+@pytest.fixture
+def outputs_for_all_slots(source_png: Path, non_ema_source: Path) -> list[ModelSamplerOutput]:
+    return [image_output(source_png), image_output(non_ema_source)]
+
+
+@pytest.fixture
+def historical_run_factory(workspace: Path) -> Any:
+    def _create(run_key: str, started_at: str | None, raw_manifest: str | None = None) -> Path:
+        run_dir = workspace / "web" / "samples" / run_key
+        run_dir.mkdir(parents=True, exist_ok=True)
+        manifest_path = run_dir / "manifest.json"
+        if raw_manifest is not None:
+            manifest_path.write_text(raw_manifest, encoding="utf-8")
+        else:
+            manifest_doc = {
+                "schema_version": 1,
+                "run": {
+                    "key": run_key,
+                    "config_filename": f"{run_key}.json",
+                    "started_at": started_at,
+                },
+                "batches": [],
+            }
+            write_json_atomic(manifest_path, manifest_doc)
+        return run_dir
+
+    return _create
+
+
+def test_record_sample_copies_exact_bytes_and_creates_thumbnail(active_gallery, source_png):
+    output = ModelSamplerOutput(FileType.IMAGE, Image.open(source_png))
+    output.filepath = str(source_png)
+    event = active_gallery.record_default_sample(output)
+    manifest = read_manifest(active_gallery)
+    sample = manifest["batches"][0]["samples"][0]
+    mirrored = active_gallery.active_run_dir / sample["filename"]
+    thumbnail = active_gallery.active_run_dir / sample["thumbnail_filename"]
+    assert mirrored.read_bytes() == source_png.read_bytes()
+    with Image.open(thumbnail) as image:
+        assert image.width <= 512
+        assert image.height <= 512
+        assert image.format == "WEBP"
+    assert event["run_key"] == active_gallery.active_run_key
+    assert event["batch_id"] == 1
+
+
+def test_non_ema_parent_maps_to_non_ema_without_prompt_suffix_confusion(active_gallery, non_ema_source):
+    output = image_output(non_ema_source)
+    active_gallery.record_default_sample(output)
+    ready = ready_samples(read_manifest(active_gallery))
+    assert ready[0]["variant"] == "non_ema"
+
+
+def test_get_image_rejects_unreferenced_and_escaping_files(active_gallery, source_png):
+    active_gallery.record_default_sample(image_output(source_png))
+    with pytest.raises(GalleryNotFound):
+        active_gallery.get_image(active_gallery.active_run_key, "../manifest.json")
+    rogue = active_gallery.active_run_dir / "rogue.png"
+    rogue.write_bytes(b"rogue")
+    with pytest.raises(GalleryNotFound):
+        active_gallery.get_image(active_gallery.active_run_key, rogue.name)
+
+
+def test_thumbnail_failure_keeps_full_image_ready(active_gallery, source_png, monkeypatch):
+    monkeypatch.setattr("modules.webui.gallery.save_pil_atomic", Mock(side_effect=OSError("thumbnail failed")))
+    active_gallery.record_default_sample(image_output(source_png))
+    sample = ready_samples(read_manifest(active_gallery))[0]
+    assert sample["status"] == "ready"
+    assert sample["thumbnail_filename"] == sample["filename"]
+    assert sample["thumbnail_error"] == "thumbnail failed"
+
+
+def test_copy_failure_marks_slot_error_without_touching_core(active_gallery, source_png, monkeypatch):
+    original = source_png.read_bytes()
+    monkeypatch.setattr("modules.webui.gallery.copy_file_atomic", Mock(side_effect=OSError("copy failed")))
+    assert active_gallery.record_default_sample(image_output(source_png)) is None
+    assert source_png.read_bytes() == original
+    assert read_manifest(active_gallery)["batches"][0]["samples"][0]["status"] == "error"
+
+
+@pytest.mark.parametrize("source_kind", ["outside_workspace", "wrong_parent", "non_image"])
+def test_rejects_unassociable_or_unsupported_output(active_gallery, output_for_kind, source_kind):
+    assert active_gallery.record_default_sample(output_for_kind(source_kind)) is None
+    assert ready_samples(read_manifest(active_gallery)) == []
+
+
+def test_concurrent_callbacks_do_not_corrupt_manifest(active_gallery, outputs_for_all_slots):
+    with ThreadPoolExecutor(max_workers=len(outputs_for_all_slots)) as executor:
+        list(executor.map(active_gallery.record_default_sample, outputs_for_all_slots))
+    manifest = read_manifest(active_gallery)
+    assert len(ready_samples(manifest)) == len(outputs_for_all_slots)
+    json.loads((active_gallery.active_run_dir / "manifest.json").read_text(encoding="utf-8"))
+
+
+def test_list_runs_is_newest_first_and_isolates_corrupt_runs(gallery, historical_run_factory):
+    historical_run_factory("older", "2026-07-26T10:00:00Z")
+    historical_run_factory("newer", "2026-07-26T11:00:00Z")
+    historical_run_factory("corrupt", None, raw_manifest="not json")
+    assert [run["key"] for run in gallery.list_runs()] == ["newer", "older"]
+
+
+def test_current_gallery_shapes_before_and_after_first_batch(gallery, train_config, core_config):
+    assert gallery.get_current_model() == {"active": False, "run": None, "batches": [], "revisions": {}}
+    gallery.begin_training(train_config)
+    assert gallery.get_current_model() == {"active": True, "run": None, "batches": [], "revisions": {}}
+    core_config()
+    gallery.begin_batch([sample_definition("prompt_a")], train_config, progress(step=0))
+    assert gallery.get_current_model()["run"]["key"] == gallery.active_run_key
+
+
+def test_missing_referenced_image_becomes_unavailable(active_gallery, source_png):
+    active_gallery.record_default_sample(image_output(source_png))
+    image = active_gallery.get_image(active_gallery.active_run_key, ready_samples(read_manifest(active_gallery))[0]["filename"])
+    image.path.unlink()
+    with pytest.raises(GalleryNotFound):
+        active_gallery.get_image(active_gallery.active_run_key, image.path.name)
+    assert active_gallery.get_run_model(active_gallery.active_run_key)["batches"][0]["samples"][0]["status"] == "unavailable"
+
