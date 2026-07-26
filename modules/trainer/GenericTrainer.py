@@ -241,8 +241,10 @@ class GenericTrainer(BaseTrainer):
                 )
 
                 def on_sample_default(sampler_output: ModelSamplerOutput):
-                    ext = self.config.sample_image_format.extension() if self.config.sample_image_format else ".png"
-                    if not hasattr(sampler_output, "filepath") or not getattr(sampler_output, "filepath", None):
+                    if not getattr(sampler_output, "filepath", None):
+                        ext = ".png"
+                        if hasattr(self.config, "sample_image_format") and hasattr(self.config.sample_image_format, "extension"):
+                            ext = self.config.sample_image_format.extension()
                         setattr(sampler_output, "filepath", sample_path + ext)
                     if self.config.samples_to_tensorboard and sampler_output.file_type == FileType.IMAGE:
                         self.tensorboard.add_image(
@@ -252,8 +254,10 @@ class GenericTrainer(BaseTrainer):
                     self.callbacks.on_sample_default(sampler_output)
 
                 def on_sample_custom(sampler_output: ModelSamplerOutput):
-                    ext = self.config.sample_image_format.extension() if self.config.sample_image_format else ".png"
-                    if not hasattr(sampler_output, "filepath") or not getattr(sampler_output, "filepath", None):
+                    if not getattr(sampler_output, "filepath", None):
+                        ext = ".png"
+                        if hasattr(self.config, "sample_image_format") and hasattr(self.config.sample_image_format, "extension"):
+                            ext = self.config.sample_image_format.extension()
                         setattr(sampler_output, "filepath", sample_path + ext)
                     self.callbacks.on_sample_custom(sampler_output)
 
