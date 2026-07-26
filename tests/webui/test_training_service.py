@@ -1,3 +1,4 @@
+import sys
 from unittest.mock import MagicMock
 
 from modules.webui.gallery import TrainingProgressSnapshot
@@ -277,7 +278,8 @@ def test_training_status_callbacks_bound_one_gallery_batch(monkeypatch):
     def fake_create_trainer(train_config, callbacks, commands):
         return FakeTrainer(callbacks, commands)
 
-    monkeypatch.setattr("modules.util.create.create_trainer", fake_create_trainer)
+    mock_create = MagicMock(create_trainer=fake_create_trainer)
+    monkeypatch.setitem(sys.modules, "modules.util.create", mock_create)
 
     config = valid_config_dict()
 
@@ -337,13 +339,35 @@ def test_training_exit_always_finishes_coordinator(monkeypatch, exit_mode):
         trainer.configure_exit(exit_mode)
         return trainer
 
-    monkeypatch.setattr("modules.util.create.create_trainer", fake_create_trainer)
+    mock_create = MagicMock(create_trainer=fake_create_trainer)
+    monkeypatch.setitem(sys.modules, "modules.util.create", mock_create)
 
     config = valid_config_dict()
 
     _original_run_training_worker(training_service, config)
 
     coordinator.finish_training.assert_called_once()
+
+
+def test_handle_status_exception_handled_gracefully():
+    coordinator = MagicMock()
+    coordinator.on_status.side_effect = RuntimeError("Status handler error")
+    training_service = TrainingService(sampling_coordinator=coordinator)
+
+    # Should not raise exception
+    training_service._handle_status("Training ...")
+    coordinator.on_status.assert_called_once()
+
+
+def test_handle_default_sample_exception_handled_gracefully():
+    coordinator = MagicMock()
+    coordinator.on_default_sample.side_effect = RuntimeError("Sample handler error")
+    training_service = TrainingService(sampling_coordinator=coordinator)
+
+    # Should not raise exception
+    training_service._handle_default_sample(object())
+    coordinator.on_default_sample.assert_called_once()
+
 
 
 

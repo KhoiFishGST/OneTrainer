@@ -2,6 +2,7 @@ import asyncio
 import contextlib
 import copy
 import json
+import logging
 import time
 from collections import deque
 from enum import Enum
@@ -11,6 +12,8 @@ from typing import Any, Optional
 
 from modules.webui.events import EventType
 from modules.webui.gallery import TrainingProgressSnapshot
+
+logger = logging.getLogger(__name__)
 
 _active_training_service: Optional["TrainingService"] = None
 
@@ -95,12 +98,23 @@ class TrainingService:
                 global_step=self._step,
             )
 
+    def _handle_status(self, status: str) -> None:
+        if self._sampling_coordinator is None:
+            return
+        try:
+            self._sampling_coordinator.on_status(status, self._progress_snapshot())
+        except Exception as e:
+            logger.exception(f"Error in sampling_coordinator.on_status: {e}")
+
     def _handle_default_sample(self, sampler_output: Any) -> None:
         if self._sampling_coordinator is None:
             return
-        payload = self._sampling_coordinator.on_default_sample(sampler_output)
-        if payload is not None:
-            self.record_sample(payload)
+        try:
+            payload = self._sampling_coordinator.on_default_sample(sampler_output)
+            if payload is not None:
+                self.record_sample(payload)
+        except Exception as e:
+            logger.exception(f"Error in sampling_coordinator.on_default_sample: {e}")
 
     def _emit_event(self, event_type: Any, data: dict[str, Any]) -> None:
         if self._event_bus is None:
@@ -377,9 +391,7 @@ class TrainingService:
                     )
 
                 callbacks = TrainCallbacks(
-                    on_update_status=lambda status: self._sampling_coordinator.on_status(status, self._progress_snapshot())
-                    if self._sampling_coordinator
-                    else None,
+                    on_update_status=self._handle_status,
                     on_update_train_progress=on_progress,
                     on_sample_default=self._handle_default_sample,
                 )
