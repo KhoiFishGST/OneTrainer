@@ -209,23 +209,31 @@
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
-  function formatPixelText(arr: any): string {
-    if (!arr || !Array.isArray(arr) || arr.length < 2) return '-';
+  function formatPixelText(arr: any, count = 0): string {
+    if (!arr || typeof arr === 'string' || !Array.isArray(arr) || arr.length < 2 || count === 0 || arr[0] >= 1000000000) {
+      return '-';
+    }
     return `${(arr[0] / 1000000).toFixed(2)} MP, ${arr[2] || ''}\n${arr[1] || ''}`;
   }
 
-  function formatCaptionText(arr: any): string {
-    if (!arr || !Array.isArray(arr) || arr.length < 2) return '-';
+  function formatCaptionText(arr: any, count = 0): string {
+    if (!arr || typeof arr === 'string' || !Array.isArray(arr) || arr.length < 2 || count === 0 || arr[0] >= 1000000000) {
+      return '-';
+    }
     return `${arr[0]} chars, ${arr[2] || 0} words\n${arr[1] || ''}`;
   }
 
-  function formatLengthText(arr: any): string {
-    if (!arr || !Array.isArray(arr) || arr.length < 2) return '-';
+  function formatLengthText(arr: any, count = 0): string {
+    if (!arr || typeof arr === 'string' || !Array.isArray(arr) || arr.length < 2 || count === 0 || arr[0] >= 1000000000) {
+      return '-';
+    }
     return `${Math.round(arr[0])} frames\n${arr[1] || ''}`;
   }
 
-  function formatFpsText(arr: any): string {
-    if (!arr || !Array.isArray(arr) || arr.length < 2) return '-';
+  function formatFpsText(arr: any, count = 0): string {
+    if (!arr || typeof arr === 'string' || !Array.isArray(arr) || arr.length < 2 || count === 0 || arr[0] >= 1000000000) {
+      return '-';
+    }
     return `${Math.round(arr[0])} fps\n${arr[1] || ''}`;
   }
 
@@ -1154,15 +1162,15 @@
                   <div class="stats-kv-stack">
                     <div class="kv-item">
                       <span class="kv-key">Max Pixels</span>
-                      <span class="kv-val">{formatPixelText(statsData.max_pixels)}</span>
+                      <span class="kv-val">{formatPixelText(statsData.max_pixels, statsData.image_count)}</span>
                     </div>
                     <div class="kv-item">
                       <span class="kv-key">Avg Pixels</span>
-                      <span class="kv-val">{statsData.avg_pixels && statsData.avg_pixels > 0 ? `${(statsData.avg_pixels / 1000000).toFixed(2)} MP, ~${Math.round(Math.sqrt(statsData.avg_pixels))}w x ${Math.round(Math.sqrt(statsData.avg_pixels))}h` : '-'}</span>
+                      <span class="kv-val">{statsData.image_count > 0 && statsData.avg_pixels && statsData.avg_pixels > 0 ? `${(statsData.avg_pixels / 1000000).toFixed(2)} MP, ~${Math.round(Math.sqrt(statsData.avg_pixels))}w x ${Math.round(Math.sqrt(statsData.avg_pixels))}h` : '-'}</span>
                     </div>
                     <div class="kv-item">
                       <span class="kv-key">Min Pixels</span>
-                      <span class="kv-val">{formatPixelText(statsData.min_pixels)}</span>
+                      <span class="kv-val">{formatPixelText(statsData.min_pixels, statsData.image_count)}</span>
                     </div>
                   </div>
                 </div>
@@ -1173,15 +1181,15 @@
                   <div class="stats-kv-stack">
                     <div class="kv-item">
                       <span class="kv-key">Max Length</span>
-                      <span class="kv-val">{formatLengthText(statsData.max_length)}</span>
+                      <span class="kv-val">{formatLengthText(statsData.max_length, statsData.video_count)}</span>
                     </div>
                     <div class="kv-item">
                       <span class="kv-key">Avg Length</span>
-                      <span class="kv-val">{statsData.avg_length && statsData.avg_length > 0 ? `${Math.round(statsData.avg_length)} frames` : '-'}</span>
+                      <span class="kv-val">{statsData.video_count > 0 && statsData.avg_length && statsData.avg_length > 0 ? `${Math.round(statsData.avg_length)} frames` : '-'}</span>
                     </div>
                     <div class="kv-item">
                       <span class="kv-key">Min Length</span>
-                      <span class="kv-val">{formatLengthText(statsData.min_length)}</span>
+                      <span class="kv-val">{formatLengthText(statsData.min_length, statsData.video_count)}</span>
                     </div>
                   </div>
                 </div>
@@ -1192,15 +1200,15 @@
                   <div class="stats-kv-stack">
                     <div class="kv-item">
                       <span class="kv-key">Max FPS</span>
-                      <span class="kv-val">{formatFpsText(statsData.max_fps)}</span>
+                      <span class="kv-val">{formatFpsText(statsData.max_fps, statsData.video_count)}</span>
                     </div>
                     <div class="kv-item">
                       <span class="kv-key">Avg FPS</span>
-                      <span class="kv-val">{statsData.avg_fps && statsData.avg_fps > 0 ? `${Math.round(statsData.avg_fps)} fps` : '-'}</span>
+                      <span class="kv-val">{statsData.video_count > 0 && statsData.avg_fps && statsData.avg_fps > 0 ? `${Math.round(statsData.avg_fps)} fps` : '-'}</span>
                     </div>
                     <div class="kv-item">
                       <span class="kv-key">Min FPS</span>
-                      <span class="kv-val">{formatFpsText(statsData.min_fps)}</span>
+                      <span class="kv-val">{formatFpsText(statsData.min_fps, statsData.video_count)}</span>
                     </div>
                   </div>
                 </div>
@@ -1211,19 +1219,19 @@
                   <div class="stats-kv-stack">
                     <div class="kv-item">
                       <span class="kv-key">Max Caption Length</span>
-                      <span class="kv-val">{formatCaptionText(statsData.max_caption_length)}</span>
+                      <span class="kv-val">{formatCaptionText(statsData.max_caption_length, statsData.caption_count)}</span>
                     </div>
                     <div class="kv-item">
                       <span class="kv-key">Avg Caption Length</span>
                       <span class="kv-val">
-                        {statsData.avg_caption_length && Array.isArray(statsData.avg_caption_length)
+                        {statsData.caption_count > 0 && statsData.avg_caption_length && Array.isArray(statsData.avg_caption_length)
                           ? `${Math.round(statsData.avg_caption_length[0] || 0)} chars, ${Math.round(statsData.avg_caption_length[1] || 0)} words`
                           : '-'}
                       </span>
                     </div>
                     <div class="kv-item">
                       <span class="kv-key">Min Caption Length</span>
-                      <span class="kv-val">{formatCaptionText(statsData.min_caption_length)}</span>
+                      <span class="kv-val">{formatCaptionText(statsData.min_caption_length, statsData.caption_count)}</span>
                     </div>
                   </div>
                 </div>
