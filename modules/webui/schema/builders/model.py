@@ -6,7 +6,7 @@ from modules.webui.schema.types import Field, Group, Tab
 def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> Tab:
     parts = model_type.model_parts()
 
-    # 1. Base Model & Output Format
+    # 1. Base Model
     base_fields = [
         Field(
             "base-model-name",
@@ -23,6 +23,17 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
             "Type of base model",
             "select",
         ),
+        Field(
+            "compile",
+            ("compile",),
+            "Compile transformer blocks",
+            "Uses torch.compile and Triton to significantly speed up training. Only applies to transformer/unet. Disable in case of compatibility issues.",
+            "toggle",
+        ),
+    ]
+
+    # 1b. Output Format & Destination
+    output_fields = [
         Field(
             "output-dtype",
             ("output_dtype",),
@@ -51,13 +62,6 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
             "Include Config",
             "Include the training configuration in the final model. Only supported for safetensors files",
             "select",
-        ),
-        Field(
-            "compile",
-            ("compile",),
-            "Compile transformer blocks",
-            "Uses torch.compile and Triton to significantly speed up training. Only applies to transformer/unet. Disable in case of compatibility issues.",
-            "toggle",
         ),
     ]
 
@@ -303,7 +307,8 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
         )
 
     groups = [
-        Group("base_model", "Base Model & Output", tuple(base_fields)),
+        Group("base_model", "Base Model", tuple(base_fields)),
+        Group("output", "Output Settings", tuple(output_fields)),
     ]
 
     if backbone_fields:

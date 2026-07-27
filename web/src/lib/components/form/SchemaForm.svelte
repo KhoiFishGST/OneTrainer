@@ -89,6 +89,15 @@
         return groupId === 'validation';
       case 'multi_gpu':
         return groupId === 'multi_gpu';
+      // Model route subtabs:
+      case 'model':
+        return groupId === 'base_model' || groupId === 'primary_backbone';
+      case 'output':
+        return groupId === 'output';
+      case 'quant':
+        return groupId === 'quantization';
+      case 'vae':
+        return groupId === 'vae_autoencoders';
       // Fallback for legacy subtab IDs if any:
       case 'general_opt':
         return ['base_settings', 'execution'].includes(groupId);
