@@ -218,6 +218,45 @@
     if (!arr || !Array.isArray(arr) || arr.length < 2) return '-';
     return `${arr[0]} chars, ${arr[2] || 0} words\n${arr[1] || ''}`;
   }
+
+  function formatLengthText(arr: any): string {
+    if (!arr || !Array.isArray(arr) || arr.length < 2) return '-';
+    return `${Math.round(arr[0])} frames\n${arr[1] || ''}`;
+  }
+
+  function formatFpsText(arr: any): string {
+    if (!arr || !Array.isArray(arr) || arr.length < 2) return '-';
+    return `${Math.round(arr[0])} fps\n${arr[1] || ''}`;
+  }
+
+  function decimalToAspectRatio(val: number): string {
+    if (!val) return '1:1';
+    if (Math.abs(val - 1.0) < 0.02) return '1:1';
+    if (Math.abs(val - 0.75) < 0.02) return '4:3';
+    if (Math.abs(val - 1.333333) < 0.02) return '3:4';
+    if (Math.abs(val - 0.5625) < 0.02) return '16:9';
+    if (Math.abs(val - 1.777778) < 0.02) return '9:16';
+    if (Math.abs(val - 0.5) < 0.02) return '2:1';
+    if (Math.abs(val - 2.0) < 0.02) return '1:2';
+    if (Math.abs(val - 0.666667) < 0.02) return '3:2';
+    if (Math.abs(val - 1.5) < 0.02) return '2:3';
+    if (Math.abs(val - 0.8) < 0.02) return '5:4';
+    if (Math.abs(val - 1.25) < 0.02) return '4:5';
+    return val.toFixed(2);
+  }
+
+  function getSmallestBuckets(buckets?: Record<string, number>): string {
+    if (!buckets) return '-';
+    const entries = Object.entries(buckets)
+      .map(([k, v]) => ({ aspect: parseFloat(k), count: v }))
+      .filter((b) => b.count > 0);
+    if (entries.length === 0) return '-';
+    const minVal = Math.min(...entries.map((e) => e.count));
+    const minEntries = entries.filter((e) => e.count === minVal);
+    return minEntries
+      .map((e) => `aspect ${decimalToAspectRatio(e.aspect)} : ${e.count} img`)
+      .join(', ');
+  }
 </script>
 
 {#if isOpen && draft}
@@ -1055,16 +1094,40 @@
                   <span class="stat-value">{statsData.image_count ?? 0}</span>
                 </div>
                 <div class="stat-card">
+                  <span class="stat-label">Images with Masks</span>
+                  <span class="stat-value">{statsData.image_with_mask_count ?? '-'}</span>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">Images with Captions</span>
+                  <span class="stat-value">{statsData.image_with_caption_count ?? '-'}</span>
+                </div>
+                <div class="stat-card">
                   <span class="stat-label">Total Videos</span>
                   <span class="stat-value">{statsData.video_count ?? 0}</span>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">Videos with Captions</span>
+                  <span class="stat-value">{statsData.video_with_caption_count ?? '-'}</span>
                 </div>
                 <div class="stat-card">
                   <span class="stat-label">Total Masks</span>
                   <span class="stat-value">{statsData.mask_count ?? 0}</span>
                 </div>
+                <div class="stat-card" class:highlight-warning={statsData.unpaired_masks > 0}>
+                  <span class="stat-label">Unpaired Masks</span>
+                  <span class="stat-value">{statsData.unpaired_masks ?? '-'}</span>
+                </div>
                 <div class="stat-card">
                   <span class="stat-label">Total Captions</span>
-                  <span class="stat-value">{statsData.caption_count ?? 0}</span>
+                  <span class="stat-value">
+                    {statsData.subcaption_count > 0
+                      ? `${statsData.caption_count} (${statsData.subcaption_count})`
+                      : statsData.caption_count ?? 0}
+                  </span>
+                </div>
+                <div class="stat-card" class:highlight-warning={statsData.unpaired_captions > 0}>
+                  <span class="stat-label">Unpaired Captions</span>
+                  <span class="stat-value">{statsData.unpaired_captions ?? '-'}</span>
                 </div>
               </div>
 
@@ -1095,11 +1158,49 @@
                     </div>
                     <div class="kv-item">
                       <span class="kv-key">Avg Pixels</span>
-                      <span class="kv-val">{statsData.avg_pixels ? `${(statsData.avg_pixels / 1000000).toFixed(2)} MP` : '-'}</span>
+                      <span class="kv-val">{statsData.avg_pixels && statsData.avg_pixels > 0 ? `${(statsData.avg_pixels / 1000000).toFixed(2)} MP, ~${Math.round(Math.sqrt(statsData.avg_pixels))}w x ${Math.round(Math.sqrt(statsData.avg_pixels))}h` : '-'}</span>
                     </div>
                     <div class="kv-item">
                       <span class="kv-key">Min Pixels</span>
                       <span class="kv-val">{formatPixelText(statsData.min_pixels)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Video Length Metrics -->
+                <div class="stats-section-box">
+                  <h5>Video Length Metrics</h5>
+                  <div class="stats-kv-stack">
+                    <div class="kv-item">
+                      <span class="kv-key">Max Length</span>
+                      <span class="kv-val">{formatLengthText(statsData.max_length)}</span>
+                    </div>
+                    <div class="kv-item">
+                      <span class="kv-key">Avg Length</span>
+                      <span class="kv-val">{statsData.avg_length && statsData.avg_length > 0 ? `${Math.round(statsData.avg_length)} frames` : '-'}</span>
+                    </div>
+                    <div class="kv-item">
+                      <span class="kv-key">Min Length</span>
+                      <span class="kv-val">{formatLengthText(statsData.min_length)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Video FPS Metrics -->
+                <div class="stats-section-box">
+                  <h5>Video FPS Metrics</h5>
+                  <div class="stats-kv-stack">
+                    <div class="kv-item">
+                      <span class="kv-key">Max FPS</span>
+                      <span class="kv-val">{formatFpsText(statsData.max_fps)}</span>
+                    </div>
+                    <div class="kv-item">
+                      <span class="kv-key">Avg FPS</span>
+                      <span class="kv-val">{statsData.avg_fps && statsData.avg_fps > 0 ? `${Math.round(statsData.avg_fps)} fps` : '-'}</span>
+                    </div>
+                    <div class="kv-item">
+                      <span class="kv-key">Min FPS</span>
+                      <span class="kv-val">{formatFpsText(statsData.min_fps)}</span>
                     </div>
                   </div>
                 </div>
@@ -1127,6 +1228,46 @@
                   </div>
                 </div>
               </div>
+
+              <!-- Aspect Bucketing & Histogram -->
+              {#if statsData.aspect_buckets && Object.keys(statsData.aspect_buckets).length > 0}
+                {@const buckets = Object.entries(statsData.aspect_buckets).map(([k, v]) => ({
+                  aspect: parseFloat(k),
+                  ratioStr: decimalToAspectRatio(parseFloat(k)),
+                  count: Number(v) || 0,
+                }))}
+                {@const maxCount = Math.max(1, ...buckets.map((b) => b.count))}
+                <div class="aspect-histogram-box">
+                  <div class="aspect-header-row">
+                    <h5>Aspect Bucketing</h5>
+                    <div class="small-buckets-preview">
+                      <span class="lbl">Smallest Buckets:</span>
+                      <span class="val">{getSmallestBuckets(statsData.aspect_buckets)}</span>
+                    </div>
+                  </div>
+
+                  <div class="histogram-chart-container">
+                    <div class="histogram-bars-wrapper">
+                      {#each buckets as b}
+                        {@const pct = (b.count / maxCount) * 100}
+                        <div class="bar-col">
+                          <span class="bar-count-val">{b.count > 0 ? b.count : ''}</span>
+                          <div class="bar-track">
+                            <div class="bar-fill" style="height: {pct}%"></div>
+                          </div>
+                          <span class="bar-ratio-lbl">{b.ratioStr}</span>
+                        </div>
+                      {/each}
+                    </div>
+
+                    <div class="histogram-axis-markers">
+                      <span class="axis-lbl">Wide</span>
+                      <span class="axis-lbl">Square</span>
+                      <span class="axis-lbl">Tall</span>
+                    </div>
+                  </div>
+                </div>
+              {/if}
             {:else}
               <div class="stats-placeholder-box">
                 <RefreshCw size={24} class={statsLoading ? 'spin muted-icon' : 'muted-icon'} />
@@ -1545,6 +1686,130 @@
     background: var(--panel-raised, #1d242c);
     border: 1px solid var(--line, #2d3741);
     border-radius: 6px;
+  }
+
+  .stat-card.highlight-warning {
+    border-color: rgba(239, 68, 68, 0.4);
+    background: rgba(239, 68, 68, 0.08);
+  }
+
+  .stat-card.highlight-warning .stat-value {
+    color: #fca5a5;
+  }
+
+  /* Aspect Histogram Styles */
+  .aspect-histogram-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: var(--panel-raised, #1d242c);
+    border: 1px solid var(--line, #2d3741);
+    border-radius: 8px;
+  }
+
+  .aspect-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .aspect-header-row h5 {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text, #f8fafc);
+  }
+
+  .small-buckets-preview {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+  }
+
+  .small-buckets-preview .lbl {
+    color: var(--muted, #94a3b8);
+    font-weight: 500;
+  }
+
+  .small-buckets-preview .val {
+    color: var(--accent, #3b82f6);
+    font-family: monospace;
+    font-weight: 600;
+  }
+
+  .histogram-chart-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: var(--control, #14191f);
+    border: 1px solid var(--line, #2d3741);
+    border-radius: 6px;
+  }
+
+  .histogram-bars-wrapper {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    height: 120px;
+    gap: 0.25rem;
+    padding-top: 1.25rem;
+  }
+
+  .bar-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    height: 100%;
+  }
+
+  .bar-count-val {
+    font-size: 0.6875rem;
+    font-family: monospace;
+    color: var(--accent, #3b82f6);
+    font-weight: 600;
+    min-height: 14px;
+  }
+
+  .bar-track {
+    display: flex;
+    align-items: flex-end;
+    width: 100%;
+    max-width: 24px;
+    flex: 1;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 3px 3px 0 0;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    width: 100%;
+    background: var(--accent, #3b82f6);
+    border-radius: 3px 3px 0 0;
+    transition: height 0.3s ease;
+  }
+
+  .bar-ratio-lbl {
+    font-size: 0.6875rem;
+    color: var(--muted, #94a3b8);
+    margin-top: 0.25rem;
+  }
+
+  .histogram-axis-markers {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.25rem 0.5rem 0;
+    border-top: 1px solid var(--line, #2d3741);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted, #94a3b8);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
   .stat-label {
