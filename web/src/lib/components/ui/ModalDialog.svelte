@@ -268,7 +268,7 @@
     background: var(--control);
   }
 
-  .btn {
+  :global(.btn) {
     padding: 0.5rem 1rem;
     border-radius: 6px;
     font-size: 0.875rem;
