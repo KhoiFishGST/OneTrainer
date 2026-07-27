@@ -86,3 +86,25 @@ def test_samples_handles_prompt_persistence_error(client, sampling_coordinator):
     response = client.put("/api/samples", json={"samples": [{"prompt": "good"}]})
     assert response.status_code == 500
     assert response.json()["detail"] == "disk full"
+
+
+def test_list_and_create_sample_files(client):
+    resp = client.get("/api/samples/files")
+    assert resp.status_code == 200
+    files = resp.json().get("files", [])
+    assert isinstance(files, list)
+    assert "samples.json" in files
+
+    create_resp = client.post("/api/samples/files", json={"name": "custom_samples"})
+    assert create_resp.status_code == 200
+    assert create_resp.json()["filename"] == "custom_samples.json"
+
+    resp2 = client.get("/api/samples/files")
+    assert "custom_samples.json" in resp2.json().get("files", [])
+
+
+def test_create_sample_file_rejects_empty_name(client):
+    resp = client.post("/api/samples/files", json={"name": "   "})
+    assert resp.status_code == 422
+    assert resp.json()["detail"] == "Sample file name cannot be empty"
+
