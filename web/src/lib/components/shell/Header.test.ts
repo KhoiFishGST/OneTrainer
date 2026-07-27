@@ -72,7 +72,7 @@ it('calls beforePresetSave when saving preset', async () => {
     workspace: mockWorkspace,
   });
 
-  const savePresetBtn = screen.getByRole('button', { name: 'Save Preset' });
+  const savePresetBtn = screen.getByRole('button', { name: 'Save' });
   await fireEvent.click(savePresetBtn);
 
   expect(beforePresetSaveSpy).toHaveBeenCalled();

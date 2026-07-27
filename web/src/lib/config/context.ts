@@ -7,6 +7,7 @@ export interface RouteContext {
   schema: ConfigSchema;
   meta?: Record<string, any>;
   openDirectory?: (currentPath: string, onSelect?: (selectedPath: string) => void) => void;
+  openFile?: (currentPath: string, extensions: string[], onSelect?: (selectedPath: string) => void) => void;
 }
 
 const CONTEXT_KEY = Symbol('ROUTE_CONTEXT');

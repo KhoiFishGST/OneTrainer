@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Save, RotateCcw, RefreshCw, AlertTriangle } from 'lucide-svelte';
+  import { Save, FolderOpen, RotateCcw, RefreshCw, AlertTriangle } from 'lucide-svelte';
   import Select from '../form/Select.svelte';
   import ModalDialog from '../ui/ModalDialog.svelte';
   import {
@@ -30,69 +30,89 @@
     // context not provided in isolated unit test
   }
 
+  const workspace = $derived(workspaceProp ?? ctx?.workspace);
   const metaQuery = createMetaQuery();
   const presetsQuery = createPresetsQuery();
   const loadPresetMutation = createLoadPresetMutation();
   const savePresetMutation = createSavePresetMutation();
 
-  const workspace = $derived(workspaceProp ?? ctx?.workspace);
-  const meta = $derived(metaDataProp ?? $metaQuery.data);
-  const presets = $derived(presetsDataProp ?? $presetsQuery.data);
+  const metaData = $derived(metaDataProp ?? $metaQuery.data);
+  const presetsData = $derived(presetsDataProp ?? $presetsQuery.data);
 
-  let showSaveDialog = $state(false);
   let presetName = $state('');
+  let showSaveDialog = $state(false);
+  let showOverwriteDialog = $state(false);
   let saveError = $state<string | null>(null);
 
-  const modelTypes = $derived(meta?.model_types ?? []);
-
-  const currentModelType = $derived(
-    workspace?.draft?.model_type ?? modelTypes[0]?.value ?? ''
+  const modelTypes = $derived(
+    metaData?.model_types?.map((mt: any) => ({
+      value: mt.value,
+      label: mt.label,
+    })) ?? []
   );
 
-  const selectedModelTypeObj = $derived(
-    modelTypes.find((m: any) => m.value === currentModelType) ?? modelTypes[0]
+  const currentModelType = $derived(workspace?.draft?.model_type ?? '');
+
+  const currentModelTypeObj = $derived(
+    metaData?.model_types?.find((mt: any) => mt.value === currentModelType)
   );
 
   const trainingMethods = $derived(
-    selectedModelTypeObj?.training_methods ?? []
+    currentModelTypeObj?.training_methods?.map((tm: any) => ({
+      value: tm.value,
+      label: tm.label,
+    })) ?? []
   );
 
-  const currentTrainingMethod = $derived(
-    workspace?.draft?.training_method ?? trainingMethods[0]?.value ?? ''
-  );
+  const currentTrainingMethod = $derived(workspace?.draft?.training_method ?? '');
 
-  function handleModelTypeChange(newType: string) {
+  const presetsTree = $derived(presetsData ?? []);
+
+  const flattenedPresets = $derived.by(() => {
+    const list: Array<{ id: string; label: string }> = [];
+
+    function traverse(nodes: any[], prefix = '') {
+      for (const node of nodes) {
+        if (Array.isArray(node)) {
+          const [name, children] = node;
+          if (typeof children === 'string') {
+            const label = prefix ? `${prefix} / ${name}` : name;
+            list.push({ id: children, label });
+          } else if (Array.isArray(children)) {
+            const nextPrefix = prefix ? `${prefix} / ${name}` : name;
+            traverse(children, nextPrefix);
+          }
+        }
+      }
+    }
+
+    traverse(presetsTree);
+    return list;
+  });
+
+  function handleModelTypeChange(newModelType: string) {
     if (!workspace) return;
 
-    const mtObj = modelTypes.find((m: any) => m.value === newType);
-    const validMethods = mtObj?.training_methods?.map((tm: any) => tm.value) ?? [];
-    const curMethod = workspace.draft?.training_method;
+    const newModelTypeObj = metaData?.model_types?.find(
+      (mt: any) => mt.value === newModelType
+    );
+    const supportedMethods =
+      newModelTypeObj?.training_methods?.map((tm: any) => tm.value) ?? [];
 
-    if (validMethods.length > 0 && !validMethods.includes(curMethod)) {
-      workspace.setRaw('training_method', validMethods[0]);
+    if (
+      supportedMethods.length > 0 &&
+      !supportedMethods.includes(currentTrainingMethod)
+    ) {
+      workspace.setRaw('training_method', supportedMethods[0]);
     }
-    workspace.setRaw('model_type', newType);
+
+    workspace.setRaw('model_type', newModelType);
   }
 
   function handleTrainingMethodChange(newMethod: string) {
     if (!workspace) return;
     workspace.setRaw('training_method', newMethod);
   }
-
-  function flattenPresetTree(nodes: any[], prefix = ''): { id: string; label: string }[] {
-    if (!Array.isArray(nodes)) return [];
-    let result: { id: string; label: string }[] = [];
-    for (const node of nodes) {
-      if (node.children) {
-        result = result.concat(flattenPresetTree(node.children, prefix ? `${prefix} / ${node.label}` : node.label));
-      } else if (node.id) {
-        result.push({ id: node.id, label: prefix ? `${prefix} / ${node.label}` : node.label });
-      }
-    }
-    return result;
-  }
-
-  const flattenedPresets = $derived(flattenPresetTree(presets ?? []));
 
   async function handleSelectPreset(presetId: string) {
     if (!presetId || !workspace) return;
@@ -112,80 +132,62 @@
     }
   }
 
+  function handleLoadConfig() {
+    if (ctx?.openFile) {
+      ctx.openFile('training_configs', ['.json'], async (selectedPath: string) => {
+        if (!selectedPath || !workspace) return;
+        try {
+          const resp = await api.loadConfigFile(selectedPath, workspace.revision);
+          if (resp) {
+            workspace.acceptRemote(resp);
+          }
+        } catch (err: any) {
+          saveError = err?.message ?? 'Failed to load configuration file';
+        }
+      });
+    }
+  }
+
   async function openSavePresetModal() {
     saveError = null;
     if (workspace) {
       try {
         await workspace.beforePresetSave();
       } catch (err: any) {
-        saveError = err?.message ?? 'Cannot save preset';
+        saveError = err?.message ?? 'Cannot save configuration';
         return;
       }
     }
     showSaveDialog = true;
   }
 
-  async function handleSavePreset() {
+  async function executeSaveConfig(overwrite = false) {
     if (!presetName.trim()) return;
     try {
-      await $savePresetMutation.mutateAsync({ name: presetName.trim() });
+      await api.saveConfigFile(presetName.trim(), overwrite);
       showSaveDialog = false;
+      showOverwriteDialog = false;
       presetName = '';
       saveError = null;
     } catch (err: any) {
-      saveError = err?.message ?? 'Failed to save preset';
+      const status = err?.status ?? err?.statusCode;
+      if (status === 409 || err?.detail?.exists) {
+        showOverwriteDialog = true;
+      } else {
+        saveError = err?.message ?? 'Failed to save configuration file';
+      }
     }
+  }
+
+  async function handleSavePreset() {
+    await executeSaveConfig(false);
+  }
+
+  async function handleConfirmOverwrite() {
+    await executeSaveConfig(true);
   }
 
   const trainingState = $derived($trainingStore.status?.state ?? 'IDLE');
-
-  async function handleStartTraining() {
-    try {
-      await api.startTraining();
-    } catch (err) {
-      console.error('Failed to start training', err);
-    }
-  }
-
-  async function handlePauseTraining() {
-    try {
-      await api.pauseTraining();
-    } catch (err) {
-      console.error('Failed to pause training', err);
-    }
-  }
-
-  async function handleResumeTraining() {
-    try {
-      await api.resumeTraining();
-    } catch (err) {
-      console.error('Failed to resume training', err);
-    }
-  }
-
-  async function handleStopTraining() {
-    try {
-      await api.stopTraining();
-    } catch (err) {
-      console.error('Failed to stop training', err);
-    }
-  }
-
-  async function handleSample() {
-    try {
-      await api.requestSample();
-    } catch (err) {
-      console.error('Failed to request sample', err);
-    }
-  }
-
-  async function handleBackup() {
-    try {
-      await api.requestBackup();
-    } catch (err) {
-      console.error('Failed to request backup', err);
-    }
-  }
 </script>
 
 <header class="header">
@@ -238,9 +240,19 @@
       <button
         type="button"
         class="btn btn-secondary"
+        onclick={handleLoadConfig}
+      >
+        <FolderOpen size={16} />
+        <span>Load</span>
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-secondary"
         onclick={openSavePresetModal}
       >
-        Save Preset
+        <Save size={16} />
+        <span>Save</span>
       </button>
     </div>
   </div>
@@ -296,7 +308,7 @@
   </div>
 </header>
 
-{#if saveError && !showSaveDialog}
+{#if saveError && !showSaveDialog && !showOverwriteDialog}
   <div class="save-error-toast" role="alert">
     {saveError}
   </div>
@@ -309,8 +321,8 @@
 {/if}
 
 <ModalDialog
-  open={showSaveDialog}
-  title="Save Preset"
+  open={showSaveDialog && !showOverwriteDialog}
+  title="Save Configuration"
   applyText="Save"
   cancelText="Cancel"
   onClose={() => (showSaveDialog = false)}
@@ -320,14 +332,36 @@
     <p class="error-msg">{saveError}</p>
   {/if}
   <label class="modal-field">
-    <span>Preset Name</span>
+    <span>Configuration Name</span>
     <input
       type="text"
       aria-label="Preset Name"
       bind:value={presetName}
-      placeholder="My Custom Preset"
+      placeholder="my_config"
     />
   </label>
+</ModalDialog>
+
+<ModalDialog
+  open={showOverwriteDialog}
+  title="File Already Exists"
+  applyText="OK"
+  cancelText="Cancel"
+  onClose={() => (showOverwriteDialog = false)}
+  onApply={handleConfirmOverwrite}
+>
+  <p>The configuration file <strong>{presetName}.json</strong> already exists in <code>training_configs</code>.</p>
+  <p>Do you want to overwrite it?</p>
+
+  <div class="modal-extra-actions" style="margin-top: 12px; display: flex; gap: 8px; justify-content: flex-end;">
+    <button
+      type="button"
+      class="btn btn-danger"
+      onclick={handleConfirmOverwrite}
+    >
+      Overwrite
+    </button>
+  </div>
 </ModalDialog>
 
 <style>

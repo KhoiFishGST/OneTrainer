@@ -73,6 +73,9 @@
 
   const schemaData = $derived($schemaQuery.data ?? {});
 
+  let pickerMode = $state<'dir' | 'file' | 'both'>('dir');
+  let pickerExtensions = $state<string[]>([]);
+
   setRouteContext({
     get workspace() {
       return workspace;
@@ -81,7 +84,16 @@
       return schemaData;
     },
     openDirectory: (currentPath: string, onSelect?: (selectedPath: string) => void) => {
+      pickerMode = 'dir';
+      pickerExtensions = [];
       pickerInitialPath = currentPath || '/';
+      pickerOnSelect = onSelect ?? null;
+      pickerOpen = true;
+    },
+    openFile: (currentPath: string, extensions: string[], onSelect?: (selectedPath: string) => void) => {
+      pickerMode = 'file';
+      pickerExtensions = extensions;
+      pickerInitialPath = currentPath || 'training_configs';
       pickerOnSelect = onSelect ?? null;
       pickerOpen = true;
     },
@@ -202,6 +214,8 @@
     <DirectoryPicker
       open={pickerOpen}
       initialPath={pickerInitialPath}
+      mode={pickerMode}
+      extensions={pickerExtensions}
       onSelect={(selectedPath) => {
         if (pickerOnSelect) {
           pickerOnSelect(selectedPath);

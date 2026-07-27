@@ -98,6 +98,18 @@ export function createApi(base = '') {
         body: JSON.stringify(data),
       }),
 
+    saveConfigFile: (name: string, overwrite = false) =>
+      request<{ filename: string }>(`${base}/api/config/save_file`, {
+        method: 'POST',
+        body: JSON.stringify({ name, overwrite }),
+      }),
+
+    loadConfigFile: (path: string, base_revision: string) =>
+      request<ConfigResponse>(`${base}/api/config/load_file`, {
+        method: 'POST',
+        body: JSON.stringify({ path, base_revision }),
+      }),
+
     listDirectory: (
       path = '',
       mode: 'dir' | 'file' | 'both' = 'both',
