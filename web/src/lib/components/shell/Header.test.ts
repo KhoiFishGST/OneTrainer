@@ -78,10 +78,11 @@ it('calls beforePresetSave when saving preset', async () => {
   expect(beforePresetSaveSpy).toHaveBeenCalled();
 });
 
-it('renders header elements and title', () => {
+it('renders header elements, title, and training status pill', () => {
   render(HeaderTestWrapper, {});
 
   expect(screen.getByText('OneTrainer')).toBeVisible();
   expect(screen.getByRole('button', { name: 'Save Preset' })).toBeVisible();
+  expect(screen.getByTestId('training-status-pill')).toHaveTextContent('IDLE');
 });
 

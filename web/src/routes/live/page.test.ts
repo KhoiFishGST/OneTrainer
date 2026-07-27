@@ -19,40 +19,6 @@ describe('Live Dashboard Page', () => {
     expect(screen.getByTestId('sample-gallery')).toBeInTheDocument();
   });
 
-  it('renders action buttons and disables them when not training', () => {
-    render(LivePage);
-
-    const sampleBtn = screen.getByRole('button', { name: /sample now/i });
-    const backupBtn = screen.getByRole('button', { name: /backup now/i });
-    const saveBtn = screen.getByRole('button', { name: /save model now/i });
-
-    expect(sampleBtn).toBeInTheDocument();
-    expect(backupBtn).toBeInTheDocument();
-    expect(saveBtn).toBeInTheDocument();
-
-    expect(sampleBtn).toBeDisabled();
-    expect(backupBtn).toBeDisabled();
-    expect(saveBtn).toBeDisabled();
-  });
-
-  it('enables action buttons when training status is active', () => {
-    trainingStore.setStatus({
-      state: 'TRAINING',
-      step: 10,
-      max_steps: 100,
-    });
-
-    render(LivePage);
-
-    const sampleBtn = screen.getByRole('button', { name: /sample now/i });
-    const backupBtn = screen.getByRole('button', { name: /backup now/i });
-    const saveBtn = screen.getByRole('button', { name: /save model now/i });
-
-    expect(sampleBtn).not.toBeDisabled();
-    expect(backupBtn).not.toBeDisabled();
-    expect(saveBtn).not.toBeDisabled();
-  });
-
   it('displays training telemetry from trainingStore', () => {
     trainingStore.setStatus({
       state: 'TRAINING',
@@ -72,26 +38,6 @@ describe('Live Dashboard Page', () => {
     expect(screen.getByText(/2 \/ 10/i)).toBeInTheDocument();
     expect(screen.getByText(/3\.50 it\/s/i)).toBeInTheDocument();
     expect(screen.getByText(/15\.0%/i)).toBeInTheDocument();
-  });
-
-  it('displays error toast when sample generation fails', async () => {
-    trainingStore.setStatus({
-      state: 'TRAINING',
-      step: 10,
-      max_steps: 100,
-    });
-
-    const errorMessage = 'Cannot request sample: No sample prompts configured in sample definitions file';
-    vi.spyOn(api, 'requestSample').mockRejectedValueOnce(new Error(errorMessage));
-
-    render(LivePage);
-
-    const sampleBtn = screen.getByRole('button', { name: /sample now/i });
-    await fireEvent.click(sampleBtn);
-
-    const toast = await screen.findByText(errorMessage);
-    expect(toast).toBeInTheDocument();
-    expect(toast).toHaveClass('toast-error');
   });
 
   it('renders current gallery on Live without a run selector', async () => {

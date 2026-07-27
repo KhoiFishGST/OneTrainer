@@ -101,41 +101,6 @@
         {status.state || 'IDLE'}
       </span>
     </div>
-
-    <div class="header-actions">
-      <button
-        type="button"
-        class="btn btn-secondary"
-        disabled={status.state !== 'RUNNING' && status.state !== 'TRAINING' || $sampleMutation.isPending}
-        onclick={handleSample}
-        title={status.state === 'RUNNING' || status.state === 'TRAINING' ? 'Trigger immediate sample image generation' : 'Active training run required to sample now'}
-      >
-        <Sparkles size={16} />
-        <span>Sample Now</span>
-      </button>
-
-      <button
-        type="button"
-        class="btn btn-secondary"
-        disabled={status.state !== 'RUNNING' && status.state !== 'TRAINING' || $backupMutation.isPending}
-        onclick={handleBackup}
-        title={status.state === 'RUNNING' || status.state === 'TRAINING' ? 'Trigger immediate model backup checkpoint' : 'Active training run required to backup now'}
-      >
-        <Archive size={16} />
-        <span>Backup Now</span>
-      </button>
-
-      <button
-        type="button"
-        class="btn btn-secondary"
-        disabled={status.state !== 'RUNNING' && status.state !== 'TRAINING' || $saveMutation.isPending}
-        onclick={handleSave}
-        title={status.state === 'RUNNING' || status.state === 'TRAINING' ? 'Trigger immediate model save' : 'Active training run required to save model now'}
-      >
-        <Save size={16} />
-        <span>Save Model Now</span>
-      </button>
-    </div>
   </div>
 
   {#if toast}

@@ -71,29 +71,7 @@
 
 <footer class="status-bar safe-area-padding">
   <div class="status-bar-right">
-    <span
-      data-testid="training-status-pill"
-      class="status-pill status-{trainingState.toLowerCase()}"
-      title={$trainingStore.status?.error_message ?? ''}
-    >
-      {trainingState}
-    </span>
-
     {#if workspace}
-      <span class="state-badge state-{workspace.state}">
-        {#if workspace.state === 'saved'}
-          Saved
-        {:else if workspace.state === 'unsaved'}
-          Unsaved
-        {:else if workspace.state === 'saving'}
-          Saving...
-        {:else if workspace.state === 'conflict'}
-          Conflict
-        {:else if workspace.state === 'failed'}
-          Failed
-        {/if}
-      </span>
-
       {#if workspace.state === 'failed' || workspace.state === 'unsaved'}
         <button
           type="button"

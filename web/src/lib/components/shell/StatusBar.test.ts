@@ -20,9 +20,6 @@ it('renders training status pill and handles Start Training action', async () =>
 
   render(StatusBarTestWrapper, {});
 
-  const statusPill = screen.getByTestId('training-status-pill');
-  expect(statusPill).toHaveTextContent('IDLE');
-
   const startBtn = screen.getByRole('button', { name: 'Start Training' });
   await fireEvent.click(startBtn);
 
