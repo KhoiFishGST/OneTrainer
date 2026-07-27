@@ -5,29 +5,10 @@
     Square,
     Sparkles,
     Archive,
-    RotateCcw,
-    RefreshCw,
-    AlertTriangle,
   } from 'lucide-svelte';
-  import { getRouteContext } from '../../config/context';
-  import type { ConfigWorkspace } from '../../config/workspace.svelte';
   import { trainingStore } from '../../events/training-store';
   import { api } from '../../api/client';
 
-  let {
-    workspace: workspaceProp = null,
-  } = $props<{
-    workspace?: ConfigWorkspace | null;
-  }>();
-
-  let ctx: any = null;
-  try {
-    ctx = getRouteContext();
-  } catch {
-    // context not provided in isolated unit test
-  }
-
-  const workspace = $derived(workspaceProp ?? ctx?.workspace);
   const trainingState = $derived($trainingStore.status?.state ?? 'IDLE');
 
   async function handleStartTraining() {
@@ -81,38 +62,6 @@
 
 <footer class="status-bar safe-area-padding">
   <div class="status-bar-right">
-    {#if workspace}
-      {#if workspace.state === 'failed' || workspace.state === 'unsaved'}
-        <button
-          type="button"
-          class="btn btn-secondary"
-          onclick={() => workspace.retry()}
-        >
-          <RotateCcw size={16} />
-          <span>Retry</span>
-        </button>
-      {/if}
-
-      {#if workspace.state === 'conflict'}
-        <button
-          type="button"
-          class="btn btn-secondary"
-          onclick={() => workspace.reloadServer(true)}
-        >
-          <RefreshCw size={16} />
-          <span>Reload</span>
-        </button>
-        <button
-          type="button"
-          class="btn btn-danger"
-          onclick={() => workspace.overwriteServer()}
-        >
-          <AlertTriangle size={16} />
-          <span>Overwrite</span>
-        </button>
-      {/if}
-    {/if}
-
     <div class="training-action-buttons">
       {#if trainingState === 'IDLE' || trainingState === 'COMPLETED' || trainingState === 'FAILED'}
         <button
