@@ -242,3 +242,25 @@ it("disables select button in file mode when no file is selected", async () => {
 
   expect(selectButton).not.toBeDisabled();
 });
+
+it("triggers onClose when clicking the backdrop overlay outside the modal dialog", async () => {
+  const list = vi.fn().mockResolvedValue({
+    path: "/dir",
+    parent: "/",
+    directories: [],
+    entries: [],
+    roots: ["/"],
+    truncated: false,
+  });
+
+  const onClose = vi.fn();
+  const onSelect = vi.fn();
+  const { container } = render(DirectoryPicker, { initialPath: "/dir", list, onClose, onSelect, open: true });
+
+  const backdrop = container.querySelector(".picker-backdrop")!;
+  expect(backdrop).toBeInTheDocument();
+
+  await fireEvent.click(backdrop);
+
+  expect(onClose).toHaveBeenCalled();
+});

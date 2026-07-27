@@ -202,6 +202,12 @@
     }
   }
 
+  function handleBackdropClick(e: MouseEvent) {
+    if (e.target === e.currentTarget) {
+      handleClose();
+    }
+  }
+
   function handleSelect() {
     if (isSelectDisabled) return;
     onSelect(selectedPath || currentPath);
@@ -210,7 +216,7 @@
 </script>
 
 {#if open}
-  <div class="picker-backdrop">
+  <div class="picker-backdrop" onclick={handleBackdropClick}>
     <div
       class="picker-modal"
       role="dialog"
