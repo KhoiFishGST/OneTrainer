@@ -6,6 +6,7 @@
   import NumberInput from '$lib/components/form/NumberInput.svelte';
   import Toggle from '$lib/components/form/Toggle.svelte';
   import DirectoryInput from '$lib/components/form/DirectoryInput.svelte';
+  import DirectoryPicker from '$lib/components/directory/DirectoryPicker.svelte';
   import Select from '$lib/components/form/Select.svelte';
   import DatasetPickerModal from '$lib/components/datasets/DatasetPickerModal.svelte';
   import { FolderKanban } from 'lucide-svelte';
@@ -27,6 +28,11 @@
   let activeTab = $state<'general' | 'image' | 'text' | 'stats'>('general');
   let draft = $state<Concept | null>(null);
   let showDatasetPicker = $state(false);
+
+  let showDirPicker = $state(false);
+  let dirPickerPath = $state('/');
+  let dirPickerMode = $state<'dir' | 'file'>('dir');
+  let dirPickerTarget = $state<'concept' | 'prompt'>('concept');
 
   $effect(() => {
     if (concept && isOpen) {
@@ -85,6 +91,26 @@
     if (draft) {
       onSave(draft);
     }
+  }
+
+  function handleBrowsePath(mode: 'dir' | 'file', target: 'concept' | 'prompt', currentPath: string) {
+    if (openDirectory) {
+      openDirectory(mode, currentPath).then((selected: string | null) => {
+        if (selected && draft) {
+          if (target === 'prompt' && draft.text) {
+            draft.text.prompt_path = selected;
+          } else {
+            draft.path = selected;
+          }
+        }
+      });
+      return;
+    }
+
+    dirPickerPath = currentPath || '/';
+    dirPickerMode = mode;
+    dirPickerTarget = target;
+    showDirPicker = true;
   }
 </script>
 
@@ -198,7 +224,7 @@
                     value={d.path || ''}
                     {ariaDescribedBy}
                     onInput={(val) => { d.path = val; }}
-                    onOpenDirectory={openDirectory ? (path, cb) => openDirectory('dir', path).then((s: string | null) => s && (cb ? cb(s) : (d.path = s))) : undefined}
+                    onOpenDirectory={(curr) => handleBrowsePath('dir', 'concept', curr)}
                     placeholder="/path/to/dataset/images"
                   />
                   <button
@@ -252,7 +278,7 @@
                     value={d.text.prompt_path || ''}
                     {ariaDescribedBy}
                     onInput={(val) => { d.text.prompt_path = val; }}
-                    onOpenDirectory={openDirectory ? (path, cb) => openDirectory('file', path).then((s: string | null) => s && (cb ? cb(s) : (d.text.prompt_path = s))) : undefined}
+                    onOpenDirectory={(curr) => handleBrowsePath('file', 'prompt', curr)}
                     placeholder="/path/to/prompts.txt"
                   />
                 {/snippet}
@@ -571,6 +597,23 @@
       </div>
     </div>
   </ModalDialog>
+
+  {#if showDirPicker}
+    <DirectoryPicker
+      open={showDirPicker}
+      initialPath={dirPickerPath || '/'}
+      mode={dirPickerMode}
+      onSelect={(selected) => {
+        if (dirPickerTarget === 'prompt' && draft?.text) {
+          draft.text.prompt_path = selected;
+        } else if (draft) {
+          draft.path = selected;
+        }
+        showDirPicker = false;
+      }}
+      onClose={() => (showDirPicker = false)}
+    />
+  {/if}
 
   <DatasetPickerModal
     open={showDatasetPicker}
