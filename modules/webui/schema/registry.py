@@ -1,3 +1,4 @@
+import math
 from typing import Any
 
 from modules.ui.TopBarController import TopBarController
@@ -299,9 +300,15 @@ def build_optimizer_sub_schemas() -> dict[str, dict[str, Any]]:
                 else:
                     val_type = "str"
 
+            sanitized_default = (
+                ("-inf" if default_val < 0 else "inf")
+                if isinstance(default_val, float) and math.isinf(default_val)
+                else default_val
+            )
+
             opt_schema[key] = {
                 "type": val_type,
-                "default": default_val,
+                "default": sanitized_default,
                 "label": meta.get("title", key.replace("_", " ").title()),
                 "tooltip": meta.get("tooltip", ""),
             }

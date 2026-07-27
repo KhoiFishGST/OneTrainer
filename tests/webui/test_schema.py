@@ -232,3 +232,11 @@ def test_train_config_has_default_datasets_dir():
     assert hasattr(config, "datasets_dir")
     assert config.datasets_dir == "training_datasets"
 
+
+def test_meta_json_dump_without_nan_or_inf_error():
+    import json
+    meta = SchemaRegistry().meta()
+    serialized = json.dumps(meta, allow_nan=False)
+    assert isinstance(serialized, str)
+    assert '"inf"' in serialized or '"-inf"' in serialized or 'default' in serialized
+

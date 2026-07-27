@@ -1,3 +1,4 @@
+import math
 from enum import Enum
 
 from modules.util.config.BaseConfig import BaseConfig
@@ -13,6 +14,8 @@ def serialize_val(val: object) -> object:
         return val.value
     if isinstance(val, BaseConfig):
         return val.to_dict()
+    if isinstance(val, float) and math.isinf(val):
+        return "-inf" if val < 0 else "inf"
     if isinstance(val, list):
         return [serialize_val(x) for x in val]
     if isinstance(val, dict):
