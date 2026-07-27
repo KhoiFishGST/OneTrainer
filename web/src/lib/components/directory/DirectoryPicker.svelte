@@ -2,6 +2,9 @@
   import { untrack, tick } from 'svelte';
   import { Folder, File, ArrowUp, X } from 'lucide-svelte';
   import { api } from '$lib/api/client';
+  import Button from '$lib/components/ui/Button.svelte';
+  import TextInput from '$lib/components/form/TextInput.svelte';
+  import Alert from '$lib/components/ui/Alert.svelte';
 
   interface DirectoryItem {
     name: string;
@@ -53,7 +56,7 @@
   );
 
   let modalEl = $state<HTMLDivElement | null>(null);
-  let pathInputEl = $state<HTMLInputElement | null>(null);
+  let pathInputControl = $state<{ focus: () => void } | null>(null);
   let previousActiveElement = $state<HTMLElement | null>(null);
 
   function formatSize(bytes?: number): string {
@@ -138,7 +141,7 @@
       const startPath = untrack(() => initialPath);
       untrack(() => loadDirectory(startPath));
       tick().then(() => {
-        pathInputEl?.focus();
+        pathInputControl?.focus();
       });
     } else {
       if (previousActiveElement) {
@@ -230,29 +233,28 @@
         <h3 class="picker-title">
           {mode === 'file' ? 'Select File' : mode === 'both' ? 'Select File or Directory' : 'Select Directory'}
         </h3>
-        <button type="button" class="close-btn" aria-label="Close" onclick={handleClose}>
+        <Button variant="ghost" class="close-btn" aria-label="Close" onclick={handleClose}>
           <X size={20} />
-        </button>
+        </Button>
       </div>
 
       <div class="picker-path-bar">
-        <input
-          type="text"
+        <TextInput
+          bind:this={pathInputControl}
+          value={typedPath}
           class="path-input"
-          bind:this={pathInputEl}
-          bind:value={typedPath}
-          oninput={(e) => (typedPath = (e.target as HTMLInputElement).value)}
-          onkeydown={handleInputKeyDown}
           placeholder="Enter path..."
+          onInput={(value) => (typedPath = value)}
+          onKeyDown={handleInputKeyDown}
         />
-        <button
-          type="button"
+        <Button
+          variant="secondary"
           class="nav-btn"
           onclick={() => loadDirectory(typedPath)}
           disabled={loading}
         >
           Go
-        </button>
+        </Button>
       </div>
 
       <nav class="breadcrumb-bar" aria-label="Breadcrumb">
@@ -260,14 +262,13 @@
           {#if index > 0}
             <span class="crumb-separator">/</span>
           {/if}
-          <button
-            type="button"
-            class="crumb-btn"
-            class:active={crumb.path === currentPath}
+          <Button
+            variant="ghost"
+            class={`crumb-btn${crumb.path === currentPath ? ' active' : ''}`}
             onclick={() => loadDirectory(crumb.path)}
           >
             {crumb.label}
-          </button>
+          </Button>
         {/each}
       </nav>
 
@@ -275,39 +276,39 @@
         <div class="roots-bar">
           <span class="roots-label">Roots:</span>
           {#each directoryData.roots as root}
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               class="root-btn"
               onclick={() => loadDirectory(root)}
             >
               {root}
-            </button>
+            </Button>
           {/each}
         </div>
       {/if}
 
       {#if error}
-        <div class="error-banner" role="alert">
+        <Alert tone="error" class="error-message">
           {error}
-        </div>
+        </Alert>
       {/if}
 
       {#if directoryData?.truncated}
-        <div class="warning-banner">
+        <Alert tone="warning" class="warning-message">
           Results truncated. Refine your path or search.
-        </div>
+        </Alert>
       {/if}
 
       <div class="picker-body">
         {#if directoryData?.parent}
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             class="dir-item parent-item"
             onclick={() => loadDirectory(directoryData!.parent!)}
           >
             <ArrowUp size={16} />
             <span>..</span>
-          </button>
+          </Button>
         {/if}
 
         {#if loading}
@@ -316,19 +317,18 @@
           <div class="dir-list">
             {#each directoryData.entries as item}
               {#if item.is_dir !== false}
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
                   class="dir-item"
                   onclick={() => loadDirectory(item.path)}
                 >
                   <Folder size={16} />
                   <span>{item.name}</span>
-                </button>
+                </Button>
               {:else}
-                <button
-                  type="button"
-                  class="dir-item file-item"
-                  class:selected={selectedPath === item.path}
+                <Button
+                  variant="ghost"
+                  class={`dir-item file-item${selectedPath === item.path ? ' selected' : ''}`}
                   onclick={() => {
                     selectedPath = item.path;
                     currentPath = item.path;
@@ -343,7 +343,7 @@
                   {#if item.size_bytes !== undefined}
                     <span class="file-size">{formatSize(item.size_bytes)}</span>
                   {/if}
-                </button>
+                </Button>
               {/if}
             {/each}
           </div>
@@ -353,18 +353,18 @@
       </div>
 
       <div class="picker-footer">
-        <button type="button" class="cancel-btn" onclick={handleClose}>
+        <Button variant="secondary" class="cancel-btn" onclick={handleClose}>
           Cancel
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="primary"
           class="select-btn"
           disabled={isSelectDisabled}
           title={selectedPath || currentPath}
           onclick={handleSelect}
         >
           {selectBtnLabel}
-        </button>
+        </Button>
       </div>
     </div>
   </div>
@@ -412,7 +412,7 @@
     color: var(--text, #e6ebef);
   }
 
-  .close-btn {
+  :global(.close-btn) {
     background: transparent;
     border: none;
     cursor: pointer;
@@ -423,7 +423,7 @@
     align-items: center;
   }
 
-  .close-btn:hover {
+  :global(.close-btn:hover) {
     background: var(--panel-raised, #1d242c);
     color: var(--text, #e6ebef);
   }
@@ -436,7 +436,7 @@
     background: var(--panel, #181e25);
   }
 
-  .path-input {
+  :global(.path-input) {
     flex: 1;
     padding: 6px 12px;
     background: var(--control, #14191f);
@@ -446,12 +446,12 @@
     font-size: 0.875rem;
   }
 
-  .path-input:focus {
+  :global(.path-input:focus) {
     outline: none;
     border-color: var(--accent, #3b82f6);
   }
 
-  .nav-btn {
+  :global(.nav-btn) {
     padding: 6px 16px;
     background: var(--control, #14191f);
     color: var(--text, #e6ebef);
@@ -461,7 +461,7 @@
     cursor: pointer;
   }
 
-  .nav-btn:hover:not(:disabled) {
+  :global(.nav-btn:hover:not(:disabled)) {
     background: var(--panel-raised, #1d242c);
   }
 
@@ -483,7 +483,7 @@
     user-select: none;
   }
 
-  .crumb-btn {
+  :global(.crumb-btn) {
     background: transparent;
     border: none;
     padding: 2px 6px;
@@ -494,18 +494,18 @@
     font-weight: 400;
   }
 
-  .crumb-btn:hover {
+  :global(.crumb-btn:hover) {
     background: var(--control, #14191f);
     text-decoration: underline;
   }
 
-  .crumb-btn.active {
+  :global(.crumb-btn.active) {
     font-weight: 600;
     color: var(--text, #e6ebef);
     cursor: default;
   }
 
-  .crumb-btn.active:hover {
+  :global(.crumb-btn.active:hover) {
     text-decoration: none;
     background: transparent;
   }
@@ -526,7 +526,7 @@
     color: var(--muted, #8995a1);
   }
 
-  .root-btn {
+  :global(.root-btn) {
     padding: 2px 8px;
     background: var(--control, #14191f);
     color: var(--text, #e6ebef);
@@ -536,7 +536,7 @@
     cursor: pointer;
   }
 
-  .error-banner {
+  :global(.error-message) {
     padding: 8px 16px;
     background: rgba(217, 120, 120, 0.15);
     color: var(--danger, #d97878);
@@ -544,7 +544,7 @@
     font-size: 0.875rem;
   }
 
-  .warning-banner {
+  :global(.warning-message) {
     padding: 8px 16px;
     background: rgba(242, 161, 111, 0.15);
     color: var(--focus, #60a5fa);
@@ -569,7 +569,7 @@
     gap: 4px;
   }
 
-  .dir-item {
+  :global(.dir-item) {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -584,11 +584,11 @@
     width: 100%;
   }
 
-  .dir-item:hover {
+  :global(.dir-item:hover) {
     background: var(--panel-raised, #1d242c);
   }
 
-  .dir-item.selected {
+  :global(.dir-item.selected) {
     background: var(--accent-soft, #2a2725);
     border-color: var(--accent, #3b82f6);
   }
@@ -602,7 +602,7 @@
     color: var(--muted, #8995a1);
   }
 
-  .parent-item {
+  :global(.parent-item) {
     font-weight: 500;
     color: var(--accent, #3b82f6);
   }
@@ -625,7 +625,7 @@
     background: var(--control, #14191f);
   }
 
-  .cancel-btn {
+  :global(.cancel-btn) {
     padding: 8px 16px;
     background: transparent;
     border: 1px solid var(--line, #2d3741);
@@ -635,11 +635,11 @@
     cursor: pointer;
   }
 
-  .cancel-btn:hover {
+  :global(.cancel-btn:hover) {
     background: var(--panel-raised, #1d242c);
   }
 
-  .select-btn {
+  :global(.select-btn) {
     padding: 8px 16px;
     background: var(--accent, #3b82f6);
     color: #ffffff;
@@ -650,11 +650,11 @@
     cursor: pointer;
   }
 
-  .select-btn:hover:not(:disabled) {
+  :global(.select-btn:hover:not(:disabled)) {
     background: var(--focus, #60a5fa);
   }
 
-  .select-btn:disabled {
+  :global(.select-btn:disabled) {
     opacity: 0.5;
     cursor: not-allowed;
   }
