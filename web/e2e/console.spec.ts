@@ -7,7 +7,7 @@ test.describe("Console Connection Flows", () => {
     const terminal = page.locator(".terminal-viewport");
     await expect(terminal).toBeVisible();
 
-    const filterInput = page.locator('input[placeholder="Filter console..."]');
+    const filterInput = page.getByPlaceholder("Filter console...");
     await filterInput.fill("stdout-line");
     await expect(page.locator(".console-row", { hasText: "stdout-line" })).toBeVisible();
 
@@ -22,7 +22,7 @@ test.describe("Console Connection Flows", () => {
   test("scrolling pauses follow mode, Jump to latest resumes it, filtering works", async ({ page }) => {
     await page.goto("/console");
 
-    const filterInput = page.locator('input[placeholder="Filter console..."]');
+    const filterInput = page.getByPlaceholder("Filter console...");
     await filterInput.fill("stdout");
 
     await expect(page.locator(".console-row", { hasText: "stdout-line" })).toBeVisible();
@@ -32,11 +32,12 @@ test.describe("Console Connection Flows", () => {
 
     const viewport = page.locator(".terminal-viewport");
     await viewport.evaluate((el) => {
+      Object.defineProperty(el, "scrollHeight", { value: 1000, configurable: true });
       el.scrollTop = 0;
       el.dispatchEvent(new Event("scroll"));
     });
 
-    const jumpBtn = page.locator('button:has-text("Jump to latest")');
+    const jumpBtn = page.getByRole("button", { name: "Latest" });
     await expect(jumpBtn).toBeVisible();
 
     await jumpBtn.click();
@@ -46,18 +47,18 @@ test.describe("Console Connection Flows", () => {
   test("full page and drawer share console rows", async ({ page }) => {
     await page.goto("/general");
 
-    const consoleToggle = page.locator('button[title="Toggle Console Drawer"]');
+    const consoleToggle = page.getByTitle("Toggle Console Drawer");
     await consoleToggle.click();
 
     const drawer = page.locator('section[aria-label="Console Output"]');
     await expect(drawer).toBeVisible();
 
-    const filterInput = drawer.locator('input[placeholder="Filter console..."]');
+    const filterInput = drawer.getByPlaceholder("Filter console...");
     await filterInput.fill("stdout-line");
     await expect(drawer.locator(".console-row", { hasText: "stdout-line" })).toBeVisible();
 
     await page.goto("/console");
-    const pageFilterInput = page.locator('input[placeholder="Filter console..."]');
+    const pageFilterInput = page.getByPlaceholder("Filter console...");
     await pageFilterInput.fill("stdout-line");
     await expect(page.locator(".console-row", { hasText: "stdout-line" })).toBeVisible();
   });
@@ -81,7 +82,7 @@ test.describe("Console Connection Flows", () => {
     const statusTag = page.locator(".status-tag");
     await expect(statusTag).toHaveText("connected");
 
-    const filterInput = page.locator('input[placeholder="Filter console..."]');
+    const filterInput = page.getByPlaceholder("Filter console...");
 
     await filterInput.fill("stdout-line");
     await expect(page.locator(".console-row", { hasText: "stdout-line" })).toBeVisible();

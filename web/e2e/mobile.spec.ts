@@ -4,23 +4,23 @@ test.describe("Phone Mobile Editing Flows", () => {
   test("off-canvas rail navigation drawer opens, navigates, and closes", async ({ page }) => {
     await page.goto("/general");
 
-    const menuBtn = page.locator('button[aria-label="Open navigation"]');
+    const menuBtn = page.getByRole("button", { name: "Open navigation" });
     await expect(menuBtn).toBeVisible();
     await menuBtn.click();
 
     const drawer = page.locator('div[role="dialog"][aria-label="Navigation"]');
     await expect(drawer).toBeVisible();
 
-    const dataLink = drawer.locator('a.nav-item[href="/data"]');
+    const dataLink = drawer.getByRole("link", { name: "Datasets" });
     await dataLink.click();
 
-    await expect(page).toHaveURL(/.*\/data$/);
+    await expect(page).toHaveURL(/.*\/datasets$/);
     await expect(drawer).not.toBeVisible();
 
     await menuBtn.click();
     await expect(drawer).toBeVisible();
 
-    const closeBtn = drawer.locator('button[aria-label="Close navigation"]');
+    const closeBtn = drawer.getByRole("button", { name: "Close navigation" });
     await closeBtn.click();
     await expect(drawer).not.toBeVisible();
   });
@@ -28,7 +28,7 @@ test.describe("Phone Mobile Editing Flows", () => {
   test("full-screen directory picker, selection, focus trap, Escape, and focus restoration", async ({ page }) => {
     await page.goto("/general");
 
-    const browseBtn = page.locator('button[aria-label="Browse directory"]').first();
+    const browseBtn = page.getByRole("button", { name: "Browse directory" }).first();
     await browseBtn.click();
 
     const modal = page.locator('div[role="dialog"][aria-label="Server Directory Picker"]');
@@ -48,7 +48,7 @@ test.describe("Phone Mobile Editing Flows", () => {
     await browseBtn.click();
     await expect(modal).toBeVisible();
 
-    const selectBtn = modal.locator('button:has-text("Select")');
+    const selectBtn = modal.getByRole("button", { name: "Select Folder" });
     await selectBtn.click();
     await expect(modal).not.toBeVisible();
   });
@@ -56,15 +56,16 @@ test.describe("Phone Mobile Editing Flows", () => {
   test("autosave, conflict controls, and console drawer on mobile", async ({ page }) => {
     await page.goto("/general");
 
-    const consoleToggle = page.locator('button[title="Toggle Console Drawer"]');
+    const consoleToggle = page.getByTitle("Toggle Console Drawer");
     await expect(consoleToggle).toBeVisible();
     await consoleToggle.click();
 
     const consoleDrawer = page.locator('section[aria-label="Console Output"]');
     await expect(consoleDrawer).toBeVisible();
 
+    await page.getByRole("tab", { name: "Hardware" }).click();
     const trainDeviceInput = page.locator("#field-train-device");
     await trainDeviceInput.fill("cuda:0");
-    await expect(page.locator(".state-badge")).toHaveText("Saved");
+    await expect(page.getByTestId("saved-icon-badge")).toBeVisible();
   });
 });

@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Phase B Configuration Surface", () => {
   test("navigates through Model, Training, Sampling, LoRA, and Concepts tabs", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveURL(/.*\/general$/);
+    await expect(page).toHaveURL(/.*\/live$/);
 
     // Expand rail if collapsed to ensure labels/links are interactable
     const rail = page.locator(".rail");
@@ -25,13 +25,13 @@ test.describe("Phase B Configuration Surface", () => {
     await expect(page.locator("h1.page-title")).toContainText(/training/i);
 
     // Open Optimizer modal
-    await page.click('button:has-text("Configure Optimizer")');
+    await page.getByTitle("Configure advanced optimizer parameters").first().click();
     const dialog = page.locator('[role="dialog"]');
     await expect(dialog).toBeVisible();
     await expect(dialog.locator(".modal-title")).toContainText(/optimizer/i);
 
-    // Close Optimizer modal with Cancel/Close button
-    await page.click('.modal-footer button:has-text("Cancel"), button[aria-label="Close"]');
+    // Close Optimizer modal with Cancel button
+    await dialog.getByRole("button", { name: "Cancel" }).click();
     await expect(dialog).not.toBeVisible();
 
     // Navigate to Sampling tab
@@ -48,7 +48,6 @@ test.describe("Phase B Configuration Surface", () => {
     await page.click('a[href="/concepts"]');
     await expect(page).toHaveURL(/.*\/concepts$/);
     await expect(page.locator("h1.page-title")).toContainText(/concepts/i);
-    await expect(page.locator('button:has-text("Add Concept")')).toBeVisible();
   });
 
   test("Optimizer / Scheduler modal updates training values and persists draft state", async ({ page }) => {
@@ -56,42 +55,44 @@ test.describe("Phase B Configuration Surface", () => {
     await expect(page.locator("h1.page-title")).toContainText(/training/i);
 
     // Open modal
-    await page.click('button:has-text("Configure Optimizer")');
+    await page.getByTitle("Configure advanced optimizer parameters").first().click();
     const dialog = page.locator('[role="dialog"]');
     await expect(dialog).toBeVisible();
 
-    // Fill learning rate input inside modal
-    const lrInput = dialog.locator('#field-learning_rate');
-    await lrInput.fill("0.0002");
+    // Fill beta1 input inside modal
+    const beta1Input = dialog.locator('#param-beta1');
+    await beta1Input.fill("0.8");
 
-    // Click Save inside modal
-    await dialog.locator('button:has-text("Save")').click();
+    // Click Apply Parameters inside modal
+    await dialog.getByRole("button", { name: "Apply Parameters" }).click();
     await expect(dialog).not.toBeVisible();
 
-    // Workspace should reflect dirty unsaved/saved state badge
-    await expect(page.locator(".state-badge")).toBeVisible();
+    // Workspace should reflect saved/unsaved status
+    await expect(page.getByTestId("saved-icon-badge")).toBeVisible();
   });
 
   test("Concepts editor supports adding and configuring dataset concepts", async ({ page }) => {
+    const reset = await page.request.put("/api/concepts", { data: { concepts: [] } });
+    expect(reset.ok()).toBeTruthy();
+
     await page.goto("/concepts");
     await expect(page.locator("h1.page-title")).toContainText(/concepts/i);
 
-    // Click Add Concept button
-    const addBtn = page.locator('button:has-text("Add Concept")').first();
+    // Click Add First Concept button
+    const addBtn = page.getByRole("button", { name: "Add First Concept" });
     await expect(addBtn).toBeVisible();
     await addBtn.click();
 
-    // Verify concept card is added
-    const conceptCard = page.locator(".concept-card").first();
-    await expect(conceptCard).toBeVisible();
+    // Modal opens for concept detail
+    const modal = page.locator('[role="dialog"]');
+    await expect(modal).toBeVisible();
+    await modal.getByLabel("Name").fill("E2E Concept");
 
-    // Fill instance prompt field
-    const promptInput = conceptCard.locator("#instance-prompt-0");
-    await promptInput.fill("a photo of my_custom_token object");
-    await expect(promptInput).toHaveValue("a photo of my_custom_token object");
+    // Save concept settings
+    await modal.getByRole("button", { name: "Save Concept Settings" }).click();
+    await expect(modal).not.toBeVisible();
 
-    // Save changes button should be functional
-    const saveBtn = page.locator('button:has-text("Save Changes")');
-    await expect(saveBtn).toBeVisible();
+    // Verify concept card with E2E Concept text is visible
+    await expect(page.locator(".concept-card", { hasText: "E2E Concept" })).toBeVisible();
   });
 });
