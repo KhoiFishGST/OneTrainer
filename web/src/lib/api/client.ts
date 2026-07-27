@@ -106,9 +106,9 @@ export function createApi(base = '') {
         });
       } catch (err: any) {
         if (err?.status === 404) {
-          return await request<{ filename: string }>(`${base}/api/presets/save`, {
+          return await request<{ filename: string }>(`${base}/api/config/save`, {
             method: 'POST',
-            body: JSON.stringify({ name }),
+            body: JSON.stringify({ name, overwrite }),
           });
         }
         throw err;
