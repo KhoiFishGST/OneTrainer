@@ -150,9 +150,6 @@
 {/if}
 
 <style>
-  .rail:not(.expanded) .nav-label {
-    display: none;
-  }
   .rail {
     width: var(--rail-width);
     background-color: var(--panel);
@@ -160,7 +157,8 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    transition: width 0.2s ease;
+    transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
     user-select: none;
   }
 
@@ -209,6 +207,26 @@
     border-radius: 4px;
     font-size: 0.875rem;
     white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .nav-item :global(.nav-icon) {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+  }
+
+  .nav-label {
+    white-space: nowrap;
+    overflow: hidden;
+    opacity: 1;
+    transition: opacity 0.15s ease 0.05s;
+  }
+
+  .rail:not(.expanded) .nav-label {
+    opacity: 0;
+    width: 0;
+    pointer-events: none;
   }
 
   .nav-item:hover:not(.disabled) {

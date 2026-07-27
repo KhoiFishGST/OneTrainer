@@ -27,7 +27,7 @@
   --color-error: var(--danger);
 
   --rail-compact: 48px;
-  --rail-expanded: 176px;
+  --rail-expanded: 160px;
   --status-height: 52px;
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
 }
