@@ -2,9 +2,12 @@
   import type { Concept } from '$lib/api/types';
   import { api } from '$lib/api/client';
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
+  import Button from '$lib/components/ui/Button.svelte';
+  import TabBar from '$lib/components/ui/TabBar.svelte';
   import Field from '$lib/components/form/Field.svelte';
   import TextInput from '$lib/components/form/TextInput.svelte';
   import NumberInput from '$lib/components/form/NumberInput.svelte';
+  import Checkbox from '$lib/components/form/Checkbox.svelte';
   import Toggle from '$lib/components/form/Toggle.svelte';
   import DirectoryInput from '$lib/components/form/DirectoryInput.svelte';
   import DirectoryPicker from '$lib/components/directory/DirectoryPicker.svelte';
@@ -278,48 +281,17 @@
   >
     <div class="concept-modal-body">
       <!-- Subnav Tabs -->
-      <div class="subnav-tabs" role="tablist">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === 'general'}
-          class="subnav-btn"
-          class:active={activeTab === 'general'}
-          onclick={() => (activeTab = 'general')}
-        >
-          General
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === 'image'}
-          class="subnav-btn"
-          class:active={activeTab === 'image'}
-          onclick={() => (activeTab = 'image')}
-        >
-          Image Augmentations
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === 'text'}
-          class="subnav-btn"
-          class:active={activeTab === 'text'}
-          onclick={() => (activeTab = 'text')}
-        >
-          Text Augmentations
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === 'stats'}
-          class="subnav-btn"
-          class:active={activeTab === 'stats'}
-          onclick={() => (activeTab = 'stats')}
-        >
-          Statistics
-        </button>
-      </div>
+      <TabBar
+        variant="dialog"
+        tabs={[
+          { id: 'general', label: 'General' },
+          { id: 'image', label: 'Image Augmentations' },
+          { id: 'text', label: 'Text Augmentations' },
+          { id: 'stats', label: 'Statistics' },
+        ]}
+        active={activeTab}
+        onSelect={(tab) => (activeTab = tab)}
+      />
 
       <!-- Tab Content Area -->
       <div class="tab-content">
@@ -404,22 +376,22 @@
                       />
                       <span>Subdirectories</span>
                     </label>
-                    <button
+                    <Button
                       type="button"
                       class="btn-path-action"
                       onclick={() => handleBrowsePath('dir', 'concept', d.path || '')}
                     >
                       <FolderOpen size={16} />
                       <span>Browse</span>
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
                       class="btn-path-action btn-accent-action"
                       onclick={() => (showDatasetPicker = true)}
                     >
                       <FolderKanban size={16} />
                       <span>Datasets</span>
-                    </button>
+                    </Button>
                   </div>
                 </div>
               {/snippet}
@@ -815,14 +787,14 @@
 
             <!-- Compact Bottom Action Bar for Preview Trigger -->
             <div class="aug-bottom-action-bar">
-              <button
+              <Button
                 type="button"
                 class="btn-aug-preview-compact"
                 onclick={() => (showAugPreviewModal = true)}
               >
                 <Eye size={14} />
                 <span>Preview</span>
-              </button>
+              </Button>
             </div>
           </div>
         {:else if activeTab === 'text' && draft && draft.text}
@@ -1063,7 +1035,7 @@
           <div class="stats-tab-wrapper">
             <!-- Action Toolbar -->
             <div class="stats-toolbar">
-              <button
+              <Button
                 type="button"
                 class="btn-stats-action"
                 disabled={statsLoading}
@@ -1071,8 +1043,8 @@
               >
                 <RefreshCw size={14} class={statsLoading ? 'spin' : ''} />
                 <span>Refresh Basic</span>
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 class="btn-stats-action btn-accent"
                 disabled={statsLoading}
@@ -1080,7 +1052,7 @@
               >
                 <RefreshCw size={14} class={statsLoading ? 'spin' : ''} />
                 <span>Refresh Advanced</span>
-              </button>
+              </Button>
               {#if statsData?.processing_time}
                 <span class="proc-time-badge">{statsData.processing_time.toFixed(2)} s</span>
               {/if}
@@ -1306,11 +1278,14 @@
     >
       <div class="aug-preview-modal-body">
         <div class="preview-toolbar">
-          <label class="preview-toggle-lbl">
-            <input
-              type="checkbox"
-              bind:checked={previewAugmentations}
-              onchange={fetchAugPreview}
+          <label class="preview-toggle-lbl" for="preview-augmentations">
+            <Checkbox
+              id="preview-augmentations"
+              value={previewAugmentations}
+              onChange={(value) => {
+                previewAugmentations = value;
+                fetchAugPreview();
+              }}
             />
             <span>Preview Augmentations</span>
           </label>
@@ -1339,23 +1314,23 @@
             {/if}
 
             <div class="nav-controls-bar">
-              <button
+              <Button
                 type="button"
                 class="nav-arrow-btn"
                 disabled={previewIndex <= 0 || previewLoading}
                 onclick={handlePrevPreview}
               >
                 <ChevronLeft size={16} />
-              </button>
+              </Button>
               <span class="nav-idx-lbl">Sample #{previewIndex + 1}</span>
-              <button
+              <Button
                 type="button"
                 class="nav-arrow-btn"
                 disabled={previewLoading}
                 onclick={handleNextPreview}
               >
                 <ChevronRight size={16} />
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -1375,6 +1350,7 @@
       </div>
     </ModalDialog>
   {/if}
+
 
   {#if showDirPicker}
     <DirectoryPicker
@@ -1422,40 +1398,7 @@
     box-sizing: border-box;
   }
 
-  .subnav-tabs {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    border-bottom: 1px solid var(--color-border, var(--line, #2d3741));
-    background-color: var(--color-bg-panel, var(--control, #14191f));
-    padding: 0.25rem 0.5rem 0;
-    border-radius: 6px 6px 0 0;
-  }
 
-  .subnav-btn {
-    padding: 0.5rem 1rem;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: var(--muted, #94a3b8);
-    background: transparent;
-    border: 1px solid transparent;
-    border-bottom: none;
-    border-radius: 6px 6px 0 0;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .subnav-btn:hover:not(.active) {
-    color: var(--text, #f8fafc);
-    background-color: var(--panel-raised, #1d242c);
-  }
-
-  .subnav-btn.active {
-    color: var(--color-text-title, var(--accent, #3b82f6));
-    background-color: var(--color-bg-card, var(--panel, #181e25));
-    border-color: var(--color-border, var(--line, #2d3741));
-    border-bottom-color: var(--color-bg-card, var(--panel, #181e25));
-  }
 
   .tab-content {
     height: 640px;
@@ -1499,7 +1442,7 @@
     cursor: pointer;
   }
 
-  .btn-path-action {
+  :global(.btn-path-action) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1518,13 +1461,13 @@
     transition: all 0.15s ease;
   }
 
-  .btn-path-action:hover {
+  :global(.btn-path-action:hover) {
     background: var(--color-bg-button-hover, var(--panel-raised, #1d242c));
     border-color: var(--color-primary, var(--accent, #3b82f6));
     color: var(--color-text-title, var(--accent, #3b82f6));
   }
 
-  .btn-path-action.btn-accent-action {
+  :global(.btn-path-action.btn-accent-action) {
     color: var(--color-text-title, var(--accent, #3b82f6));
   }
 
@@ -1541,7 +1484,7 @@
     padding-top: 0.25rem;
   }
 
-  .btn-aug-preview-compact {
+  :global(.btn-aug-preview-compact) {
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
@@ -1557,7 +1500,7 @@
     transition: all 0.15s ease;
   }
 
-  .btn-aug-preview-compact:hover {
+  :global(.btn-aug-preview-compact:hover) {
     opacity: 0.9;
   }
 
@@ -1654,7 +1597,7 @@
     gap: 0.75rem;
   }
 
-  .btn-stats-action {
+  :global(.btn-stats-action) {
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
@@ -1668,7 +1611,7 @@
     cursor: pointer;
   }
 
-  .btn-stats-action.btn-accent {
+  :global(.btn-stats-action.btn-accent) {
     color: var(--accent, #3b82f6);
     border-color: var(--accent, #3b82f6);
   }
@@ -1982,7 +1925,7 @@
     gap: 0.5rem;
   }
 
-  .nav-arrow-btn {
+  :global(.nav-arrow-btn) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1994,7 +1937,7 @@
     cursor: pointer;
   }
 
-  .nav-arrow-btn:disabled {
+  :global(.nav-arrow-btn:disabled) {
     opacity: 0.4;
     cursor: not-allowed;
   }

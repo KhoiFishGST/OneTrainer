@@ -83,4 +83,16 @@ describe('ConceptsEditor', () => {
     await fireEvent.click(conceptName);
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
+
+  it('stops clone and delete actions from opening the card modal', async () => {
+    const onChange = vi.fn();
+    render(ConceptsEditor, { props: { concepts: [{ name: 'A', path: '/a', enabled: true }], onChange } });
+    await fireEvent.click(screen.getByTitle('Duplicate Concept'));
+    expect(onChange).toHaveBeenLastCalledWith(expect.arrayContaining([expect.objectContaining({ name: 'A (Copy)' })]));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await fireEvent.click(screen.getAllByTitle('Delete Concept')[0]);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
 });
+

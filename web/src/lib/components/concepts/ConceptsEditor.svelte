@@ -1,6 +1,9 @@
 <script lang="ts">
   import Select from '../form/Select.svelte';
   import AddCard from '../ui/AddCard.svelte';
+  import Button from '../ui/Button.svelte';
+  import TextInput from '../form/TextInput.svelte';
+  import Checkbox from '../form/Checkbox.svelte';
   import { Plus, Trash2, Edit2, Copy, Search, Layers, Folder, Eye, EyeOff } from 'lucide-svelte';
   import type { Concept } from '$lib/api/types';
   import ConceptDetailModal from './ConceptDetailModal.svelte';
@@ -148,10 +151,11 @@
     <div class="toolbar-row main-row">
       <div class="search-box">
         <Search size={16} class="search-icon" />
-        <input
-          type="text"
+        <TextInput
+          type="search"
           placeholder="Search concepts by name or directory path..."
-          bind:value={searchQuery}
+          value={searchQuery}
+          onInput={(v) => (searchQuery = v)}
         />
       </div>
 
@@ -174,11 +178,14 @@
 
     <div class="toolbar-row controls-row">
       <label class="checkbox-toggle">
-        <input type="checkbox" bind:checked={showDisabled} />
+        <Checkbox
+          value={showDisabled}
+          onChange={(val) => (showDisabled = val)}
+        />
         <span>Show Disabled</span>
       </label>
 
-      <button
+      <Button
         type="button"
         class="btn btn-secondary"
         {disabled}
@@ -192,7 +199,7 @@
           <Eye size={16} />
           <span>Enable All</span>
         {/if}
-      </button>
+      </Button>
     </div>
   </div>
 
@@ -209,7 +216,7 @@
           : 'Try adjusting your search filter or enabling "Show Disabled".'}
       </p>
       {#if concepts.length === 0}
-        <button
+        <Button
           type="button"
           class="btn btn-primary"
           {disabled}
@@ -217,7 +224,7 @@
         >
           <Plus size={16} />
           <span>Add First Concept</span>
-        </button>
+        </Button>
       {/if}
     </div>
   {:else}
@@ -263,13 +270,11 @@
                 onkeydown={(e) => e.stopPropagation()}
               >
                 <label class="toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={concept.enabled !== false}
-                    onchange={(e) => {
-                      e.stopPropagation();
+                  <Checkbox
+                    value={concept.enabled !== false}
+                    onChange={(checked) => {
                       const updated = concepts.map((c, i) =>
-                        i === originalIndex ? { ...c, enabled: (e.target as HTMLInputElement).checked } : c
+                        i === originalIndex ? { ...c, enabled: checked } : c
                       );
                       notifyChange(updated);
                     }}
@@ -290,7 +295,7 @@
 
             <!-- Card Actions -->
             <div class="card-actions">
-              <button
+              <Button
                 type="button"
                 class="btn-action edit"
                 title="Edit Concept Settings"
@@ -301,9 +306,9 @@
               >
                 <Edit2 size={15} />
                 <span>Edit</span>
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="button"
                 class="btn-action clone"
                 title="Duplicate Concept"
@@ -314,9 +319,9 @@
               >
                 <Copy size={15} />
                 <span>Clone</span>
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="button"
                 class="btn-action delete"
                 title="Delete Concept"
@@ -326,7 +331,7 @@
                 }}
               >
                 <Trash2 size={15} />
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -408,13 +413,14 @@
     color: var(--muted, #94a3b8);
   }
 
-  .search-box input {
+  .search-box :global(.text-input) {
     background: transparent;
     border: none;
     outline: none;
     color: var(--text, #f8fafc);
     font-size: 0.875rem;
     width: 100%;
+    padding: 0;
   }
 
   .filter-select-wrapper {
@@ -430,7 +436,7 @@
     cursor: pointer;
   }
 
-  .btn {
+  :global(.btn) {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
@@ -443,12 +449,12 @@
     transition: all 0.15s ease;
   }
 
-  .btn-primary {
+  :global(.btn-primary) {
     background-color: var(--color-primary, var(--accent, #3b82f6));
     color: white;
   }
 
-  .btn-secondary {
+  :global(.btn-secondary) {
     background-color: var(--panel-raised, #1d242c);
     border: 1px solid var(--line, #2d3741);
     color: var(--text, #f8fafc);
@@ -490,7 +496,6 @@
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 1.25rem;
   }
-
 
   .concept-card {
     display: flex;
@@ -563,10 +568,6 @@
     white-space: nowrap;
   }
 
-  .toggle-switch input {
-    cursor: pointer;
-  }
-
   .concept-path {
     margin: 0;
     font-size: 0.75rem;
@@ -601,7 +602,7 @@
     border-top: 1px solid var(--line, #2d3741);
   }
 
-  .btn-action {
+  :global(.btn-action) {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
@@ -615,13 +616,14 @@
     transition: background 0.15s ease;
   }
 
-  .btn-action:hover {
+  :global(.btn-action:hover) {
     background: var(--line, #2d3741);
   }
 
-  .btn-action.delete:hover {
+  :global(.btn-action.delete:hover) {
     background: rgba(239, 68, 68, 0.2);
     color: #f87171;
     border-color: #ef4444;
   }
 </style>
+

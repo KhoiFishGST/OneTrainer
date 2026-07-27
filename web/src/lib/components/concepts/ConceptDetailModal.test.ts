@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { readable } from 'svelte/store';
 import ConceptDetailModal from './ConceptDetailModal.svelte';
 import * as queries from '$lib/api/queries';
+import { api } from '$lib/api/client';
 
 describe('ConceptDetailModal Component', () => {
   beforeEach(() => {
@@ -59,4 +60,14 @@ describe('ConceptDetailModal Component', () => {
       expect(screen.getByText('Dataset One')).toBeInTheDocument();
     });
   });
+
+  it('updates preview augmentation state before requesting the preview', async () => {
+    const preview = vi.spyOn(api, 'previewConceptAugmentation').mockResolvedValue({ image_data: '', filename: 'x.png', prompt: 'x' });
+    render(ConceptDetailModal, { props: { concept: { name: 'A', path: '/a', enabled: true }, isOpen: true, onSave: vi.fn(), onClose: vi.fn() } });
+    await fireEvent.click(screen.getByRole('tab', { name: 'Image Augmentations' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+    await fireEvent.click(await screen.findByLabelText('Preview Augmentations'));
+    await waitFor(() => expect(preview).toHaveBeenLastCalledWith(expect.any(Object), 0, true));
+  });
 });
+

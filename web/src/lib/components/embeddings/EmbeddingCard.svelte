@@ -2,6 +2,9 @@
   import { Trash2, Copy, Folder } from 'lucide-svelte';
   import Toggle from '$lib/components/form/Toggle.svelte';
   import TimeInput from '$lib/components/form/TimeInput.svelte';
+  import Button from '$lib/components/ui/Button.svelte';
+  import TextInput from '$lib/components/form/TextInput.svelte';
+  import NumberInput from '$lib/components/form/NumberInput.svelte';
 
   interface EmbeddingConfig {
     uuid?: string;
@@ -48,7 +51,7 @@
     </div>
 
     <div class="card-actions">
-      <button
+      <Button
         type="button"
         class="action-btn clone-btn"
         title="Clone embedding"
@@ -57,8 +60,8 @@
       >
         <Copy size={15} />
         <span>Clone</span>
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
         class="action-btn remove-btn"
         title="Remove embedding"
@@ -67,7 +70,7 @@
       >
         <Trash2 size={15} />
         <span>Remove</span>
-      </button>
+      </Button>
     </div>
   </div>
 
@@ -77,15 +80,16 @@
       <div class="field-item flex-2">
         <label for={`base-emb-${index}`} class="field-label">Base Embedding</label>
         <div class="input-with-button">
-          <input
+          <TextInput
             id={`base-emb-${index}`}
             type="text"
             class="text-input"
             placeholder="Leave empty to create new"
-            bind:value={embedding.model_name}
+            value={embedding.model_name || ''}
             {disabled}
+            onInput={(val) => (embedding.model_name = val)}
           />
-          <button
+          <Button
             type="button"
             class="browse-btn"
             title="Browse file"
@@ -93,32 +97,38 @@
             onclick={handleFilePick}
           >
             <Folder size={15} />
-          </button>
+          </Button>
         </div>
       </div>
 
       <div class="field-item flex-1">
         <label for={`placeholder-${index}`} class="field-label">Placeholder</label>
-        <input
+        <TextInput
           id={`placeholder-${index}`}
           type="text"
           class="text-input"
           placeholder="<embedding>"
-          bind:value={embedding.placeholder}
+          value={embedding.placeholder || ''}
           {disabled}
+          onInput={(val) => (embedding.placeholder = val)}
         />
       </div>
 
       <div class="field-item flex-sm">
         <label for={`token-count-${index}`} class="field-label">Token Count</label>
-        <input
+        <NumberInput
           id={`token-count-${index}`}
-          type="number"
           min="1"
           class="text-input"
           placeholder="Auto"
-          bind:value={embedding.token_count}
+          value={embedding.token_count ?? ''}
           {disabled}
+          onInput={(val) => {
+            const num = Number(val);
+            if (!isNaN(num)) {
+              embedding.token_count = val === '' ? undefined : num;
+            }
+          }}
         />
       </div>
     </div>
@@ -159,13 +169,14 @@
 
       <div class="field-item flex-1">
         <label for={`initial-text-${index}`} class="field-label">Initial Embedding Text</label>
-        <input
+        <TextInput
           id={`initial-text-${index}`}
           type="text"
           class="text-input"
           placeholder="*"
-          bind:value={embedding.initial_embedding_text}
+          value={embedding.initial_embedding_text || ''}
           {disabled}
+          onInput={(val) => (embedding.initial_embedding_text = val)}
         />
       </div>
     </div>
@@ -224,7 +235,7 @@
     gap: 0.5rem;
   }
 
-  .action-btn {
+  :global(.action-btn) {
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
@@ -237,30 +248,30 @@
     transition: all 0.15s ease;
   }
 
-  .clone-btn {
+  :global(.clone-btn) {
     background: var(--panel-raised, #252d37);
     color: var(--text, #e2e8f0);
     border-color: var(--line, #334155);
   }
 
-  .clone-btn:hover:not(:disabled) {
+  :global(.clone-btn:hover:not(:disabled)) {
     background: var(--accent-soft, rgba(59, 130, 246, 0.15));
     color: var(--accent, #3b82f6);
     border-color: var(--accent, #3b82f6);
   }
 
-  .remove-btn {
+  :global(.remove-btn) {
     background: rgba(239, 68, 68, 0.1);
     color: #f87171;
     border-color: rgba(239, 68, 68, 0.25);
   }
 
-  .remove-btn:hover:not(:disabled) {
+  :global(.remove-btn:hover:not(:disabled)) {
     background: rgba(239, 68, 68, 0.2);
     color: #ef4444;
   }
 
-  .action-btn:disabled {
+  :global(.action-btn:disabled) {
     opacity: 0.5;
     cursor: not-allowed;
   }
@@ -317,8 +328,7 @@
     color: var(--color-text-muted, #94a3b8);
   }
 
-  .text-input,
-  .select-input {
+  :global(.text-input) {
     height: 38px;
     padding: 0 0.75rem;
     background-color: var(--input-bg, #0f1419);
@@ -330,13 +340,11 @@
     transition: border-color 0.15s ease;
   }
 
-  .text-input:focus:not(:disabled),
-  .select-input:focus:not(:disabled) {
+  :global(.text-input:focus:not(:disabled)) {
     border-color: var(--accent, #3b82f6);
   }
 
-  .text-input:disabled,
-  .select-input:disabled {
+  :global(.text-input:disabled) {
     opacity: 0.6;
     cursor: not-allowed;
   }
@@ -347,11 +355,11 @@
     gap: 0.25rem;
   }
 
-  .input-with-button .text-input {
+  .input-with-button :global(.text-input) {
     flex: 1;
   }
 
-  .browse-btn {
+  :global(.browse-btn) {
     height: 38px;
     width: 38px;
     display: flex;
@@ -365,10 +373,9 @@
     transition: all 0.15s ease;
   }
 
-  .browse-btn:hover:not(:disabled) {
+  :global(.browse-btn:hover:not(:disabled)) {
     color: var(--text, #f8fafc);
     border-color: var(--accent, #3b82f6);
   }
-
-
 </style>
+
