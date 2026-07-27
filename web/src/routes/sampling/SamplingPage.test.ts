@@ -3,12 +3,18 @@ import { render, screen, fireEvent } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { readable } from 'svelte/store';
 import SamplingPage from './+page.svelte';
-import { createSamplesQuery, createUpdateSamplesMutation, createRequestSampleMutation } from '$lib/api/queries';
+import {
+  createSamplesQuery,
+  createUpdateSamplesMutation,
+  createRequestSampleMutation,
+  createSampleFilesQuery,
+  createCreateSampleFileMutation,
+} from '$lib/api/queries';
 
 vi.mock('$lib/config/context', () => ({
   getRouteContext: () => ({
     workspace: {
-      draft: {},
+      draft: { sample_definition_file_name: 'samples.json' },
       errors: [],
       setRaw: vi.fn(),
     },
@@ -23,11 +29,14 @@ vi.mock('$lib/api/queries', () => ({
   createSamplesQuery: vi.fn(),
   createUpdateSamplesMutation: vi.fn(),
   createRequestSampleMutation: vi.fn(),
+  createSampleFilesQuery: vi.fn(),
+  createCreateSampleFileMutation: vi.fn(),
 }));
 
 describe('SamplingPage', () => {
   const mockSamples = [
     {
+      webui_id: 'prompt_1',
       prompt: 'a cute shiba inu dog',
       negative_prompt: 'blurry, low quality',
       enabled: true,
@@ -39,6 +48,7 @@ describe('SamplingPage', () => {
       noise_scheduler: 'EULER_A',
     },
     {
+      webui_id: 'prompt_2',
       prompt: 'a futuristic city at night',
       negative_prompt: '',
       enabled: false,
@@ -59,9 +69,42 @@ describe('SamplingPage', () => {
         isPending: false,
       }) as any
     );
+    vi.mocked(createSampleFilesQuery).mockReturnValue(
+      readable({
+        data: { files: ['samples.json', 'portrait.json'] },
+        isLoading: false,
+        isError: false,
+      }) as any
+    );
+    vi.mocked(createCreateSampleFileMutation).mockReturnValue(
+      readable({
+        mutateAsync: vi.fn().mockResolvedValue({ filename: 'new_samples.json' }),
+        isPending: false,
+      }) as any
+    );
   });
 
-  it('renders title, Sample Now button, compact options panel, Sample Prompts header, and Add Sample Prompt button', () => {
+  it('renders sample config selector bar and prompt table', async () => {
+    vi.mocked(createSamplesQuery).mockReturnValue(
+      readable({
+        data: [],
+        isLoading: false,
+        isError: false,
+      }) as any
+    );
+    vi.mocked(createUpdateSamplesMutation).mockReturnValue(
+      readable({
+        mutateAsync: vi.fn(),
+        isPending: false,
+      }) as any
+    );
+
+    render(SamplingPage);
+    expect(screen.getByRole('button', { name: /Add Config/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Add Sample Prompt/i })).toBeInTheDocument();
+  });
+
+  it('renders title, Sample Now button, compact options panel, and Sample Prompts header', () => {
     vi.mocked(createSamplesQuery).mockReturnValue(
       readable({
         data: [],
@@ -87,12 +130,9 @@ describe('SamplingPage', () => {
 
     // Section header
     expect(screen.getByRole('heading', { level: 2, name: /sample prompts \(0\)/i })).toBeInTheDocument();
-
-    // Add Card button
-    expect(screen.getByRole('button', { name: /add sample prompt/i })).toBeInTheDocument();
   });
 
-  it('renders sample cards from createSamplesQuery mock and opens SampleDetailModal on card click or edit', async () => {
+  it('renders prompt table rows from createSamplesQuery mock and opens SampleDetailModal on edit click', async () => {
     vi.mocked(createSamplesQuery).mockReturnValue(
       readable({
         data: mockSamples,
@@ -109,20 +149,13 @@ describe('SamplingPage', () => {
 
     render(SamplingPage);
 
-    // Prompt snippets
-    expect(screen.getByText('a cute shiba inu dog')).toBeInTheDocument();
-    expect(screen.getByText('a futuristic city at night')).toBeInTheDocument();
-    expect(screen.getByText('blurry, low quality')).toBeInTheDocument();
+    // Prompt input values in prompt table
+    expect(screen.getByDisplayValue('a cute shiba inu dog')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('a futuristic city at night')).toBeInTheDocument();
 
-    // Parameter pills
-    expect(screen.getByText('512 × 512')).toBeInTheDocument();
-    expect(screen.getByText('30 steps')).toBeInTheDocument();
-    expect(screen.getByText('CFG 7.5')).toBeInTheDocument();
-    expect(screen.getByText('Seed: 12345')).toBeInTheDocument();
-
-    // Clicking card opens edit modal
-    const firstCardText = screen.getByText('a cute shiba inu dog');
-    await fireEvent.click(firstCardText);
+    // Clicking edit button on first prompt row opens modal
+    const editBtn = screen.getAllByTitle('Edit sample prompt')[0];
+    await fireEvent.click(editBtn);
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByText('Edit Sample Prompt')).toBeInTheDocument();

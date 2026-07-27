@@ -101,9 +101,9 @@ describe('SamplePromptTable Component', () => {
       onDelete,
     });
 
-    const editButtons = screen.getAllByRole('button', { name: 'Edit details' });
-    const cloneButtons = screen.getAllByRole('button', { name: 'Clone prompt' });
-    const deleteButtons = screen.getAllByRole('button', { name: 'Delete prompt' });
+    const editButtons = screen.getAllByRole('button', { name: 'Edit sample prompt' });
+    const cloneButtons = screen.getAllByRole('button', { name: 'Clone sample prompt' });
+    const deleteButtons = screen.getAllByRole('button', { name: 'Delete sample prompt' });
 
     await fireEvent.click(editButtons[0]);
     expect(onEditModal).toHaveBeenCalledWith(0);

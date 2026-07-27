@@ -113,13 +113,13 @@
             />
           </td>
           <td class="col-actions">
-            <button type="button" class="btn-icon" title="Edit details" aria-label="Edit details" onclick={() => onEditModal(index)}>
+            <button type="button" class="btn-icon" title="Edit sample prompt" aria-label="Edit sample prompt" onclick={() => onEditModal(index)}>
               <Pencil size={14} />
             </button>
-            <button type="button" class="btn-icon" title="Clone prompt" aria-label="Clone prompt" onclick={() => onClone(index)}>
+            <button type="button" class="btn-icon" title="Clone sample prompt" aria-label="Clone sample prompt" onclick={() => onClone(index)}>
               <Copy size={14} />
             </button>
-            <button type="button" class="btn-icon danger" title="Delete prompt" aria-label="Delete prompt" onclick={() => onDelete(index)}>
+            <button type="button" class="btn-icon danger" title="Delete sample prompt" aria-label="Delete sample prompt" onclick={() => onDelete(index)}>
               <Trash2 size={14} />
             </button>
           </td>

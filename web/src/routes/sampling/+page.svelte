@@ -1,30 +1,49 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Sparkles, Pencil, Copy, Trash2 } from 'lucide-svelte';
+  import { Sparkles, Plus } from 'lucide-svelte';
   import { getRouteContext } from '$lib/config/context';
   import SchemaForm from '$lib/components/form/SchemaForm.svelte';
-  import AddCard from '$lib/components/ui/AddCard.svelte';
+  import Select from '$lib/components/form/Select.svelte';
+  import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
   import SampleDetailModal from '$lib/components/sampling/SampleDetailModal.svelte';
+  import SamplePromptTable from '$lib/components/sampling/SamplePromptTable.svelte';
   import { trainingStore } from '$lib/events/training-store';
   import { api } from '$lib/api/client';
   import {
     createRequestSampleMutation,
     createSamplesQuery,
     createUpdateSamplesMutation,
+    createSampleFilesQuery,
+    createCreateSampleFileMutation,
   } from '$lib/api/queries';
 
   const ctx = getRouteContext();
   const sampleMutation = createRequestSampleMutation();
   const samplesQuery = createSamplesQuery();
   const updateSamplesMutation = createUpdateSamplesMutation();
+  const sampleFilesQuery = createSampleFilesQuery();
+  const createSampleFileMutation = createCreateSampleFileMutation();
 
   const samples = $derived(Array.isArray($samplesQuery.data) ? $samplesQuery.data : ($samplesQuery.data?.samples ?? []));
   const queued = $derived(!Array.isArray($samplesQuery.data) && Boolean($samplesQuery.data?.queued));
+
+  const sampleFiles = $derived($sampleFilesQuery.data?.files ?? []);
+  const sampleFileOptions = $derived(
+    sampleFiles.map((f: string) => ({ value: f, label: f }))
+  );
+
+  let currentConfigFile = $derived(
+    ctx.workspace?.draft?.sample_definition_file_name || 'samples.json'
+  );
 
   let isModalOpen = $state(false);
   let editingSample = $state<any>(null);
   let editingIndex = $state<number>(-1);
   let modalMode = $state<'add' | 'edit'>('add');
+
+  let isConfigModalOpen = $state(false);
+  let newConfigName = $state('');
+  let configModalError = $state('');
 
   let toast = $state<{ message: string; type: 'success' | 'error' } | null>(null);
   let toastTimeout: any;
@@ -58,7 +77,9 @@
     ...rawTab,
     groups: (rawTab.groups || []).map((group: any) => ({
       ...group,
-      fields: (group.fields || []).filter((f: any) => f.id !== 'samples'),
+      fields: (group.fields || []).filter(
+        (f: any) => f.id !== 'samples' && f.id !== 'sample_definition_file_name'
+      ),
     })),
   });
 
@@ -70,6 +91,38 @@
       triggerToast('Sample generation requested successfully', 'success');
     } catch (err: any) {
       triggerToast(err?.message || 'Failed to request sample', 'error');
+    }
+  }
+
+  function handleSelectConfigFile(val: string) {
+    if (ctx.workspace?.setRaw) {
+      ctx.workspace.setRaw('sample_definition_file_name', val);
+    }
+  }
+
+  function handleOpenAddConfigModal() {
+    newConfigName = '';
+    configModalError = '';
+    isConfigModalOpen = true;
+  }
+
+  async function handleCreateConfigFile() {
+    const name = newConfigName.trim();
+    if (!name) {
+      configModalError = 'Config name cannot be empty';
+      return;
+    }
+    try {
+      const res = await $createSampleFileMutation.mutateAsync(name);
+      if (res?.filename) {
+        if (ctx.workspace?.setRaw) {
+          ctx.workspace.setRaw('sample_definition_file_name', res.filename);
+        }
+        triggerToast(`Sample config file created: ${res.filename}`, 'success');
+      }
+      isConfigModalOpen = false;
+    } catch (err: any) {
+      configModalError = err?.message || 'Failed to create sample config file';
     }
   }
 
@@ -87,39 +140,34 @@
     isModalOpen = true;
   }
 
-  async function handleToggleSample(index: number, event: Event) {
-    event.stopPropagation();
-    const updated = samples.map((s: any, i: number) =>
-      i === index ? { ...s, enabled: !s.enabled } : s
-    );
+  async function handleUpdateSample(index: number, updatedSample: any) {
+    const updated = samples.map((s: any, i: number) => (i === index ? updatedSample : s));
     try {
       await $updateSamplesMutation.mutateAsync(updated);
     } catch (err: any) {
-      triggerToast(err?.message || 'Failed to update sample', 'error');
+      triggerToast(err?.message || 'Failed to update sample prompt', 'error');
     }
   }
 
-  async function handleCloneSample(index: number, event: Event) {
-    event.stopPropagation();
+  async function handleCloneSample(index: number) {
     const target = samples[index];
     const { webui_id: _discardedWebuiId, ...clone } = structuredClone(target);
     const updated = [...samples, clone];
     try {
       await $updateSamplesMutation.mutateAsync(updated);
-      triggerToast('Sample cloned', 'success');
+      triggerToast('Sample prompt cloned', 'success');
     } catch (err: any) {
-      triggerToast(err?.message || 'Failed to clone sample', 'error');
+      triggerToast(err?.message || 'Failed to clone sample prompt', 'error');
     }
   }
 
-  async function handleDeleteSample(index: number, event: Event) {
-    event.stopPropagation();
+  async function handleDeleteSample(index: number) {
     const updated = samples.filter((_: any, i: number) => i !== index);
     try {
       await $updateSamplesMutation.mutateAsync(updated);
-      triggerToast('Sample deleted', 'success');
+      triggerToast('Sample prompt deleted', 'success');
     } catch (err: any) {
-      triggerToast(err?.message || 'Failed to delete sample', 'error');
+      triggerToast(err?.message || 'Failed to delete sample prompt', 'error');
     }
   }
 
@@ -136,10 +184,9 @@
       await $updateSamplesMutation.mutateAsync(updated);
       triggerToast(modalMode === 'add' ? 'Sample prompt added' : 'Sample prompt saved', 'success');
     } catch (err: any) {
-      triggerToast(err?.message || 'Failed to save sample', 'error');
+      triggerToast(err?.message || 'Failed to save sample prompt', 'error');
     }
   }
-
 </script>
 
 {#if !ctx.workspace}
@@ -172,6 +219,28 @@
       </div>
     {/if}
 
+    <div class="config-bar">
+      <div class="config-selector">
+        <label for="sample-config-select" class="config-label">Sample Configuration:</label>
+        <div class="select-wrapper">
+          <Select
+            id="sample-config-select"
+            value={currentConfigFile}
+            options={sampleFileOptions.length > 0 ? sampleFileOptions : [{ value: 'samples.json', label: 'samples.json' }]}
+            onChange={handleSelectConfigFile}
+          />
+        </div>
+        <button
+          type="button"
+          class="btn btn-secondary add-config-btn"
+          onclick={handleOpenAddConfigModal}
+        >
+          <Plus size={16} />
+          <span>+ Add Config</span>
+        </button>
+      </div>
+    </div>
+
     <div class="options-panel">
       <SchemaForm
         {tab}
@@ -192,88 +261,45 @@
       </div>
     {/if}
 
-
-    <div class="samples-grid">
-      <AddCard label="Add Sample Prompt" onClick={handleAddSample} />
-
-      {#each samples as sample, index}
-        <div
-          class="sample-card"
-          class:disabled={!sample.enabled}
-          onclick={() => handleEditSample(index)}
-          onkeydown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              handleEditSample(index);
-            }
-          }}
-          role="button"
-          tabindex="0"
-        >
-          <div class="card-header">
-            <div class="switch-wrapper" onclick={(e) => e.stopPropagation()} role="none">
-              <label class="switch">
-                <input
-                  type="checkbox"
-                  checked={sample.enabled}
-                  onchange={(e) => handleToggleSample(index, e)}
-                />
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="card-actions">
-              <button
-                type="button"
-                class="icon-btn"
-                title="Edit sample prompt"
-                onclick={(e) => {
-                  e.stopPropagation();
-                  handleEditSample(index);
-                }}
-              >
-                <Pencil size={15} />
-              </button>
-              <button
-                type="button"
-                class="icon-btn"
-                title="Clone sample prompt"
-                onclick={(e) => handleCloneSample(index, e)}
-              >
-                <Copy size={15} />
-              </button>
-              <button
-                type="button"
-                class="icon-btn danger"
-                title="Delete sample prompt"
-                onclick={(e) => handleDeleteSample(index, e)}
-              >
-                <Trash2 size={15} />
-              </button>
-            </div>
-          </div>
-
-          <div class="card-body">
-            <div class="prompt-text">{sample.prompt || '(No prompt set)'}</div>
-            {#if sample.negative_prompt}
-              <div class="negative-prompt-text">
-                <span class="neg-label">Neg:</span> {sample.negative_prompt}
-              </div>
-            {/if}
-          </div>
-
-          <div class="card-footer">
-            <div class="pills">
-              <span class="pill">{sample.width || 512} × {sample.height || 512}</span>
-              <span class="pill">{sample.diffusion_steps || 30} steps</span>
-              <span class="pill">CFG {sample.cfg_scale ?? 7.5}</span>
-              <span class="pill">Seed: {sample.seed ?? -1}</span>
-            </div>
-          </div>
-        </div>
-      {/each}
-    </div>
+    <SamplePromptTable
+      {samples}
+      onUpdate={handleUpdateSample}
+      onEditModal={handleEditSample}
+      onClone={handleCloneSample}
+      onDelete={handleDeleteSample}
+      onAdd={handleAddSample}
+    />
   </div>
 {/if}
+
+<ModalDialog
+  open={isConfigModalOpen}
+  title="Add Sample Configuration"
+  applyText="Create File"
+  cancelText="Cancel"
+  onClose={() => (isConfigModalOpen = false)}
+  onApply={handleCreateConfigFile}
+>
+  <div class="config-modal-body">
+    <label for="new-config-name" class="modal-label">Configuration Name</label>
+    <input
+      id="new-config-name"
+      type="text"
+      class="text-input"
+      placeholder="e.g. portrait_samples.json"
+      bind:value={newConfigName}
+      onkeydown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleCreateConfigFile();
+        }
+      }}
+    />
+    {#if configModalError}
+      <div class="modal-error">{configModalError}</div>
+    {/if}
+  </div>
+</ModalDialog>
 
 <SampleDetailModal
   open={isModalOpen}
@@ -371,6 +397,35 @@
     color: var(--accent, #60a5fa);
   }
 
+  .config-bar {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: var(--panel-raised, #1d242c);
+    border: 1px solid var(--line, #2d3741);
+    border-radius: 8px;
+  }
+
+  .config-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .config-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text, #e6ebef);
+    white-space: nowrap;
+  }
+
+  .select-wrapper {
+    min-width: 220px;
+  }
+
+  .add-config-btn {
+    white-space: nowrap;
+  }
 
   .options-panel {
     width: 740px;
@@ -392,178 +447,37 @@
     color: var(--text, #f8fafc);
   }
 
-  .samples-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.25rem;
-    align-items: stretch;
-  }
-
-  .sample-card {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    min-height: 220px;
-    background: var(--panel-raised, #1d242c);
-    border: 1px solid var(--line, #2d3741);
-    border-radius: 8px;
-    padding: 1rem;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    box-sizing: border-box;
-  }
-
-  .sample-card:hover {
-    border-color: var(--accent, #3b82f6);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  }
-
-  .sample-card.disabled {
-    opacity: 0.6;
-    background: rgba(29, 36, 44, 0.5);
-  }
-
-  .card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.75rem;
-  }
-
-  .card-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-  }
-
-  .icon-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    padding: 0;
-    border-radius: 4px;
-    border: 1px solid transparent;
-    background: transparent;
-    color: var(--muted, #94a3b8);
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .icon-btn:hover {
-    background: var(--line, #2d3741);
-    color: var(--text, #f8fafc);
-  }
-
-  .icon-btn.danger:hover {
-    background: rgba(239, 68, 68, 0.2);
-    color: #f87171;
-  }
-
-  .card-body {
-    flex: 1;
+  .config-modal-body {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    margin-bottom: 0.75rem;
   }
 
-  .prompt-text {
+  .modal-label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--text, #f8fafc);
-    line-height: 1.4;
-    word-break: break-word;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    color: var(--text, #e6ebef);
   }
 
-  .negative-prompt-text {
-    font-size: 0.75rem;
-    color: var(--muted, #94a3b8);
-    line-height: 1.3;
-    word-break: break-word;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .neg-label {
-    font-weight: 600;
-    color: #f87171;
-  }
-
-  .card-footer {
-    margin-top: auto;
-  }
-
-  .pills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.375rem;
-  }
-
-  .pill {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.15rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    background: var(--control, #14191f);
+  .text-input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
     border: 1px solid var(--line, #2d3741);
-    color: var(--muted, #94a3b8);
+    background: var(--control, #14191f);
+    color: var(--text, #e6ebef);
+    font-size: 0.875rem;
+    box-sizing: border-box;
   }
 
-  /* Toggle Switch */
-  .switch {
-    position: relative;
-    display: inline-block;
-    width: 36px;
-    height: 20px;
+  .text-input:focus {
+    outline: none;
+    border-color: var(--accent, #3b82f6);
   }
 
-  .switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-
-  .slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: var(--line, #2d3741);
-    transition: 0.2s;
-    border-radius: 20px;
-  }
-
-  .slider:before {
-    position: absolute;
-    content: '';
-    height: 14px;
-    width: 14px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
-    transition: 0.2s;
-    border-radius: 50%;
-  }
-
-  input:checked + .slider {
-    background-color: var(--accent, #3b82f6);
-  }
-
-  input:checked + .slider:before {
-    transform: translateX(16px);
+  .modal-error {
+    font-size: 0.8125rem;
+    color: #f87171;
   }
 
   .skeleton-container {
