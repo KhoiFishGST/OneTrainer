@@ -12,21 +12,13 @@
     }
   );
 
-  type GeneralSubTab =
-    | 'workspace'
-    | 'debug'
-    | 'tensors'
-    | 'validation'
-    | 'execution'
-    | 'multi_gpu';
+  type GeneralSubTab = 'workspace' | 'debug' | 'tensors' | 'hardware';
 
   const subnavTabs: Array<{ id: GeneralSubTab; label: string }> = [
     { id: 'workspace', label: 'Workspace' },
     { id: 'debug', label: 'Debug' },
     { id: 'tensors', label: 'Tensors' },
-    { id: 'validation', label: 'Validation' },
-    { id: 'execution', label: 'Execution' },
-    { id: 'multi_gpu', label: 'Multi-GPU' },
+    { id: 'hardware', label: 'Hardware' },
   ];
 
   let activeSubTab = $state<GeneralSubTab>('workspace');

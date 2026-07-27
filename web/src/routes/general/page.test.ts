@@ -108,7 +108,7 @@ vi.mock("$lib/config/context", () => ({
 }));
 
 describe("General page subnav tabs", () => {
-  it("renders 6 text-only tabs and switches between panels", async () => {
+  it("renders 4 text-only tabs and switches between combined panels", async () => {
     render(GeneralPage);
 
     const tabs = screen.getAllByRole("tab");
@@ -116,9 +116,7 @@ describe("General page subnav tabs", () => {
       "Workspace",
       "Debug",
       "Tensors",
-      "Validation",
-      "Execution",
-      "Multi-GPU",
+      "Hardware",
     ]);
 
     // Workspace tab active by default
@@ -130,20 +128,14 @@ describe("General page subnav tabs", () => {
     expect(screen.getByLabelText("Debug mode")).toBeInTheDocument();
     expect(screen.queryByLabelText("Workspace Directory")).not.toBeInTheDocument();
 
-    // Switch to Tensors tab
+    // Switch to Tensors tab (combines Tensorboard & Validation)
     await fireEvent.click(screen.getByRole("tab", { name: "Tensors" }));
     expect(screen.getByLabelText("Tensorboard")).toBeInTheDocument();
-
-    // Switch to Validation tab
-    await fireEvent.click(screen.getByRole("tab", { name: "Validation" }));
     expect(screen.getByLabelText("Validation")).toBeInTheDocument();
 
-    // Switch to Execution tab
-    await fireEvent.click(screen.getByRole("tab", { name: "Execution" }));
+    // Switch to Hardware tab (combines Execution & Multi-GPU)
+    await fireEvent.click(screen.getByRole("tab", { name: "Hardware" }));
     expect(screen.getByLabelText("Dataloader Threads")).toBeInTheDocument();
-
-    // Switch to Multi-GPU tab
-    await fireEvent.click(screen.getByRole("tab", { name: "Multi-GPU" }));
     expect(screen.getByLabelText("Multi-GPU")).toBeInTheDocument();
   });
 });

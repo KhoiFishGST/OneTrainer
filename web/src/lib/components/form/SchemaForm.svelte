@@ -84,11 +84,9 @@
       case 'debug':
         return groupId === 'debug';
       case 'tensors':
-        return groupId === 'tensorboard';
-      case 'validation':
-        return groupId === 'validation';
-      case 'multi_gpu':
-        return groupId === 'multi_gpu';
+        return groupId === 'tensorboard' || groupId === 'validation';
+      case 'hardware':
+        return groupId === 'execution_hardware' || groupId === 'multi_gpu';
       // Model route subtabs:
       case 'model':
         return groupId === 'base_model' || groupId === 'primary_backbone';
