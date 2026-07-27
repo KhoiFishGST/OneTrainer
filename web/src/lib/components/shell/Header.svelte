@@ -245,14 +245,6 @@
   </div>
 
   <div class="header-right">
-    <span
-      data-testid="training-status-pill"
-      class="status-pill status-{trainingState.toLowerCase()}"
-      title={$trainingStore.status?.error_message ?? ''}
-    >
-      {trainingState}
-    </span>
-
     {#if workspace}
       <span class="state-badge state-{workspace.state}">
         {#if workspace.state === 'saved'}
@@ -268,6 +260,14 @@
         {/if}
       </span>
     {/if}
+
+    <span
+      data-testid="training-status-pill"
+      class="status-pill status-{trainingState.toLowerCase()}"
+      title={$trainingStore.status?.error_message ?? ''}
+    >
+      {trainingState}
+    </span>
   </div>
 </header>
 
@@ -312,7 +312,7 @@
     border-bottom: 1px solid var(--line);
     display: flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: space-between;
     padding: 0 16px;
     gap: 16px;
   }
@@ -321,6 +321,13 @@
     display: flex;
     align-items: center;
     gap: 16px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
   }
 
   .header-divider {
@@ -349,17 +356,25 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    flex-wrap: wrap;
   }
 
   .selector-field {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.875rem;
+  }
+
+  .header-select-wrapper {
+    min-width: 140px;
   }
 
   .label-text {
+    font-size: 0.75rem;
     color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
   .actions {
@@ -445,16 +460,16 @@
   .modal-field {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    margin: 16px 0;
+    gap: 4px;
+    margin-bottom: 12px;
   }
 
-  input[type='text'] {
+  .modal-field input {
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid var(--line);
     background-color: var(--control);
     color: var(--text);
-    border: 1px solid var(--line);
-    border-radius: 4px;
-    padding: 8px 12px;
   }
 
   .modal-actions {
@@ -482,6 +497,10 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
   .status-idle {
@@ -495,6 +514,18 @@
     background-color: rgba(59, 130, 246, 0.15);
     color: #3b82f6;
     border: 1px solid rgba(59, 130, 246, 0.3);
+    animation: statusPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes statusPulse {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.2);
+    }
+    50% {
+      transform: scale(1.05);
+      box-shadow: 0 0 10px 2px rgba(59, 130, 246, 0.3);
+    }
   }
 
   .status-paused {
