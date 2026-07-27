@@ -1303,10 +1303,12 @@
   }
 
   .tab-content {
-    min-height: 560px;
-    max-height: 620px;
+    height: 640px;
+    min-height: 640px;
+    max-height: 640px;
     overflow-y: auto;
     padding: 0.5rem 0.25rem;
+    box-sizing: border-box;
   }
 
   .form-stack {
