@@ -72,24 +72,26 @@
 </script>
 
 <div class="sample-gallery-container" data-testid="sample-gallery">
-  {#if title}
-    <h2 class="gallery-title">{title}</h2>
-  {/if}
+  <div class="gallery-single-panel" data-testid="checkpoints-list">
+    {#if title}
+      <div class="panel-header">
+        <h3 class="panel-title">{title}</h3>
+      </div>
+    {/if}
 
-  {#if loading}
-    <div class="gallery-state loading-state">
-      <p class="state-text">Loading sample gallery...</p>
-    </div>
-  {:else if errorMessage}
-    <div class="gallery-state error-state">
-      <p class="state-text">{errorMessage}</p>
-    </div>
-  {:else if !gallery || !sortedBatches || sortedBatches.length === 0}
-    <div class="gallery-state empty-state">
-      <p class="state-text">No samples yet</p>
-    </div>
-  {:else}
-    <div class="gallery-single-panel" data-testid="checkpoints-list">
+    {#if loading}
+      <div class="gallery-state loading-state">
+        <p class="state-text">Loading sample gallery...</p>
+      </div>
+    {:else if errorMessage}
+      <div class="gallery-state error-state">
+        <p class="state-text">{errorMessage}</p>
+      </div>
+    {:else if !gallery || !sortedBatches || sortedBatches.length === 0}
+      <div class="gallery-state empty-state">
+        <p class="state-text">No samples yet</p>
+      </div>
+    {:else}
       {#each sortedBatches as batch (batch.id ?? batch.batch_id ?? 1)}
         {@const revision = gallery.revisions ? gallery.revisions[batch.prompt_revision_id] : null}
         {@const promptIds = batch.expected_prompt_ids ?? (batch.samples ? Array.from(new Set(batch.samples.map((s) => s.webui_prompt_id).filter(Boolean))) : [])}
@@ -187,8 +189,8 @@
           </div>
         </div>
       {/each}
-    </div>
-  {/if}
+    {/if}
+  </div>
 
   {#if isViewerOpen && selection && gallery}
     <GalleryImageViewer
@@ -208,11 +210,28 @@
     width: 100%;
   }
 
-  .gallery-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--text);
+  .gallery-single-panel {
+    display: flex;
+    flex-direction: column;
+    background: var(--panel, #1e293b);
+    border: 1px solid var(--line, #334155);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--line, #334155);
+  }
+
+  .panel-title {
     margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-title, var(--accent, #3b82f6));
   }
 
   .gallery-state {
