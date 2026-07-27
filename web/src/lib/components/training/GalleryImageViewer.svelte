@@ -1,6 +1,7 @@
 <script lang="ts">
   import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-svelte';
   import ModalDialog from '../ui/ModalDialog.svelte';
+  import Button from '../ui/Button.svelte';
   import type { GalleryRunModel, GalleryVariant } from '../../api/types';
   import { galleryImageUrl } from '../../api/client';
 
@@ -214,25 +215,29 @@
             <div class="viewer-no-image">No Image Available</div>
           {/if}
 
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             class="nav-btn nav-btn-prev"
             aria-label="Previous checkpoint"
             disabled={activeReadyIndex <= 0}
             onclick={() => navigate(-1)}
           >
             <ChevronLeft size={24} />
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             class="nav-btn nav-btn-next"
             aria-label="Next checkpoint"
             disabled={activeReadyIndex < 0 || activeReadyIndex >= readyEntries.length - 1}
             onclick={() => navigate(1)}
           >
             <ChevronRight size={24} />
-          </button>
+          </Button>
         </div>
 
         <div class="viewer-sidebar">
@@ -355,7 +360,7 @@
     font-size: 0.9rem;
   }
 
-  .nav-btn {
+  :global(.nav-btn) {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
@@ -372,20 +377,20 @@
     transition: background 0.15s ease, opacity 0.15s ease;
   }
 
-  .nav-btn:hover:not(:disabled) {
+  :global(.nav-btn:hover:not(:disabled)) {
     background: rgba(0, 0, 0, 0.85);
   }
 
-  .nav-btn:disabled {
+  :global(.nav-btn:disabled) {
     opacity: 0.25;
     cursor: not-allowed;
   }
 
-  .nav-btn-prev {
+  :global(.nav-btn-prev) {
     left: 12px;
   }
 
-  .nav-btn-next {
+  :global(.nav-btn-next) {
     right: 12px;
   }
 

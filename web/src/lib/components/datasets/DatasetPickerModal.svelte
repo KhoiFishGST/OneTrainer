@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Check, FolderKanban, AlertCircle } from 'lucide-svelte';
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
+  import Button from '$lib/components/ui/Button.svelte';
   import { createDatasetsQuery } from '$lib/api/queries';
 
   interface DatasetItem {
@@ -80,10 +81,10 @@
       {:else}
         <div class="dataset-grid">
           {#each datasets as ds (ds.name)}
-            <button
+            <Button
               type="button"
-              class="dataset-card"
-              class:selected={selectedDataset?.name === ds.name}
+              variant="ghost"
+              class={`dataset-card${selectedDataset?.name === ds.name ? ' selected' : ''}`}
               onclick={() => handleCardClick(ds)}
               ondblclick={() => handleCardDblClick(ds)}
             >
@@ -102,7 +103,7 @@
                   {ds.image_count} images • {ds.caption_count} captions
                 </p>
               </div>
-            </button>
+            </Button>
           {/each}
         </div>
       {/if}
@@ -170,7 +171,7 @@
     gap: 1rem;
   }
 
-  .dataset-card {
+  :global(.dataset-card) {
     position: relative;
     border-radius: 10px;
     overflow: hidden;
@@ -184,12 +185,12 @@
     flex-direction: column;
   }
 
-  .dataset-card:hover {
+  :global(.dataset-card:hover) {
     transform: translateY(-2px);
     border-color: var(--color-primary-hover, #60a5fa);
   }
 
-  .dataset-card.selected {
+  :global(.dataset-card.selected) {
     border-color: var(--color-primary, #3b82f6);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
   }

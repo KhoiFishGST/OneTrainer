@@ -45,6 +45,9 @@ describe('MetricsChart', () => {
     render(MetricsChart, { props: { metrics: mockMetrics, metricKey: 'loss', title: 'Loss' } });
 
     const slider = screen.getByLabelText(/EMA/i) as HTMLInputElement;
+    expect(slider).toHaveAttribute('min', '0');
+    expect(slider).toHaveAttribute('max', '0.99');
+    expect(slider).toHaveAttribute('step', '0.01');
     expect(slider.value).toBe('0');
 
     await fireEvent.input(slider, { target: { value: '0.6' } });

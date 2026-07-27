@@ -2,6 +2,8 @@
   import { consoleStore, type ConsoleStore, type ConsoleSpan } from '$lib/events/console-store.svelte';
   import { onMount, tick } from 'svelte';
   import { Download, ArrowDown, Pause, Play, Trash2 } from 'lucide-svelte';
+  import Button from '$lib/components/ui/Button.svelte';
+  import TextInput from '$lib/components/form/TextInput.svelte';
 
   const ROW_HEIGHT = 20;
   const ALLOWED_CLASSES = new Set([
@@ -109,36 +111,34 @@
     <div class="toolbar-left">
       <!-- Channel Selector -->
       <div class="channel-selector" role="radiogroup" aria-label="Log Channel">
-        <button
+        <Button
           type="button"
-          class="channel-btn"
-          class:active={activeChannel === 'console'}
+          class={`channel-btn${activeChannel === 'console' ? ' active' : ''}`}
           onclick={() => (activeChannel = 'console')}
         >
           Console
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          class="channel-btn"
-          class:active={activeChannel === 'webui'}
+          class={`channel-btn${activeChannel === 'webui' ? ' active' : ''}`}
           onclick={() => (activeChannel = 'webui')}
         >
           Web UI
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          class="channel-btn"
-          class:active={activeChannel === 'all'}
+          class={`channel-btn${activeChannel === 'all' ? ' active' : ''}`}
           onclick={() => (activeChannel = 'all')}
         >
           ALL
-        </button>
+        </Button>
       </div>
 
-      <input
-        type="text"
+      <TextInput
+        type="search"
         placeholder="Filter console..."
-        bind:value={filterText}
+        value={filterText}
+        onInput={(value) => (filterText = value)}
         class="filter-input"
       />
 
@@ -156,10 +156,9 @@
     </div>
 
     <div class="toolbar-right">
-      <button
+      <Button
         type="button"
-        class="btn-action"
-        class:active={isPaused}
+        class={`btn-action${isPaused ? ' active' : ''}`}
         onclick={togglePause}
         title={isPaused ? 'Resume stream' : 'Pause stream'}
       >
@@ -170,18 +169,18 @@
           <Pause size={14} />
           <span>Pause</span>
         {/if}
-      </button>
+      </Button>
 
-      <button type="button" class="btn-action" onclick={handleClear} title="Clear view buffer">
+      <Button type="button" class="btn-action" onclick={handleClear} title="Clear view buffer">
         <Trash2 size={14} />
         <span>Clear</span>
-      </button>
+      </Button>
 
       {#if !autoScroll && !isPaused}
-        <button type="button" class="btn-action btn-jump" onclick={jumpToLatest}>
+        <Button type="button" class="btn-action btn-jump" onclick={jumpToLatest}>
           <ArrowDown size={14} />
           <span>Latest</span>
-        </button>
+        </Button>
       {/if}
 
       <a href="/api/console/log" download class="btn-action btn-download">
@@ -249,7 +248,7 @@
     gap: 2px;
   }
 
-  .channel-btn {
+  :global(.channel-btn) {
     background: transparent;
     border: none;
     color: var(--muted, #8b949e);
@@ -261,16 +260,16 @@
     transition: all 0.15s ease;
   }
 
-  .channel-btn:hover {
+  :global(.channel-btn:hover) {
     color: var(--text, #c9d1d9);
   }
 
-  .channel-btn.active {
+  :global(.channel-btn.active) {
     background-color: var(--accent, #6366f1);
     color: #ffffff;
   }
 
-  .filter-input {
+  :global(.filter-input) {
     background-color: var(--input-bg, #0d1117);
     border: 1px solid var(--border-color, #30363d);
     color: var(--text, #c9d1d9);
@@ -280,7 +279,7 @@
     width: 160px;
   }
 
-  .filter-input:focus {
+  :global(.filter-input:focus) {
     outline: none;
     border-color: var(--accent, #58a6ff);
   }
@@ -318,7 +317,7 @@
     color: #d29922;
   }
 
-  .btn-action {
+  :global(.btn-action) {
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -332,11 +331,11 @@
     text-decoration: none;
   }
 
-  .btn-action:hover {
+  :global(.btn-action:hover) {
     background-color: var(--button-hover-bg, #30363d);
   }
 
-  .btn-action.active {
+  :global(.btn-action.active) {
     background-color: rgba(210, 153, 34, 0.2);
     color: #d29922;
     border-color: #d29922;

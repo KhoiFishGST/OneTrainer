@@ -3,6 +3,7 @@
   import { galleryImageUrl } from '../../api/client';
   import { uiPreferences } from '../../stores/ui-preferences';
   import Select from '../form/Select.svelte';
+  import Button from '../ui/Button.svelte';
   import GalleryImageViewer, { type GallerySelection } from './GalleryImageViewer.svelte';
 
   let {
@@ -145,8 +146,9 @@
                     <div class="sample-slot-container">
                       {#if status === 'ready' && sample}
                         {@const thumbUrl = gallery.run?.key ? galleryImageUrl(gallery.run.key, sample.thumbnail_filename || sample.filename || '') : ''}
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
                           class="sample-card ready-card"
                           aria-label={`Open sample ${promptDef?.prompt || promptId}`}
                           onclick={() => openViewer(batch.id, promptId, variant)}
@@ -179,7 +181,7 @@
                               {/if}
                             </div>
                           </div>
-                        </button>
+                        </Button>
                       {:else}
                         <div class="sample-card non-ready-card status-{status}">
                           <div class="status-placeholder">
@@ -377,7 +379,7 @@
     max-width: 100%;
   }
 
-  .sample-card {
+  :global(.sample-card) {
     display: flex;
     flex-direction: column;
     background: var(--control);
@@ -389,12 +391,12 @@
     padding: 0;
   }
 
-  .ready-card {
+  :global(.ready-card) {
     cursor: pointer;
     transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   }
 
-  .ready-card:hover {
+  :global(.ready-card:hover) {
     transform: translateY(-2px);
     border-color: var(--accent);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
@@ -425,7 +427,7 @@
     transition: opacity 0.15s ease;
   }
 
-  .ready-card:hover .card-overlay {
+  :global(.ready-card:hover) .card-overlay {
     opacity: 1;
   }
 

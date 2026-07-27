@@ -3,6 +3,8 @@
   import uPlot from 'uplot';
   import 'uplot/dist/uPlot.min.css';
   import type { TrainingMetric } from '../../api/types';
+  import Button from '../ui/Button.svelte';
+  import RangeInput from '../form/RangeInput.svelte';
 
   let {
     metrics = [],
@@ -182,33 +184,37 @@
     <div class="chart-controls">
       <label class="control-label" for="ema-slider">
         <span>EMA: {emaFactor.toFixed(2)}</span>
-        <input
+        <RangeInput
           id="ema-slider"
-          type="range"
-          min="0"
-          max="0.99"
-          step="0.01"
+          min={0}
+          max={0.99}
+          step={0.01}
           aria-label="EMA Smoothing"
-          bind:value={emaFactor}
+          value={emaFactor}
+          onInput={(value) => (emaFactor = value)}
           class="ema-slider"
         />
       </label>
 
-      <button
+      <Button
         type="button"
+        variant="secondary"
+        size="small"
         class="btn-control"
         onclick={toggleLogScale}
       >
         {isLogScale ? 'Logarithmic' : 'Linear'}
-      </button>
+      </Button>
 
-      <button
+      <Button
         type="button"
+        variant="secondary"
+        size="small"
         class="btn-control"
         onclick={resetZoom}
       >
         Reset Zoom
-      </button>
+      </Button>
     </div>
   </div>
 
@@ -267,13 +273,13 @@
     color: var(--muted, #94a3b8);
   }
 
-  .ema-slider {
+  :global(.ema-slider) {
     width: 90px;
     accent-color: var(--accent, #3b82f6);
     cursor: pointer;
   }
 
-  .btn-control {
+  :global(.btn-control) {
     background-color: var(--control, #0f172a);
     color: var(--text, #f8fafc);
     border: 1px solid var(--line, #334155);
@@ -284,7 +290,7 @@
     transition: background-color 0.15s ease;
   }
 
-  .btn-control:hover {
+  :global(.btn-control:hover) {
     background-color: var(--panel-raised, #1e293b);
     border-color: var(--accent, #3b82f6);
   }
