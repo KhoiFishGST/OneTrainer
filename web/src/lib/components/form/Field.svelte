@@ -155,7 +155,7 @@
   .field-control-side {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: flex-start;
     flex: 0 0 420px;
     width: 420px;
     min-width: 420px;
@@ -173,8 +173,8 @@
   }
 
   .field-control-side :global(.toggle-input) {
-    margin-left: auto;
-    margin-right: 8px;
+    margin-left: 0;
+    margin-right: auto;
   }
 
   .field-label {
