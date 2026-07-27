@@ -1,6 +1,6 @@
-import { createQuery, createMutation, useQueryClient, QueryClient, type CreateQueryOptions } from '@tanstack/svelte-query';
+import { createQuery, createMutation, useQueryClient, QueryClient, type CreateQueryOptions, type CreateQueryResult } from '@tanstack/svelte-query';
 import { api } from './client';
-import type { Concept, ConfigUpdateRequest, PresetLoadRequest, PresetSaveRequest, SampleDefinition, GalleryRunModel } from './types';
+import type { Concept, ConfigUpdateRequest, PresetLoadRequest, PresetSaveRequest, SampleDefinition, SamplesResponse, GalleryRunModel } from './types';
 
 const defaultQueryClient = new QueryClient({
   defaultOptions: {
@@ -26,7 +26,7 @@ export const queryKeys = {
   directories: (path?: string) => ['directories', path ?? ''] as const,
   backlog: () => ['backlog'] as const,
   concepts: () => ['concepts'] as const,
-  samples: () => ['samples'] as const,
+  samples: (file?: string) => ['samples', file ?? 'default'] as const,
   sampleFiles: () => ['sampleFiles'] as const,
   datasets: () => ['datasets'] as const,
   datasetFiles: (name: string) => ['datasets', name, 'files'] as const,
@@ -331,13 +331,16 @@ export function createUpdateCaptionMutation() {
   );
 }
 
-export function createSamplesQuery() {
+export function createSamplesQuery(fileSupplier?: () => string | undefined): CreateQueryResult<SamplesResponse, Error> {
   const client = getSafeQueryClient();
   return createQuery(
-    {
-      queryKey: queryKeys.samples(),
-      queryFn: () => api.getSamples(),
-    },
+    (() => {
+      const file = fileSupplier?.();
+      return {
+        queryKey: queryKeys.samples(file),
+        queryFn: () => api.getSamples(file),
+      };
+    }) as any,
     client
   );
 }
@@ -346,10 +349,13 @@ export function createUpdateSamplesMutation() {
   const client = getSafeQueryClient();
   return createMutation(
     {
-      mutationFn: (samples: SampleDefinition[]) => api.updateSamples(samples),
-      onSuccess: (data) => {
-        client.setQueryData(queryKeys.samples(), data);
-        client.invalidateQueries({ queryKey: queryKeys.samples() });
+      mutationFn: (payload: { samples: SampleDefinition[]; file?: string } | SampleDefinition[]) => {
+        const samples = Array.isArray(payload) ? payload : payload.samples;
+        const file = Array.isArray(payload) ? undefined : payload.file;
+        return api.updateSamples(samples, file);
+      },
+      onSuccess: () => {
+        client.invalidateQueries({ queryKey: ['samples'] });
       },
     },
     client

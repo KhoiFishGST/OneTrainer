@@ -262,13 +262,18 @@ export function createApi(base = '') {
 
     getCurrentGallery: () => request<GalleryRunModel>(`${base}/api/gallery/current`),
 
-    getSamples: () => request<SamplesResponse>(`${base}/api/samples`),
+    getSamples: (file?: string) => {
+      const query = file ? `?file=${encodeURIComponent(file)}` : '';
+      return request<SamplesResponse>(`${base}/api/samples${query}`);
+    },
 
-    updateSamples: (samples: SampleDefinition[]) =>
-      request<SamplesResponse>(`${base}/api/samples`, {
+    updateSamples: (samples: SampleDefinition[], file?: string) => {
+      const query = file ? `?file=${encodeURIComponent(file)}` : '';
+      return request<SamplesResponse>(`${base}/api/samples${query}`, {
         method: 'PUT',
         body: JSON.stringify({ samples }),
-      }),
+      });
+    },
 
     getSampleFiles: () => request<{ files: string[] }>(`${base}/api/samples/files`),
 

@@ -19,7 +19,7 @@
 
   const ctx = getRouteContext();
   const sampleMutation = createRequestSampleMutation();
-  const samplesQuery = createSamplesQuery();
+  const samplesQuery = createSamplesQuery(() => currentConfigFile);
   const updateSamplesMutation = createUpdateSamplesMutation();
   const sampleFilesQuery = createSampleFilesQuery();
   const createSampleFileMutation = createCreateSampleFileMutation();
@@ -143,7 +143,7 @@
   async function handleUpdateSample(index: number, updatedSample: any) {
     const updated = samples.map((s: any, i: number) => (i === index ? updatedSample : s));
     try {
-      await $updateSamplesMutation.mutateAsync(updated);
+      await $updateSamplesMutation.mutateAsync({ samples: updated, file: currentConfigFile });
     } catch (err: any) {
       triggerToast(err?.message || 'Failed to update sample prompt', 'error');
     }
@@ -154,7 +154,7 @@
     const { webui_id: _discardedWebuiId, ...clone } = structuredClone(target);
     const updated = [...samples, clone];
     try {
-      await $updateSamplesMutation.mutateAsync(updated);
+      await $updateSamplesMutation.mutateAsync({ samples: updated, file: currentConfigFile });
       triggerToast('Sample prompt cloned', 'success');
     } catch (err: any) {
       triggerToast(err?.message || 'Failed to clone sample prompt', 'error');
@@ -164,7 +164,7 @@
   async function handleDeleteSample(index: number) {
     const updated = samples.filter((_: any, i: number) => i !== index);
     try {
-      await $updateSamplesMutation.mutateAsync(updated);
+      await $updateSamplesMutation.mutateAsync({ samples: updated, file: currentConfigFile });
       triggerToast('Sample prompt deleted', 'success');
     } catch (err: any) {
       triggerToast(err?.message || 'Failed to delete sample prompt', 'error');
@@ -181,7 +181,7 @@
     }
     isModalOpen = false;
     try {
-      await $updateSamplesMutation.mutateAsync(updated);
+      await $updateSamplesMutation.mutateAsync({ samples: updated, file: currentConfigFile });
       triggerToast(modalMode === 'add' ? 'Sample prompt added' : 'Sample prompt saved', 'success');
     } catch (err: any) {
       triggerToast(err?.message || 'Failed to save sample prompt', 'error');

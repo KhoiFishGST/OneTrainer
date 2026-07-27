@@ -59,7 +59,13 @@ class SamplingCoordinator:
         self._sampling_active: bool = False
         self._batch_open: bool = False
 
-    def _resolve_prompt_path(self) -> Path | None:
+    def _resolve_prompt_path(self, file_override: str | None = None) -> Path | None:
+        if file_override is not None and file_override.strip():
+            clean_name = Path(file_override.strip()).name
+            if not clean_name.endswith(".json"):
+                clean_name = f"{clean_name}.json"
+            return self._root_dir / "training_samples" / clean_name
+
         if self._active_config is not None:
             file_name = getattr(self._active_config, "sample_definition_file_name", None)
             if file_name:
@@ -77,9 +83,9 @@ class SamplingCoordinator:
             self._active_config is not None and getattr(self._active_config, "samples", None)
         )
 
-    def get_definitions(self) -> PromptDefinitionsState:
+    def get_definitions(self, file: str | None = None) -> PromptDefinitionsState:
         with self._lock:
-            path = self._resolve_prompt_path()
+            path = self._resolve_prompt_path(file_override=file)
             samples: list[dict[str, Any]] = []
             loaded_from_file = False
             if path is not None:
@@ -98,10 +104,12 @@ class SamplingCoordinator:
             normalized = _normalize_ids(samples)
             return PromptDefinitionsState(samples=normalized, queued=self._is_queued())
 
-    def put_definitions(self, samples: Sequence[Mapping[str, Any]]) -> PromptDefinitionsState:
+    def put_definitions(
+        self, samples: Sequence[Mapping[str, Any]], file: str | None = None
+    ) -> PromptDefinitionsState:
         with self._lock:
             normalized = _normalize_ids(samples)
-            path = self._resolve_prompt_path()
+            path = self._resolve_prompt_path(file_override=file)
             if path is None:
                 raise PromptPersistenceError("No sample definition path configured")
 

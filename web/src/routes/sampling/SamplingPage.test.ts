@@ -228,7 +228,9 @@ describe('SamplingPage', () => {
     await fireEvent.click(cloneBtn);
 
     expect(mutateAsync).toHaveBeenCalled();
-    const updatedSamples = mutateAsync.mock.calls[0][0];
+    const payload = mutateAsync.mock.calls[0][0];
+    expect(payload.file).toBe('samples.json');
+    const updatedSamples = payload.samples;
     expect(updatedSamples).toHaveLength(2);
     expect(updatedSamples[0].webui_id).toBe('prompt_a');
     expect(updatedSamples[1]).not.toHaveProperty('webui_id');

@@ -114,3 +114,20 @@ def test_create_sample_file_rejects_path_traversal(client):
     assert resp.status_code == 422
     assert resp.json()["detail"] == "Invalid sample file name"
 
+
+def test_put_and_get_samples_with_file_param(client):
+    sample_data = [{"prompt": "a photo of a dog", "seed": 10}]
+    put_resp = client.put("/api/samples?file=custom_samples.json", json={"samples": sample_data})
+    assert put_resp.status_code == 200
+    assert len(put_resp.json()["samples"]) == 1
+
+    get_resp = client.get("/api/samples?file=custom_samples.json")
+    assert get_resp.status_code == 200
+    assert len(get_resp.json()["samples"]) == 1
+    assert get_resp.json()["samples"][0]["prompt"] == "a photo of a dog"
+
+    default_get = client.get("/api/samples")
+    assert default_get.status_code == 200
+    assert len(default_get.json()["samples"]) == 0
+
+

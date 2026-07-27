@@ -210,3 +210,14 @@ def test_get_definitions_falls_back_to_inline_config_samples_when_file_missing(
     assert len(state.samples) == 1
     assert state.samples[0]["prompt"] == train_config.samples[0].prompt
 
+
+def test_file_override_resolves_to_training_samples_dir(coordinator: SamplingCoordinator, tmp_path: Path) -> None:
+    coordinator.put_definitions([{"prompt": "override prompt"}], file="custom_file")
+    expected_file = tmp_path / "training_samples" / "custom_file.json"
+    assert expected_file.exists()
+
+    state = coordinator.get_definitions(file="custom_file")
+    assert len(state.samples) == 1
+    assert state.samples[0]["prompt"] == "override prompt"
+
+

@@ -8,7 +8,7 @@ from modules.webui.sampling_coordinator import (
 )
 from modules.webui.state import AppState
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -53,19 +53,19 @@ async def create_sample_file(body: SampleFileCreateRequest, request: Request):
 
 
 @router.get("/samples")
-def get_samples(request: Request):
+def get_samples(request: Request, file: str | None = Query(None)):
     app_state: AppState = request.app.state.webui
     sampling_coord = app_state.sampling_coordinator
-    state = sampling_coord.get_definitions()
+    state = sampling_coord.get_definitions(file=file)
     return {"samples": state.samples, "queued": state.queued}
 
 
 @router.put("/samples")
-def put_samples(request: Request, body: SamplesPutRequest):
+def put_samples(request: Request, body: SamplesPutRequest, file: str | None = Query(None)):
     app_state: AppState = request.app.state.webui
     sampling_coord = app_state.sampling_coordinator
     try:
-        state = sampling_coord.put_definitions(body.samples)
+        state = sampling_coord.put_definitions(body.samples, file=file)
         return {"samples": state.samples, "queued": state.queued}
     except PromptDefinitionsError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
