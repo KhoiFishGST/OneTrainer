@@ -3,22 +3,32 @@
 
   let {
     id,
+    name,
     value = '',
     options = [],
     placeholder = '',
     disabled = false,
+    required = false,
+    class: className = '',
     ariaDescribedBy,
     ariaLabel,
     onChange,
+    onBlur,
+    onKeyDown,
   }: {
     id?: string;
+    name?: string;
     value?: any;
     options?: Array<{ value: any; label: string } | string>;
     placeholder?: string;
     disabled?: boolean;
+    required?: boolean;
+    class?: string;
     ariaDescribedBy?: string;
     ariaLabel?: string;
     onChange?: (val: any) => void;
+    onBlur?: (event: FocusEvent) => void;
+    onKeyDown?: (event: KeyboardEvent) => void;
   } = $props();
 
   let isOpen = $state(false);
@@ -81,7 +91,7 @@
 
 <svelte:window onclick={closePopover} onresize={() => { if (isOpen) checkDirection(); }} />
 
-<div class="custom-select-wrapper" class:is-disabled={disabled}>
+<div class={`custom-select-wrapper ${className}`} class:is-disabled={disabled}>
   <button
     bind:this={triggerBtn}
     type="button"
@@ -137,11 +147,15 @@
 
   <select
     {id}
+    {name}
     value={value ?? ''}
     {disabled}
+    {required}
     aria-describedby={ariaDescribedBy}
     aria-label={ariaLabel}
     onchange={handleNativeChange}
+    onblur={onBlur}
+    onkeydown={onKeyDown}
     class="sr-only-select"
   >
     {#if placeholder}
