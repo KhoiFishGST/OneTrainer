@@ -97,4 +97,23 @@ it('renders saved icon badge when workspace state is saved, hides during unsaved
   expect(screen.getByText('Save Failed')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
 });
+it('triggers save when pressing Enter in the save config input modal', async () => {
+  const saveConfigFileSpy = vi.spyOn(api, 'saveConfigFile').mockResolvedValue({ filename: 'training_configs/my_enter_config.json' });
+  const beforePresetSaveSpy = vi.fn().mockResolvedValue(undefined);
+  const mockWorkspace = {
+    draft: { model_type: 'STABLE_DIFFUSION_15', training_method: 'FINE_TUNE' },
+    state: 'saved',
+    beforePresetSave: beforePresetSaveSpy,
+  } as any;
 
+  render(HeaderTestWrapper, { workspace: mockWorkspace });
+
+  const saveBtn = screen.getByRole('button', { name: 'Save' });
+  await fireEvent.click(saveBtn);
+
+  const input = screen.getByPlaceholderText('my_config');
+  await fireEvent.input(input, { target: { value: 'my_enter_config' } });
+  await fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
+
+  expect(saveConfigFileSpy).toHaveBeenCalledWith('my_enter_config', false);
+});

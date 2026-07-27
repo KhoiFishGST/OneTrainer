@@ -338,6 +338,12 @@
       aria-label="Preset Name"
       bind:value={presetName}
       placeholder="my_config"
+      onkeydown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleSavePreset();
+        }
+      }}
     />
   </label>
 </ModalDialog>
