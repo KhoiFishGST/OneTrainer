@@ -157,11 +157,6 @@
                               {/if}
                             </div>
                           </div>
-                          {#if promptDef?.prompt}
-                            <p class="prompt-caption" title={promptDef.prompt}>
-                              {promptDef.prompt}
-                            </p>
-                          {/if}
                         </button>
                       {:else}
                         <div class="sample-card non-ready-card status-{status}">
@@ -174,11 +169,6 @@
                               <span class="status-text">Unavailable</span>
                             {/if}
                           </div>
-                          {#if promptDef?.prompt}
-                            <p class="prompt-caption" title={promptDef.prompt}>
-                              {promptDef.prompt}
-                            </p>
-                          {/if}
                         </div>
                       {/if}
                     </div>
@@ -418,7 +408,6 @@
     align-items: center;
     justify-content: center;
     background: var(--control);
-    border-bottom: 1px solid var(--line);
     padding: 0.5rem;
     text-align: center;
   }
@@ -435,21 +424,6 @@
 
   .status-pending .status-text {
     color: var(--accent);
-  }
-
-  .prompt-caption {
-    font-size: 0.8125rem;
-    color: var(--text);
-    padding: 0.6rem 0.75rem;
-    margin: 0;
-    line-height: 1.3;
-    display: -webkit-box;
-    line-clamp: 2;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    word-break: break-word;
   }
 
   @media (max-width: 768px) {

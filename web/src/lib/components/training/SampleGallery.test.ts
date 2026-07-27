@@ -244,13 +244,13 @@ const emptyGallery: GalleryRunModel = {
 };
 
 describe('SampleGallery', () => {
-  it('renders chronological checkpoints in descending order by default and respects per-revision captions', () => {
+  it('renders chronological checkpoints in descending order by default and respects per-revision prompt metadata', () => {
     render(SampleGallery, { props: { gallery: galleryWithEditedPrompt } });
     const rows = screen.getAllByTestId('checkpoint-row');
     expect(rows[0]).toHaveTextContent('Step 100');
     expect(rows[1]).toHaveTextContent('Step 0');
-    expect(rows[0]).toHaveTextContent('edited prompt');
-    expect(rows[1]).toHaveTextContent('old prompt');
+    expect(screen.getByRole('button', { name: /Open sample edited prompt/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Open sample old prompt/ })).toBeInTheDocument();
   });
 
   it('respects sortOrder="asc"', () => {

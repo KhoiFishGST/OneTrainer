@@ -134,6 +134,6 @@ describe('Gallery Route Page', () => {
     await fireEvent.change(combobox, {
       target: { value: '2026-07-26_11-00-00' },
     });
-    expect(await screen.findByText('Historical checkpoint')).toBeInTheDocument();
+    expect(await screen.findByAltText('Historical checkpoint')).toBeInTheDocument();
   });
 });
