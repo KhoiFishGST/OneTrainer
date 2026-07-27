@@ -260,21 +260,6 @@
     font-weight: 500;
   }
 
-  .sort-select {
-    background-color: var(--control, #0f172a);
-    color: var(--text, #f8fafc);
-    border: 1px solid var(--line, #334155);
-    border-radius: 4px;
-    padding: 0.25rem 0.6rem;
-    font-size: 0.8125rem;
-    cursor: pointer;
-    transition: border-color 0.15s ease;
-  }
-
-  .sort-select:hover {
-    border-color: var(--accent, #3b82f6);
-  }
-
   .gallery-state {
     display: flex;
     align-items: center;

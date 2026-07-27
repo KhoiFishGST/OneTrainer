@@ -161,7 +161,6 @@
     min-width: 420px;
   }
 
-  .field-control-side :global(.select-input),
   .field-control-side :global(.text-input),
   .field-control-side :global(.number-input),
   .field-control-side :global(.directory-input-wrapper),

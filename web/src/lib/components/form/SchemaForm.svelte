@@ -325,21 +325,6 @@
     }
   }
 
-  .form-group {
-    border: 1px solid var(--color-border, var(--line, #2d3741));
-    border-radius: 8px;
-    padding: 1.25rem;
-    background: var(--color-bg-card, var(--panel, #181e25));
-  }
-
-  .group-title {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-top: 0;
-    margin-bottom: 1rem;
-    color: var(--color-text-title, var(--accent, #3b82f6));
-  }
-
   .group-fields {
     display: flex;
     flex-direction: column;
@@ -360,7 +345,6 @@
     flex: 1 1 100%;
   }
 
-  .group-fields.components-table :global(.select-input),
   .group-fields.components-table :global(.text-input),
   .group-fields.components-table :global(.number-input),
   .group-fields.components-table :global(.directory-input-wrapper) {
@@ -368,36 +352,5 @@
     max-width: 100% !important;
     min-width: 100% !important;
     box-sizing: border-box;
-  }
-
-  .options-section {
-    margin-top: 1rem;
-    padding: 0.875rem 1rem;
-    border: 1px solid var(--color-border, var(--line, #2d3741));
-    border-radius: 6px;
-    background: var(--color-bg-secondary, var(--panel-raised, #13181f));
-  }
-
-  .group-fields + .options-section {
-    margin-top: 1.25rem;
-  }
-
-  .options-header {
-    margin-bottom: 0.625rem;
-  }
-
-  .options-title {
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--color-text-muted, var(--muted, #8995a1));
-  }
-
-  .options-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem 1.5rem;
-    align-items: flex-end;
   }
 </style>

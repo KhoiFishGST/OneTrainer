@@ -444,12 +444,6 @@
     letter-spacing: 0.05em;
   }
 
-  .actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
   .state-badge {
     padding: 4px 8px;
     border-radius: 4px;
@@ -532,27 +526,6 @@
     transform: translateY(1px);
   }
 
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.6);
-    z-index: 200;
-  }
-
-  .modal-content {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 24px;
-    width: 360px;
-    max-width: 90vw;
-    z-index: 201;
-  }
-
   .modal-field {
     display: flex;
     flex-direction: column;
@@ -568,22 +541,10 @@
     color: var(--text);
   }
 
-  .modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-  }
-
   .error-msg,
   :global(.save-error-toast) {
     color: var(--danger);
     font-size: 0.875rem;
-  }
-
-  .training-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
   }
 
   .saved-icon-badge {
@@ -662,92 +623,5 @@
     background-color: rgba(239, 68, 68, 0.2);
     color: #ef4444;
     border: 1px solid rgba(239, 68, 68, 0.4);
-  }
-
-  .custom-dropdown-container {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-  }
-
-  .dropdown-trigger {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    background-color: var(--control);
-    color: var(--text);
-    border: 1px solid var(--line);
-    border-radius: 4px;
-    padding: 6px 10px;
-    font-size: 0.875rem;
-    cursor: pointer;
-    min-width: 140px;
-    white-space: nowrap;
-    transition: border-color 0.15s ease;
-  }
-
-  .dropdown-trigger:hover {
-    border-color: var(--accent);
-  }
-
-  .dropdown-popover {
-    position: absolute;
-    top: calc(100% + 6px);
-    left: 0;
-    min-width: 100%;
-    width: max-content;
-    max-width: 320px;
-    max-height: 280px;
-    overflow-y: auto;
-    background-color: var(--panel-raised, #1d242c);
-    border: 1px solid var(--line, #2d3741);
-    border-radius: 6px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-    z-index: 250;
-    display: flex;
-    flex-direction: column;
-    padding: 4px;
-    gap: 2px;
-    animation: fadeIn 0.12s ease-out;
-  }
-
-  .popover-option {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    padding: 6px 12px;
-    font-size: 0.875rem;
-    color: var(--text, #e6ebef);
-    background: transparent;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    text-align: left;
-    white-space: nowrap;
-    transition: background-color 0.15s ease, color 0.15s ease;
-  }
-
-  .popover-option:hover {
-    background-color: var(--accent-soft, #1e293b);
-    color: var(--accent, #3b82f6);
-  }
-
-  .popover-option.is-active {
-    background-color: var(--accent, #3b82f6);
-    color: #ffffff;
-    font-weight: 600;
-  }
-
-  .sr-only-select {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
   }
 </style>

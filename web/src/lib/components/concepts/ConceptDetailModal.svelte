@@ -1391,7 +1391,6 @@
 
   .concept-modal-body :global(.text-input),
   .concept-modal-body :global(.number-input),
-  .concept-modal-body :global(.select-input),
   .concept-modal-body :global(.directory-input-wrapper) {
     width: 100% !important;
     max-width: 100% !important;
