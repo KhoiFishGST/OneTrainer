@@ -1,35 +1,204 @@
 <script lang="ts">
-  import { createHealthQuery } from '../../api/queries';
+  import { getRouteContext } from '../../config/context';
+  import type { ConfigWorkspace } from '../../config/workspace.svelte';
+  import { trainingStore } from '../../events/training-store';
+  import { api } from '../../api/client';
 
   let {
-    connected: connectedProp,
-    onToggleConsole,
-  }: {
-    connected?: boolean;
-    onToggleConsole?: () => void;
-  } = $props();
+    workspace: workspaceProp = null,
+  } = $props<{
+    workspace?: ConfigWorkspace | null;
+  }>();
 
-  const healthQuery = createHealthQuery();
+  let ctx: any = null;
+  try {
+    ctx = getRouteContext();
+  } catch {
+    // context not provided in isolated unit test
+  }
 
-  const isConnected = $derived(
-    connectedProp ?? $healthQuery.isSuccess
-  );
+  const workspace = $derived(workspaceProp ?? ctx?.workspace);
+  const trainingState = $derived($trainingStore.status?.state ?? 'IDLE');
+
+  async function handleStartTraining() {
+    try {
+      await api.startTraining();
+    } catch (err) {
+      console.error('Failed to start training', err);
+    }
+  }
+
+  async function handlePauseTraining() {
+    try {
+      await api.pauseTraining();
+    } catch (err) {
+      console.error('Failed to pause training', err);
+    }
+  }
+
+  async function handleResumeTraining() {
+    try {
+      await api.resumeTraining();
+    } catch (err) {
+      console.error('Failed to resume training', err);
+    }
+  }
+
+  async function handleStopTraining() {
+    try {
+      await api.stopTraining();
+    } catch (err) {
+      console.error('Failed to stop training', err);
+    }
+  }
+
+  async function handleSample() {
+    try {
+      await api.requestSample();
+    } catch (err) {
+      console.error('Failed to request sample', err);
+    }
+  }
+
+  async function handleBackup() {
+    try {
+      await api.requestBackup();
+    } catch (err) {
+      console.error('Failed to request backup', err);
+    }
+  }
 </script>
 
 <footer class="status-bar safe-area-padding">
-  <div class="server-status">
-    <span class="status-indicator" class:connected={isConnected}></span>
-    <span class="status-text">{isConnected ? 'Connected' : 'Disconnected'}</span>
-    {#if onToggleConsole}
-      <button
-        type="button"
-        class="console-toggle-btn"
-        onclick={onToggleConsole}
-        title="Toggle Console Drawer"
-      >
-        Console
-      </button>
+  <div class="status-bar-right">
+    <span
+      data-testid="training-status-pill"
+      class="status-pill status-{trainingState.toLowerCase()}"
+      title={$trainingStore.status?.error_message ?? ''}
+    >
+      {trainingState}
+    </span>
+
+    {#if workspace}
+      <span class="state-badge state-{workspace.state}">
+        {#if workspace.state === 'saved'}
+          Saved
+        {:else if workspace.state === 'unsaved'}
+          Unsaved
+        {:else if workspace.state === 'saving'}
+          Saving...
+        {:else if workspace.state === 'conflict'}
+          Conflict
+        {:else if workspace.state === 'failed'}
+          Failed
+        {/if}
+      </span>
+
+      {#if workspace.state === 'failed' || workspace.state === 'unsaved'}
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick={() => workspace.retry()}
+        >
+          Retry
+        </button>
+      {/if}
+
+      {#if workspace.state === 'conflict'}
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick={() => workspace.reloadServer(true)}
+        >
+          Reload
+        </button>
+        <button
+          type="button"
+          class="btn btn-danger"
+          onclick={() => workspace.overwriteServer()}
+        >
+          Overwrite
+        </button>
+      {/if}
     {/if}
+
+    <div class="training-action-buttons">
+      {#if trainingState === 'IDLE' || trainingState === 'COMPLETED' || trainingState === 'FAILED'}
+        <button
+          type="button"
+          class="btn btn-primary"
+          onclick={handleStartTraining}
+        >
+          Start Training
+        </button>
+      {:else if trainingState === 'TRAINING'}
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick={handlePauseTraining}
+        >
+          Pause
+        </button>
+        <button
+          type="button"
+          class="btn btn-danger"
+          onclick={handleStopTraining}
+        >
+          Stop
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick={handleSample}
+        >
+          Sample
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick={handleBackup}
+        >
+          Backup
+        </button>
+      {:else if trainingState === 'PAUSED'}
+        <button
+          type="button"
+          class="btn btn-primary"
+          onclick={handleResumeTraining}
+        >
+          Resume
+        </button>
+        <button
+          type="button"
+          class="btn btn-danger"
+          onclick={handleStopTraining}
+        >
+          Stop
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick={handleSample}
+        >
+          Sample
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick={handleBackup}
+        >
+          Backup
+        </button>
+      {:else if trainingState === 'STOPPING'}
+        <button
+          type="button"
+          class="btn btn-danger"
+          disabled
+        >
+          Stop
+        </button>
+      {/if}
+    </div>
   </div>
 </footer>
 
@@ -40,45 +209,121 @@
     border-top: 1px solid var(--line);
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     padding: 0 16px;
     font-size: 0.875rem;
     z-index: 50;
   }
 
-  .server-status {
+  .status-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .training-action-buttons {
     display: flex;
     align-items: center;
     gap: 8px;
+    margin-left: 4px;
   }
 
-  .status-indicator {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background-color: var(--danger);
+  .state-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
   }
 
-  .status-indicator.connected {
-    background-color: var(--success);
+  .state-saved {
+    background-color: rgba(101, 185, 141, 0.15);
+    color: var(--success);
   }
 
-  .status-text {
+  .state-unsaved {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: var(--accent);
+  }
+
+  .state-saving {
+    background-color: rgba(137, 149, 161, 0.15);
     color: var(--muted);
   }
 
-  .console-toggle-btn {
-    background-color: var(--control, #21262d);
-    color: var(--text, #c9d1d9);
-    border: 1px solid var(--line, #30363d);
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    cursor: pointer;
-    margin-left: 8px;
+  .state-conflict,
+  .state-failed {
+    background-color: rgba(217, 120, 120, 0.15);
+    color: var(--danger);
   }
 
-  .console-toggle-btn:hover {
-    background-color: var(--line, #30363d);
+  .status-pill {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .status-idle {
+    background-color: var(--panel-raised, rgba(255, 255, 255, 0.05));
+    color: var(--muted, #888);
+    border: 1px solid var(--line, #444);
+  }
+
+  .status-starting,
+  .status-training {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+  }
+
+  .status-paused {
+    background-color: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+
+  .status-stopping {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+
+  .status-completed {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+
+  .status-failed {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+  }
+
+  .btn {
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+
+  .btn-primary {
+    background-color: var(--accent);
+    color: #fff;
+  }
+
+  .btn-secondary {
+    background-color: var(--control);
+    color: var(--text);
+    border-color: var(--line);
+  }
+
+  .btn-danger {
+    background-color: var(--danger);
+    color: #fff;
   }
 </style>

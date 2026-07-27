@@ -181,16 +181,23 @@
     {/if}
 
     <div class="shell-body">
-      <Rail {currentPath} mobile={isMobile} />
-      <main class="main-content">
-        {#if children}
-          {@render children()}
-        {/if}
-      </main>
-    </div>
+      <Rail
+        {currentPath}
+        mobile={isMobile}
+        onToggleConsole={toggleDrawer}
+        isConsoleOpen={drawerOpen}
+      />
+      <div class="main-column">
+        <main class="main-content">
+          {#if children}
+            {@render children()}
+          {/if}
+        </main>
 
-    <ConsoleDrawer open={drawerOpen && currentPath !== '/console'} onClose={closeDrawer} store={consoleStore} />
-    <StatusBar connected={$healthQuery.isSuccess} onToggleConsole={toggleDrawer} />
+        <ConsoleDrawer open={drawerOpen && currentPath !== '/console'} onClose={closeDrawer} store={consoleStore} />
+        <StatusBar />
+      </div>
+    </div>
 
     <DirectoryPicker
       open={pickerOpen}
@@ -231,6 +238,14 @@
   .shell-body {
     flex: 1;
     display: flex;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .main-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
     position: relative;
   }

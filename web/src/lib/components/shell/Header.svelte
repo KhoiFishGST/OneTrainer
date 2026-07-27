@@ -188,187 +188,60 @@
 </script>
 
 <header class="header">
-  <div class="brand">
-    <img src="/logo.png" alt="OneTrainer Logo" class="brand-logo" />
-    <span class="app-title">OneTrainer</span>
-  </div>
-
-  <div class="selectors">
-    <div class="selector-field">
-      <span class="label-text">Model</span>
-      <div class="header-select-wrapper">
-        <Select
-          ariaLabel="Model Type"
-          value={currentModelType}
-          options={modelTypes}
-          onChange={handleModelTypeChange}
-        />
-      </div>
+  <div class="header-left">
+    <div class="brand">
+      <img src="/logo.png" alt="OneTrainer Logo" class="brand-logo" />
+      <span class="app-title">OneTrainer</span>
     </div>
 
-    <div class="selector-field">
-      <span class="label-text">Method</span>
-      <div class="header-select-wrapper">
-        <Select
-          ariaLabel="Training Method"
-          value={currentTrainingMethod}
-          options={trainingMethods}
-          onChange={handleTrainingMethodChange}
-        />
+    <div class="header-divider"></div>
+
+    <div class="selectors">
+      <div class="selector-field">
+        <span class="label-text">Model</span>
+        <div class="header-select-wrapper">
+          <Select
+            ariaLabel="Model Type"
+            value={currentModelType}
+            options={modelTypes}
+            onChange={handleModelTypeChange}
+          />
+        </div>
       </div>
-    </div>
 
-    <div class="selector-field">
-      <span class="label-text">Preset</span>
-      <div class="header-select-wrapper">
-        <Select
-          ariaLabel="Presets"
-          value=""
-          placeholder="Select preset..."
-          options={flattenedPresets.map((p) => ({ value: p.id, label: p.label }))}
-          onChange={handleSelectPreset}
-        />
+      <div class="selector-field">
+        <span class="label-text">Method</span>
+        <div class="header-select-wrapper">
+          <Select
+            ariaLabel="Training Method"
+            value={currentTrainingMethod}
+            options={trainingMethods}
+            onChange={handleTrainingMethodChange}
+          />
+        </div>
       </div>
+
+      <div class="selector-field">
+        <span class="label-text">Preset</span>
+        <div class="header-select-wrapper">
+          <Select
+            ariaLabel="Presets"
+            value=""
+            placeholder="Select preset..."
+            options={flattenedPresets.map((p) => ({ value: p.id, label: p.label }))}
+            onChange={handleSelectPreset}
+          />
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="btn btn-secondary"
+        onclick={openSavePresetModal}
+      >
+        Save Preset
+      </button>
     </div>
-
-    <button
-      type="button"
-      class="btn btn-secondary"
-      onclick={openSavePresetModal}
-    >
-      Save Preset
-    </button>
-  </div>
-
-  <div class="training-bar">
-    <span
-      data-testid="training-status-pill"
-      class="status-pill status-{trainingState.toLowerCase()}"
-      title={$trainingStore.status?.error_message ?? ''}
-    >
-      {trainingState}
-    </span>
-
-    {#if trainingState === 'IDLE' || trainingState === 'COMPLETED' || trainingState === 'FAILED'}
-      <button
-        type="button"
-        class="btn btn-primary"
-        onclick={handleStartTraining}
-      >
-        Start Training
-      </button>
-    {:else if trainingState === 'TRAINING'}
-      <button
-        type="button"
-        class="btn btn-secondary"
-        onclick={handlePauseTraining}
-      >
-        Pause
-      </button>
-      <button
-        type="button"
-        class="btn btn-danger"
-        onclick={handleStopTraining}
-      >
-        Stop
-      </button>
-      <button
-        type="button"
-        class="btn btn-secondary"
-        onclick={handleSample}
-      >
-        Sample
-      </button>
-      <button
-        type="button"
-        class="btn btn-secondary"
-        onclick={handleBackup}
-      >
-        Backup
-      </button>
-    {:else if trainingState === 'PAUSED'}
-      <button
-        type="button"
-        class="btn btn-primary"
-        onclick={handleResumeTraining}
-      >
-        Resume
-      </button>
-      <button
-        type="button"
-        class="btn btn-danger"
-        onclick={handleStopTraining}
-      >
-        Stop
-      </button>
-      <button
-        type="button"
-        class="btn btn-secondary"
-        onclick={handleSample}
-      >
-        Sample
-      </button>
-      <button
-        type="button"
-        class="btn btn-secondary"
-        onclick={handleBackup}
-      >
-        Backup
-      </button>
-    {:else if trainingState === 'STOPPING'}
-      <button
-        type="button"
-        class="btn btn-danger"
-        disabled
-      >
-        Stop
-      </button>
-    {/if}
-  </div>
-
-  <div class="actions">
-    {#if workspace}
-      <span class="state-badge state-{workspace.state}">
-        {#if workspace.state === 'saved'}
-          Saved
-        {:else if workspace.state === 'unsaved'}
-          Unsaved
-        {:else if workspace.state === 'saving'}
-          Saving...
-        {:else if workspace.state === 'conflict'}
-          Conflict
-        {:else if workspace.state === 'failed'}
-          Failed
-        {/if}
-      </span>
-
-      {#if workspace.state === 'failed' || workspace.state === 'unsaved'}
-        <button
-          type="button"
-          class="btn btn-secondary"
-          onclick={() => workspace.retry()}
-        >
-          Retry
-        </button>
-      {/if}
-
-      {#if workspace.state === 'conflict'}
-        <button
-          type="button"
-          class="btn btn-secondary"
-          onclick={() => workspace.reloadServer(true)}
-        >
-          Reload
-        </button>
-        <button
-          type="button"
-          class="btn btn-danger"
-          onclick={() => workspace.overwriteServer()}
-        >
-          Overwrite
-        </button>
-      {/if}
-    {/if}
   </div>
 </header>
 
@@ -413,9 +286,21 @@
     border-bottom: 1px solid var(--line);
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     padding: 0 16px;
     gap: 16px;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .header-divider {
+    width: 1px;
+    height: 24px;
+    background-color: var(--line, #2d3741);
   }
 
   .brand {

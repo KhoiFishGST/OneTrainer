@@ -19,9 +19,16 @@
     Key,
   } from 'lucide-svelte';
 
-  let { currentPath = '/live', mobile = false } = $props<{
+  let {
+    currentPath = '/live',
+    mobile = false,
+    onToggleConsole,
+    isConsoleOpen = false,
+  } = $props<{
     currentPath?: string;
     mobile?: boolean;
+    onToggleConsole?: () => void;
+    isConsoleOpen?: boolean;
   }>();
 
   let expanded = $state(false);
@@ -106,6 +113,20 @@
             </a>
           {/if}
         {/each}
+        {#if onToggleConsole}
+          <button
+            type="button"
+            class="nav-item console-nav-btn"
+            class:active={isConsoleOpen}
+            onclick={() => {
+              onToggleConsole();
+              drawerOpen = false;
+            }}
+          >
+            <Terminal size={20} class="nav-icon" />
+            <span class="nav-label">Console</span>
+          </button>
+        {/if}
       </nav>
     </div>
   {/if}
@@ -146,6 +167,20 @@
         {/if}
       {/each}
     </nav>
+    {#if onToggleConsole}
+      <div class="rail-footer">
+        <button
+          type="button"
+          class="nav-item console-nav-btn"
+          class:active={isConsoleOpen}
+          onclick={onToggleConsole}
+          title="Toggle Console Drawer"
+        >
+          <Terminal size={20} class="nav-icon" />
+          <span class="nav-label">Console</span>
+        </button>
+      </div>
+    {/if}
   </aside>
 {/if}
 
@@ -195,6 +230,22 @@
     padding: 8px 4px;
     gap: 4px;
     overflow-y: auto;
+    flex: 1;
+  }
+
+  .rail-footer {
+    padding: 8px 4px;
+    border-top: 1px solid var(--line);
+    margin-top: auto;
+  }
+
+  .console-nav-btn {
+    width: 100%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
   }
 
   .nav-item {
