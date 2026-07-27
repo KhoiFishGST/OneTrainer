@@ -1129,8 +1129,14 @@
               </div>
             {:else}
               <div class="stats-placeholder-box">
-                <RefreshCw size={24} class="spin muted-icon" />
-                <span>Click "Refresh Basic" or "Refresh Advanced" to scan concept statistics.</span>
+                <RefreshCw size={24} class={statsLoading ? 'spin muted-icon' : 'muted-icon'} />
+                {#if !draft?.path}
+                  <span>Specify a valid concept dataset path in General tab to scan statistics.</span>
+                {:else if statsLoading}
+                  <span>Scanning concept statistics...</span>
+                {:else}
+                  <span>Click "Refresh Basic" or "Refresh Advanced" to scan concept statistics.</span>
+                {/if}
               </div>
             {/if}
           </div>

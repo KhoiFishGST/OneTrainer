@@ -92,7 +92,7 @@ async def get_concept_stats_endpoint(
     if not path or not os.path.exists(path):
         return init_concept_stats(advanced)
 
-    concept_config = ConceptConfig()
+    concept_config = ConceptConfig.default_values()
     concept_config.path = path
     concept_config.include_subdirectories = include_subdirectories
 
