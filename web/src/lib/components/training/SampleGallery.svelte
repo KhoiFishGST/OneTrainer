@@ -71,100 +71,102 @@
       <p class="state-text">No samples yet</p>
     </div>
   {:else}
-    <div class="checkpoints-list">
+    <div class="gallery-single-panel" data-testid="checkpoints-list">
       {#each sortedBatches as batch (batch.id ?? batch.batch_id ?? 1)}
         {@const revision = gallery.revisions ? gallery.revisions[batch.prompt_revision_id] : null}
         {@const promptIds = batch.expected_prompt_ids ?? (batch.samples ? Array.from(new Set(batch.samples.map((s) => s.webui_prompt_id).filter(Boolean))) : [])}
         {@const expectedVariants = batch.expected_variants ?? ['ema']}
         <div class="checkpoint-row" data-testid="checkpoint-row">
-          <div class="checkpoint-header">
-            <span class="checkpoint-label">
+          <div class="epoch-badge-col">
+            <span class="epoch-badge-text">
               Epoch {batch.epoch ?? batch.progress?.epoch ?? 0} {'\u00b7'} Step {batch.global_step ?? batch.progress?.global_step ?? 0}
             </span>
           </div>
 
-          {#each expectedVariants as variant (variant)}
-            <div class="variant-subrow">
-              {#if expectedVariants.length > 1}
-                <h4 class="variant-label">{formatVariant(variant)}</h4>
-              {/if}
+          <div class="checkpoint-content-col">
+            {#each expectedVariants as variant (variant)}
+              <div class="variant-subrow">
+                {#if expectedVariants.length > 1}
+                  <h4 class="variant-label">{formatVariant(variant)}</h4>
+                {/if}
 
-              <div
-                class="variant-grid"
-                data-testid="variant-grid"
-                style={`--prompt-columns: ${Math.max(promptIds.length, 1)}`}
-              >
-                {#each promptIds as promptId (promptId)}
-                  {@const promptDef = revision?.prompts?.find((p) => p.webui_id === promptId)}
-                  {@const sample = batch.samples?.find((s) => s.webui_prompt_id === promptId && s.variant === variant)}
-                  {@const status = sample ? sample.status : 'unavailable'}
+                <div
+                  class="variant-grid"
+                  data-testid="variant-grid"
+                  style={`--prompt-columns: ${Math.max(promptIds.length, 1)}`}
+                >
+                  {#each promptIds as promptId (promptId)}
+                    {@const promptDef = revision?.prompts?.find((p) => p.webui_id === promptId)}
+                    {@const sample = batch.samples?.find((s) => s.webui_prompt_id === promptId && s.variant === variant)}
+                    {@const status = sample ? sample.status : 'unavailable'}
 
-                  <div class="sample-slot-container">
-                    {#if status === 'ready' && sample}
-                      {@const thumbUrl = gallery.run?.key ? galleryImageUrl(gallery.run.key, sample.thumbnail_filename || sample.filename || '') : ''}
-                      <button
-                        type="button"
-                        class="sample-card ready-card"
-                        aria-label={`Open sample ${promptDef?.prompt || promptId}`}
-                        onclick={() => openViewer(batch.id, promptId, variant)}
-                      >
-                        <div class="thumbnail-wrapper">
-                          {#if thumbUrl}
-                            <img
-                              src={thumbUrl}
-                              alt={promptDef?.prompt || 'sample prompt'}
-                              loading="lazy"
-                              class="thumbnail-img"
-                            />
+                    <div class="sample-slot-container">
+                      {#if status === 'ready' && sample}
+                        {@const thumbUrl = gallery.run?.key ? galleryImageUrl(gallery.run.key, sample.thumbnail_filename || sample.filename || '') : ''}
+                        <button
+                          type="button"
+                          class="sample-card ready-card"
+                          aria-label={`Open sample ${promptDef?.prompt || promptId}`}
+                          onclick={() => openViewer(batch.id, promptId, variant)}
+                        >
+                          <div class="thumbnail-wrapper">
+                            {#if thumbUrl}
+                              <img
+                                src={thumbUrl}
+                                alt={promptDef?.prompt || 'sample prompt'}
+                                loading="lazy"
+                                class="thumbnail-img"
+                              />
+                            {/if}
+                            <div class="card-overlay">
+                              {#if promptDef}
+                                <div class="overlay-meta">
+                                  {#if promptDef.width && promptDef.height}
+                                    <span class="meta-tag">{promptDef.width}{'\u00d7'}{promptDef.height}</span>
+                                  {/if}
+                                  {#if promptDef.diffusion_steps !== undefined}
+                                    <span class="meta-tag">{promptDef.diffusion_steps} steps</span>
+                                  {/if}
+                                  {#if promptDef.cfg_scale !== undefined}
+                                    <span class="meta-tag">CFG {promptDef.cfg_scale}</span>
+                                  {/if}
+                                  {#if getSeedLabel(promptDef)}
+                                    <span class="meta-tag">Seed {getSeedLabel(promptDef)}</span>
+                                  {/if}
+                                </div>
+                              {/if}
+                            </div>
+                          </div>
+                          {#if promptDef?.prompt}
+                            <p class="prompt-caption" title={promptDef.prompt}>
+                              {promptDef.prompt}
+                            </p>
                           {/if}
-                          <div class="card-overlay">
-                            {#if promptDef}
-                              <div class="overlay-meta">
-                                {#if promptDef.width && promptDef.height}
-                                  <span class="meta-tag">{promptDef.width}{'\u00d7'}{promptDef.height}</span>
-                                {/if}
-                                {#if promptDef.diffusion_steps !== undefined}
-                                  <span class="meta-tag">{promptDef.diffusion_steps} steps</span>
-                                {/if}
-                                {#if promptDef.cfg_scale !== undefined}
-                                  <span class="meta-tag">CFG {promptDef.cfg_scale}</span>
-                                {/if}
-                                {#if getSeedLabel(promptDef)}
-                                  <span class="meta-tag">Seed {getSeedLabel(promptDef)}</span>
-                                {/if}
-                              </div>
+                        </button>
+                      {:else}
+                        <div class="sample-card non-ready-card status-{status}">
+                          <div class="status-placeholder">
+                            {#if status === 'pending'}
+                              <span class="status-text">Generating...</span>
+                            {:else if status === 'error'}
+                              <span class="status-text">{sample?.error || sample?.thumbnail_error || 'Gallery error'}</span>
+                            {:else}
+                              <span class="status-text">Unavailable</span>
                             {/if}
                           </div>
-                        </div>
-                        {#if promptDef?.prompt}
-                          <p class="prompt-caption" title={promptDef.prompt}>
-                            {promptDef.prompt}
-                          </p>
-                        {/if}
-                      </button>
-                    {:else}
-                      <div class="sample-card non-ready-card status-{status}">
-                        <div class="status-placeholder">
-                          {#if status === 'pending'}
-                            <span class="status-text">Generating...</span>
-                          {:else if status === 'error'}
-                            <span class="status-text">{sample?.error || sample?.thumbnail_error || 'Gallery error'}</span>
-                          {:else}
-                            <span class="status-text">Unavailable</span>
+                          {#if promptDef?.prompt}
+                            <p class="prompt-caption" title={promptDef.prompt}>
+                              {promptDef.prompt}
+                            </p>
                           {/if}
                         </div>
-                        {#if promptDef?.prompt}
-                          <p class="prompt-caption" title={promptDef.prompt}>
-                            {promptDef.prompt}
-                          </p>
-                        {/if}
-                      </div>
-                    {/if}
-                  </div>
-                {/each}
+                      {/if}
+                    </div>
+                  {/each}
+                </div>
               </div>
-            </div>
-          {/each}
+            {/each}
+          </div>
         </div>
       {/each}
     </div>
@@ -217,36 +219,58 @@
     margin: 0;
   }
 
-  .checkpoints-list {
+  .gallery-single-panel {
     display: flex;
     flex-direction: column;
-    gap: 1.75rem;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
   }
 
   .checkpoint-row {
     content-visibility: auto;
     contain-intrinsic-size: 1px 300px;
     display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 1rem;
-  }
-
-  .checkpoint-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-bottom: 0.5rem;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 1rem;
+    padding: 1.25rem 1rem;
     border-bottom: 1px solid var(--line);
   }
 
-  .checkpoint-label {
-    font-size: 1rem;
+  .checkpoint-row:last-child {
+    border-bottom: none;
+  }
+
+  .epoch-badge-col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+    background: var(--control);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 0.75rem 0.375rem;
+    user-select: none;
+    flex-shrink: 0;
+  }
+
+  .epoch-badge-text {
+    font-size: 0.8125rem;
     font-weight: 600;
     color: var(--text);
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+
+  .checkpoint-content-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
   }
 
   .variant-subrow {
