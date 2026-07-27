@@ -209,3 +209,20 @@ it("throws error for unknown control type", () => {
     });
   }).toThrow('Unknown control type: "invalid_type_xyz"');
 });
+
+it("keeps incomplete numeric schema edits as raw strings", async () => {
+  const setRaw = vi.fn();
+  render(SchemaForm, {
+    tab: {
+      id: "x",
+      label: "X",
+      groups: [{ id: "g", fields: [{ id: "n", keys: ["n"], label: "N", control: "number" }] }],
+    },
+    values: { n: 1 },
+    issues: [],
+    setRaw,
+  });
+  await fireEvent.input(screen.getByLabelText("N"), { target: { value: "-" } });
+  expect(setRaw).toHaveBeenCalledWith("n", "-");
+});
+

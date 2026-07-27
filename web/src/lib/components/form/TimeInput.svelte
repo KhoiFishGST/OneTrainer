@@ -1,4 +1,5 @@
 <script lang="ts">
+  import NumberInput from './NumberInput.svelte';
   import Select from './Select.svelte';
 
   let {
@@ -36,23 +37,16 @@
         : { value: opt, label: String(opt) }
     )
   );
-
-  function handleValueInput(e: Event) {
-    const val = (e.target as HTMLInputElement).value;
-    onValueInput(val);
-  }
 </script>
 
 <div class="time-input-group">
-  <input
-    type="text"
-    inputmode="decimal"
+  <NumberInput
     {id}
-    value={value ?? ''}
+    {value}
     {disabled}
-    aria-describedby={ariaDescribedBy}
-    oninput={handleValueInput}
+    {ariaDescribedBy}
     class="time-value-input"
+    onInput={onValueInput}
   />
   <div class="time-unit-select-wrapper">
     <Select
@@ -74,7 +68,7 @@
     width: 100%;
   }
 
-  .time-value-input {
+  :global(.time-value-input) {
     flex: 1;
     min-width: 0;
     padding: 0.5rem 0.75rem;
@@ -86,7 +80,7 @@
     box-sizing: border-box;
   }
 
-  .time-value-input:focus {
+  :global(.time-value-input:focus) {
     outline: none;
     border-color: var(--color-primary, var(--accent, #3b82f6));
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);

@@ -69,4 +69,15 @@ describe('ModalDialog', () => {
     await fireEvent.keyDown(dialog, { key: 'ArrowRight' });
     expect(onKeyDown).toHaveBeenCalledWith(expect.objectContaining({ key: 'ArrowRight' }));
   });
+
+  it('keeps focus trapped after shared buttons are composed', async () => {
+    render(ModalDialog, { props: { open: true, title: 'Trap', onClose: vi.fn(), onApply: vi.fn() } });
+    await new Promise((r) => setTimeout(r, 0));
+    const dialog = screen.getByRole('dialog');
+    const apply = screen.getByRole('button', { name: 'Apply' });
+    const close = screen.getByRole('button', { name: 'Close' });
+    apply.focus();
+    await fireEvent.keyDown(dialog, { key: 'Tab' });
+    expect(close).toHaveFocus();
+  });
 });

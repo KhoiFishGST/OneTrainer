@@ -1,6 +1,7 @@
 <script lang="ts">
   import { tick, type Snippet } from 'svelte';
   import { X } from 'lucide-svelte';
+  import Button from './Button.svelte';
 
   let {
     open = $bindable(false),
@@ -131,14 +132,15 @@
     >
       <div class="modal-header">
         <h3 id={titleId} class="modal-title">{title}</h3>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon"
           class="close-btn"
           aria-label="Close"
           onclick={handleClose}
         >
           <X size={20} />
-        </button>
+        </Button>
       </div>
 
       <div class="modal-body">
@@ -149,21 +151,21 @@
 
       {#if showFooter}
         <div class="modal-footer">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
             class="btn cancel-btn"
             onclick={handleClose}
           >
             {cancelText}
-          </button>
+          </Button>
           {#if onApply}
-            <button
-              type="button"
+            <Button
+              variant="primary"
               class="btn apply-btn"
               onclick={handleApply}
             >
               {applyText}
-            </button>
+            </Button>
           {/if}
         </div>
       {/if}
@@ -230,7 +232,7 @@
     color: var(--text);
   }
 
-  .close-btn {
+  :global(.close-btn) {
     background: transparent;
     border: none;
     cursor: pointer;
@@ -242,7 +244,7 @@
     justify-content: center;
   }
 
-  .close-btn:hover {
+  :global(.close-btn:hover) {
     background: var(--control);
     color: var(--text);
   }
@@ -275,23 +277,23 @@
     transition: background-color 0.15s ease, opacity 0.15s ease;
   }
 
-  .cancel-btn {
+  :global(.cancel-btn) {
     background: transparent;
     border: 1px solid var(--line);
     color: var(--text);
   }
 
-  .cancel-btn:hover {
+  :global(.cancel-btn:hover) {
     background: var(--control);
   }
 
-  .apply-btn {
+  :global(.apply-btn) {
     background: var(--accent);
     color: #ffffff;
     border: none;
   }
 
-  .apply-btn:hover {
+  :global(.apply-btn:hover) {
     opacity: 0.9;
   }
 

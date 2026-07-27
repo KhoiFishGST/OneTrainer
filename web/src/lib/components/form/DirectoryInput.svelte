@@ -1,5 +1,7 @@
 <script lang="ts">
   import { FolderOpen } from 'lucide-svelte';
+  import Button from '$lib/components/ui/Button.svelte';
+  import TextInput from './TextInput.svelte';
   import { getRouteContext } from '$lib/config/context';
 
   let {
@@ -21,11 +23,6 @@
     onInput: (val: string) => void;
     onOpenDirectory?: (currentPath: string, onSelect?: (selectedPath: string) => void) => void;
   } = $props();
-
-  function handleInput(e: Event) {
-    const val = (e.target as HTMLInputElement).value;
-    onInput(val);
-  }
 
   function handleOpen() {
     if (onOpenDirectory) {
@@ -49,18 +46,17 @@
 </script>
 
 <div class="directory-input-wrapper">
-  <input
-    type="text"
+  <TextInput
     {id}
-    value={value ?? ''}
+    {value}
     {disabled}
     {placeholder}
-    aria-describedby={ariaDescribedBy}
-    oninput={handleInput}
+    {ariaDescribedBy}
     class="directory-input"
+    onInput={onInput}
   />
-  <button
-    type="button"
+  <Button
+    variant="secondary"
     class="directory-btn"
     aria-label="Browse directory"
     {disabled}
@@ -70,7 +66,7 @@
     {#if buttonLabel}
       <span>{buttonLabel}</span>
     {/if}
-  </button>
+  </Button>
 </div>
 
 <style>
@@ -84,7 +80,7 @@
     box-sizing: border-box;
   }
 
-  .directory-input {
+  :global(.directory-input) {
     flex: 1 1 0%;
     min-width: 0;
     width: 100%;
@@ -98,13 +94,13 @@
     box-sizing: border-box;
   }
 
-  .directory-input:focus {
+  :global(.directory-input:focus) {
     outline: none;
     border-color: var(--color-primary, var(--accent, #3b82f6));
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
   }
 
-  .directory-btn {
+  :global(.directory-btn) {
     flex: 0 0 auto;
     height: 38px;
     display: inline-flex;
@@ -123,7 +119,7 @@
     white-space: nowrap;
   }
 
-  .directory-btn:hover:not(:disabled) {
+  :global(.directory-btn:hover:not(:disabled)) {
     background: var(--color-bg-button-hover, var(--panel-raised, #1d242c));
   }
 </style>

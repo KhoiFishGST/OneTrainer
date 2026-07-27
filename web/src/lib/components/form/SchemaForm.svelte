@@ -10,6 +10,7 @@
   import Select from './Select.svelte';
   import DirectoryInput from './DirectoryInput.svelte';
   import TimeInput from './TimeInput.svelte';
+  import Button from '$lib/components/ui/Button.svelte';
 
   import FormPanel from './FormPanel.svelte';
   import SectionDivider from './SectionDivider.svelte';
@@ -182,17 +183,19 @@
                     />
                   </div>
                   {#if primaryKey === 'optimizer' || primaryKey === 'optimizer.optimizer'}
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       class="action-btn gear-btn"
                       title="Configure advanced optimizer parameters"
                       onclick={() => onOpenOptimizerParams?.()}
                     >
                       <Settings size={16} />
-                    </button>
+                    </Button>
                   {:else if primaryKey === 'learning_rate_scheduler'}
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       class="action-btn gear-btn"
                       disabled={fieldValue !== 'CUSTOM'}
                       title={fieldValue === 'CUSTOM'
@@ -201,7 +204,7 @@
                       onclick={() => fieldValue === 'CUSTOM' && onOpenSchedulerParams?.()}
                     >
                       <Settings size={16} />
-                    </button>
+                    </Button>
                   {/if}
                 </div>
               {:else}

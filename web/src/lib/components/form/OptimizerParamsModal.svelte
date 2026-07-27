@@ -3,6 +3,9 @@
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
   import Select from '$lib/components/form/Select.svelte';
   import Toggle from '$lib/components/form/Toggle.svelte';
+  import NumberInput from '$lib/components/form/NumberInput.svelte';
+  import TextInput from '$lib/components/form/TextInput.svelte';
+  import Button from '$lib/components/ui/Button.svelte';
   import { getRouteContext } from '$lib/config/context';
 
   import type { RouteContext } from '$lib/config/context';
@@ -148,9 +151,24 @@
   }
 
   function handleApply() {
+    const finalParams: Record<string, any> = {};
+    for (const key of currentParamKeys) {
+      const val = localParams[key];
+      const spec = currentFieldSpecs[key];
+      if (spec && (spec.type === 'int' || spec.type === 'float')) {
+        if (val === '' || val === null || val === undefined) {
+          finalParams[key] = '';
+        } else {
+          const num = Number(val);
+          finalParams[key] = Number.isNaN(num) ? val : num;
+        }
+      } else {
+        finalParams[key] = val;
+      }
+    }
     onSave({
       optimizer: localOptimizer,
-      optimizer_params: localParams,
+      optimizer_params: finalParams,
     });
     open = false;
   }
@@ -177,14 +195,14 @@
         />
       </div>
 
-      <button
-        type="button"
+      <Button
+        variant="secondary"
         class="defaults-btn"
         title="Reset parameters to standard defaults for this optimizer"
         onclick={handleLoadDefaults}
       >
         Load Defaults
-      </button>
+      </Button>
     </div>
 
     <div class="params-divider"></div>
@@ -203,20 +221,25 @@
                 onChange={(val) => (localParams[key] = val)}
               />
             </div>
+          {:else if spec.type === 'int' || spec.type === 'float'}
+            <label for={`param-${key}`} class="param-label" title={spec.tooltip}>
+              {spec.label}
+            </label>
+            <NumberInput
+              id={`param-${key}`}
+              value={localParams[key] ?? ''}
+              class="param-input"
+              onInput={(val) => (localParams[key] = val)}
+            />
           {:else}
             <label for={`param-${key}`} class="param-label" title={spec.tooltip}>
               {spec.label}
             </label>
-            <input
+            <TextInput
               id={`param-${key}`}
-              type={spec.type === 'int' || spec.type === 'float' ? 'number' : 'text'}
-              step={spec.type === 'float' ? 'any' : '1'}
-              class="param-input"
               value={localParams[key] ?? ''}
-              oninput={(e) => {
-                const val = (e.target as HTMLInputElement).value;
-                localParams[key] = spec.type === 'int' || spec.type === 'float' ? Number(val) : val;
-              }}
+              class="param-input"
+              onInput={(val) => (localParams[key] = val)}
             />
           {/if}
         </div>
@@ -253,7 +276,7 @@
     color: var(--text, #f8fafc);
   }
 
-  .defaults-btn {
+  :global(.defaults-btn) {
     height: 38px;
     padding: 0 1rem;
     background: var(--panel-raised, #252d37);
@@ -266,7 +289,7 @@
     transition: all 0.15s ease;
   }
 
-  .defaults-btn:hover {
+  :global(.defaults-btn:hover) {
     background: var(--line, #334155);
     color: var(--accent, #3b82f6);
     border-color: var(--accent, #3b82f6);
@@ -307,7 +330,7 @@
     color: var(--muted, #94a3b8);
   }
 
-  .param-input {
+  :global(.param-input) {
     height: 38px;
     padding: 0 0.75rem;
     background-color: var(--input-bg, #0f1419);
@@ -318,7 +341,7 @@
     outline: none;
   }
 
-  .param-input:focus {
+  :global(.param-input:focus) {
     border-color: var(--accent, #3b82f6);
   }
 </style>

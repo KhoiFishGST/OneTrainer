@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
+  import TextInput from '$lib/components/form/TextInput.svelte';
 
   let {
     open = $bindable(false),
@@ -42,12 +43,12 @@
       <label for="custom-scheduler-class" class="field-label">
         Class Name
       </label>
-      <input
+      <TextInput
         id="custom-scheduler-class"
-        type="text"
         class="text-input"
         placeholder="e.g. torch.optim.lr_scheduler.CosineAnnealingLR"
-        bind:value={customClassName}
+        value={customClassName}
+        onInput={(val) => (customClassName = val)}
       />
       <span class="field-help">
         Python class module and name for the custom scheduler class in the form of <code>&lt;module&gt;.&lt;class_name&gt;</code>.
@@ -75,7 +76,7 @@
     color: var(--text, #f8fafc);
   }
 
-  .text-input {
+  :global(.text-input) {
     height: 38px;
     padding: 0 0.75rem;
     background-color: var(--input-bg, #0f1419);
@@ -86,7 +87,7 @@
     outline: none;
   }
 
-  .text-input:focus {
+  :global(.text-input:focus) {
     border-color: var(--accent, #3b82f6);
   }
 

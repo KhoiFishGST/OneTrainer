@@ -1,6 +1,8 @@
 <script lang="ts">
   import { FolderOpen } from 'lucide-svelte';
   import DirectoryPicker from '$lib/components/directory/DirectoryPicker.svelte';
+  import Button from '$lib/components/ui/Button.svelte';
+  import TextInput from './TextInput.svelte';
 
   let {
     id = `path-input-${Math.random().toString(36).slice(2, 9)}`,
@@ -26,8 +28,7 @@
 
   let pickerOpen = $state(false);
 
-  function handleInputChange(e: Event) {
-    const val = (e.target as HTMLInputElement).value;
+  function handleTextInput(val: string) {
     value = val;
     onInput?.(val);
     onChange?.(val);
@@ -56,17 +57,16 @@
   {/if}
 
   <div class="path-input-wrapper">
-    <input
-      type="text"
+    <TextInput
       {id}
-      value={value ?? ''}
+      {value}
       {disabled}
       {placeholder}
-      oninput={handleInputChange}
       class="path-input"
+      onInput={handleTextInput}
     />
-    <button
-      type="button"
+    <Button
+      variant="secondary"
       class="browse-btn"
       aria-label="Browse"
       {disabled}
@@ -74,7 +74,7 @@
     >
       <FolderOpen size={16} />
       <span>Browse</span>
-    </button>
+    </Button>
   </div>
 
   {#if value && mode !== 'dir'}
@@ -140,7 +140,7 @@
     width: 100%;
   }
 
-  .path-input {
+  :global(.path-input) {
     flex: 1;
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--color-border, #d1d5db);
@@ -151,13 +151,13 @@
     box-sizing: border-box;
   }
 
-  .path-input:focus {
+  :global(.path-input:focus) {
     outline: none;
     border-color: var(--color-primary, #2563eb);
     box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
   }
 
-  .browse-btn {
+  :global(.browse-btn) {
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
@@ -172,11 +172,11 @@
     white-space: nowrap;
   }
 
-  .browse-btn:hover:not(:disabled) {
+  :global(.browse-btn:hover:not(:disabled)) {
     background: var(--color-bg-button-hover, #f3f4f6);
   }
 
-  .browse-btn:disabled {
+  :global(.browse-btn:disabled) {
     opacity: 0.5;
     cursor: not-allowed;
   }

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Plus } from 'lucide-svelte';
+  import Button from './Button.svelte';
 
   let {
     label = 'Add Item',
@@ -12,8 +13,8 @@
   } = $props();
 </script>
 
-<button
-  type="button"
+<Button
+  variant="ghost"
   class="add-card"
   {disabled}
   onclick={onClick}
@@ -22,10 +23,10 @@
     <Plus size={32} />
   </div>
   <span class="add-label">{label}</span>
-</button>
+</Button>
 
 <style>
-  .add-card {
+  :global(.add-card) {
     min-height: 220px;
     height: 100%;
     display: flex;
@@ -42,13 +43,13 @@
     padding: 1.5rem;
   }
 
-  .add-card:hover:not(:disabled) {
+  :global(.add-card:hover:not(:disabled)) {
     border-color: var(--accent, #3b82f6);
     background: rgba(59, 130, 246, 0.05);
     transform: translateY(-2px);
   }
 
-  .add-card:disabled {
+  :global(.add-card:disabled) {
     opacity: 0.5;
     cursor: not-allowed;
   }
