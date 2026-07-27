@@ -266,7 +266,7 @@
 
   .variant-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 280px));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 240px));
     gap: 1rem;
   }
 
@@ -274,7 +274,7 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    max-width: 280px;
+    max-width: 240px;
   }
 
   .sample-card {
