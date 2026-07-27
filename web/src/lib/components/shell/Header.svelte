@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Save, RotateCcw, RefreshCw, AlertTriangle } from 'lucide-svelte';
   import Select from '../form/Select.svelte';
   import ModalDialog from '../ui/ModalDialog.svelte';
   import {
@@ -246,19 +247,43 @@
 
   <div class="header-right">
     {#if workspace}
-      <span class="state-badge state-{workspace.state}">
-        {#if workspace.state === 'saved'}
-          Saved
-        {:else if workspace.state === 'unsaved'}
-          Unsaved
-        {:else if workspace.state === 'saving'}
-          Saving...
-        {:else if workspace.state === 'conflict'}
-          Conflict
-        {:else if workspace.state === 'failed'}
-          Failed
-        {/if}
-      </span>
+      {#if workspace.state === 'saved'}
+        <span
+          class="saved-icon-badge"
+          title="All changes saved to training_presets/#.json"
+          data-testid="saved-icon-badge"
+        >
+          <Save size={16} />
+        </span>
+      {:else if workspace.state === 'failed'}
+        <span class="state-badge state-failed">Save Failed</span>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick={() => workspace.retry()}
+        >
+          <RotateCcw size={14} />
+          <span>Retry</span>
+        </button>
+      {:else if workspace.state === 'conflict'}
+        <span class="state-badge state-conflict">Conflict</span>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick={() => workspace.reloadServer(true)}
+        >
+          <RefreshCw size={14} />
+          <span>Reload</span>
+        </button>
+        <button
+          type="button"
+          class="btn btn-danger"
+          onclick={() => workspace.overwriteServer()}
+        >
+          <AlertTriangle size={14} />
+          <span>Overwrite</span>
+        </button>
+      {/if}
     {/if}
 
     <span
@@ -488,6 +513,22 @@
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+
+  .saved-icon-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--success, #10b981);
+    padding: 4px;
+    border-radius: 4px;
+    opacity: 0.9;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .saved-icon-badge:hover {
+    opacity: 1;
+    transform: scale(1.1);
   }
 
   .status-pill {

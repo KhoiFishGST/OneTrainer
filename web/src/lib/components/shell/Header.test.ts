@@ -78,11 +78,23 @@ it('calls beforePresetSave when saving preset', async () => {
   expect(beforePresetSaveSpy).toHaveBeenCalled();
 });
 
-it('renders header elements, title, and training status pill', () => {
-  render(HeaderTestWrapper, {});
+it('renders saved icon badge when workspace state is saved, hides during unsaved, and renders retry button on failure', () => {
+  const savedWorkspace = { state: 'saved' } as any;
+  const { rerender } = render(HeaderTestWrapper, { workspace: savedWorkspace });
 
-  expect(screen.getByText('OneTrainer')).toBeVisible();
-  expect(screen.getByRole('button', { name: 'Save Preset' })).toBeVisible();
-  expect(screen.getByTestId('training-status-pill')).toHaveTextContent('IDLE');
+  expect(screen.getByTestId('saved-icon-badge')).toBeInTheDocument();
+  expect(screen.queryByText('Saved')).not.toBeInTheDocument();
+
+  const unsavedWorkspace = { state: 'unsaved' } as any;
+  rerender({ workspace: unsavedWorkspace });
+
+  expect(screen.queryByTestId('saved-icon-badge')).not.toBeInTheDocument();
+  expect(screen.queryByText('Unsaved')).not.toBeInTheDocument();
+
+  const failedWorkspace = { state: 'failed', retry: vi.fn() } as any;
+  rerender({ workspace: failedWorkspace });
+
+  expect(screen.getByText('Save Failed')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
 });
 
