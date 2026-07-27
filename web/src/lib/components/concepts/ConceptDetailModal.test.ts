@@ -20,7 +20,7 @@ describe('ConceptDetailModal Component', () => {
       },
     });
 
-    expect(screen.getByLabelText(/dataset directory path/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^path/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /select dataset/i })).toBeInTheDocument();
   });
 
