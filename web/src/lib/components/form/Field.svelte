@@ -173,7 +173,7 @@
   }
 
   .field-control-side :global(.toggle-input) {
-    margin-left: 0;
+    margin-left: 0.25rem;
     margin-right: auto;
   }
 
