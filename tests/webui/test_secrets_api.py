@@ -1,10 +1,10 @@
 import json
-import pytest
-from fastapi.testclient import TestClient
-from pathlib import Path
 
 from modules.webui.app import create_app
 from modules.webui.state import WebUISettings
+
+import pytest
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture

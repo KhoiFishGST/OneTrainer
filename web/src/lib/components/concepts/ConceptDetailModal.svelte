@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Concept } from '$lib/api/types';
+  import { api } from '$lib/api/client';
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
   import Field from '$lib/components/form/Field.svelte';
   import TextInput from '$lib/components/form/TextInput.svelte';
@@ -9,7 +10,15 @@
   import DirectoryPicker from '$lib/components/directory/DirectoryPicker.svelte';
   import Select from '$lib/components/form/Select.svelte';
   import DatasetPickerModal from '$lib/components/datasets/DatasetPickerModal.svelte';
-  import { FolderKanban, FolderOpen } from 'lucide-svelte';
+  import {
+    FolderKanban,
+    FolderOpen,
+    RefreshCw,
+    ChevronLeft,
+    ChevronRight,
+    AlertTriangle,
+    Eye,
+  } from 'lucide-svelte';
 
   let {
     concept,
@@ -32,12 +41,26 @@
   let showDirPicker = $state(false);
   let dirPickerPath = $state('/');
   let dirPickerMode = $state<'dir' | 'file'>('dir');
-  let dirPickerTarget = $state<'concept' | 'prompt'>('concept');
+  let dirPickerTarget = $state<'concept' | 'prompt' | 'special_tags'>('concept');
+
+  // Layered Image Augmentation Preview Modal state
+  let showAugPreviewModal = $state(false);
+  let previewIndex = $state(0);
+  let previewAugmentations = $state(false);
+  let previewLoading = $state(false);
+  let previewData = $state<{ image_data: string; filename: string; prompt: string } | null>(null);
+
+  // Concept Stats state
+  let statsLoading = $state(false);
+  let statsData = $state<Record<string, any> | null>(null);
 
   $effect(() => {
     if (concept && isOpen) {
-      // Create deep clone for local editing
       const cloned = JSON.parse(JSON.stringify(concept));
+
+      if (cloned.image_variations === undefined) cloned.image_variations = 1;
+      if (cloned.text_variations === undefined) cloned.text_variations = 1;
+
       if (!cloned.image) {
         cloned.image = {
           enable_crop_jitter: true,
@@ -84,6 +107,56 @@
         };
       }
       draft = cloned;
+      statsData = null;
+      previewData = null;
+      previewIndex = 0;
+      showAugPreviewModal = false;
+    }
+  });
+
+  async function fetchStats(advanced = false) {
+    if (!draft?.path) return;
+    statsLoading = true;
+    try {
+      statsData = await api.getConceptStats(
+        draft.path,
+        advanced,
+        draft.include_subdirectories || false
+      );
+    } catch {
+      // Ignore network errors gracefully
+    } finally {
+      statsLoading = false;
+    }
+  }
+
+  async function fetchAugPreview() {
+    if (!draft) return;
+    previewLoading = true;
+    try {
+      previewData = await api.previewConceptAugmentation(
+        draft,
+        previewIndex,
+        previewAugmentations
+      );
+    } catch {
+      // Ignore preview errors gracefully
+    } finally {
+      previewLoading = false;
+    }
+  }
+
+  $effect(() => {
+    if (activeTab === 'stats' && draft?.path) {
+      if (!statsData) {
+        fetchStats(false);
+      }
+    }
+  });
+
+  $effect(() => {
+    if (showAugPreviewModal && draft) {
+      fetchAugPreview();
     }
   });
 
@@ -93,12 +166,18 @@
     }
   }
 
-  function handleBrowsePath(mode: 'dir' | 'file', target: 'concept' | 'prompt', currentPath: string) {
+  function handleBrowsePath(
+    mode: 'dir' | 'file',
+    target: 'concept' | 'prompt' | 'special_tags',
+    currentPath: string
+  ) {
     if (openDirectory) {
       openDirectory(mode, currentPath).then((selected: string | null) => {
         if (selected && draft) {
           if (target === 'prompt' && draft.text) {
             draft.text.prompt_path = selected;
+          } else if (target === 'special_tags' && draft.text) {
+            draft.text.tag_dropout_special_tags = selected;
           } else {
             draft.path = selected;
           }
@@ -112,6 +191,33 @@
     dirPickerTarget = target;
     showDirPicker = true;
   }
+
+  function handlePrevPreview() {
+    if (previewIndex > 0) {
+      previewIndex -= 1;
+      fetchAugPreview();
+    }
+  }
+
+  function handleNextPreview() {
+    previewIndex += 1;
+    fetchAugPreview();
+  }
+
+  function formatBytes(bytes?: number): string {
+    if (!bytes) return '0 MB';
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  function formatPixelText(arr: any): string {
+    if (!arr || !Array.isArray(arr) || arr.length < 2) return '-';
+    return `${(arr[0] / 1000000).toFixed(2)} MP, ${arr[2] || ''}\n${arr[1] || ''}`;
+  }
+
+  function formatCaptionText(arr: any): string {
+    if (!arr || !Array.isArray(arr) || arr.length < 2) return '-';
+    return `${arr[0]} chars, ${arr[2] || 0} words\n${arr[1] || ''}`;
+  }
 </script>
 
 {#if isOpen && draft}
@@ -124,7 +230,7 @@
     {onClose}
   >
     <div class="concept-modal-body">
-      <!-- Connected Text-Only Subnav Tabs -->
+      <!-- Subnav Tabs -->
       <div class="subnav-tabs" role="tablist">
         <button
           type="button"
@@ -164,7 +270,7 @@
           class:active={activeTab === 'stats'}
           onclick={() => (activeTab = 'stats')}
         >
-          Dataset Stats & Gallery
+          Statistics
         </button>
       </div>
 
@@ -179,7 +285,9 @@
                   {id}
                   value={d.name || ''}
                   {ariaDescribedBy}
-                  onInput={(val) => { d.name = val; }}
+                  onInput={(val) => {
+                    d.name = val;
+                  }}
                   placeholder="e.g. MyCharacter"
                 />
               {/snippet}
@@ -191,7 +299,9 @@
                   {id}
                   value={d.enabled}
                   {ariaDescribedBy}
-                  onChange={(val) => { d.enabled = val; }}
+                  onChange={(val) => {
+                    d.enabled = val;
+                  }}
                 />
               {/snippet}
             </Field>
@@ -208,10 +318,15 @@
                   options={[
                     { value: 'STANDARD', label: 'STANDARD (Finetune training target)' },
                     { value: 'VALIDATION', label: 'VALIDATION (Validation dataset)' },
-                    { value: 'PRIOR_PREDICTION', label: 'PRIOR_PREDICTION (Prior preservation regularization)' },
+                    {
+                      value: 'PRIOR_PREDICTION',
+                      label: 'PRIOR_PREDICTION (Prior preservation regularization)',
+                    },
                   ]}
                   {ariaDescribedBy}
-                  onChange={(v) => { d.type = v; }}
+                  onChange={(v) => {
+                    d.type = v;
+                  }}
                 />
               {/snippet}
             </Field>
@@ -223,10 +338,25 @@
                     {id}
                     value={d.path || ''}
                     {ariaDescribedBy}
-                    onInput={(val) => { d.path = val; }}
+                    onInput={(val) => {
+                      d.path = val;
+                    }}
                     placeholder="/path/to/dataset/images"
                   />
                   <div class="path-action-row">
+                    <label
+                      class="subdir-toggle-inline"
+                      title="Includes images from subdirectories into the dataset"
+                    >
+                      <Toggle
+                        id="concept-subdirs-inline"
+                        value={d.include_subdirectories}
+                        onChange={(val) => {
+                          d.include_subdirectories = val;
+                        }}
+                      />
+                      <span>Subdirectories</span>
+                    </label>
                     <button
                       type="button"
                       class="btn-path-action"
@@ -241,21 +371,10 @@
                       onclick={() => (showDatasetPicker = true)}
                     >
                       <FolderKanban size={16} />
-                      <span>Select Dataset</span>
+                      <span>Datasets</span>
                     </button>
                   </div>
                 </div>
-              {/snippet}
-            </Field>
-
-            <Field id="concept-subdirs" label="Include Subdirectories" tooltip="Includes images from subdirectories into the dataset">
-              {#snippet children({ id, ariaDescribedBy })}
-                <Toggle
-                  {id}
-                  value={d.include_subdirectories}
-                  {ariaDescribedBy}
-                  onChange={(val) => { d.include_subdirectories = val; }}
-                />
               {/snippet}
             </Field>
 
@@ -274,26 +393,68 @@
                     { value: 'filename', label: 'From image file name' },
                   ]}
                   {ariaDescribedBy}
-                  onChange={(v) => { d.text.prompt_source = v; }}
+                  onChange={(v) => {
+                    d.text.prompt_source = v;
+                  }}
                 />
               {/snippet}
             </Field>
 
             {#if d.text.prompt_source === 'concept'}
-              <Field id="concept-prompt-path" label="Prompt Path" tooltip="Path to single text file containing training prompts">
+              <Field
+                id="concept-prompt-path"
+                label="Prompt Path"
+                tooltip="Path to single text file containing training prompts"
+              >
                 {#snippet children({ id, ariaDescribedBy })}
                   <DirectoryInput
                     {id}
                     value={d.text.prompt_path || ''}
                     {ariaDescribedBy}
                     buttonLabel="Browse"
-                    onInput={(val) => { d.text.prompt_path = val; }}
+                    onInput={(val) => {
+                      d.text.prompt_path = val;
+                    }}
                     onOpenDirectory={(curr) => handleBrowsePath('file', 'prompt', curr)}
                     placeholder="/path/to/prompts.txt"
                   />
                 {/snippet}
               </Field>
             {/if}
+
+            <Field
+              id="concept-img-variations"
+              label="Image Variations"
+              tooltip="The number of different image versions to cache if latent caching is enabled."
+            >
+              {#snippet children({ id, ariaDescribedBy })}
+                <NumberInput
+                  {id}
+                  value={d.image_variations}
+                  {ariaDescribedBy}
+                  onInput={(val) => {
+                    d.image_variations = parseInt(val, 10) || 1;
+                  }}
+                />
+              {/snippet}
+            </Field>
+
+            <Field
+              id="concept-text-variations"
+              label="Text Variations"
+              tooltip="The number of different text versions to cache if latent caching is enabled."
+            >
+              {#snippet children({ id, ariaDescribedBy })}
+                <NumberInput
+                  {id}
+                  value={d.text_variations}
+                  {ariaDescribedBy}
+                  onInput={(val) => {
+                    d.text_variations = parseInt(val, 10) || 1;
+                  }}
+                />
+              {/snippet}
+            </Field>
 
             <Field
               id="concept-balancing-strategy"
@@ -309,170 +470,347 @@
                     { value: 'SAMPLES', label: 'SAMPLES (Exact sample target count)' },
                   ]}
                   {ariaDescribedBy}
-                  onChange={(v) => { d.balancing_strategy = v; }}
+                  onChange={(v) => {
+                    d.balancing_strategy = v;
+                  }}
                 />
               {/snippet}
             </Field>
 
-            <Field id="concept-balancing" label="Balancing Value" tooltip="The number of samples/repeats used during training">
+            <Field
+              id="concept-balancing"
+              label="Balancing Value"
+              tooltip="The number of samples/repeats used during training"
+            >
               {#snippet children({ id, ariaDescribedBy })}
                 <NumberInput
                   {id}
                   value={d.balancing}
                   {ariaDescribedBy}
-                  onInput={(val) => { d.balancing = parseFloat(val) || 0; }}
+                  onInput={(val) => {
+                    d.balancing = parseFloat(val) || 0;
+                  }}
                 />
               {/snippet}
             </Field>
 
-            <Field id="concept-loss-weight" label="Loss Weight" tooltip="The loss multiplier for this concept">
+            <Field
+              id="concept-loss-weight"
+              label="Loss Weight"
+              tooltip="The loss multiplier for this concept"
+            >
               {#snippet children({ id, ariaDescribedBy })}
                 <NumberInput
                   {id}
                   value={d.loss_weight}
                   {ariaDescribedBy}
-                  onInput={(val) => { d.loss_weight = parseFloat(val) || 0; }}
+                  onInput={(val) => {
+                    d.loss_weight = parseFloat(val) || 0;
+                  }}
                 />
               {/snippet}
             </Field>
           </div>
         {:else if activeTab === 'image' && draft && draft.image}
           {@const img = draft.image}
-          <div class="form-stack">
-            <Field id="aug-crop-jitter" label="Crop Jitter" tooltip="Enables random cropping of samples">
-              {#snippet children({ id, ariaDescribedBy })}
-                <Toggle
-                  {id}
-                  value={img.enable_crop_jitter}
-                  {ariaDescribedBy}
-                  onChange={(val) => { img.enable_crop_jitter = val; }}
-                />
-              {/snippet}
-            </Field>
+          <div class="aug-tab-container">
+            <!-- 2-Column Augmentations Matrix Table -->
+            <div class="aug-matrix-wrapper">
+              <div class="aug-matrix-header">
+                <div class="col-lbl">Augmentation Feature</div>
+                <div class="col-sw">Random</div>
+                <div class="col-sw">Fixed</div>
+                <div class="col-val">Value / Max Strength</div>
+              </div>
 
-            <Field id="aug-rand-flip" label="Random Flip" tooltip="Randomly flip the sample during training">
-              {#snippet children({ id, ariaDescribedBy })}
-                <Toggle
-                  {id}
-                  value={img.enable_random_flip}
-                  {ariaDescribedBy}
-                  onChange={(val) => { img.enable_random_flip = val; }}
-                />
-              {/snippet}
-            </Field>
-
-            <Field id="aug-fix-flip" label="Fixed Flip" tooltip="Fixed flip during training">
-              {#snippet children({ id, ariaDescribedBy })}
-                <Toggle
-                  {id}
-                  value={img.enable_fixed_flip}
-                  {ariaDescribedBy}
-                  onChange={(val) => { img.enable_fixed_flip = val; }}
-                />
-              {/snippet}
-            </Field>
-
-            <Field id="aug-rand-rot" label="Random Rotation" tooltip="Randomly rotates the sample during training">
-              {#snippet children({ id, ariaDescribedBy })}
-                <Toggle
-                  {id}
-                  value={img.enable_random_rotate}
-                  {ariaDescribedBy}
-                  onChange={(val) => { img.enable_random_rotate = val; }}
-                />
-              {/snippet}
-            </Field>
-
-            <Field id="aug-rot-angle" label="Max Rotation Angle (°)" tooltip="Maximum angle for random rotation">
-              {#snippet children({ id, ariaDescribedBy })}
-                <NumberInput
-                  {id}
-                  value={img.random_rotate_max_angle}
-                  {ariaDescribedBy}
-                  onInput={(val) => { img.random_rotate_max_angle = parseFloat(val) || 0; }}
-                />
-              {/snippet}
-            </Field>
-
-            <Field id="aug-rand-bright" label="Random Brightness" tooltip="Randomly adjusts brightness during training">
-              {#snippet children({ id, ariaDescribedBy })}
-                <Toggle
-                  {id}
-                  value={img.enable_random_brightness}
-                  {ariaDescribedBy}
-                  onChange={(val) => { img.enable_random_brightness = val; }}
-                />
-              {/snippet}
-            </Field>
-
-            <Field id="aug-bright-strength" label="Max Brightness Strength" tooltip="Maximum brightness strength adjustment">
-              {#snippet children({ id, ariaDescribedBy })}
-                <NumberInput
-                  {id}
-                  value={img.random_brightness_max_strength}
-                  {ariaDescribedBy}
-                  onInput={(val) => { img.random_brightness_max_strength = parseFloat(val) || 0; }}
-                />
-              {/snippet}
-            </Field>
-
-            <Field id="aug-rand-contrast" label="Random Contrast" tooltip="Randomly adjusts contrast during training">
-              {#snippet children({ id, ariaDescribedBy })}
-                <Toggle
-                  {id}
-                  value={img.enable_random_contrast}
-                  {ariaDescribedBy}
-                  onChange={(val) => { img.enable_random_contrast = val; }}
-                />
-              {/snippet}
-            </Field>
-
-            <Field id="aug-contrast-strength" label="Max Contrast Strength" tooltip="Maximum contrast strength adjustment">
-              {#snippet children({ id, ariaDescribedBy })}
-                <NumberInput
-                  {id}
-                  value={img.random_contrast_max_strength}
-                  {ariaDescribedBy}
-                  onInput={(val) => { img.random_contrast_max_strength = parseFloat(val) || 0; }}
-                />
-              {/snippet}
-            </Field>
-
-            <Field id="aug-rand-res-override" label="Resolution Override" tooltip="Override resolution for this concept">
-              {#snippet children({ id, ariaDescribedBy })}
-                <Toggle
-                  {id}
-                  value={img.enable_resolution_override}
-                  {ariaDescribedBy}
-                  onChange={(val) => { img.enable_resolution_override = val; }}
-                />
-              {/snippet}
-            </Field>
-
-            {#if img.enable_resolution_override}
-              <Field id="aug-res-val" label="Target Resolution" tooltip="Target resolution in format <width>x<height> or 512">
-                {#snippet children({ id, ariaDescribedBy })}
-                  <TextInput
-                    {id}
-                    value={img.resolution_override || ''}
-                    {ariaDescribedBy}
-                    onInput={(val) => { img.resolution_override = val; }}
+              <!-- Crop Jitter -->
+              <div class="aug-matrix-row">
+                <div class="col-lbl" title="Enables random cropping of samples">Crop Jitter</div>
+                <div class="col-sw">
+                  <Toggle
+                    id="aug-matrix-crop-jitter"
+                    value={img.enable_crop_jitter}
+                    onChange={(v) => (img.enable_crop_jitter = v)}
                   />
-                {/snippet}
-              </Field>
-            {/if}
+                </div>
+                <div class="col-sw">-</div>
+                <div class="col-val">-</div>
+              </div>
+
+              <!-- Random / Fixed Flip -->
+              <div class="aug-matrix-row">
+                <div class="col-lbl" title="Randomly or fixed flip sample during training">
+                  Flip
+                </div>
+                <div class="col-sw">
+                  <Toggle
+                    id="aug-matrix-rand-flip"
+                    value={img.enable_random_flip}
+                    onChange={(v) => (img.enable_random_flip = v)}
+                  />
+                </div>
+                <div class="col-sw">
+                  <Toggle
+                    id="aug-matrix-fixed-flip"
+                    value={img.enable_fixed_flip}
+                    onChange={(v) => (img.enable_fixed_flip = v)}
+                  />
+                </div>
+                <div class="col-val">-</div>
+              </div>
+
+              <!-- Rotation -->
+              <div class="aug-matrix-row">
+                <div class="col-lbl" title="Rotates the sample during training">Rotation</div>
+                <div class="col-sw">
+                  <Toggle
+                    id="aug-matrix-rand-rot"
+                    value={img.enable_random_rotate}
+                    onChange={(v) => (img.enable_random_rotate = v)}
+                  />
+                </div>
+                <div class="col-sw">
+                  <Toggle
+                    id="aug-matrix-fixed-rot"
+                    value={img.enable_fixed_rotate}
+                    onChange={(v) => (img.enable_fixed_rotate = v)}
+                  />
+                </div>
+                <div class="col-val">
+                  <NumberInput
+                    id="aug-matrix-rot-angle"
+                    value={img.random_rotate_max_angle}
+                    onInput={(v) => (img.random_rotate_max_angle = parseFloat(v) || 0)}
+                    placeholder="Angle (°)"
+                  />
+                </div>
+              </div>
+
+              <!-- Brightness -->
+              <div class="aug-matrix-row">
+                <div class="col-lbl" title="Adjusts brightness of sample during training">
+                  Brightness
+                </div>
+                <div class="col-sw">
+                  <Toggle
+                    id="aug-matrix-rand-bright"
+                    value={img.enable_random_brightness}
+                    onChange={(v) => (img.enable_random_brightness = v)}
+                  />
+                </div>
+                <div class="col-sw">
+                  <Toggle
+                    id="aug-matrix-fixed-bright"
+                    value={img.enable_fixed_brightness}
+                    onChange={(v) => (img.enable_fixed_brightness = v)}
+                  />
+                </div>
+                <div class="col-val">
+                  <NumberInput
+                    id="aug-matrix-bright-strength"
+                    value={img.random_brightness_max_strength}
+                    onInput={(v) => (img.random_brightness_max_strength = parseFloat(v) || 0)}
+                    placeholder="Max Strength"
+                  />
+                </div>
+              </div>
+
+              <!-- Contrast -->
+              <div class="aug-matrix-row">
+                <div class="col-lbl" title="Adjusts contrast of sample during training">
+                  Contrast
+                </div>
+                <div class="col-sw">
+                  <Toggle
+                    id="aug-matrix-rand-contrast"
+                    value={img.enable_random_contrast}
+                    onChange={(v) => (img.enable_random_contrast = v)}
+                  />
+                </div>
+                <div class="col-sw">
+                  <Toggle
+                    id="aug-matrix-fixed-contrast"
+                    value={img.enable_fixed_contrast}
+                    onChange={(v) => (img.enable_fixed_contrast = v)}
+                  />
+                </div>
+                <div class="col-val">
+                  <NumberInput
+                    id="aug-matrix-contrast-strength"
+                    value={img.random_contrast_max_strength}
+                    onInput={(v) => (img.random_contrast_max_strength = parseFloat(v) || 0)}
+                    placeholder="Max Strength"
+                  />
+                </div>
+              </div>
+
+              <!-- Saturation -->
+              <div class="aug-matrix-row">
+                <div class="col-lbl" title="Adjusts saturation of sample during training">
+                  Saturation
+                </div>
+                <div class="col-sw">
+                  <Toggle
+                    id="aug-matrix-rand-sat"
+                    value={img.enable_random_saturation}
+                    onChange={(v) => (img.enable_random_saturation = v)}
+                  />
+                </div>
+                <div class="col-sw">
+                  <Toggle
+                    id="aug-matrix-fixed-sat"
+                    value={img.enable_fixed_saturation}
+                    onChange={(v) => (img.enable_fixed_saturation = v)}
+                  />
+                </div>
+                <div class="col-val">
+                  <NumberInput
+                    id="aug-matrix-sat-strength"
+                    value={img.random_saturation_max_strength}
+                    onInput={(v) => (img.random_saturation_max_strength = parseFloat(v) || 0)}
+                    placeholder="Max Strength"
+                  />
+                </div>
+              </div>
+
+              <!-- Hue -->
+              <div class="aug-matrix-row">
+                <div class="col-lbl" title="Adjusts hue of sample during training">Hue</div>
+                <div class="col-sw">
+                  <Toggle
+                    id="aug-matrix-rand-hue"
+                    value={img.enable_random_hue}
+                    onChange={(v) => (img.enable_random_hue = v)}
+                  />
+                </div>
+                <div class="col-sw">
+                  <Toggle
+                    id="aug-matrix-fixed-hue"
+                    value={img.enable_fixed_hue}
+                    onChange={(v) => (img.enable_fixed_hue = v)}
+                  />
+                </div>
+                <div class="col-val">
+                  <NumberInput
+                    id="aug-matrix-hue-strength"
+                    value={img.random_hue_max_strength}
+                    onInput={(v) => (img.random_hue_max_strength = parseFloat(v) || 0)}
+                    placeholder="Max Strength"
+                  />
+                </div>
+              </div>
+
+              <!-- Circular Mask Generation -->
+              <div class="aug-matrix-row">
+                <div class="col-lbl" title="Automatically create circular masks for masked training">
+                  Circular Mask Generation
+                </div>
+                <div class="col-sw">
+                  <Toggle
+                    id="aug-matrix-circular-mask"
+                    value={img.enable_random_circular_mask_shrink}
+                    onChange={(v) => (img.enable_random_circular_mask_shrink = v)}
+                  />
+                </div>
+                <div class="col-sw">-</div>
+                <div class="col-val">-</div>
+              </div>
+
+              <!-- Random Rotate & Crop -->
+              <div class="aug-matrix-row">
+                <div
+                  class="col-lbl"
+                  title="Randomly rotate training samples and crop to masked region"
+                >
+                  Random Rotate & Crop
+                </div>
+                <div class="col-sw">
+                  <Toggle
+                    id="aug-matrix-rotate-crop"
+                    value={img.enable_random_mask_rotate_crop}
+                    onChange={(v) => (img.enable_random_mask_rotate_crop = v)}
+                  />
+                </div>
+                <div class="col-sw">-</div>
+                <div class="col-val">-</div>
+              </div>
+
+              <!-- Resolution Override -->
+              <div class="aug-matrix-row">
+                <div
+                  class="col-lbl"
+                  title="Override resolution for this concept in format <width>x<height>"
+                >
+                  Resolution Override
+                </div>
+                <div class="col-sw">-</div>
+                <div class="col-sw">
+                  <Toggle
+                    id="aug-matrix-res-override-toggle"
+                    value={img.enable_resolution_override}
+                    onChange={(v) => (img.enable_resolution_override = v)}
+                  />
+                </div>
+                <div class="col-val">
+                  {#if img.enable_resolution_override}
+                    <TextInput
+                      id="aug-matrix-res-override-val"
+                      value={img.resolution_override || ''}
+                      onInput={(v) => (img.resolution_override = v)}
+                      placeholder="512x512"
+                    />
+                  {:else}
+                    <span class="muted-dash">-</span>
+                  {/if}
+                </div>
+              </div>
+            </div>
+
+            <!-- Compact Bottom Action Bar for Preview Trigger -->
+            <div class="aug-bottom-action-bar">
+              <button
+                type="button"
+                class="btn-aug-preview-compact"
+                onclick={() => (showAugPreviewModal = true)}
+              >
+                <Eye size={14} />
+                <span>Preview</span>
+              </button>
+            </div>
           </div>
         {:else if activeTab === 'text' && draft && draft.text}
           {@const txt = draft.text}
           <div class="form-stack">
-            <Field id="aug-tag-shuffle" label="Tag Shuffling" tooltip="Enables tag shuffling">
-              {#snippet children({ id, ariaDescribedBy })}
-                <Toggle
-                  {id}
-                  value={txt.enable_tag_shuffling}
-                  {ariaDescribedBy}
-                  onChange={(val) => { txt.enable_tag_shuffling = val; }}
-                />
+            <!-- Combined Tag Options Row (Tag Shuffling & Tag Dropout) -->
+            <Field
+              id="aug-tag-options"
+              label="Tag Options"
+              tooltip="Enable tag shuffling and/or tag dropout"
+            >
+              {#snippet children({ id: _id, ariaDescribedBy: _aria })}
+                <div class="tag-options-row">
+                  <label class="inline-toggle-item" title="Enables tag shuffling">
+                    <Toggle
+                      id="aug-tag-shuffle-inline"
+                      value={txt.enable_tag_shuffling}
+                      onChange={(val) => {
+                        txt.enable_tag_shuffling = val;
+                      }}
+                    />
+                    <span>Shuffling</span>
+                  </label>
+
+                  <label class="inline-toggle-item" title="Enables random dropout for tags in captions">
+                    <Toggle
+                      id="aug-tag-dropout-inline"
+                      value={txt.tag_dropout_enable}
+                      onChange={(val) => {
+                        txt.tag_dropout_enable = val;
+                      }}
+                    />
+                    <span>Dropout</span>
+                  </label>
+                </div>
               {/snippet}
             </Field>
 
@@ -482,131 +820,406 @@
                   {id}
                   value={txt.tag_delimiter || ','}
                   {ariaDescribedBy}
-                  onInput={(val) => { txt.tag_delimiter = val; }}
+                  onInput={(val) => {
+                    txt.tag_delimiter = val;
+                  }}
                   placeholder=","
                 />
               {/snippet}
             </Field>
 
-            <Field id="aug-keep-tags" label="Keep Tag Count" tooltip="Number of tags at start of caption that are not shuffled or dropped">
+            <Field
+              id="aug-keep-tags"
+              label="Keep Tag Count"
+              tooltip="Number of tags at start of caption that are not shuffled or dropped"
+            >
               {#snippet children({ id, ariaDescribedBy })}
                 <NumberInput
                   {id}
                   value={txt.keep_tags_count}
                   {ariaDescribedBy}
-                  onInput={(val) => { txt.keep_tags_count = parseInt(val, 10) || 0; }}
+                  onInput={(val) => {
+                    txt.keep_tags_count = parseInt(val, 10) || 0;
+                  }}
                 />
               {/snippet}
             </Field>
 
-            <Field id="aug-dropout-enable" label="Tag Dropout" tooltip="Enables random dropout for tags in captions">
+            <Field
+              id="aug-dropout-mode"
+              label="Dropout Mode"
+              tooltip="FULL: drop entire caption past kept tags; RANDOM: drop individual tags; RANDOM WEIGHTED: linearly increase drop probability"
+            >
+              {#snippet children({ id, ariaDescribedBy })}
+                <Select
+                  {id}
+                  value={txt.tag_dropout_mode}
+                  options={[
+                    { value: 'FULL', label: 'Full' },
+                    { value: 'RANDOM', label: 'Random' },
+                    { value: 'RANDOM WEIGHTED', label: 'Random Weighted' },
+                  ]}
+                  {ariaDescribedBy}
+                  onChange={(v) => {
+                    txt.tag_dropout_mode = v;
+                  }}
+                />
+              {/snippet}
+            </Field>
+
+            <Field
+              id="aug-dropout-prob"
+              label="Probability"
+              tooltip="Probability to drop tags (0 to 1)"
+            >
+              {#snippet children({ id, ariaDescribedBy })}
+                <NumberInput
+                  {id}
+                  value={txt.tag_dropout_probability}
+                  {ariaDescribedBy}
+                  onInput={(val) => {
+                    txt.tag_dropout_probability = parseFloat(val) || 0;
+                  }}
+                />
+              {/snippet}
+            </Field>
+
+            <Field
+              id="aug-special-tags-mode"
+              label="Special Dropout Tags Mode"
+              tooltip="Whitelist/blacklist mode for tag dropout"
+            >
+              {#snippet children({ id, ariaDescribedBy })}
+                <Select
+                  {id}
+                  value={txt.tag_dropout_special_tags_mode}
+                  options={[
+                    { value: 'NONE', label: 'None' },
+                    { value: 'BLACKLIST', label: 'Blacklist' },
+                    { value: 'WHITELIST', label: 'Whitelist' },
+                  ]}
+                  {ariaDescribedBy}
+                  onChange={(v) => {
+                    txt.tag_dropout_special_tags_mode = v;
+                  }}
+                />
+              {/snippet}
+            </Field>
+
+            <Field
+              id="aug-special-tags"
+              label="Special Dropout Tags List"
+              tooltip="List of tags for whitelist/blacklist or filepath to .txt/.csv file"
+            >
+              {#snippet children({ id, ariaDescribedBy })}
+                <DirectoryInput
+                  {id}
+                  value={txt.tag_dropout_special_tags || ''}
+                  {ariaDescribedBy}
+                  buttonLabel="Browse"
+                  onInput={(val) => {
+                    txt.tag_dropout_special_tags = val;
+                  }}
+                  onOpenDirectory={(curr) => handleBrowsePath('file', 'special_tags', curr)}
+                  placeholder="tag1, tag2 or /path/to/tags.txt"
+                />
+              {/snippet}
+            </Field>
+
+            <Field
+              id="aug-special-tags-regex"
+              label="Special Tags Regex"
+              tooltip="Interpret special tags with regular expressions"
+            >
               {#snippet children({ id, ariaDescribedBy })}
                 <Toggle
                   {id}
-                  value={txt.tag_dropout_enable}
+                  value={txt.tag_dropout_special_tags_regex}
                   {ariaDescribedBy}
-                  onChange={(val) => { txt.tag_dropout_enable = val; }}
+                  onChange={(val) => {
+                    txt.tag_dropout_special_tags_regex = val;
+                  }}
                 />
               {/snippet}
             </Field>
 
-            {#if txt.tag_dropout_enable}
-              <Field id="aug-dropout-mode" label="Dropout Mode" tooltip="FULL: drop entire caption past kept tags; RANDOM: drop individual tags; RANDOM WEIGHTED: linearly increase drop probability">
-                {#snippet children({ id, ariaDescribedBy })}
-                  <Select
-                    {id}
-                    value={txt.tag_dropout_mode}
-                    options={[
-                      { value: 'FULL', label: 'Full' },
-                      { value: 'RANDOM', label: 'Random' },
-                      { value: 'RANDOM WEIGHTED', label: 'Random Weighted' },
-                    ]}
-                    {ariaDescribedBy}
-                    onChange={(v) => { txt.tag_dropout_mode = v; }}
-                  />
-                {/snippet}
-              </Field>
-
-              <Field id="aug-dropout-prob" label="Probability" tooltip="Probability to drop tags (0 to 1)">
-                {#snippet children({ id, ariaDescribedBy })}
-                  <NumberInput
-                    {id}
-                    value={txt.tag_dropout_probability}
-                    {ariaDescribedBy}
-                    onInput={(val) => { txt.tag_dropout_probability = parseFloat(val) || 0; }}
-                  />
-                {/snippet}
-              </Field>
-
-              <Field id="aug-special-tags-mode" label="Special Dropout Tags" tooltip="Whitelist/blacklist mode for tag dropout">
-                {#snippet children({ id, ariaDescribedBy })}
-                  <Select
-                    {id}
-                    value={txt.tag_dropout_special_tags_mode}
-                    options={[
-                      { value: 'NONE', label: 'None' },
-                      { value: 'BLACKLIST', label: 'Blacklist' },
-                      { value: 'WHITELIST', label: 'Whitelist' },
-                    ]}
-                    {ariaDescribedBy}
-                    onChange={(v) => { txt.tag_dropout_special_tags_mode = v; }}
-                  />
-                {/snippet}
-              </Field>
-
-              <Field id="aug-special-tags" label="Special Tags List" tooltip="List of tags for whitelist/blacklist">
-                {#snippet children({ id, ariaDescribedBy })}
-                  <TextInput
-                    {id}
-                    value={txt.tag_dropout_special_tags || ''}
-                    {ariaDescribedBy}
-                    onInput={(val) => { txt.tag_dropout_special_tags = val; }}
-                  />
-                {/snippet}
-              </Field>
-
-              <Field id="aug-special-tags-regex" label="Special Tags Regex" tooltip="Interpret special tags with regular expressions">
-                {#snippet children({ id, ariaDescribedBy })}
-                  <Toggle
-                    {id}
-                    value={txt.tag_dropout_special_tags_regex}
-                    {ariaDescribedBy}
-                    onChange={(val) => { txt.tag_dropout_special_tags_regex = val; }}
-                  />
-                {/snippet}
-              </Field>
-            {/if}
-
-            <Field id="aug-caps-randomize" label="Randomize Capitalization" tooltip="Enables randomization of capitalization for tags in caption">
+            <Field
+              id="aug-caps-randomize"
+              label="Randomize Capitalization"
+              tooltip="Enables randomization of capitalization for tags in caption"
+            >
               {#snippet children({ id, ariaDescribedBy })}
                 <Toggle
                   {id}
                   value={txt.caps_randomize_enable}
                   {ariaDescribedBy}
-                  onChange={(val) => { txt.caps_randomize_enable = val; }}
+                  onChange={(val) => {
+                    txt.caps_randomize_enable = val;
+                  }}
+                />
+              {/snippet}
+            </Field>
+
+            <Field
+              id="aug-caps-lowercase"
+              label="Force Lowercase"
+              tooltip="Converts caption to lowercase before processing"
+            >
+              {#snippet children({ id, ariaDescribedBy })}
+                <Toggle
+                  {id}
+                  value={txt.caps_randomize_lowercase}
+                  {ariaDescribedBy}
+                  onChange={(val) => {
+                    txt.caps_randomize_lowercase = val;
+                  }}
+                />
+              {/snippet}
+            </Field>
+
+            <Field
+              id="aug-caps-mode"
+              label="Capitalization Mode"
+              tooltip="Comma-separated capitalization modes: capslock, title, first, random"
+            >
+              {#snippet children({ id, ariaDescribedBy })}
+                <TextInput
+                  {id}
+                  value={txt.caps_randomize_mode || ''}
+                  {ariaDescribedBy}
+                  onInput={(val) => {
+                    txt.caps_randomize_mode = val;
+                  }}
+                  placeholder="capslock, title, first, random"
+                />
+              {/snippet}
+            </Field>
+
+            <Field
+              id="aug-caps-prob"
+              label="Probability"
+              tooltip="Probability to randomize capitalization (0 to 1)"
+            >
+              {#snippet children({ id, ariaDescribedBy })}
+                <NumberInput
+                  {id}
+                  value={txt.caps_randomize_probability}
+                  {ariaDescribedBy}
+                  onInput={(val) => {
+                    txt.caps_randomize_probability = parseFloat(val) || 0;
+                  }}
                 />
               {/snippet}
             </Field>
           </div>
         {:else if activeTab === 'stats'}
-          <div class="stats-preview-container">
-            <div class="preview-hero">
-              <img
-                src="/api/concepts/preview-image?path={encodeURIComponent(draft.path || '')}&include_subdirectories={draft.include_subdirectories}"
-                alt="Concept Preview"
-                class="hero-thumbnail"
-              />
-              <div class="hero-info">
-                <h4>{draft.name || draft.path || 'Untitled Concept'}</h4>
-                <span class="path-sub">{draft.path || 'No directory path configured'}</span>
-                <span class="badge type-badge">{draft.type || 'STANDARD'}</span>
-              </div>
+          <div class="stats-tab-wrapper">
+            <!-- Action Toolbar -->
+            <div class="stats-toolbar">
+              <button
+                type="button"
+                class="btn-stats-action"
+                disabled={statsLoading}
+                onclick={() => fetchStats(false)}
+              >
+                <RefreshCw size={14} class={statsLoading ? 'spin' : ''} />
+                <span>Refresh Basic</span>
+              </button>
+              <button
+                type="button"
+                class="btn-stats-action btn-accent"
+                disabled={statsLoading}
+                onclick={() => fetchStats(true)}
+              >
+                <RefreshCw size={14} class={statsLoading ? 'spin' : ''} />
+                <span>Refresh Advanced</span>
+              </button>
+              {#if statsData?.processing_time}
+                <span class="proc-time-badge">{statsData.processing_time.toFixed(2)} s</span>
+              {/if}
             </div>
+
+            <!-- Stats Summary Cards Grid -->
+            {#if statsData}
+              <div class="stats-summary-grid">
+                <div class="stat-card">
+                  <span class="stat-label">Total Size</span>
+                  <span class="stat-value">{formatBytes(statsData.file_size)}</span>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">Directories</span>
+                  <span class="stat-value">{statsData.directory_count ?? 0}</span>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">Total Images</span>
+                  <span class="stat-value">{statsData.image_count ?? 0}</span>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">Total Videos</span>
+                  <span class="stat-value">{statsData.video_count ?? 0}</span>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">Total Masks</span>
+                  <span class="stat-value">{statsData.mask_count ?? 0}</span>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">Total Captions</span>
+                  <span class="stat-value">{statsData.caption_count ?? 0}</span>
+                </div>
+              </div>
+
+              <!-- Pairing Warning Alerts -->
+              {#if statsData.unpaired_masks > 0 || statsData.unpaired_captions > 0}
+                <div class="pairing-alert-box">
+                  <AlertTriangle size={18} />
+                  <div class="alert-content">
+                    {#if statsData.unpaired_masks > 0}
+                      <span>Warning: {statsData.unpaired_masks} unpaired mask(s) found!</span>
+                    {/if}
+                    {#if statsData.unpaired_captions > 0}
+                      <span>Warning: {statsData.unpaired_captions} unpaired caption file(s) found!</span>
+                    {/if}
+                  </div>
+                </div>
+              {/if}
+
+              <!-- Detailed Stats Tables -->
+              <div class="stats-sections-grid">
+                <!-- Resolution Info -->
+                <div class="stats-section-box">
+                  <h5>Resolution Metrics</h5>
+                  <div class="stats-kv-stack">
+                    <div class="kv-item">
+                      <span class="kv-key">Max Pixels</span>
+                      <span class="kv-val">{formatPixelText(statsData.max_pixels)}</span>
+                    </div>
+                    <div class="kv-item">
+                      <span class="kv-key">Avg Pixels</span>
+                      <span class="kv-val">{statsData.avg_pixels ? `${(statsData.avg_pixels / 1000000).toFixed(2)} MP` : '-'}</span>
+                    </div>
+                    <div class="kv-item">
+                      <span class="kv-key">Min Pixels</span>
+                      <span class="kv-val">{formatPixelText(statsData.min_pixels)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Caption Metrics -->
+                <div class="stats-section-box">
+                  <h5>Caption Metrics</h5>
+                  <div class="stats-kv-stack">
+                    <div class="kv-item">
+                      <span class="kv-key">Max Caption Length</span>
+                      <span class="kv-val">{formatCaptionText(statsData.max_caption_length)}</span>
+                    </div>
+                    <div class="kv-item">
+                      <span class="kv-key">Avg Caption Length</span>
+                      <span class="kv-val">
+                        {statsData.avg_caption_length && Array.isArray(statsData.avg_caption_length)
+                          ? `${Math.round(statsData.avg_caption_length[0] || 0)} chars, ${Math.round(statsData.avg_caption_length[1] || 0)} words`
+                          : '-'}
+                      </span>
+                    </div>
+                    <div class="kv-item">
+                      <span class="kv-key">Min Caption Length</span>
+                      <span class="kv-val">{formatCaptionText(statsData.min_caption_length)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {:else}
+              <div class="stats-placeholder-box">
+                <RefreshCw size={24} class="spin muted-icon" />
+                <span>Click "Refresh Basic" or "Refresh Advanced" to scan concept statistics.</span>
+              </div>
+            {/if}
           </div>
         {/if}
       </div>
     </div>
   </ModalDialog>
+
+  <!-- Layered Image Augmentations Preview Modal -->
+  {#if showAugPreviewModal}
+    <ModalDialog
+      open={showAugPreviewModal}
+      title="Image Augmentations Live Test - Sample #{previewIndex + 1}"
+      applyText="Close Preview"
+      width="medium"
+      onApply={() => (showAugPreviewModal = false)}
+      onClose={() => (showAugPreviewModal = false)}
+    >
+      <div class="aug-preview-modal-body">
+        <div class="preview-toolbar">
+          <label class="preview-toggle-lbl">
+            <input
+              type="checkbox"
+              bind:checked={previewAugmentations}
+              onchange={fetchAugPreview}
+            />
+            <span>Preview Augmentations</span>
+          </label>
+        </div>
+
+        <div class="preview-display-box">
+          <div class="preview-img-container">
+            {#if previewLoading}
+              <div class="preview-loading-overlay">Testing Pipeline...</div>
+            {/if}
+
+            {#if previewData?.image_data}
+              <img
+                src={previewData.image_data}
+                alt="Augmented Preview"
+                class="preview-img"
+              />
+            {:else}
+              <img
+                src="/api/concepts/preview-image?path={encodeURIComponent(
+                  draft.path || ''
+                )}&include_subdirectories={draft.include_subdirectories}"
+                alt="Concept Preview"
+                class="preview-img"
+              />
+            {/if}
+
+            <div class="nav-controls-bar">
+              <button
+                type="button"
+                class="nav-arrow-btn"
+                disabled={previewIndex <= 0 || previewLoading}
+                onclick={handlePrevPreview}
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <span class="nav-idx-lbl">Sample #{previewIndex + 1}</span>
+              <button
+                type="button"
+                class="nav-arrow-btn"
+                disabled={previewLoading}
+                onclick={handleNextPreview}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+
+          <div class="preview-meta-container">
+            <div class="meta-row">
+              <span class="meta-lbl">Filename:</span>
+              <span class="meta-val">{previewData?.filename || 'sample.png'}</span>
+            </div>
+            <div class="meta-col">
+              <span class="meta-lbl">Augmented Prompt Output:</span>
+              <div class="prompt-output-box">
+                {previewData?.prompt || '[No caption output]'}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ModalDialog>
+  {/if}
 
   {#if showDirPicker}
     <DirectoryPicker
@@ -616,6 +1229,8 @@
       onSelect={(selected) => {
         if (dirPickerTarget === 'prompt' && draft?.text) {
           draft.text.prompt_path = selected;
+        } else if (dirPickerTarget === 'special_tags' && draft?.text) {
+          draft.text.tag_dropout_special_tags = selected;
         } else if (draft) {
           draft.path = selected;
         }
@@ -657,26 +1272,25 @@
     align-items: center;
     gap: 0.25rem;
     border-bottom: 1px solid var(--color-border, var(--line, #2d3741));
-    margin-bottom: 0.25rem;
+    background-color: var(--color-bg-panel, var(--control, #14191f));
+    padding: 0.25rem 0.5rem 0;
+    border-radius: 6px 6px 0 0;
   }
 
   .subnav-btn {
-    padding: 0.5rem 0.875rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--muted, #94a3b8);
+    background: transparent;
     border: 1px solid transparent;
     border-bottom: none;
-    border-top-left-radius: 6px;
-    border-top-right-radius: 6px;
-    background: transparent;
-    color: var(--muted, #94a3b8);
-    font-size: 0.875rem;
-    font-weight: 500;
+    border-radius: 6px 6px 0 0;
     cursor: pointer;
-    margin-bottom: -1px;
     transition: all 0.15s ease;
-    white-space: nowrap;
   }
 
-  .subnav-btn:hover {
+  .subnav-btn:hover:not(.active) {
     color: var(--text, #f8fafc);
     background-color: var(--panel-raised, #1d242c);
   }
@@ -689,8 +1303,8 @@
   }
 
   .tab-content {
-    min-height: 540px;
-    max-height: 600px;
+    min-height: 560px;
+    max-height: 620px;
     overflow-y: auto;
     padding: 0.5rem 0.25rem;
   }
@@ -713,8 +1327,19 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 0.5rem;
+    gap: 0.75rem;
     width: 100%;
+  }
+
+  .subdir-toggle-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-right: auto;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text, var(--text, #e6ebef));
+    cursor: pointer;
   }
 
   .btn-path-action {
@@ -746,64 +1371,415 @@
     color: var(--color-text-title, var(--accent, #3b82f6));
   }
 
-  .stats-preview-container {
+  .aug-tab-container {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    padding: 0.5rem 0;
+    gap: 0.875rem;
   }
 
-  .preview-hero {
+  .aug-bottom-action-bar {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
+    padding-top: 0.25rem;
+  }
+
+  .btn-aug-preview-compact {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    height: 32px;
+    padding: 0 0.75rem;
+    background: var(--accent, #3b82f6);
+    border: 1px solid var(--accent, #3b82f6);
+    border-radius: 5px;
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-aug-preview-compact:hover {
+    opacity: 0.9;
+  }
+
+  /* Tag Options Inline Row */
+  .tag-options-row {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .inline-toggle-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text, #e6ebef);
+    cursor: pointer;
+  }
+
+  /* 2-Column Augmentations Matrix Table */
+  .aug-matrix-wrapper {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--line, #2d3741);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--panel, #181e25);
+  }
+
+  .aug-matrix-header {
+    display: grid;
+    grid-template-columns: 1.8fr 0.8fr 0.8fr 1.6fr;
+    gap: 0.5rem;
+    padding: 0.625rem 0.875rem;
+    background: var(--panel-raised, #1d242c);
+    border-bottom: 1px solid var(--line, #2d3741);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted, #94a3b8);
+  }
+
+  .aug-matrix-header .col-sw {
+    text-align: center;
+  }
+
+  .aug-matrix-row {
+    display: grid;
+    grid-template-columns: 1.8fr 0.8fr 0.8fr 1.6fr;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.625rem 0.875rem;
+    border-bottom: 1px solid var(--line, #2d3741);
+  }
+
+  .aug-matrix-row:last-child {
+    border-bottom: none;
+  }
+
+  .aug-matrix-row:hover {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .col-lbl {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text, #e6ebef);
+  }
+
+  .col-sw {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted, #94a3b8);
+  }
+
+  .col-val {
+    display: flex;
+    align-items: center;
+  }
+
+  /* Stats Tab Dashboard */
+  .stats-tab-wrapper {
+    display: flex;
+    flex-direction: column;
     gap: 1.25rem;
+  }
+
+  .stats-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .btn-stats-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.4rem 0.875rem;
+    background: var(--control, #14191f);
+    border: 1px solid var(--line, #2d3741);
+    border-radius: 6px;
+    color: var(--text, #e6ebef);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .btn-stats-action.btn-accent {
+    color: var(--accent, #3b82f6);
+    border-color: var(--accent, #3b82f6);
+  }
+
+  .proc-time-badge {
+    margin-left: auto;
+    font-size: 0.75rem;
+    font-family: monospace;
+    color: var(--muted, #94a3b8);
+  }
+
+  .stats-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.75rem;
+    background: var(--panel-raised, #1d242c);
+    border: 1px solid var(--line, #2d3741);
+    border-radius: 6px;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--muted, #94a3b8);
+  }
+
+  .stat-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text, #f8fafc);
+  }
+
+  .pairing-alert-box {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 6px;
+    color: #fca5a5;
+    font-size: 0.8125rem;
+  }
+
+  .alert-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .stats-sections-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+
+  .stats-section-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
     padding: 1rem;
     background: var(--panel-raised, #1d242c);
     border: 1px solid var(--line, #2d3741);
     border-radius: 8px;
   }
 
-  .hero-thumbnail {
-    width: 80px;
-    height: 80px;
-    object-fit: cover;
+  .stats-section-box h5 {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text, #f8fafc);
+  }
+
+  .stats-kv-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+
+  .kv-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.8125rem;
+  }
+
+  .kv-key {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted, #94a3b8);
+  }
+
+  .kv-val {
+    font-size: 0.8125rem;
+    color: var(--text, #e6ebef);
+    white-space: pre-wrap;
+    font-family: monospace;
+  }
+
+  .stats-placeholder-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 3rem 1rem;
+    background: var(--panel-raised, #1d242c);
+    border: 1px dashed var(--line, #2d3741);
+    border-radius: 8px;
+    color: var(--muted, #94a3b8);
+    font-size: 0.875rem;
+  }
+
+  /* Image Augmentation Preview Layered Modal */
+  .aug-preview-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .preview-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .preview-toggle-lbl {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--text, #e6ebef);
+    cursor: pointer;
+  }
+
+  .preview-display-box {
+    display: flex;
+    gap: 1rem;
+  }
+
+  @media (max-width: 600px) {
+    .preview-display-box {
+      flex-direction: column;
+    }
+  }
+
+  .preview-img-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    width: 220px;
+    flex-shrink: 0;
+  }
+
+  .preview-img {
+    width: 220px;
+    height: 220px;
+    object-fit: contain;
     border-radius: 6px;
     background: var(--control, #14191f);
     border: 1px solid var(--line, #2d3741);
   }
 
-  .hero-info {
+  .preview-loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
     display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .hero-info h4 {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text, #f8fafc);
-  }
-
-  .path-sub {
+    align-items: center;
+    justify-content: center;
     font-size: 0.8125rem;
-    color: var(--muted, #94a3b8);
-    word-break: break-all;
+    color: var(--accent, #3b82f6);
+    border-radius: 6px;
   }
 
-  .badge {
+  .nav-controls-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .nav-arrow-btn {
     display: inline-flex;
     align-items: center;
-    padding: 0.125rem 0.5rem;
+    justify-content: center;
+    padding: 0.35rem;
+    background: var(--control, #14191f);
+    border: 1px solid var(--line, #2d3741);
     border-radius: 4px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    width: fit-content;
+    color: var(--text, #e6ebef);
+    cursor: pointer;
   }
 
-  .type-badge {
-    background: rgba(59, 130, 246, 0.15);
-    color: var(--color-text-title, var(--accent, #3b82f6));
-    border: 1px solid rgba(59, 130, 246, 0.3);
+  .nav-arrow-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .nav-idx-lbl {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--muted, #94a3b8);
+  }
+
+  .preview-meta-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .meta-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  .meta-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  .meta-lbl {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted, #94a3b8);
+  }
+
+  .meta-val {
+    font-size: 0.8125rem;
+    color: var(--text, #e6ebef);
+    font-family: monospace;
+  }
+
+  .prompt-output-box {
+    padding: 0.75rem;
+    background: var(--control, #14191f);
+    border: 1px solid var(--line, #2d3741);
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    font-family: monospace;
+    color: var(--text, #e6ebef);
+    min-height: 120px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  :global(.spin) {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>

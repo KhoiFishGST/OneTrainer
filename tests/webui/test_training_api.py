@@ -1,10 +1,11 @@
-import pytest
 from unittest.mock import MagicMock
-from fastapi.testclient import TestClient
 
 from modules.webui.app import create_app
 from modules.webui.state import WebUISettings
 from modules.webui.training import TrainingState
+
+import pytest
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture
@@ -141,7 +142,7 @@ def test_training_api_get_sample_image(client, tmp_path):
     service = client.app.state.webui.training_service
     test_img = tmp_path / "test_sample.png"
     test_img.write_bytes(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82")
-    
+
     sample_info = {
         "id": "sample_999",
         "sample_id": "sample_999",

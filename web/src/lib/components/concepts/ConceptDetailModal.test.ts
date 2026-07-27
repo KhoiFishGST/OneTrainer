@@ -21,7 +21,7 @@ describe('ConceptDetailModal Component', () => {
     });
 
     expect(screen.getByLabelText(/^path/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /select dataset/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /datasets/i })).toBeInTheDocument();
   });
 
   it('opens dataset picker modal when Select Dataset button is clicked', async () => {
@@ -52,7 +52,7 @@ describe('ConceptDetailModal Component', () => {
       },
     });
 
-    const selectDatasetBtn = screen.getByRole('button', { name: /select dataset/i });
+    const selectDatasetBtn = screen.getByRole('button', { name: /datasets/i });
     await fireEvent.click(selectDatasetBtn);
 
     await waitFor(() => {

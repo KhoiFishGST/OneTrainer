@@ -1,13 +1,12 @@
 from pathlib import Path
 from unittest.mock import patch
 
-from fastapi.testclient import TestClient
-
 from modules.webui.app import create_app
 from modules.webui.directories import DirectoryDenied, DirectoryMissing, DirectoryService
 from modules.webui.state import WebUISettings
 
 import pytest
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture

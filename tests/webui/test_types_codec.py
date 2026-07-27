@@ -1,6 +1,8 @@
 from enum import Enum
-from modules.webui.schema.types import Option, Field, Group, Tab
+
 from modules.webui.schema.codec import getattr_nested, serialize_val
+from modules.webui.schema.types import Option
+
 
 class SampleEnum(Enum):
     ALPHA = "ALPHA"

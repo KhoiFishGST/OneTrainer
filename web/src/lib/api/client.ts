@@ -128,6 +128,32 @@ export function createApi(base = '') {
         body: JSON.stringify(concepts),
       }),
 
+    getConceptStats: (path: string, advanced = false, includeSubdirectories = false) => {
+      const q = new URLSearchParams({
+        path,
+        advanced: advanced ? 'true' : 'false',
+        include_subdirectories: includeSubdirectories ? 'true' : 'false',
+      }).toString();
+      return request<Record<string, any>>(`${base}/api/concepts/stats?${q}`);
+    },
+
+    previewConceptAugmentation: (
+      concept: Record<string, any>,
+      imagePreviewFileIndex = 0,
+      previewAugmentations = false
+    ) =>
+      request<{ image_data: string; filename: string; prompt: string }>(
+        `${base}/api/concepts/preview-augmentation`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            concept,
+            image_preview_file_index: imagePreviewFileIndex,
+            preview_augmentations: previewAugmentations,
+          }),
+        }
+      ),
+
     getTrainingStatus: () => request<TrainingStatus>(`${base}/api/training/status`),
 
     startTraining: (config?: Record<string, any>) =>

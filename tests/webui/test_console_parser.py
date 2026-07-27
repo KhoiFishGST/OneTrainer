@@ -7,7 +7,7 @@ def plain(line):
 
 def test_parser_handles_split_utf8_and_crlf():
     parser = TerminalParser()
-    encoded = "caf\u00e9\r\n".encode("utf-8")
+    encoded = "caf\u00e9\r\n".encode()
     assert parser.feed(encoded[:4]) == []
     lines = parser.feed(encoded[4:])
     assert [plain(line) for line in lines] == ["caf\u00e9"]

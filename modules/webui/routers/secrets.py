@@ -1,16 +1,17 @@
-from typing import Any, Optional
-from pydantic import BaseModel
-from fastapi import APIRouter, Request
+from typing import Any
 
 from modules.util.config.config_io import save_secrets
 from modules.webui.state import AppState
+
+from fastapi import APIRouter, Request
+from pydantic import BaseModel
 
 router = APIRouter(tags=["secrets"])
 
 
 class SecretsUpdateRequest(BaseModel):
-    huggingface_token: Optional[str] = None
-    webui_password: Optional[str] = None
+    huggingface_token: str | None = None
+    webui_password: str | None = None
 
 
 @router.get("/secrets")
