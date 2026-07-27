@@ -9,7 +9,7 @@ it('forwards file metadata, emits FileList, and opens imperatively', async () =>
   const result = render(FileInput, { id: 'files', accept: 'image/*,.txt', multiple: true, onChange });
   const input = document.querySelector('#files') as HTMLInputElement;
   const file = new File(['x'], 'x.txt');
-  const files = { 0: file, length: 1, item: (i: number) => (i === 0 ? file : null) } as FileList;
+  const files = { 0: file, length: 1, item: (i: number) => (i === 0 ? file : null) } as unknown as FileList;
   Object.defineProperty(input, 'files', { configurable: true, value: files });
   const click = vi.spyOn(input, 'click');
   await fireEvent.change(input);
