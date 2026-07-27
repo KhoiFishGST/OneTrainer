@@ -8,6 +8,7 @@
     disabled = false,
     ariaDescribedBy,
     placeholder = '',
+    buttonLabel = '',
     onInput,
     onOpenDirectory,
   }: {
@@ -16,6 +17,7 @@
     disabled?: boolean;
     ariaDescribedBy?: string;
     placeholder?: string;
+    buttonLabel?: string;
     onInput: (val: string) => void;
     onOpenDirectory?: (currentPath: string, onSelect?: (selectedPath: string) => void) => void;
   } = $props();
@@ -65,6 +67,9 @@
     onclick={handleOpen}
   >
     <FolderOpen size={16} />
+    {#if buttonLabel}
+      <span>{buttonLabel}</span>
+    {/if}
   </button>
 </div>
 
@@ -83,6 +88,7 @@
     flex: 1 1 0%;
     min-width: 0;
     width: 100%;
+    height: 38px;
     padding: 0.4rem 0.5rem;
     border: 1px solid var(--color-border, var(--line, #2d3741));
     border-radius: 6px;
@@ -100,16 +106,21 @@
 
   .directory-btn {
     flex: 0 0 auto;
+    height: 38px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.4rem 0.6rem;
+    gap: 0.375rem;
+    padding: 0 0.75rem;
     border: 1px solid var(--color-border, var(--line, #2d3741));
     border-radius: 6px;
     background: var(--color-bg-button, var(--control, #14191f));
     color: var(--color-text, var(--text, #e6ebef));
+    font-size: 0.8125rem;
+    font-weight: 500;
     cursor: pointer;
     box-sizing: border-box;
+    white-space: nowrap;
   }
 
   .directory-btn:hover:not(:disabled) {

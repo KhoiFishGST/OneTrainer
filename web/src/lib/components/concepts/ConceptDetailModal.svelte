@@ -9,7 +9,7 @@
   import DirectoryPicker from '$lib/components/directory/DirectoryPicker.svelte';
   import Select from '$lib/components/form/Select.svelte';
   import DatasetPickerModal from '$lib/components/datasets/DatasetPickerModal.svelte';
-  import { FolderKanban } from 'lucide-svelte';
+  import { FolderKanban, FolderOpen } from 'lucide-svelte';
 
   let {
     concept,
@@ -218,26 +218,32 @@
 
             <Field id="concept-path" label="Path" tooltip="Path where the training data is located">
               {#snippet children({ id, ariaDescribedBy })}
-                <div class="control-with-action">
-                  <div class="control-target">
-                    <DirectoryInput
-                      {id}
-                      value={d.path || ''}
-                      {ariaDescribedBy}
-                      onInput={(val) => { d.path = val; }}
-                      onOpenDirectory={(curr) => handleBrowsePath('dir', 'concept', curr)}
-                      placeholder="/path/to/dataset/images"
-                    />
+                <div class="path-field-stack">
+                  <TextInput
+                    {id}
+                    value={d.path || ''}
+                    {ariaDescribedBy}
+                    onInput={(val) => { d.path = val; }}
+                    placeholder="/path/to/dataset/images"
+                  />
+                  <div class="path-action-row">
+                    <button
+                      type="button"
+                      class="btn-path-action"
+                      onclick={() => handleBrowsePath('dir', 'concept', d.path || '')}
+                    >
+                      <FolderOpen size={16} />
+                      <span>Browse</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-path-action btn-accent-action"
+                      onclick={() => (showDatasetPicker = true)}
+                    >
+                      <FolderKanban size={16} />
+                      <span>Select Dataset</span>
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    class="action-btn select-dataset-btn"
-                    title="Select dataset from library"
-                    onclick={() => (showDatasetPicker = true)}
-                  >
-                    <FolderKanban size={16} />
-                    <span>Select Dataset</span>
-                  </button>
                 </div>
               {/snippet}
             </Field>
@@ -280,6 +286,7 @@
                     {id}
                     value={d.text.prompt_path || ''}
                     {ariaDescribedBy}
+                    buttonLabel="Browse"
                     onInput={(val) => { d.text.prompt_path = val; }}
                     onOpenDirectory={(curr) => handleBrowsePath('file', 'prompt', curr)}
                     placeholder="/path/to/prompts.txt"
@@ -682,8 +689,8 @@
   }
 
   .tab-content {
-    min-height: 440px;
-    max-height: 480px;
+    min-height: 540px;
+    max-height: 600px;
     overflow-y: auto;
     padding: 0.5rem 0.25rem;
   }
@@ -695,15 +702,48 @@
     width: 100%;
   }
 
-  :global(.select-dataset-btn) {
+  .path-field-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .path-action-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .btn-path-action {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.375rem;
-    padding: 0 0.75rem;
-    white-space: nowrap;
-    color: var(--color-text-title, var(--accent, #3b82f6));
+    height: 38px;
+    padding: 0 0.875rem;
+    background: var(--color-bg-button, var(--control, #14191f));
+    border: 1px solid var(--color-border, var(--line, #2d3741));
+    border-radius: 6px;
+    color: var(--color-text, var(--text, #e6ebef));
     font-size: 0.8125rem;
     font-weight: 500;
+    cursor: pointer;
+    box-sizing: border-box;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+  }
+
+  .btn-path-action:hover {
+    background: var(--color-bg-button-hover, var(--panel-raised, #1d242c));
+    border-color: var(--color-primary, var(--accent, #3b82f6));
+    color: var(--color-text-title, var(--accent, #3b82f6));
+  }
+
+  .btn-path-action.btn-accent-action {
+    color: var(--color-text-title, var(--accent, #3b82f6));
   }
 
   .stats-preview-container {
