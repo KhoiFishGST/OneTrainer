@@ -135,7 +135,6 @@
     background-color: var(--color-bg-card, var(--panel, #181e25));
     border-color: var(--color-border, var(--line, #2d3741));
     border-bottom-color: var(--color-bg-card, var(--panel, #181e25));
-    font-weight: 600;
   }
 
   .skeleton-container {

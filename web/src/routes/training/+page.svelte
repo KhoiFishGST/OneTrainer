@@ -178,18 +178,6 @@
     background-color: var(--color-bg-card, var(--panel, #181e25));
     border-color: var(--color-border, var(--line, #2d3741));
     border-bottom-color: var(--color-bg-card, var(--panel, #181e25));
-    font-weight: 600;
-  }
-
-  .subnav-btn:hover {
-    color: var(--text, #f8fafc);
-    background-color: var(--panel-raised, #1d242c);
-  }
-
-  .subnav-btn.active {
-    color: var(--color-text-title, var(--accent, #3b82f6));
-    background-color: var(--panel-raised, #1d242c);
-    font-weight: 600;
   }
 
   .page-title {
