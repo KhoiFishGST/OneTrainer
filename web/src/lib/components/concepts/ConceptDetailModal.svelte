@@ -1,6 +1,11 @@
 <script lang="ts">
   import type { Concept } from '$lib/api/types';
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
+  import Field from '$lib/components/form/Field.svelte';
+  import TextInput from '$lib/components/form/TextInput.svelte';
+  import NumberInput from '$lib/components/form/NumberInput.svelte';
+  import Toggle from '$lib/components/form/Toggle.svelte';
+  import DirectoryInput from '$lib/components/form/DirectoryInput.svelte';
   import Select from '$lib/components/form/Select.svelte';
   import DatasetPickerModal from '$lib/components/datasets/DatasetPickerModal.svelte';
   import { FolderKanban } from 'lucide-svelte';
@@ -81,18 +86,6 @@
       onSave(draft);
     }
   }
-
-  async function handleBrowsePath() {
-    if (!openDirectory || !draft) return;
-    const selected = await openDirectory('dir', draft.path || '');
-    if (selected) draft.path = selected;
-  }
-
-  async function handleBrowsePromptPath() {
-    if (!openDirectory || !draft || !draft.text) return;
-    const selected = await openDirectory('file', draft.text.prompt_path || '');
-    if (selected) draft.text.prompt_path = selected;
-  }
 </script>
 
 {#if isOpen && draft}
@@ -151,42 +144,61 @@
 
       <!-- Tab Content Area -->
       <div class="tab-content">
-        {#if activeTab === 'general'}
+        {#if activeTab === 'general' && draft}
+          {@const d = draft}
           <div class="form-grid">
             <div class="form-row-group">
-              <div class="form-row">
-                <label for="concept-name">Concept Name</label>
-                <input id="concept-name" type="text" bind:value={draft.name} placeholder="e.g. MyCharacter" />
-              </div>
-              <div class="form-row inline-field">
-                <label for="concept-enabled">Enabled</label>
-                <input id="concept-enabled" type="checkbox" bind:checked={draft.enabled} />
-              </div>
+              <Field id="concept-name" label="Concept Name">
+                {#snippet children({ id, ariaDescribedBy })}
+                  <TextInput
+                    {id}
+                    value={d.name || ''}
+                    {ariaDescribedBy}
+                    onInput={(val) => { d.name = val; }}
+                    placeholder="e.g. MyCharacter"
+                  />
+                {/snippet}
+              </Field>
+              <Field id="concept-enabled" label="Enabled" inline={true}>
+                {#snippet children({ id, ariaDescribedBy })}
+                  <Toggle
+                    {id}
+                    value={d.enabled}
+                    {ariaDescribedBy}
+                    onChange={(val) => { d.enabled = val; }}
+                  />
+                {/snippet}
+              </Field>
             </div>
 
-            <div class="form-row">
-              <label for="concept-type">Concept Type</label>
-              <Select
-                id="concept-type"
-                value={draft.type}
-                options={[
-                  { value: 'STANDARD', label: 'STANDARD (Finetune training target)' },
-                  { value: 'VALIDATION', label: 'VALIDATION (Validation dataset)' },
-                  { value: 'PRIOR_PREDICTION', label: 'PRIOR_PREDICTION (Prior preservation regularization)' },
-                ]}
-                onChange={(v) => { if (draft) draft.type = v; }}
-              />
-            </div>
+            <Field id="concept-type" label="Concept Type">
+              {#snippet children({ id, ariaDescribedBy })}
+                <Select
+                  {id}
+                  value={d.type}
+                  options={[
+                    { value: 'STANDARD', label: 'STANDARD (Finetune training target)' },
+                    { value: 'VALIDATION', label: 'VALIDATION (Validation dataset)' },
+                    { value: 'PRIOR_PREDICTION', label: 'PRIOR_PREDICTION (Prior preservation regularization)' },
+                  ]}
+                  {ariaDescribedBy}
+                  onChange={(v) => { d.type = v; }}
+                />
+              {/snippet}
+            </Field>
 
-            <div class="form-row">
-              <label for="concept-path">Dataset Directory Path</label>
-              <div class="path-input-group">
-                <input id="concept-path" type="text" bind:value={draft.path} placeholder="/path/to/dataset/images" />
-                {#if openDirectory}
-                  <button type="button" class="btn-browse" onclick={handleBrowsePath}>Browse</button>
-                {/if}
-              </div>
-            </div>
+            <Field id="concept-path" label="Dataset Directory Path">
+              {#snippet children({ id, ariaDescribedBy })}
+                <DirectoryInput
+                  {id}
+                  value={d.path || ''}
+                  {ariaDescribedBy}
+                  onInput={(val) => { d.path = val; }}
+                  onOpenDirectory={openDirectory ? (path, cb) => openDirectory('dir', path).then((s: string | null) => s && (cb ? cb(s) : (d.path = s))) : undefined}
+                  placeholder="/path/to/dataset/images"
+                />
+              {/snippet}
+            </Field>
 
             <div class="form-row-group align-center">
               <div class="form-row">
@@ -199,167 +211,293 @@
                   <span>Select Dataset</span>
                 </button>
               </div>
-              <div class="form-row inline-field">
-                <label for="concept-subdirs">Include Subdirectories</label>
-                <input id="concept-subdirs" type="checkbox" bind:checked={draft.include_subdirectories} />
-              </div>
+              <Field id="concept-subdirs" label="Include Subdirectories" inline={true}>
+                {#snippet children({ id, ariaDescribedBy })}
+                  <Toggle
+                    {id}
+                    value={d.include_subdirectories}
+                    {ariaDescribedBy}
+                    onChange={(val) => { d.include_subdirectories = val; }}
+                  />
+                {/snippet}
+              </Field>
             </div>
 
             <div class="form-row-group">
-              <div class="form-row">
-                <label for="concept-prompt-source">Prompt Source</label>
-                <Select
-                  id="concept-prompt-source"
-                  value={draft.text.prompt_source}
-                  options={[
-                    { value: 'sample', label: 'From text file per sample (.txt / .caption)' },
-                    { value: 'concept', label: 'From single text file' },
-                    { value: 'filename', label: 'From image file name' },
-                  ]}
-                  onChange={(v) => { if (draft) draft.text.prompt_source = v; }}
-                />
-              </div>
-              <div class="form-row">
-                <label for="concept-balancing-strategy">Balancing Strategy</label>
-                <Select
-                  id="concept-balancing-strategy"
-                  value={draft.balancing_strategy}
-                  options={[
-                    { value: 'REPEATS', label: 'REPEATS (Multiply dataset epoch count)' },
-                    { value: 'SAMPLES', label: 'SAMPLES (Exact sample target count)' },
-                  ]}
-                  onChange={(v) => { if (draft) draft.balancing_strategy = v; }}
-                />
-              </div>
+              <Field id="concept-prompt-source" label="Prompt Source">
+                {#snippet children({ id, ariaDescribedBy })}
+                  <Select
+                    {id}
+                    value={d.text.prompt_source}
+                    options={[
+                      { value: 'sample', label: 'From text file per sample (.txt / .caption)' },
+                      { value: 'concept', label: 'From single text file' },
+                      { value: 'filename', label: 'From image file name' },
+                    ]}
+                    {ariaDescribedBy}
+                    onChange={(v) => { d.text.prompt_source = v; }}
+                  />
+                {/snippet}
+              </Field>
+              <Field id="concept-balancing-strategy" label="Balancing Strategy">
+                {#snippet children({ id, ariaDescribedBy })}
+                  <Select
+                    {id}
+                    value={d.balancing_strategy}
+                    options={[
+                      { value: 'REPEATS', label: 'REPEATS (Multiply dataset epoch count)' },
+                      { value: 'SAMPLES', label: 'SAMPLES (Exact sample target count)' },
+                    ]}
+                    {ariaDescribedBy}
+                    onChange={(v) => { d.balancing_strategy = v; }}
+                  />
+                {/snippet}
+              </Field>
             </div>
 
-            {#if draft.text.prompt_source === 'concept'}
-              <div class="form-row">
-                <label for="concept-prompt-path">Single Prompt File Path</label>
-                <div class="path-input-group">
-                  <input id="concept-prompt-path" type="text" bind:value={draft.text.prompt_path} placeholder="/path/to/prompts.txt" />
-                  {#if openDirectory}
-                    <button type="button" class="btn-browse" onclick={handleBrowsePromptPath}>Browse</button>
-                  {/if}
-                </div>
-              </div>
+            {#if d.text.prompt_source === 'concept'}
+              <Field id="concept-prompt-path" label="Single Prompt File Path">
+                {#snippet children({ id, ariaDescribedBy })}
+                  <DirectoryInput
+                    {id}
+                    value={d.text.prompt_path || ''}
+                    {ariaDescribedBy}
+                    onInput={(val) => { d.text.prompt_path = val; }}
+                    onOpenDirectory={openDirectory ? (path, cb) => openDirectory('file', path).then((s: string | null) => s && (cb ? cb(s) : (d.text.prompt_path = s))) : undefined}
+                    placeholder="/path/to/prompts.txt"
+                  />
+                {/snippet}
+              </Field>
             {/if}
 
             <div class="form-row-group">
-              <div class="form-row">
-                <label for="concept-balancing">Balancing Value</label>
-                <input id="concept-balancing" type="number" step="0.1" bind:value={draft.balancing} />
-              </div>
-              <div class="form-row">
-                <label for="concept-loss-weight">Loss Weight</label>
-                <input id="concept-loss-weight" type="number" step="0.05" bind:value={draft.loss_weight} />
-              </div>
-            </div>
-          </div>
-        {:else if activeTab === 'image'}
-          <div class="form-grid">
-            <div class="form-row inline">
-              <label for="aug-crop-jitter">Crop Jitter</label>
-              <input id="aug-crop-jitter" type="checkbox" bind:checked={draft.image.enable_crop_jitter} />
-            </div>
-
-            <div class="form-row-group">
-              <div class="form-row inline">
-                <label for="aug-rand-flip">Random Flip</label>
-                <input id="aug-rand-flip" type="checkbox" bind:checked={draft.image.enable_random_flip} />
-              </div>
-              <div class="form-row inline">
-                <label for="aug-fix-flip">Fixed Flip</label>
-                <input id="aug-fix-flip" type="checkbox" bind:checked={draft.image.enable_fixed_flip} />
-              </div>
-            </div>
-
-            <div class="form-row-group">
-              <div class="form-row inline">
-                <label for="aug-rand-rot">Random Rotate</label>
-                <input id="aug-rand-rot" type="checkbox" bind:checked={draft.image.enable_random_rotate} />
-              </div>
-              <div class="form-row">
-                <label for="aug-rot-angle">Max Rotate Angle (°)</label>
-                <input id="aug-rot-angle" type="number" step="1" bind:value={draft.image.random_rotate_max_angle} />
-              </div>
-            </div>
-
-            <div class="form-row-group">
-              <div class="form-row inline">
-                <label for="aug-rand-bright">Random Brightness</label>
-                <input id="aug-rand-bright" type="checkbox" bind:checked={draft.image.enable_random_brightness} />
-              </div>
-              <div class="form-row">
-                <label for="aug-bright-strength">Max Brightness Strength</label>
-                <input id="aug-bright-strength" type="number" step="0.05" bind:value={draft.image.random_brightness_max_strength} />
-              </div>
-            </div>
-
-            <div class="form-row-group">
-              <div class="form-row inline">
-                <label for="aug-rand-contrast">Random Contrast</label>
-                <input id="aug-rand-contrast" type="checkbox" bind:checked={draft.image.enable_random_contrast} />
-              </div>
-              <div class="form-row">
-                <label for="aug-contrast-strength">Max Contrast Strength</label>
-                <input id="aug-contrast-strength" type="number" step="0.05" bind:value={draft.image.random_contrast_max_strength} />
-              </div>
-            </div>
-
-            <div class="form-row-group">
-              <div class="form-row inline">
-                <label for="aug-rand-res-override">Resolution Override</label>
-                <input id="aug-rand-res-override" type="checkbox" bind:checked={draft.image.enable_resolution_override} />
-              </div>
-              <div class="form-row">
-                <label for="aug-res-val">Target Resolution (e.g. 512, 1024x1024)</label>
-                <input id="aug-res-val" type="text" bind:value={draft.image.resolution_override} />
-              </div>
-            </div>
-          </div>
-        {:else if activeTab === 'text'}
-          <div class="form-grid">
-            <div class="form-row inline">
-              <label for="aug-tag-shuffle">Tag Shuffling</label>
-              <input id="aug-tag-shuffle" type="checkbox" bind:checked={draft.text.enable_tag_shuffling} />
-            </div>
-
-            <div class="form-row-group">
-              <div class="form-row">
-                <label for="aug-tag-delim">Tag Delimiter</label>
-                <input id="aug-tag-delim" type="text" bind:value={draft.text.tag_delimiter} placeholder="," />
-              </div>
-              <div class="form-row">
-                <label for="aug-keep-tags">Keep Tags Count</label>
-                <input id="aug-keep-tags" type="number" min="0" bind:value={draft.text.keep_tags_count} />
-              </div>
-            </div>
-
-            <div class="form-row inline">
-              <label for="aug-dropout-enable">Tag Dropout Enabled</label>
-              <input id="aug-dropout-enable" type="checkbox" bind:checked={draft.text.tag_dropout_enable} />
-            </div>
-
-            {#if draft.text.tag_dropout_enable}
-              <div class="form-row-group">
-                <div class="form-row">
-                  <label for="aug-dropout-mode">Dropout Mode</label>
-                  <Select
-                    id="aug-dropout-mode"
-                    value={draft.text.tag_dropout_mode}
-                    options={[
-                      { value: 'FULL', label: 'FULL (Drop entire caption past kept tags)' },
-                      { value: 'RANDOM', label: 'RANDOM (Drop individual tags with set probability)' },
-                      { value: 'RANDOM WEIGHTED', label: 'RANDOM WEIGHTED (Linearly increase drop probability)' },
-                    ]}
-                    onChange={(v) => { if (draft) draft.text.tag_dropout_mode = v; }}
+              <Field id="concept-balancing" label="Balancing Value">
+                {#snippet children({ id, ariaDescribedBy })}
+                  <NumberInput
+                    {id}
+                    value={d.balancing}
+                    {ariaDescribedBy}
+                    onInput={(val) => { d.balancing = parseFloat(val) || 0; }}
                   />
-                </div>
-                <div class="form-row">
-                  <label for="aug-dropout-prob">Probability (0 to 1)</label>
-                  <input id="aug-dropout-prob" type="number" step="0.05" min="0" max="1" bind:value={draft.text.tag_dropout_probability} />
-                </div>
+                {/snippet}
+              </Field>
+              <Field id="concept-loss-weight" label="Loss Weight">
+                {#snippet children({ id, ariaDescribedBy })}
+                  <NumberInput
+                    {id}
+                    value={d.loss_weight}
+                    {ariaDescribedBy}
+                    onInput={(val) => { d.loss_weight = parseFloat(val) || 0; }}
+                  />
+                {/snippet}
+              </Field>
+            </div>
+          </div>
+        {:else if activeTab === 'image' && draft && draft.image}
+          {@const img = draft.image}
+          <div class="form-grid">
+            <Field id="aug-crop-jitter" label="Crop Jitter" inline={true}>
+              {#snippet children({ id, ariaDescribedBy })}
+                <Toggle
+                  {id}
+                  value={img.enable_crop_jitter}
+                  {ariaDescribedBy}
+                  onChange={(val) => { img.enable_crop_jitter = val; }}
+                />
+              {/snippet}
+            </Field>
+
+            <div class="form-row-group">
+              <Field id="aug-rand-flip" label="Random Flip" inline={true}>
+                {#snippet children({ id, ariaDescribedBy })}
+                  <Toggle
+                    {id}
+                    value={img.enable_random_flip}
+                    {ariaDescribedBy}
+                    onChange={(val) => { img.enable_random_flip = val; }}
+                  />
+                {/snippet}
+              </Field>
+              <Field id="aug-fix-flip" label="Fixed Flip" inline={true}>
+                {#snippet children({ id, ariaDescribedBy })}
+                  <Toggle
+                    {id}
+                    value={img.enable_fixed_flip}
+                    {ariaDescribedBy}
+                    onChange={(val) => { img.enable_fixed_flip = val; }}
+                  />
+                {/snippet}
+              </Field>
+            </div>
+
+            <div class="form-row-group">
+              <Field id="aug-rand-rot" label="Random Rotate" inline={true}>
+                {#snippet children({ id, ariaDescribedBy })}
+                  <Toggle
+                    {id}
+                    value={img.enable_random_rotate}
+                    {ariaDescribedBy}
+                    onChange={(val) => { img.enable_random_rotate = val; }}
+                  />
+                {/snippet}
+              </Field>
+              <Field id="aug-rot-angle" label="Max Rotate Angle (°)">
+                {#snippet children({ id, ariaDescribedBy })}
+                  <NumberInput
+                    {id}
+                    value={img.random_rotate_max_angle}
+                    {ariaDescribedBy}
+                    onInput={(val) => { img.random_rotate_max_angle = parseFloat(val) || 0; }}
+                  />
+                {/snippet}
+              </Field>
+            </div>
+
+            <div class="form-row-group">
+              <Field id="aug-rand-bright" label="Random Brightness" inline={true}>
+                {#snippet children({ id, ariaDescribedBy })}
+                  <Toggle
+                    {id}
+                    value={img.enable_random_brightness}
+                    {ariaDescribedBy}
+                    onChange={(val) => { img.enable_random_brightness = val; }}
+                  />
+                {/snippet}
+              </Field>
+              <Field id="aug-bright-strength" label="Max Brightness Strength">
+                {#snippet children({ id, ariaDescribedBy })}
+                  <NumberInput
+                    {id}
+                    value={img.random_brightness_max_strength}
+                    {ariaDescribedBy}
+                    onInput={(val) => { img.random_brightness_max_strength = parseFloat(val) || 0; }}
+                  />
+                {/snippet}
+              </Field>
+            </div>
+
+            <div class="form-row-group">
+              <Field id="aug-rand-contrast" label="Random Contrast" inline={true}>
+                {#snippet children({ id, ariaDescribedBy })}
+                  <Toggle
+                    {id}
+                    value={img.enable_random_contrast}
+                    {ariaDescribedBy}
+                    onChange={(val) => { img.enable_random_contrast = val; }}
+                  />
+                {/snippet}
+              </Field>
+              <Field id="aug-contrast-strength" label="Max Contrast Strength">
+                {#snippet children({ id, ariaDescribedBy })}
+                  <NumberInput
+                    {id}
+                    value={img.random_contrast_max_strength}
+                    {ariaDescribedBy}
+                    onInput={(val) => { img.random_contrast_max_strength = parseFloat(val) || 0; }}
+                  />
+                {/snippet}
+              </Field>
+            </div>
+
+            <div class="form-row-group">
+              <Field id="aug-rand-res-override" label="Resolution Override" inline={true}>
+                {#snippet children({ id, ariaDescribedBy })}
+                  <Toggle
+                    {id}
+                    value={img.enable_resolution_override}
+                    {ariaDescribedBy}
+                    onChange={(val) => { img.enable_resolution_override = val; }}
+                  />
+                {/snippet}
+              </Field>
+              <Field id="aug-res-val" label="Target Resolution (e.g. 512, 1024x1024)">
+                {#snippet children({ id, ariaDescribedBy })}
+                  <TextInput
+                    {id}
+                    value={img.resolution_override || ''}
+                    {ariaDescribedBy}
+                    onInput={(val) => { img.resolution_override = val; }}
+                  />
+                {/snippet}
+              </Field>
+            </div>
+          </div>
+        {:else if activeTab === 'text' && draft && draft.text}
+          {@const txt = draft.text}
+          <div class="form-grid">
+            <Field id="aug-tag-shuffle" label="Tag Shuffling" inline={true}>
+              {#snippet children({ id, ariaDescribedBy })}
+                <Toggle
+                  {id}
+                  value={txt.enable_tag_shuffling}
+                  {ariaDescribedBy}
+                  onChange={(val) => { txt.enable_tag_shuffling = val; }}
+                />
+              {/snippet}
+            </Field>
+
+            <div class="form-row-group">
+              <Field id="aug-tag-delim" label="Tag Delimiter">
+                {#snippet children({ id, ariaDescribedBy })}
+                  <TextInput
+                    {id}
+                    value={txt.tag_delimiter || ','}
+                    {ariaDescribedBy}
+                    onInput={(val) => { txt.tag_delimiter = val; }}
+                    placeholder=","
+                  />
+                {/snippet}
+              </Field>
+              <Field id="aug-keep-tags" label="Keep Tags Count">
+                {#snippet children({ id, ariaDescribedBy })}
+                  <NumberInput
+                    {id}
+                    value={txt.keep_tags_count}
+                    {ariaDescribedBy}
+                    onInput={(val) => { txt.keep_tags_count = parseInt(val, 10) || 0; }}
+                  />
+                {/snippet}
+              </Field>
+            </div>
+
+            <Field id="aug-dropout-enable" label="Tag Dropout Enabled" inline={true}>
+              {#snippet children({ id, ariaDescribedBy })}
+                <Toggle
+                  {id}
+                  value={txt.tag_dropout_enable}
+                  {ariaDescribedBy}
+                  onChange={(val) => { txt.tag_dropout_enable = val; }}
+                />
+              {/snippet}
+            </Field>
+
+            {#if txt.tag_dropout_enable}
+              <div class="form-row-group">
+                <Field id="aug-dropout-mode" label="Dropout Mode">
+                  {#snippet children({ id, ariaDescribedBy })}
+                    <Select
+                      {id}
+                      value={txt.tag_dropout_mode}
+                      options={[
+                        { value: 'FULL', label: 'FULL (Drop entire caption past kept tags)' },
+                        { value: 'RANDOM', label: 'RANDOM (Drop individual tags with set probability)' },
+                        { value: 'RANDOM WEIGHTED', label: 'RANDOM WEIGHTED (Linearly increase drop probability)' },
+                      ]}
+                      {ariaDescribedBy}
+                      onChange={(v) => { txt.tag_dropout_mode = v; }}
+                    />
+                  {/snippet}
+                </Field>
+                <Field id="aug-dropout-prob" label="Probability (0 to 1)">
+                  {#snippet children({ id, ariaDescribedBy })}
+                    <NumberInput
+                      {id}
+                      value={txt.tag_dropout_probability}
+                      {ariaDescribedBy}
+                      onInput={(val) => { txt.tag_dropout_probability = parseFloat(val) || 0; }}
+                    />
+                  {/snippet}
+                </Field>
               </div>
             {/if}
           </div>
@@ -463,37 +601,6 @@
     gap: 0.35rem;
   }
 
-  .form-row.inline {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .form-row label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--text, #f8fafc);
-  }
-
-  .form-row input[type='text'],
-  .form-row input[type='number'] {
-    padding: 0.5rem 0.75rem;
-    background-color: var(--control, #14191f);
-    border: 1px solid var(--line, #2d3741);
-    border-radius: 6px;
-    color: var(--text, #f8fafc);
-    font-size: 0.875rem;
-  }
-
-  .path-input-group {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .path-input-group input {
-    flex: 1;
-  }
-
   .btn-select-dataset {
     display: flex;
     align-items: center;
@@ -510,21 +617,6 @@
   }
 
   .btn-select-dataset:hover {
-    background: var(--line, #2d3741);
-  }
-
-  .btn-browse {
-    padding: 0.5rem 0.75rem;
-    background: var(--panel-raised, #1d242c);
-    border: 1px solid var(--line, #2d3741);
-    border-radius: 6px;
-    color: var(--text, #f8fafc);
-    font-size: 0.8125rem;
-    font-weight: 500;
-    cursor: pointer;
-  }
-
-  .btn-browse:hover {
     background: var(--line, #2d3741);
   }
 
