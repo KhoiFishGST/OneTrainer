@@ -41,5 +41,31 @@ describe("api client", () => {
       "/root/api/gallery/runs/prefix%20run/images/sample%20one.png"
     );
   });
+
+  it("fetches sample config files list", async () => {
+    const mockFiles = { files: ["samples.json", "portrait.json"] };
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify(mockFiles), { status: 200 }));
+
+    const api = createApi("");
+    const result = await api.getSampleFiles();
+    expect(result.files).toEqual(["samples.json", "portrait.json"]);
+  });
+
+  it("creates new sample config file", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ filename: "new_samples.json" }), { status: 200 })
+    );
+
+    const api = createApi("");
+    const result = await api.createSampleFile("new_samples");
+    expect(result.filename).toBe("new_samples.json");
+    expect(fetchSpy).toHaveBeenCalledWith(
+      "/api/samples/files",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ name: "new_samples" }),
+      })
+    );
+  });
 });
 

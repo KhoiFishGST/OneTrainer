@@ -269,6 +269,14 @@ export function createApi(base = '') {
         method: 'PUT',
         body: JSON.stringify({ samples }),
       }),
+
+    getSampleFiles: () => request<{ files: string[] }>(`${base}/api/samples/files`),
+
+    createSampleFile: (name: string) =>
+      request<{ filename: string }>(`${base}/api/samples/files`, {
+        method: 'POST',
+        body: JSON.stringify({ name }),
+      }),
   };
 }
 

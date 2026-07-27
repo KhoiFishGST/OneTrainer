@@ -27,6 +27,7 @@ export const queryKeys = {
   backlog: () => ['backlog'] as const,
   concepts: () => ['concepts'] as const,
   samples: () => ['samples'] as const,
+  sampleFiles: () => ['sampleFiles'] as const,
   datasets: () => ['datasets'] as const,
   datasetFiles: (name: string) => ['datasets', name, 'files'] as const,
   trainingStatus: () => ['training', 'status'] as const,
@@ -384,6 +385,30 @@ export function createGalleryCurrentQuery() {
     {
       queryKey: queryKeys.galleryCurrent(),
       queryFn: () => api.getCurrentGallery(),
+    },
+    client
+  );
+}
+
+export function createSampleFilesQuery() {
+  const client = getSafeQueryClient();
+  return createQuery(
+    {
+      queryKey: queryKeys.sampleFiles(),
+      queryFn: () => api.getSampleFiles(),
+    },
+    client
+  );
+}
+
+export function createCreateSampleFileMutation() {
+  const client = getSafeQueryClient();
+  return createMutation(
+    {
+      mutationFn: (name: string) => api.createSampleFile(name),
+      onSuccess: () => {
+        client.invalidateQueries({ queryKey: queryKeys.sampleFiles() });
+      },
     },
     client
   );
