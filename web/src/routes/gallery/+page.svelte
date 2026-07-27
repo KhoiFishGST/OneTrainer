@@ -150,22 +150,6 @@
     color: var(--muted, #94a3b8);
   }
 
-  .run-select {
-    background-color: var(--panel-raised, var(--control, #14191f));
-    color: var(--text, #e6ebef);
-    border: 1px solid var(--line, #2d3741);
-    border-radius: 6px;
-    padding: 0.4rem 0.85rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    outline: none;
-  }
-
-  .run-select:focus {
-    border-color: var(--accent, #3b82f6);
-  }
-
   .gallery-content {
     width: 100%;
   }
