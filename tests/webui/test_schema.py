@@ -216,6 +216,14 @@ def test_meta_serializes_model_method_and_enum_values():
         "EMBEDDING",
     }
     assert "MINUTE" in meta["enums"]["TimeUnit"]
+    assert "optimizer_sub_schemas" in meta
+    adamw_schema = meta["optimizer_sub_schemas"]["ADAMW"]
+    assert "amsgrad" in adamw_schema
+    assert "foreach" in adamw_schema
+    assert "maximize" in adamw_schema
+    assert "differentiable" in adamw_schema
+    assert adamw_schema["amsgrad"]["type"] == "bool"
+    assert "MUON" in meta["optimizer_sub_schemas"]
 
 
 def test_train_config_has_default_datasets_dir():

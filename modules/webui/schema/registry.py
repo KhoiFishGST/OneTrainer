@@ -1,3 +1,5 @@
+from typing import Any
+
 from modules.ui.TopBarController import TopBarController
 from modules.util.config.TrainConfig import TrainConfig
 from modules.util.enum.AttentionMechanism import AttentionMechanism
@@ -58,54 +60,256 @@ PHASE_A_KEYS = {
     "save_filename_prefix",
 }
 
-OPTIMIZER_SUB_SCHEMAS = {
-    "AdamW": {
-        "beta1": {"type": "float", "default": 0.9, "label": "Beta 1", "tooltip": "Exponential decay rate for first moment estimates"},
-        "beta2": {"type": "float", "default": 0.999, "label": "Beta 2", "tooltip": "Exponential decay rate for second moment estimates"},
-        "eps": {"type": "float", "default": 1e-8, "label": "Epsilon", "tooltip": "Small constant for numerical stability"},
-        "weight_decay": {"type": "float", "default": 0.01, "label": "Weight Decay", "tooltip": "Weight decay regularization factor"},
-        "amsgrad": {"type": "bool", "default": False, "label": "AMSGrad", "tooltip": "Whether to use AMSGrad variant"},
+KEY_DETAIL_MAP = {
+    'adam_w_mode': {'title': 'Adam W Mode', 'tooltip': 'Whether to use weight decay correction for Adam optimizer.', 'type': 'bool'},
+    'alpha': {'title': 'Alpha', 'tooltip': 'Smoothing parameter for RMSprop and others.', 'type': 'float'},
+    'amsgrad': {'title': 'AMSGrad', 'tooltip': 'Whether to use the AMSGrad variant for Adam.', 'type': 'bool'},
+    'beta1': {'title': 'Beta1', 'tooltip': 'optimizer_momentum term.', 'type': 'float'},
+    'beta2': {'title': 'Beta2', 'tooltip': 'Coefficients for computing running averages of gradient.', 'type': 'float'},
+    'beta3': {'title': 'Beta3', 'tooltip': 'Coefficient for computing the Prodigy stepsize.', 'type': 'float'},
+    'bias_correction': {'title': 'Bias Correction', 'tooltip': 'Whether to use bias correction in optimization algorithms like Adam.', 'type': 'bool'},
+    'block_wise': {'title': 'Block Wise', 'tooltip': 'Whether to perform block-wise model update.', 'type': 'bool'},
+    'capturable': {'title': 'Capturable', 'tooltip': 'Whether some property of the optimizer can be captured.', 'type': 'bool'},
+    'centered': {'title': 'Centered', 'tooltip': 'Whether to center the gradient before scaling.', 'type': 'bool'},
+    'clip_threshold': {'title': 'Clip Threshold', 'tooltip': 'Clipping value for gradients.', 'type': 'float'},
+    'd0': {'title': 'Initial D', 'tooltip': 'Initial D estimate for D-adaptation.', 'type': 'float'},
+    'd_coef': {'title': 'D Coefficient', 'tooltip': 'Coefficient in the expression for the estimate of d.', 'type': 'float'},
+    'dampening': {'title': 'Dampening', 'tooltip': 'Dampening for optimizer_momentum.', 'type': 'float'},
+    'decay_rate': {'title': 'Decay Rate', 'tooltip': 'Rate of decay for moment estimation.', 'type': 'float'},
+    'decouple': {'title': 'Decouple', 'tooltip': 'Use AdamW style optimizer_decoupled weight decay.', 'type': 'bool'},
+    'differentiable': {'title': 'Differentiable', 'tooltip': 'Whether the optimization function is optimizer_differentiable.', 'type': 'bool'},
+    'eps': {'title': 'EPS', 'tooltip': 'A small value to prevent division by zero.', 'type': 'float'},
+    'eps2': {'title': 'EPS 2', 'tooltip': 'A small value to prevent division by zero.', 'type': 'float'},
+    'foreach': {'title': 'ForEach', 'tooltip': 'Whether to use a foreach implementation if available.', 'type': 'bool'},
+    'fsdp_in_use': {'title': 'FSDP in Use', 'tooltip': 'Flag for using sharded parameters.', 'type': 'bool'},
+    'fused': {'title': 'Fused', 'tooltip': 'Whether to use a fused implementation if available.', 'type': 'bool'},
+    'fused_back_pass': {'title': 'Fused Back Pass', 'tooltip': 'Whether to fuse the back propagation pass with the optimizer step.', 'type': 'bool'},
+    'growth_rate': {'title': 'Growth Rate', 'tooltip': 'Limit for D estimate growth rate.', 'type': 'float'},
+    'initial_accumulator_value': {'title': 'Initial Accumulator Value', 'tooltip': 'Initial value for Adagrad optimizer.', 'type': 'float'},
+    'initial_accumulator': {'title': 'Initial Accumulator', 'tooltip': 'Sets the starting value for both moment estimates.', 'type': 'float'},
+    'is_paged': {'title': 'Is Paged', 'tooltip': "Whether the optimizer's internal state should be paged to CPU.", 'type': 'bool'},
+    'log_every': {'title': 'Log Every', 'tooltip': 'Intervals at which logging should occur.', 'type': 'int'},
+    'lr_decay': {'title': 'LR Decay', 'tooltip': 'Rate at which learning rate decreases.', 'type': 'float'},
+    'max_unorm': {'title': 'Max Unorm', 'tooltip': 'Maximum value for gradient clipping by norms.', 'type': 'float'},
+    'maximize': {'title': 'Maximize', 'tooltip': 'Whether to optimizer_maximize the optimization function.', 'type': 'bool'},
+    'min_8bit_size': {'title': 'Min 8bit Size', 'tooltip': 'Minimum tensor size for 8-bit quantization.', 'type': 'int'},
+    'quant_block_size': {'title': 'Quant Block Size', 'tooltip': 'Size of a block of normalized 8-bit quantization data.', 'type': 'int'},
+    'momentum': {'title': 'Momentum', 'tooltip': 'Factor to accelerate SGD in relevant direction.', 'type': 'float'},
+    'nesterov': {'title': 'Nesterov', 'tooltip': 'Whether to enable Nesterov optimizer_momentum.', 'type': 'bool'},
+    'no_prox': {'title': 'No Prox', 'tooltip': 'Whether to use proximity updates or not.', 'type': 'bool'},
+    'optim_bits': {'title': 'Optim Bits', 'tooltip': 'Number of bits used for optimization.', 'type': 'int'},
+    'percentile_clipping': {'title': 'Percentile Clipping', 'tooltip': 'Gradient clipping based on percentile values.', 'type': 'int'},
+    'relative_step': {'title': 'Relative Step', 'tooltip': 'Whether to use a relative step size.', 'type': 'bool'},
+    'safeguard_warmup': {'title': 'Safeguard Warmup', 'tooltip': 'Avoid issues during warm-up stage.', 'type': 'bool'},
+    'scale_parameter': {'title': 'Scale Parameter', 'tooltip': 'Whether to scale the parameter or not.', 'type': 'bool'},
+    'stochastic_rounding': {'title': 'Stochastic Rounding', 'tooltip': 'Stochastic rounding for weight updates.', 'type': 'bool'},
+    'use_bias_correction': {'title': 'Bias Correction', 'tooltip': "Turn on Adam's bias correction.", 'type': 'bool'},
+    'use_triton': {'title': 'Use Triton', 'tooltip': 'Whether Triton optimization should be used.', 'type': 'bool'},
+    'warmup_init': {'title': 'Warmup Initialization', 'tooltip': 'Whether to warm-up the optimizer initialization.', 'type': 'bool'},
+    'weight_decay': {'title': 'Weight Decay', 'tooltip': 'Regularization to prevent overfitting.', 'type': 'float'},
+    'weight_lr_power': {'title': 'Weight LR Power', 'tooltip': 'During warmup, the weights in the average will be equal to lr raised to this power.', 'type': 'float'},
+    'decoupled_decay': {'title': 'Decoupled Decay', 'tooltip': 'If set as True, then the optimizer uses decoupled weight decay as in AdamW.', 'type': 'bool'},
+    'fixed_decay': {'title': 'Fixed Decay', 'tooltip': 'Applies fixed weight decay when True.', 'type': 'bool'},
+    'rectify': {'title': 'Rectify', 'tooltip': 'Perform the rectified update similar to RAdam.', 'type': 'bool'},
+    'degenerated_to_sgd': {'title': 'Degenerated to SGD', 'tooltip': 'Performs SGD update when gradient variance is high.', 'type': 'bool'},
+    'k': {'title': 'K', 'tooltip': 'Number of vector projected per iteration.', 'type': 'int'},
+    'xi': {'title': 'Xi', 'tooltip': 'Term used in vector projections to avoid division by zero.', 'type': 'float'},
+    'n_sma_threshold': {'title': 'N SMA Threshold', 'tooltip': 'Number of SMA threshold.', 'type': 'int'},
+    'ams_bound': {'title': 'AMS Bound', 'tooltip': 'Whether to use the AMSBound variant.', 'type': 'bool'},
+    'r': {'title': 'R', 'tooltip': 'EMA factor.', 'type': 'float'},
+    'adanorm': {'title': 'AdaNorm', 'tooltip': 'Whether to use the AdaNorm variant', 'type': 'bool'},
+    'adam_debias': {'title': 'Adam Debias', 'tooltip': 'Only correct the denominator to avoid inflating step sizes early in training.', 'type': 'bool'},
+    'slice_p': {'title': 'Slice parameters', 'tooltip': 'Reduce memory usage by calculating LR adaptation statistics on only every pth entry.', 'type': 'int'},
+    'cautious': {'title': 'Cautious', 'tooltip': 'Whether to use the Cautious variant', 'type': 'bool'},
+    'weight_decay_by_lr': {'title': 'weight_decay_by_lr', 'tooltip': 'Automatically adjust weight decay based on lr', 'type': 'bool'},
+    'prodigy_steps': {'title': 'prodigy_steps', 'tooltip': 'Turn off Prodigy after N steps', 'type': 'int'},
+    'use_speed': {'title': 'use_speed', 'tooltip': 'use_speed method', 'type': 'bool'},
+    'split_groups': {'title': 'split_groups', 'tooltip': 'Use split groups when training multiple params', 'type': 'bool'},
+    'split_groups_mean': {'title': 'split_groups_mean', 'tooltip': 'Use mean for split groups', 'type': 'bool'},
+    'factored': {'title': 'factored', 'tooltip': 'Use factored', 'type': 'bool'},
+    'factored_fp32': {'title': 'factored_fp32', 'tooltip': 'Use factored_fp32', 'type': 'bool'},
+    'use_stableadamw': {'title': 'use_stableadamw', 'tooltip': 'Use use_stableadamw for gradient scaling', 'type': 'bool'},
+    'use_cautious': {'title': 'use_cautious', 'tooltip': 'Use cautious method', 'type': 'bool'},
+    'use_grams': {'title': 'use_grams', 'tooltip': 'Use grams method', 'type': 'bool'},
+    'use_adopt': {'title': 'use_adopt', 'tooltip': 'Use adopt method', 'type': 'bool'},
+    'd_limiter': {'title': 'd_limiter', 'tooltip': 'Prevent over-estimated LRs when gradients and EMA are still stabilizing', 'type': 'bool'},
+    'use_schedulefree': {'title': 'use_schedulefree', 'tooltip': 'Use Schedulefree method', 'type': 'bool'},
+    'use_orthograd': {'title': 'use_orthograd', 'tooltip': 'Use orthograd method', 'type': 'bool'},
+    'nnmf_factor': {'title': 'Factored Optimizer', 'tooltip': 'Enables a memory-efficient mode by applying fast low-rank factorization.', 'type': 'bool'},
+    'orthogonal_gradient': {'title': 'OrthoGrad', 'tooltip': 'Reduces overfitting by removing gradient component parallel to weight.', 'type': 'bool'},
+    'use_atan2': {'title': 'Atan2 Scaling', 'tooltip': 'A robust replacement for eps, incorporating gradient clipping.', 'type': 'bool'},
+    'use_AdEMAMix': {'title': 'AdEMAMix EMA', 'tooltip': 'Adds a second, slow-moving EMA.', 'type': 'bool'},
+    'beta3_ema': {'title': 'Beta3 EMA', 'tooltip': 'Coefficient for slow-moving EMA of AdEMAMix.', 'type': 'float'},
+    'beta1_warmup': {'title': 'Beta1 Warmup Steps', 'tooltip': 'Number of warmup steps to gradually increase beta1.', 'type': 'int'},
+    'min_beta1': {'title': 'Minimum Beta1', 'tooltip': 'Starting beta1 value for warmup scheduling.', 'type': 'float'},
+    'Simplified_AdEMAMix': {'title': 'Simplified AdEMAMix', 'tooltip': "Enables a simplified, single-EMA variant of AdEMAMix.", 'type': 'bool'},
+    'alpha_grad': {'title': 'Grad α', 'tooltip': 'Controls mixing coefficient between raw gradients and momentum gradients.', 'type': 'float'},
+    'kourkoutas_beta': {'title': 'Kourkoutas Beta', 'tooltip': 'Enables layer-wise dynamic β₂ adaptation.', 'type': 'bool'},
+    'schedulefree_c': {'title': 'Schedule free averaging strength', 'tooltip': 'Larger values = more responsive; smaller values = smoother.', 'type': 'float'},
+    'ns_steps': {'title': 'Newton-Schulz Iterations', 'tooltip': 'Controls iterations for update orthogonalization.', 'type': 'int'},
+    'MuonWithAuxAdam': {'title': 'MuonWithAuxAdam', 'tooltip': 'Whether to use standard way of Muon.', 'type': 'bool'},
+    'muon_hidden_layers': {'title': 'Hidden Layers', 'tooltip': 'Comma-separated list of hidden layers to train using Muon.', 'type': 'str'},
+    'muon_adam_regex': {'title': 'Use Regex', 'tooltip': 'Whether to use regular expressions for hidden layers.', 'type': 'bool'},
+    'muon_adam_lr': {'title': 'Auxiliary Adam LR', 'tooltip': 'Learning rate for auxiliary AdamW optimizer.', 'type': 'float'},
+    'muon_te1_adam_lr': {'title': 'AuxAdam TE1 LR', 'tooltip': 'Learning rate for auxiliary AdamW optimizer for TE1.', 'type': 'float'},
+    'muon_te2_adam_lr': {'title': 'AuxAdam TE2 LR', 'tooltip': 'Learning rate for auxiliary AdamW optimizer for TE2.', 'type': 'float'},
+    'rms_rescaling': {'title': 'RMS Rescaling', 'tooltip': 'Integrates a more accurate method to match Adam LR.', 'type': 'bool'},
+    'normuon_variant': {'title': 'NorMuon Variant', 'tooltip': 'Enables NorMuon optimizer variant.', 'type': 'bool'},
+    'beta2_normuon': {'title': 'NorMuon Beta2', 'tooltip': 'Exponential decay rate for second-moment estimator in NorMuon.', 'type': 'float'},
+    'low_rank_ortho': {'title': 'Low-rank Orthogonalization', 'tooltip': 'Use low-rank orthogonalization to accelerate Muon.', 'type': 'bool'},
+    'ortho_rank': {'title': 'Ortho Rank', 'tooltip': 'Target rank for low-rank orthogonalization.', 'type': 'int'},
+    'accelerated_ns': {'title': 'Accelerated Newton-Schulz', 'tooltip': 'Applies an enhanced Newton-Schulz variant.', 'type': 'bool'},
+    'cautious_wd': {'title': 'Cautious Weight Decay', 'tooltip': 'Applies weight decay only when signs align.', 'type': 'bool'},
+    'approx_mars': {'title': 'Approx MARS-M', 'tooltip': 'Enables Approximated MARS-M.', 'type': 'bool'},
+    'auto_kappa_p': {'title': 'Auto Lion-K', 'tooltip': 'Automatically determines optimal P-value.', 'type': 'bool'},
+    'compile': {'title': 'Compiled Optimizer', 'tooltip': 'Enables PyTorch compilation for optimizer step.', 'type': 'bool'},
+}
+
+
+FALLBACK_OPTIMIZER_DEFAULTS = {
+    "ADAMW": {
+        "beta1": 0.9,
+        "beta2": 0.999,
+        "eps": 1e-8,
+        "weight_decay": 1e-2,
+        "amsgrad": False,
+        "foreach": False,
+        "maximize": False,
+        "capturable": False,
+        "differentiable": False,
+        "fused": True,
+        "stochastic_rounding": False,
+        "fused_back_pass": False,
     },
-    "Prodigy": {
-        "beta1": {"type": "float", "default": 0.9, "label": "Beta 1", "tooltip": "Exponential decay rate for first moment estimates"},
-        "beta2": {"type": "float", "default": 0.999, "label": "Beta 2", "tooltip": "Exponential decay rate for second moment estimates"},
-        "beta3": {"type": "float", "default": None, "label": "Beta 3", "tooltip": "Prodigy step size coefficient"},
-        "d0": {"type": "float", "default": 1e-6, "label": "Initial D", "tooltip": "Initial D estimate for D-adaptation"},
-        "d_coef": {"type": "float", "default": 1.0, "label": "D Coefficient", "tooltip": "Coefficient for estimate of D"},
-        "weight_decay": {"type": "float", "default": 0.0, "label": "Weight Decay", "tooltip": "Weight decay regularization factor"},
-        "decouple": {"type": "bool", "default": True, "label": "Decouple", "tooltip": "Use AdamW style decoupled weight decay"},
-        "use_bias_correction": {"type": "bool", "default": False, "label": "Bias Correction", "tooltip": "Use bias correction"},
-        "safeguard_warmup": {"type": "bool", "default": False, "label": "Safeguard Warmup", "tooltip": "Safeguard warmup stage"},
-        "slice_p": {"type": "int", "default": 11, "label": "Slice Parameters", "tooltip": "Slice parameter reduction factor"},
+    "ADAMW_8BIT": {
+        "beta1": 0.9,
+        "beta2": 0.999,
+        "eps": 1e-8,
+        "weight_decay": 1e-2,
+        "amsgrad": False,
+        "optim_bits": 32,
+        "min_8bit_size": 4096,
+        "percentile_clipping": 100,
+        "block_wise": True,
+        "is_paged": False,
+    },
+    "ADAMW_ADV": {
+        "beta1": 0.9,
+        "beta2": 0.99,
+        "eps": 1e-8,
+        "cautious_wd": False,
+        "weight_decay": 0.0,
+        "nnmf_factor": False,
+        "stochastic_rounding": True,
+        "compile": False,
+        "fused_back_pass": False,
+        "use_atan2": False,
+        "orthogonal_gradient": False,
+        "use_AdEMAMix": False,
+        "beta3_ema": 0.9999,
+        "alpha": 5,
+        "kourkoutas_beta": False,
+    },
+    "MUON": {
+        "momentum": 0.95,
+        "weight_decay": 0.0,
+        "MuonWithAuxAdam": True,
+        "muon_hidden_layers": None,
+        "muon_adam_regex": False,
+        "muon_adam_lr": 3e-4,
+        "muon_te1_adam_lr": None,
+        "muon_te2_adam_lr": None,
+        "muon_adam_config": {},
+    },
+    "PRODIGY": {
+        "beta1": 0.9,
+        "beta2": 0.999,
+        "beta3": None,
+        "d0": 1e-6,
+        "d_coef": 1.0,
+        "weight_decay": 0.0,
+        "decouple": True,
+        "use_bias_correction": False,
+        "safeguard_warmup": False,
+        "slice_p": 11,
+    },
+    "ADAFACTOR": {
+        "eps": 1e-30,
+        "eps2": 1e-3,
+        "clip_threshold": 1.0,
+        "decay_rate": -0.8,
+        "beta1": None,
+        "weight_decay": 0.0,
+        "scale_parameter": False,
+        "relative_step": False,
+        "warmup_init": False,
+        "stochastic_rounding": True,
+        "fused_back_pass": False,
     },
     "CAME": {
-        "beta1": {"type": "float", "default": 0.9, "label": "Beta 1", "tooltip": "Exponential decay rate for first moment estimates"},
-        "beta2": {"type": "float", "default": 0.999, "label": "Beta 2", "tooltip": "Exponential decay rate for second moment estimates"},
-        "beta3": {"type": "float", "default": 0.9999, "label": "Beta 3", "tooltip": "Exponential decay rate for third moment estimates"},
-        "eps": {"type": "float", "default": 1e-30, "label": "Epsilon 1", "tooltip": "First small constant for numerical stability"},
-        "eps2": {"type": "float", "default": 1e-16, "label": "Epsilon 2", "tooltip": "Second small constant for numerical stability"},
-        "weight_decay": {"type": "float", "default": 0.01, "label": "Weight Decay", "tooltip": "Weight decay regularization factor"},
+        "beta1": 0.9,
+        "beta2": 0.999,
+        "beta3": 0.9999,
+        "eps": 1e-30,
+        "eps2": 1e-16,
+        "weight_decay": 1e-2,
+        "stochastic_rounding": False,
+        "use_cautious": False,
+        "fused_back_pass": False,
     },
-    "ADAM_8BIT": {
-        "beta1": {"type": "float", "default": 0.9, "label": "Beta 1", "tooltip": "Exponential decay rate for first moment estimates"},
-        "beta2": {"type": "float", "default": 0.999, "label": "Beta 2", "tooltip": "Exponential decay rate for second moment estimates"},
-        "eps": {"type": "float", "default": 1e-8, "label": "Epsilon", "tooltip": "Small constant for numerical stability"},
-        "weight_decay": {"type": "float", "default": 0.0, "label": "Weight Decay", "tooltip": "Weight decay regularization factor"},
-        "block_wise": {"type": "bool", "default": True, "label": "Block Wise", "tooltip": "Perform block-wise 8-bit quantization"},
-        "min_8bit_size": {"type": "int", "default": 4096, "label": "Min 8-bit Size", "tooltip": "Minimum tensor size for 8-bit quantization"},
+    "SGD": {
+        "momentum": 0,
+        "dampening": 0,
+        "weight_decay": 0,
+        "nesterov": False,
+        "foreach": False,
+        "maximize": False,
+        "differentiable": False,
     },
-    "Adafactor": {
-        "eps": {"type": "float", "default": 1e-30, "label": "Epsilon 1", "tooltip": "First epsilon value"},
-        "eps2": {"type": "float", "default": 1e-3, "label": "Epsilon 2", "tooltip": "Second epsilon value"},
-        "clip_threshold": {"type": "float", "default": 1.0, "label": "Clip Threshold", "tooltip": "Clipping threshold for update RMS"},
-        "decay_rate": {"type": "float", "default": -0.8, "label": "Decay Rate", "tooltip": "Decay rate coefficient"},
-        "beta1": {"type": "float", "default": None, "label": "Beta 1", "tooltip": "Beta 1 factor"},
-        "weight_decay": {"type": "float", "default": 0.0, "label": "Weight Decay", "tooltip": "Weight decay regularization factor"},
-        "scale_parameter": {"type": "bool", "default": False, "label": "Scale Parameter", "tooltip": "Scale learning rate by root mean square of parameter"},
-        "relative_step": {"type": "bool", "default": False, "label": "Relative Step", "tooltip": "Use relative step size"},
-        "warmup_init": {"type": "bool", "default": False, "label": "Warmup Initialization", "tooltip": "Warmup initialization"},
+    "LION": {
+        "beta1": 0.9,
+        "beta2": 0.99,
+        "weight_decay": 0.0,
+        "use_triton": False,
     },
 }
+
+
+def build_optimizer_sub_schemas() -> dict[str, dict[str, Any]]:
+    try:
+        from modules.util.optimizer_util import OPTIMIZER_DEFAULT_PARAMETERS
+        source_defaults = OPTIMIZER_DEFAULT_PARAMETERS
+    except Exception:
+        source_defaults = FALLBACK_OPTIMIZER_DEFAULTS
+
+    schemas = {}
+    for opt_enum, params in source_defaults.items():
+        opt_key = str(opt_enum.value if hasattr(opt_enum, "value") else opt_enum)
+        opt_schema = {}
+        for key, default_val in params.items():
+            meta = KEY_DETAIL_MAP.get(key, {})
+            val_type = meta.get("type")
+            if not val_type:
+                if isinstance(default_val, bool):
+                    val_type = "bool"
+                elif isinstance(default_val, int):
+                    val_type = "int"
+                elif isinstance(default_val, (float, type(None))):
+                    val_type = "float"
+                else:
+                    val_type = "str"
+
+            opt_schema[key] = {
+                "type": val_type,
+                "default": default_val,
+                "label": meta.get("title", key.replace("_", " ").title()),
+                "tooltip": meta.get("tooltip", ""),
+            }
+        schemas[opt_key] = opt_schema
+    return schemas
+
+
+OPTIMIZER_SUB_SCHEMAS = build_optimizer_sub_schemas()
 
 SCHEDULER_SUB_SCHEMAS = {
     "Cosine": {
@@ -241,6 +445,6 @@ class SchemaRegistry:
         return {
             "model_types": model_types,
             "enums": enums,
-            "optimizer_sub_schemas": OPTIMIZER_SUB_SCHEMAS,
+            "optimizer_sub_schemas": build_optimizer_sub_schemas(),
             "scheduler_sub_schemas": SCHEDULER_SUB_SCHEMAS,
         }

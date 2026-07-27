@@ -5,6 +5,7 @@ import type { ConfigSchema } from './validation';
 export interface RouteContext {
   workspace: ConfigWorkspace | null;
   schema: ConfigSchema;
+  meta?: Record<string, any>;
   openDirectory?: (currentPath: string, onSelect?: (selectedPath: string) => void) => void;
 }
 

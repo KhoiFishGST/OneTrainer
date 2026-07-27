@@ -33,4 +33,26 @@ describe("OptimizerParamsModal", () => {
       optimizer_params: expect.objectContaining({ ns_steps: 5 }),
     });
   });
+
+  it("renders dynamic parameters for AdamW including AMSGrad, ForEach, Maximize, and Differentiable", async () => {
+    let open = true;
+    const values = {
+      optimizer: { optimizer: "ADAMW" },
+      optimizer_params: { beta1: 0.9, amsgrad: false, foreach: false },
+    };
+    const onSave = vi.fn();
+
+    render(OptimizerParamsModal, {
+      props: {
+        open,
+        values,
+        onSave,
+      },
+    });
+
+    expect(screen.getByText("AMSGrad")).toBeInTheDocument();
+    expect(screen.getByText("ForEach")).toBeInTheDocument();
+    expect(screen.getByText("Maximize")).toBeInTheDocument();
+    expect(screen.getByText("Differentiable")).toBeInTheDocument();
+  });
 });

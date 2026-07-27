@@ -3,6 +3,9 @@
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
   import Select from '$lib/components/form/Select.svelte';
   import Toggle from '$lib/components/form/Toggle.svelte';
+  import { getRouteContext } from '$lib/config/context';
+
+  import type { RouteContext } from '$lib/config/context';
 
   let {
     open = $bindable(false),
@@ -14,131 +17,110 @@
     onSave?: (updatedValues: Record<string, any>) => void;
   }>();
 
-  const OPTIMIZER_OPTIONS = [
-    { value: 'ADAMW', label: 'AdamW' },
-    { value: 'ADAMW_ADV', label: 'AdamW (Advanced)' },
-    { value: 'MUON', label: 'Muon' },
-    { value: 'PRODIGY', label: 'Prodigy' },
-    { value: 'ADAFACTOR', label: 'Adafactor' },
-    { value: 'SGD', label: 'SGD' },
-    { value: 'ADAGRAD', label: 'Adagrad' },
-    { value: 'ADAM', label: 'Adam' },
-    { value: 'LION', label: 'Lion' },
-    { value: 'SOPHIA', label: 'Sophia' },
-  ];
+  let ctx: RouteContext | null = null;
+  try {
+    ctx = getRouteContext();
+  } catch {
+    ctx = null;
+  }
 
-  // Default parameters map per optimizer (mirrors OPTIMIZER_DEFAULT_PARAMETERS from optimizer_util.py)
-  const OPTIMIZER_DEFAULTS: Record<string, Record<string, any>> = {
+  const FALLBACK_OPTIMIZER_SCHEMAS: Record<
+    string,
+    Record<string, { label: string; tooltip: string; type: string; default: any }>
+  > = {
     ADAMW: {
-      beta1: 0.9,
-      beta2: 0.999,
-      weight_decay: 0.01,
-      eps: 1e-8,
-      fused: false,
+      beta1: { label: 'Beta 1', tooltip: 'Optimizer momentum term', type: 'float', default: 0.9 },
+      beta2: { label: 'Beta 2', tooltip: 'Coefficients for computing running averages of gradient', type: 'float', default: 0.999 },
+      eps: { label: 'EPS', tooltip: 'Small value to prevent division by zero', type: 'float', default: 1e-8 },
+      weight_decay: { label: 'Weight Decay', tooltip: 'Regularization to prevent overfitting', type: 'float', default: 0.01 },
+      amsgrad: { label: 'AMSGrad', tooltip: 'Use AMSGrad variant', type: 'bool', default: false },
+      foreach: { label: 'ForEach', tooltip: 'Use foreach implementation', type: 'bool', default: false },
+      maximize: { label: 'Maximize', tooltip: 'Maximize optimization function', type: 'bool', default: false },
+      capturable: { label: 'Capturable', tooltip: 'Capturable property', type: 'bool', default: false },
+      differentiable: { label: 'Differentiable', tooltip: 'Differentiable optimization function', type: 'bool', default: false },
+      fused: { label: 'Fused', tooltip: 'Use fused implementation', type: 'bool', default: true },
+      stochastic_rounding: { label: 'Stochastic Rounding', tooltip: 'Stochastic rounding for weight updates', type: 'bool', default: false },
+      fused_back_pass: { label: 'Fused Back Pass', tooltip: 'Fuse back propagation pass with optimizer step', type: 'bool', default: false },
     },
     ADAMW_ADV: {
-      beta1: 0.9,
-      beta2: 0.999,
-      weight_decay: 0.01,
-      eps: 1e-8,
-      amsgrad: false,
-      decouple: true,
-      fused_back_pass: false,
-      stochastic_rounding: false,
+      beta1: { label: 'Beta 1', tooltip: 'Optimizer momentum term', type: 'float', default: 0.9 },
+      beta2: { label: 'Beta 2', tooltip: 'Coefficients for computing running averages of gradient', type: 'float', default: 0.999 },
+      weight_decay: { label: 'Weight Decay', tooltip: 'Regularization to prevent overfitting', type: 'float', default: 0.01 },
+      eps: { label: 'EPS', tooltip: 'Small value to prevent division by zero', type: 'float', default: 1e-8 },
+      amsgrad: { label: 'AMSGrad', tooltip: 'Use AMSGrad variant', type: 'bool', default: false },
+      decouple: { label: 'Decouple', tooltip: 'Use AdamW style decoupled weight decay', type: 'bool', default: true },
+      fused_back_pass: { label: 'Fused Back Pass', tooltip: 'Fuse back propagation pass', type: 'bool', default: false },
+      stochastic_rounding: { label: 'Stochastic Rounding', tooltip: 'Stochastic rounding for weight updates', type: 'bool', default: false },
     },
     MUON: {
-      beta1: 0.95,
-      beta2: 0.95,
-      weight_decay: 0.01,
-      ns_steps: 5,
-      MuonWithAuxAdam: true,
-      muon_adam_lr: 0.0001,
-      normuon_variant: false,
+      momentum: { label: 'Momentum', tooltip: 'Factor to accelerate SGD', type: 'float', default: 0.95 },
+      weight_decay: { label: 'Weight Decay', tooltip: 'Regularization to prevent overfitting', type: 'float', default: 0.0 },
+      ns_steps: { label: 'Newton-Schulz Iterations', tooltip: 'Iterations for update orthogonalization', type: 'int', default: 5 },
+      MuonWithAuxAdam: { label: 'MuonWithAuxAdam', tooltip: 'Non-hidden layers fallback to AdamW', type: 'bool', default: true },
+      muon_adam_lr: { label: 'Auxiliary Adam LR', tooltip: 'Learning rate for auxiliary AdamW optimizer', type: 'float', default: 0.0003 },
+      normuon_variant: { label: 'NorMuon Variant', tooltip: 'NorMuon optimizer variant', type: 'bool', default: false },
     },
     PRODIGY: {
-      beta1: 0.9,
-      beta2: 0.999,
-      beta3: 0,
-      weight_decay: 0.01,
-      eps: 1e-8,
-      d0: 1e-6,
-      d_coef: 1.0,
-      growth_rate: 0,
-      use_bias_correction: true,
-      safeguard_warmup: true,
+      beta1: { label: 'Beta 1', tooltip: 'Optimizer momentum term', type: 'float', default: 0.9 },
+      beta2: { label: 'Beta 2', tooltip: 'Coefficients for computing running averages of gradient', type: 'float', default: 0.999 },
+      beta3: { label: 'Beta 3', tooltip: 'Coefficient for computing Prodigy stepsize', type: 'float', default: 0 },
+      weight_decay: { label: 'Weight Decay', tooltip: 'Regularization to prevent overfitting', type: 'float', default: 0.0 },
+      eps: { label: 'EPS', tooltip: 'Small value to prevent division by zero', type: 'float', default: 1e-8 },
+      d0: { label: 'Initial D', tooltip: 'Initial D estimate for D-adaptation', type: 'float', default: 1e-6 },
+      d_coef: { label: 'D Coefficient', tooltip: 'Coefficient for estimate of d', type: 'float', default: 1.0 },
+      use_bias_correction: { label: 'Bias Correction', tooltip: 'Turn on Adam bias correction', type: 'bool', default: false },
+      safeguard_warmup: { label: 'Safeguard Warmup', tooltip: 'Avoid issues during warm-up stage', type: 'bool', default: false },
+      slice_p: { label: 'Slice Parameters', tooltip: 'Slice parameter reduction factor', type: 'int', default: 11 },
     },
     ADAFACTOR: {
-      beta1: 0.0,
-      decay_rate: -0.8,
-      eps: 1e-30,
-      eps2: 1e-3,
-      clip_threshold: 1.0,
-      relative_step: false,
-      scale_parameter: false,
-      warmup_init: false,
+      eps: { label: 'EPS', tooltip: 'Small value to prevent division by zero', type: 'float', default: 1e-30 },
+      eps2: { label: 'EPS 2', tooltip: 'Second EPS value', type: 'float', default: 1e-3 },
+      clip_threshold: { label: 'Clip Threshold', tooltip: 'Clipping value for gradients', type: 'float', default: 1.0 },
+      decay_rate: { label: 'Decay Rate', tooltip: 'Rate of decay for moment estimation', type: 'float', default: -0.8 },
+      weight_decay: { label: 'Weight Decay', tooltip: 'Regularization to prevent overfitting', type: 'float', default: 0.0 },
+      scale_parameter: { label: 'Scale Parameter', tooltip: 'Scale parameter', type: 'bool', default: false },
+      relative_step: { label: 'Relative Step', tooltip: 'Use relative step size', type: 'bool', default: false },
+      warmup_init: { label: 'Warmup Initialization', tooltip: 'Warm-up optimizer initialization', type: 'bool', default: false },
     },
     SGD: {
-      momentum: 0.9,
-      dampening: 0,
-      weight_decay: 0,
-      nesterov: false,
+      momentum: { label: 'Momentum', tooltip: 'Factor to accelerate SGD', type: 'float', default: 0.9 },
+      dampening: { label: 'Dampening', tooltip: 'Dampening for momentum', type: 'float', default: 0.0 },
+      weight_decay: { label: 'Weight Decay', tooltip: 'Regularization to prevent overfitting', type: 'float', default: 0.0 },
+      nesterov: { label: 'Nesterov', tooltip: 'Enable Nesterov momentum', type: 'bool', default: false },
     },
   };
 
-  const PARAM_METADATA: Record<
-    string,
-    { title: string; tooltip: string; type: 'float' | 'int' | 'bool' | 'str' }
-  > = {
-    beta1: { title: 'Beta 1', tooltip: 'Optimizer momentum term', type: 'float' },
-    beta2: { title: 'Beta 2', tooltip: 'Coefficients for computing running averages of gradient', type: 'float' },
-    beta3: { title: 'Beta 3', tooltip: 'Coefficient for computing Prodigy stepsize', type: 'float' },
-    weight_decay: { title: 'Weight Decay', tooltip: 'Regularization to prevent overfitting', type: 'float' },
-    eps: { title: 'EPS', tooltip: 'Small value to prevent division by zero', type: 'float' },
-    eps2: { title: 'EPS 2', tooltip: 'Second EPS value', type: 'float' },
-    amsgrad: { title: 'AMSGrad', tooltip: 'Use AMSGrad variant', type: 'bool' },
-    decouple: { title: 'Decouple', tooltip: 'Use AdamW style decoupled weight decay', type: 'bool' },
-    fused: { title: 'Fused', tooltip: 'Use fused implementation', type: 'bool' },
-    fused_back_pass: { title: 'Fused Back Pass', tooltip: 'Fuse back propagation pass with optimizer step', type: 'bool' },
-    stochastic_rounding: { title: 'Stochastic Rounding', tooltip: 'Stochastic rounding for weight updates', type: 'bool' },
-    is_paged: { title: 'Is Paged', tooltip: 'Page optimizer state to CPU', type: 'bool' },
-    nnmf_factor: { title: 'Factored Optimizer', tooltip: 'Apply low-rank factorization to optimizer states', type: 'bool' },
-    use_atan2: { title: 'Atan2 Scaling', tooltip: 'Replacement for eps with gradient clipping', type: 'bool' },
-    cautious_wd: { title: 'Cautious Weight Decay', tooltip: 'Apply weight decay only when signs align', type: 'bool' },
-    compile: { title: 'Compiled Optimizer', tooltip: 'Enable PyTorch compilation for optimizer step', type: 'bool' },
-    momentum: { title: 'Momentum', tooltip: 'Factor to accelerate SGD', type: 'float' },
-    dampening: { title: 'Dampening', tooltip: 'Dampening for momentum', type: 'float' },
-    nesterov: { title: 'Nesterov', tooltip: 'Enable Nesterov momentum', type: 'bool' },
-    ns_steps: { title: 'Newton-Schulz Iterations', tooltip: 'Iterations for update orthogonalization', type: 'int' },
-    MuonWithAuxAdam: { title: 'MuonWithAuxAdam', tooltip: 'Non-hidden layers fallback to AdamW', type: 'bool' },
-    muon_adam_lr: { title: 'Auxiliary Adam LR', tooltip: 'Learning rate for auxiliary AdamW optimizer', type: 'float' },
-    normuon_variant: { title: 'NorMuon Variant', tooltip: 'NorMuon optimizer variant', type: 'bool' },
-    d0: { title: 'Initial D', tooltip: 'Initial D estimate for D-adaptation', type: 'float' },
-    d_coef: { title: 'D Coefficient', tooltip: 'Coefficient for estimate of d', type: 'float' },
-    growth_rate: { title: 'Growth Rate', tooltip: 'Limit for D estimate growth rate', type: 'float' },
-    use_bias_correction: { title: 'Bias Correction', tooltip: 'Turn on Adam bias correction', type: 'bool' },
-    safeguard_warmup: { title: 'Safeguard Warmup', tooltip: 'Avoid issues during warm-up stage', type: 'bool' },
-    decay_rate: { title: 'Decay Rate', tooltip: 'Rate of decay for moment estimation', type: 'float' },
-    clip_threshold: { title: 'Clip Threshold', tooltip: 'Clipping value for gradients', type: 'float' },
-    relative_step: { title: 'Relative Step', tooltip: 'Use relative step size', type: 'bool' },
-    scale_parameter: { title: 'Scale Parameter', tooltip: 'Scale parameter', type: 'bool' },
-    warmup_init: { title: 'Warmup Initialization', tooltip: 'Warm-up optimizer initialization', type: 'bool' },
-  };
+  const optimizerSubSchemas = $derived(
+    ctx?.meta?.optimizer_sub_schemas || FALLBACK_OPTIMIZER_SCHEMAS
+  );
+
+  const optimizerOptions = $derived(
+    Object.keys(optimizerSubSchemas).map((key) => ({
+      value: key,
+      label: key,
+    }))
+  );
 
   let localOptimizer = $state('ADAMW');
   let localParams = $state<Record<string, any>>({});
+
+  const currentFieldSpecs = $derived(
+    optimizerSubSchemas[localOptimizer] || optimizerSubSchemas['ADAMW'] || {}
+  );
+
+  const currentParamKeys = $derived(Object.keys(currentFieldSpecs));
 
   $effect(() => {
     if (open) {
       untrack(() => {
         const opt = values?.optimizer?.optimizer || values?.optimizer || 'ADAMW';
-        localOptimizer = typeof opt === 'string' ? opt : 'ADAMW';
+        localOptimizer = typeof opt === 'string' && optimizerSubSchemas[opt] ? opt : 'ADAMW';
         const params = { ...(values?.optimizer_params || {}) };
 
-        // Initialize with defaults if empty
-        const defaults = OPTIMIZER_DEFAULTS[localOptimizer] || {};
-        for (const [key, val] of Object.entries(defaults)) {
-          if (params[key] === undefined) {
-            params[key] = val;
+        const specs = optimizerSubSchemas[localOptimizer] || {};
+        for (const [key, spec] of Object.entries(specs)) {
+          if (params[key] === undefined && (spec as any).default !== undefined) {
+            params[key] = (spec as any).default;
           }
         }
         localParams = params;
@@ -148,15 +130,21 @@
 
   function handleOptimizerChange(newOpt: string) {
     localOptimizer = newOpt;
-
-    // Load defaults for newly selected optimizer
-    const defaults = OPTIMIZER_DEFAULTS[newOpt] || {};
-    localParams = { ...defaults };
+    const specs = optimizerSubSchemas[newOpt] || {};
+    const defaults: Record<string, any> = {};
+    for (const [key, spec] of Object.entries(specs)) {
+      defaults[key] = (spec as any).default;
+    }
+    localParams = defaults;
   }
 
   function handleLoadDefaults() {
-    const defaults = OPTIMIZER_DEFAULTS[localOptimizer] || {};
-    localParams = { ...defaults };
+    const specs = optimizerSubSchemas[localOptimizer] || {};
+    const defaults: Record<string, any> = {};
+    for (const [key, spec] of Object.entries(specs)) {
+      defaults[key] = (spec as any).default;
+    }
+    localParams = defaults;
   }
 
   function handleApply() {
@@ -166,15 +154,6 @@
     });
     open = false;
   }
-
-  const currentParamKeys = $derived(
-    Object.keys(OPTIMIZER_DEFAULTS[localOptimizer] || {
-      beta1: 0.9,
-      beta2: 0.999,
-      weight_decay: 0.01,
-      eps: 1e-8,
-    })
-  );
 </script>
 
 <ModalDialog
@@ -193,7 +172,7 @@
         <Select
           id="modal-optimizer-select"
           value={localOptimizer}
-          options={OPTIMIZER_OPTIONS}
+          options={optimizerOptions}
           onChange={handleOptimizerChange}
         />
       </div>
@@ -213,11 +192,11 @@
     <!-- Dynamic Parameter Controls -->
     <div class="params-grid">
       {#each currentParamKeys as key (key)}
-        {@const meta = PARAM_METADATA[key] || { title: key, tooltip: '', type: 'float' }}
+        {@const spec = currentFieldSpecs[key] || { label: key, tooltip: '', type: 'float' }}
         <div class="param-item">
-          {#if meta.type === 'bool'}
+          {#if spec.type === 'bool'}
             <div class="bool-row">
-              <span class="param-label" title={meta.tooltip}>{meta.title}</span>
+              <span class="param-label" title={spec.tooltip}>{spec.label}</span>
               <Toggle
                 id={`param-${key}`}
                 value={!!localParams[key]}
@@ -225,18 +204,18 @@
               />
             </div>
           {:else}
-            <label for={`param-${key}`} class="param-label" title={meta.tooltip}>
-              {meta.title}
+            <label for={`param-${key}`} class="param-label" title={spec.tooltip}>
+              {spec.label}
             </label>
             <input
               id={`param-${key}`}
-              type={meta.type === 'int' || meta.type === 'float' ? 'number' : 'text'}
-              step={meta.type === 'float' ? 'any' : '1'}
+              type={spec.type === 'int' || spec.type === 'float' ? 'number' : 'text'}
+              step={spec.type === 'float' ? 'any' : '1'}
               class="param-input"
               value={localParams[key] ?? ''}
               oninput={(e) => {
                 const val = (e.target as HTMLInputElement).value;
-                localParams[key] = meta.type === 'int' || meta.type === 'float' ? Number(val) : val;
+                localParams[key] = spec.type === 'int' || spec.type === 'float' ? Number(val) : val;
               }}
             />
           {/if}
