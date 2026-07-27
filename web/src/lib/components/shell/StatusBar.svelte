@@ -179,10 +179,11 @@
     margin-left: 4px;
   }
 
-  :global(.btn) {
+  .training-action-buttons :global(.btn) {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
+    min-height: 0;
     padding: 0.4rem 0.85rem;
     border-radius: 6px;
     font-size: 0.875rem;
@@ -193,54 +194,54 @@
     user-select: none;
   }
 
-  :global(.btn:disabled) {
+  .training-action-buttons :global(.btn:disabled) {
     opacity: 0.5;
     cursor: not-allowed;
   }
 
-  :global(.btn-primary) {
+  .training-action-buttons :global(.btn-primary) {
     background-color: var(--accent, #3b82f6);
     color: #ffffff;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   }
 
-  :global(.btn-primary:hover:not(:disabled)) {
+  .training-action-buttons :global(.btn-primary:hover:not(:disabled)) {
     background-color: #2563eb;
     box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
   }
 
-  :global(.btn-primary:active:not(:disabled)) {
+  .training-action-buttons :global(.btn-primary:active:not(:disabled)) {
     transform: translateY(1px);
   }
 
-  :global(.btn-secondary) {
+  .training-action-buttons :global(.btn-secondary) {
     background-color: var(--panel-raised, var(--control, #14191f));
     color: var(--text, #e6ebef);
     border-color: var(--line, #2d3741);
   }
 
-  :global(.btn-secondary:hover:not(:disabled)) {
+  .training-action-buttons :global(.btn-secondary:hover:not(:disabled)) {
     background-color: var(--line, #2d3741);
     color: #ffffff;
     border-color: var(--muted, #475569);
   }
 
-  :global(.btn-secondary:active:not(:disabled)) {
+  .training-action-buttons :global(.btn-secondary:active:not(:disabled)) {
     transform: translateY(1px);
   }
 
-  :global(.btn-danger) {
+  .training-action-buttons :global(.btn-danger) {
     background-color: var(--danger, #ef4444);
     color: #ffffff;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   }
 
-  :global(.btn-danger:hover:not(:disabled)) {
+  .training-action-buttons :global(.btn-danger:hover:not(:disabled)) {
     background-color: #dc2626;
     box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
   }
 
-  :global(.btn-danger:active:not(:disabled)) {
+  .training-action-buttons :global(.btn-danger:active:not(:disabled)) {
     transform: translateY(1px);
   }
 </style>

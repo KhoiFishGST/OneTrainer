@@ -69,6 +69,7 @@
       {#snippet actions()}
         <Button
           variant="secondary"
+          class="btn btn-secondary"
           disabled={status.state !== 'RUNNING' && status.state !== 'TRAINING' || $backupMutation.isPending}
           onclick={handleBackup}
           title={status.state === 'RUNNING' || status.state === 'TRAINING' ? 'Trigger immediate model backup checkpoint' : 'Active training run required to backup now'}
@@ -79,6 +80,7 @@
 
         <Button
           variant="secondary"
+          class="btn btn-secondary"
           disabled={status.state !== 'RUNNING' && status.state !== 'TRAINING' || $saveMutation.isPending}
           onclick={handleSave}
           title={status.state === 'RUNNING' || status.state === 'TRAINING' ? 'Trigger immediate model save' : 'Active training run required to save model now'}
@@ -113,18 +115,19 @@
     padding: 1.5rem;
   }
 
-  :global(.backup-header) {
+  .route-page :global(.backup-header) {
     margin-bottom: 1.5rem;
   }
 
-  :global(.backup-toast) {
+  .route-page :global(.backup-toast) {
     margin-bottom: 1rem;
   }
 
-  .btn {
+  .route-page :global(.btn) {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+    min-height: 0;
     padding: 0.4rem 0.85rem;
     border-radius: 6px;
     font-size: 0.875rem;
@@ -134,18 +137,18 @@
     transition: background-color 0.15s ease, opacity 0.15s ease;
   }
 
-  .btn:disabled {
+  .route-page :global(.btn:disabled) {
     opacity: 0.5;
     cursor: not-allowed;
   }
 
-  .btn-secondary {
+  .route-page :global(.btn-secondary) {
     background-color: var(--panel-raised, var(--control, #14191f));
     color: var(--text, #e6ebef);
     border-color: var(--line, #2d3741);
   }
 
-  .btn-secondary:hover:not(:disabled) {
+  .route-page :global(.btn-secondary:hover:not(:disabled)) {
     background-color: var(--line, #2d3741);
   }
 </style>

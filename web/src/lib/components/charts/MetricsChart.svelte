@@ -273,13 +273,14 @@
     color: var(--muted, #94a3b8);
   }
 
-  :global(.ema-slider) {
+  .chart-controls :global(.ema-slider) {
     width: 90px;
     accent-color: var(--accent, #3b82f6);
     cursor: pointer;
   }
 
-  :global(.btn-control) {
+  .chart-controls :global(.btn-control) {
+    min-height: 0;
     background-color: var(--control, #0f172a);
     color: var(--text, #f8fafc);
     border: 1px solid var(--line, #334155);
@@ -290,7 +291,7 @@
     transition: background-color 0.15s ease;
   }
 
-  :global(.btn-control:hover) {
+  .chart-controls :global(.btn-control:hover) {
     background-color: var(--panel-raised, #1e293b);
     border-color: var(--accent, #3b82f6);
   }

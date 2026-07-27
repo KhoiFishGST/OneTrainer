@@ -171,7 +171,7 @@
     gap: 1rem;
   }
 
-  :global(.dataset-card) {
+  .dataset-grid :global(.dataset-card) {
     position: relative;
     border-radius: 10px;
     overflow: hidden;
@@ -185,12 +185,12 @@
     flex-direction: column;
   }
 
-  :global(.dataset-card:hover) {
+  .dataset-grid :global(.dataset-card:hover) {
     transform: translateY(-2px);
     border-color: var(--color-primary-hover, #60a5fa);
   }
 
-  :global(.dataset-card.selected) {
+  .dataset-grid :global(.dataset-card.selected) {
     border-color: var(--color-primary, #3b82f6);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
   }

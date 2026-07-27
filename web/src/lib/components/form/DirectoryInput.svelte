@@ -80,7 +80,7 @@
     box-sizing: border-box;
   }
 
-  :global(.directory-input) {
+  .directory-input-wrapper :global(.directory-input) {
     flex: 1 1 0%;
     min-width: 0;
     width: 100%;
@@ -94,13 +94,13 @@
     box-sizing: border-box;
   }
 
-  :global(.directory-input:focus) {
+  .directory-input-wrapper :global(.directory-input:focus) {
     outline: none;
     border-color: var(--color-primary, var(--accent, #3b82f6));
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
   }
 
-  :global(.directory-btn) {
+  .directory-input-wrapper :global(.directory-btn) {
     flex: 0 0 auto;
     height: 38px;
     display: inline-flex;
@@ -119,7 +119,7 @@
     white-space: nowrap;
   }
 
-  :global(.directory-btn:hover:not(:disabled)) {
+  .directory-input-wrapper :global(.directory-btn:hover:not(:disabled)) {
     background: var(--color-bg-button-hover, var(--panel-raised, #1d242c));
   }
 </style>

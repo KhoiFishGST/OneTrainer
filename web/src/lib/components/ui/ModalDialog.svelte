@@ -232,7 +232,10 @@
     color: var(--text);
   }
 
-  :global(.close-btn) {
+  .modal-header :global(.close-btn) {
+    min-height: 0;
+    width: auto;
+    height: auto;
     background: transparent;
     border: none;
     cursor: pointer;
@@ -244,7 +247,7 @@
     justify-content: center;
   }
 
-  :global(.close-btn:hover) {
+  .modal-header :global(.close-btn:hover) {
     background: var(--control);
     color: var(--text);
   }
@@ -268,7 +271,8 @@
     background: var(--control);
   }
 
-  :global(.btn) {
+  .modal-footer :global(.btn) {
+    min-height: 0;
     padding: 0.5rem 1rem;
     border-radius: 6px;
     font-size: 0.875rem;
@@ -277,23 +281,23 @@
     transition: background-color 0.15s ease, opacity 0.15s ease;
   }
 
-  :global(.cancel-btn) {
+  .modal-footer :global(.cancel-btn) {
     background: transparent;
     border: 1px solid var(--line);
     color: var(--text);
   }
 
-  :global(.cancel-btn:hover) {
+  .modal-footer :global(.cancel-btn:hover) {
     background: var(--control);
   }
 
-  :global(.apply-btn) {
+  .modal-footer :global(.apply-btn) {
     background: var(--accent);
     color: #ffffff;
     border: none;
   }
 
-  :global(.apply-btn:hover) {
+  .modal-footer :global(.apply-btn:hover) {
     opacity: 0.9;
   }
 

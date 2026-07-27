@@ -85,7 +85,7 @@
     box-sizing: border-box;
   }
 
-  :global(.concepts-error-alert) {
+  .concepts-page :global(.concepts-error-alert) {
     display: flex;
     align-items: center;
     gap: 0.625rem;

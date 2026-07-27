@@ -31,6 +31,11 @@
     { value: 'DPM_2', label: 'DPM 2' },
   ];
 
+  type NumericField = 'width' | 'height' | 'diffusion_steps' | 'cfg_scale' | 'seed';
+
+  const NUMERIC_FIELDS: NumericField[] = ['width', 'height', 'diffusion_steps', 'cfg_scale', 'seed'];
+  const HTML_NUMBER_PATTERN = /^-?(?:\d+|\d*\.\d+)(?:[eE][+-]?\d+)?$/;
+
   let draft = $state<any>({
     prompt: '',
     negative_prompt: '',
@@ -61,10 +66,16 @@
     }
   });
 
-  function setDraftNumber(key: 'width' | 'height' | 'diffusion_steps' | 'cfg_scale' | 'seed', value: string) {
-    if (value.trim() === '') return;
+  function normalizeDraftNumber(value: unknown): number | null {
+    if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+    if (typeof value !== 'string' || !HTML_NUMBER_PATTERN.test(value)) return null;
+
     const parsed = Number(value);
-    if (!Number.isNaN(parsed)) draft[key] = parsed;
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function setDraftNumber(key: NumericField, value: string) {
+    draft[key] = value;
   }
 
   function setPresetResolution(res: number) {
@@ -72,8 +83,14 @@
     draft.height = res;
   }
 
+  function isPresetResolution(res: number) {
+    return normalizeDraftNumber(draft.width) === res && normalizeDraftNumber(draft.height) === res;
+  }
+
   function handleSave() {
-    onSave(draft);
+    const saved = { ...draft };
+    for (const field of NUMERIC_FIELDS) saved[field] = normalizeDraftNumber(saved[field]);
+    onSave(saved);
   }
 </script>
 
@@ -123,21 +140,21 @@
           <div class="preset-buttons">
             <Button
               type="button"
-              class={`preset-btn ${draft.width === 512 && draft.height === 512 ? 'active' : ''}`}
+              class={`preset-btn ${isPresetResolution(512) ? 'active' : ''}`}
               onclick={() => setPresetResolution(512)}
             >
               512
             </Button>
             <Button
               type="button"
-              class={`preset-btn ${draft.width === 768 && draft.height === 768 ? 'active' : ''}`}
+              class={`preset-btn ${isPresetResolution(768) ? 'active' : ''}`}
               onclick={() => setPresetResolution(768)}
             >
               768
             </Button>
             <Button
               type="button"
-              class={`preset-btn ${draft.width === 1024 && draft.height === 1024 ? 'active' : ''}`}
+              class={`preset-btn ${isPresetResolution(1024) ? 'active' : ''}`}
               onclick={() => setPresetResolution(1024)}
             >
               1024
@@ -241,8 +258,8 @@
     color: var(--text, #f8fafc);
   }
 
-  :global(.form-row .textarea-input),
-  :global(.form-row .number-input) {
+  .form-row :global(.textarea-input),
+  .form-row :global(.number-input) {
     padding: 0.5rem 0.75rem;
     background-color: var(--control, #14191f);
     border: 1px solid var(--line, #2d3741);
@@ -252,8 +269,8 @@
     font-family: inherit;
   }
 
-  :global(.form-row .textarea-input:focus),
-  :global(.form-row .number-input:focus) {
+  .form-row :global(.textarea-input:focus),
+  .form-row :global(.number-input:focus) {
     outline: none;
     border-color: var(--accent, #3b82f6);
   }
@@ -291,7 +308,8 @@
     gap: 0.375rem;
   }
 
-  :global(.preset-btn) {
+  .preset-buttons :global(.preset-btn) {
+    min-height: 0;
     padding: 0.25rem 0.625rem;
     font-size: 0.75rem;
     font-weight: 600;
@@ -303,12 +321,12 @@
     transition: all 0.15s ease;
   }
 
-  :global(.preset-btn:hover) {
+  .preset-buttons :global(.preset-btn:hover) {
     color: var(--text, #f8fafc);
     border-color: var(--accent, #3b82f6);
   }
 
-  :global(.preset-btn.active) {
+  .preset-buttons :global(.preset-btn.active) {
     background: var(--accent, #3b82f6);
     color: #ffffff;
     border-color: var(--accent, #3b82f6);

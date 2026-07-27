@@ -191,7 +191,7 @@
     color: var(--text-muted, #8b949e);
   }
 
-  :global(.btn-icon) {
+  .drawer-header :global(.btn-icon) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -204,9 +204,15 @@
     text-decoration: none;
   }
 
-  :global(.btn-icon:hover) {
+  .drawer-header :global(.btn-icon:hover) {
     color: var(--text, #c9d1d9);
     background-color: var(--button-hover-bg, #21262d);
+  }
+
+  .drawer-header :global(button.btn-icon) {
+    min-height: 0;
+    width: auto;
+    height: auto;
   }
 
   .console-body {

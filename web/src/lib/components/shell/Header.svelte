@@ -311,15 +311,19 @@
 </header>
 
 {#if saveError && !showSaveDialog && !showOverwriteDialog}
-  <Alert tone="error" class="save-error-toast">
-    {saveError}
-  </Alert>
+  <div class="header-alert-owner">
+    <Alert tone="error" class="save-error-toast">
+      {saveError}
+    </Alert>
+  </div>
 {/if}
 
 {#if trainingState === 'FAILED' && $trainingStore.status?.error_message}
-  <Alert tone="error" class="save-error-toast">
-    {$trainingStore.status.error_message}
-  </Alert>
+  <div class="header-alert-owner">
+    <Alert tone="error" class="save-error-toast">
+      {$trainingStore.status.error_message}
+    </Alert>
+  </div>
 {/if}
 
 <ModalDialog
@@ -473,7 +477,9 @@
     color: var(--danger);
   }
 
-  :global(.btn) {
+  .header :global(.btn),
+  .modal-extra-actions :global(.btn) {
+    min-height: 0;
     padding: 6px 12px;
     border-radius: 4px;
     font-size: 0.875rem;
@@ -486,23 +492,25 @@
     color: #fff;
   }
 
-  :global(.btn-secondary) {
+  .header :global(.btn-secondary) {
     background-color: var(--control);
     color: var(--text);
     border-color: var(--line);
   }
 
-  :global(.btn-danger) {
+  .header :global(.btn-danger),
+  .modal-extra-actions :global(.btn-danger) {
     background-color: var(--danger);
     color: #fff;
   }
 
-  :global(.header-btn) {
+  .selectors :global(.header-btn) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
     height: 32px;
+    min-height: 0;
     padding: 0 12px;
     font-size: 0.875rem;
     font-weight: 500;
@@ -516,13 +524,13 @@
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
   }
 
-  :global(.header-btn:hover) {
+  .selectors :global(.header-btn:hover) {
     background-color: var(--panel-raised, #1d242c);
     border-color: var(--accent, #3b82f6);
     color: var(--accent, #3b82f6);
   }
 
-  :global(.header-btn:active) {
+  .selectors :global(.header-btn:active) {
     transform: translateY(1px);
   }
 
@@ -534,6 +542,7 @@
   }
 
   .modal-field :global(.text-input) {
+    min-width: 0;
     padding: 8px;
     border-radius: 4px;
     border: 1px solid var(--line);
@@ -542,9 +551,13 @@
   }
 
   .error-msg,
-  :global(.save-error-toast) {
+  .header-alert-owner :global(.save-error-toast) {
     color: var(--danger);
     font-size: 0.875rem;
+  }
+
+  .header-alert-owner {
+    display: contents;
   }
 
   .saved-icon-badge {

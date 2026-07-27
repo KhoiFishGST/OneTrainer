@@ -112,7 +112,7 @@
     padding: 1.5rem;
   }
 
-  :global(.training-header) {
+  .route-page :global(.training-header) {
     margin-bottom: 1rem;
   }
 

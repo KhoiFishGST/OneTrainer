@@ -27,14 +27,16 @@ function findNative(source: string, filename: string): string[] {
       return;
     }
     const record = node as Record<string, unknown>;
-    if (
-      record.type === 'RegularElement' &&
-      typeof record.name === 'string' &&
-      typeof record.start === 'number' &&
-      native.has(record.name)
-    ) {
+    let name: string | undefined;
+    if (record.type === 'RegularElement' && typeof record.name === 'string') {
+      name = record.name;
+    } else if (record.type === 'SvelteElement' && record.tag && typeof record.tag === 'object') {
+      const tag = record.tag as Record<string, unknown>;
+      if (tag.type === 'Literal' && typeof tag.value === 'string') name = tag.value;
+    }
+    if (name && typeof record.start === 'number' && native.has(name)) {
       const line = source.slice(0, record.start).split('\n').length;
-      found.push(`${filename}:${line} <${record.name}>`);
+      found.push(`${filename}:${line} <${name}>`);
     }
     for (const value of Object.values(record)) visit(value);
   };
@@ -45,6 +47,10 @@ function findNative(source: string, filename: string): string[] {
 describe('native control ownership', () => {
   it('detects forbidden native markup through the modern fragment AST', () => {
     expect(findNative('<script>const sample="<button>";</script><!-- <input> --><section><button>Save</button></section>', 'fixture.svelte')).toEqual(['fixture.svelte:1 <button>']);
+  });
+  it('detects a literal native svelte:element without failing closed on dynamic tags', () => {
+    const source = '<div>\n<svelte:element this="button">Save</svelte:element>\n<svelte:element this={tag}>Dynamic</svelte:element>\n</div>';
+    expect(findNative(source, 'fixture.svelte')).toEqual(['fixture.svelte:2 <button>']);
   });
   it('allows native controls only in explicit leaves', () => {
     const violations = Object.entries(sources).flatMap(([file, source]) => allowed.has(file) ? [] : findNative(source, file));

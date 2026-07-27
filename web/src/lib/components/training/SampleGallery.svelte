@@ -364,7 +364,7 @@
     max-width: 100%;
   }
 
-  :global(.sample-card) {
+  .sample-slot-container :global(.sample-card) {
     display: flex;
     flex-direction: column;
     background: var(--control);
@@ -376,12 +376,12 @@
     padding: 0;
   }
 
-  :global(.ready-card) {
+  .sample-slot-container :global(.ready-card) {
     cursor: pointer;
     transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   }
 
-  :global(.ready-card:hover) {
+  .sample-slot-container :global(.ready-card:hover) {
     transform: translateY(-2px);
     border-color: var(--accent);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
@@ -412,7 +412,7 @@
     transition: opacity 0.15s ease;
   }
 
-  :global(.ready-card:hover) .card-overlay {
+  .sample-slot-container :global(.ready-card:hover .card-overlay) {
     opacity: 1;
   }
 

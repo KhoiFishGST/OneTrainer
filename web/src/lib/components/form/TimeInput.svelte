@@ -68,7 +68,7 @@
     width: 100%;
   }
 
-  :global(.time-value-input) {
+  .time-input-group :global(.time-value-input) {
     flex: 1;
     min-width: 0;
     padding: 0.5rem 0.75rem;
@@ -80,7 +80,7 @@
     box-sizing: border-box;
   }
 
-  :global(.time-value-input:focus) {
+  .time-input-group :global(.time-value-input:focus) {
     outline: none;
     border-color: var(--color-primary, var(--accent, #3b82f6));
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);

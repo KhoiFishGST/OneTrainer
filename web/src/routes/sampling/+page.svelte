@@ -198,6 +198,7 @@
       {#snippet actions()}
         <Button
           variant="secondary"
+          class="btn btn-secondary"
           disabled={status.state !== 'RUNNING' && status.state !== 'TRAINING' || $sampleMutation.isPending}
           onclick={handleSample}
           title={status.state === 'RUNNING' || status.state === 'TRAINING' ? 'Trigger immediate sample image generation' : 'Active training run required to sample now'}
@@ -230,7 +231,7 @@
         </div>
         <Button
           variant="secondary"
-          class="add-config-btn"
+          class="btn btn-secondary add-config-btn"
           onclick={handleOpenAddConfigModal}
         >
           <Plus size={16} />
@@ -311,22 +312,31 @@
     padding: 1.5rem;
   }
 
-  :global(.sampling-header) {
+  .route-page :global(.sampling-header) {
     margin-bottom: 1.5rem;
   }
 
-  :global(.sampling-toast) {
+  .route-page :global(.sampling-toast) {
     margin-bottom: 1rem;
   }
 
-  :global(.sampling-queued-alert) {
+  .route-page :global(.sampling-queued-alert) {
+    display: block;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    font-weight: 500;
     margin-bottom: 1rem;
+    background-color: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: var(--accent, #60a5fa);
   }
 
-  .btn {
+  .route-page :global(.btn) {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+    min-height: 0;
     padding: 0.4rem 0.85rem;
     border-radius: 6px;
     font-size: 0.875rem;
@@ -336,18 +346,18 @@
     transition: background-color 0.15s ease, opacity 0.15s ease;
   }
 
-  .btn:disabled {
+  .route-page :global(.btn:disabled) {
     opacity: 0.5;
     cursor: not-allowed;
   }
 
-  .btn-secondary {
+  .route-page :global(.btn-secondary) {
     background-color: var(--panel-raised, var(--control, #14191f));
     color: var(--text, #e6ebef);
     border-color: var(--line, #2d3741);
   }
 
-  .btn-secondary:hover:not(:disabled) {
+  .route-page :global(.btn-secondary:hover:not(:disabled)) {
     background-color: var(--line, #2d3741);
   }
 
@@ -377,7 +387,7 @@
     min-width: 220px;
   }
 
-  :global(.add-config-btn) {
+  .config-selector :global(.add-config-btn) {
     white-space: nowrap;
   }
 
@@ -407,13 +417,36 @@
     gap: 0.5rem;
   }
 
+  .config-modal-body :global(.text-input) {
+    min-width: 0;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--line, #2d3741);
+    background: var(--control, #14191f);
+    color: var(--text, #e6ebef);
+    font-size: 0.875rem;
+    box-sizing: border-box;
+  }
+
+  .config-modal-body :global(.text-input:focus) {
+    outline: none;
+    border-color: var(--accent, #3b82f6);
+    box-shadow: none;
+  }
+
   .modal-label {
     font-size: 0.875rem;
     font-weight: 500;
     color: var(--text, #e6ebef);
   }
 
-  :global(.modal-error) {
+  .config-modal-body :global(.modal-error) {
+    display: block;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     font-size: 0.8125rem;
     color: #f87171;
   }

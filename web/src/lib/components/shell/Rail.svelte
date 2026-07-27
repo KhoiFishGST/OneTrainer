@@ -66,14 +66,16 @@
 </script>
 
 {#if mobile}
-  <Button
-    variant="ghost"
-    class="mobile-toggle-btn"
-    aria-label="Open navigation"
-    onclick={() => (drawerOpen = true)}
-  >
-    <Menu size={20} />
-  </Button>
+  <div class="mobile-toggle-owner">
+    <Button
+      variant="ghost"
+      class="mobile-toggle-btn"
+      aria-label="Open navigation"
+      onclick={() => (drawerOpen = true)}
+    >
+      <Menu size={20} />
+    </Button>
+  </div>
 
   {#if drawerOpen}
     <div class="drawer-overlay" onclick={() => (drawerOpen = false)} role="presentation"></div>
@@ -204,8 +206,8 @@
     border-bottom: 1px solid var(--line);
   }
 
-  :global(.rail-toggle-btn),
-  :global(.mobile-toggle-btn) {
+  .rail-header :global(.rail-toggle-btn),
+  .mobile-toggle-owner :global(.mobile-toggle-btn) {
     background: transparent;
     border: none;
     color: var(--muted);
@@ -217,8 +219,8 @@
     justify-content: center;
   }
 
-  :global(.rail-toggle-btn:hover),
-  :global(.mobile-toggle-btn:hover) {
+  .rail-header :global(.rail-toggle-btn:hover),
+  .mobile-toggle-owner :global(.mobile-toggle-btn:hover) {
     color: var(--text);
     background-color: var(--panel-raised);
   }
@@ -238,7 +240,9 @@
     margin-top: auto;
   }
 
-  :global(.console-nav-btn) {
+  .rail-footer :global(.console-nav-btn),
+  .drawer-nav :global(.console-nav-btn) {
+    min-height: 0;
     width: 100%;
     background: transparent;
     border: none;
@@ -247,7 +251,8 @@
     font-family: inherit;
   }
 
-  :global(.nav-item) {
+  .rail :global(.nav-item),
+  .drawer-content :global(.nav-item) {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -260,7 +265,8 @@
     overflow: hidden;
   }
 
-  :global(.nav-item) :global(.nav-icon) {
+  .rail :global(.nav-item) :global(.nav-icon),
+  .drawer-content :global(.nav-item) :global(.nav-icon) {
     flex-shrink: 0;
     width: 20px;
     height: 20px;
@@ -279,18 +285,21 @@
     pointer-events: none;
   }
 
-  :global(.nav-item:hover:not(.disabled)) {
+  .rail :global(.nav-item:hover:not(.disabled)),
+  .drawer-content :global(.nav-item:hover:not(.disabled)) {
     color: var(--text);
     background-color: var(--panel-raised);
   }
 
-  :global(.nav-item.active) {
+  .rail :global(.nav-item.active),
+  .drawer-content :global(.nav-item.active) {
     color: var(--accent);
     background-color: var(--accent-soft);
     font-weight: 500;
   }
 
-  :global(.nav-item.disabled) {
+  .rail :global(.nav-item.disabled),
+  .drawer-content :global(.nav-item.disabled) {
     opacity: 0.5;
     cursor: not-allowed;
   }
@@ -331,12 +340,17 @@
     color: var(--text);
   }
 
-  :global(.close-btn) {
+  .drawer-header :global(.close-btn) {
+    min-height: 0;
     background: transparent;
     border: none;
     color: var(--muted);
     cursor: pointer;
     padding: 4px;
+  }
+
+  .mobile-toggle-owner {
+    display: contents;
   }
 
   .drawer-nav {

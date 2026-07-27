@@ -235,10 +235,11 @@
     gap: 0.5rem;
   }
 
-  :global(.action-btn) {
+  .card-actions :global(.action-btn) {
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
+    min-height: 0;
     padding: 0.375rem 0.625rem;
     border-radius: 5px;
     font-size: 0.75rem;
@@ -248,30 +249,30 @@
     transition: all 0.15s ease;
   }
 
-  :global(.clone-btn) {
+  .card-actions :global(.clone-btn) {
     background: var(--panel-raised, #252d37);
     color: var(--text, #e2e8f0);
     border-color: var(--line, #334155);
   }
 
-  :global(.clone-btn:hover:not(:disabled)) {
+  .card-actions :global(.clone-btn:hover:not(:disabled)) {
     background: var(--accent-soft, rgba(59, 130, 246, 0.15));
     color: var(--accent, #3b82f6);
     border-color: var(--accent, #3b82f6);
   }
 
-  :global(.remove-btn) {
+  .card-actions :global(.remove-btn) {
     background: rgba(239, 68, 68, 0.1);
     color: #f87171;
     border-color: rgba(239, 68, 68, 0.25);
   }
 
-  :global(.remove-btn:hover:not(:disabled)) {
+  .card-actions :global(.remove-btn:hover:not(:disabled)) {
     background: rgba(239, 68, 68, 0.2);
     color: #ef4444;
   }
 
-  :global(.action-btn:disabled) {
+  .card-actions :global(.action-btn:disabled) {
     opacity: 0.5;
     cursor: not-allowed;
   }
@@ -328,7 +329,8 @@
     color: var(--color-text-muted, #94a3b8);
   }
 
-  :global(.text-input) {
+  .embedding-card :global(.text-input) {
+    min-width: 0;
     height: 38px;
     padding: 0 0.75rem;
     background-color: var(--input-bg, #0f1419);
@@ -340,11 +342,11 @@
     transition: border-color 0.15s ease;
   }
 
-  :global(.text-input:focus:not(:disabled)) {
+  .embedding-card :global(.text-input:focus:not(:disabled)) {
     border-color: var(--accent, #3b82f6);
   }
 
-  :global(.text-input:disabled) {
+  .embedding-card :global(.text-input:disabled) {
     opacity: 0.6;
     cursor: not-allowed;
   }
@@ -359,7 +361,7 @@
     flex: 1;
   }
 
-  :global(.browse-btn) {
+  .input-with-button :global(.browse-btn) {
     height: 38px;
     width: 38px;
     display: flex;
@@ -373,9 +375,8 @@
     transition: all 0.15s ease;
   }
 
-  :global(.browse-btn:hover:not(:disabled)) {
+  .input-with-button :global(.browse-btn:hover:not(:disabled)) {
     color: var(--text, #f8fafc);
     border-color: var(--accent, #3b82f6);
   }
 </style>
-

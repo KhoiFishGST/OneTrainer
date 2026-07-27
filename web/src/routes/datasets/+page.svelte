@@ -318,7 +318,8 @@
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
   }
 
-  :global(.btn-delete) {
+  .thumbnail-wrapper :global(.btn-delete) {
+    min-height: 0;
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;
@@ -359,7 +360,7 @@
     font-weight: 500;
   }
 
-  :global(.error-text) {
+  .create-modal-content :global(.error-text) {
     color: var(--danger, #ef4444);
     font-size: 0.75rem;
     margin: 0;

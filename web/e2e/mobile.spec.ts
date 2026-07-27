@@ -56,7 +56,9 @@ test.describe("Phone Mobile Editing Flows", () => {
   test("autosave, conflict controls, and console drawer on mobile", async ({ page }) => {
     await page.goto("/general");
 
-    const consoleToggle = page.getByTitle("Toggle Console Drawer");
+    await page.getByRole("button", { name: "Open navigation" }).click();
+    const navigation = page.getByRole("dialog", { name: "Navigation" });
+    const consoleToggle = navigation.getByRole("button", { name: "Console" });
     await expect(consoleToggle).toBeVisible();
     await consoleToggle.click();
 

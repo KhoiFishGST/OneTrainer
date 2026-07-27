@@ -55,4 +55,7 @@
   :where(.button--ghost) { background:transparent; color:var(--muted,#8995a1); }
   :where(.button:focus-visible) { outline:2px solid var(--focus,var(--accent,#3b82f6)); outline-offset:2px; }
   :where(.button:disabled) { opacity:.5; cursor:not-allowed; }
+  @media (max-width: 768px) {
+    :where(.button) { min-height: 44px !important; }
+  }
 </style>

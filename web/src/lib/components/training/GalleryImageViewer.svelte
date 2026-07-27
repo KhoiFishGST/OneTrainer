@@ -360,7 +360,8 @@
     font-size: 0.9rem;
   }
 
-  :global(.nav-btn) {
+  .viewer-main-content :global(.nav-btn) {
+    min-height: 0;
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
@@ -377,20 +378,20 @@
     transition: background 0.15s ease, opacity 0.15s ease;
   }
 
-  :global(.nav-btn:hover:not(:disabled)) {
+  .viewer-main-content :global(.nav-btn:hover:not(:disabled)) {
     background: rgba(0, 0, 0, 0.85);
   }
 
-  :global(.nav-btn:disabled) {
+  .viewer-main-content :global(.nav-btn:disabled) {
     opacity: 0.25;
     cursor: not-allowed;
   }
 
-  :global(.nav-btn-prev) {
+  .viewer-main-content :global(.nav-btn-prev) {
     left: 12px;
   }
 
-  :global(.nav-btn-next) {
+  .viewer-main-content :global(.nav-btn-next) {
     right: 12px;
   }
 

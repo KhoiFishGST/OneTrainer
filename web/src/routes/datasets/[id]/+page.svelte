@@ -198,7 +198,8 @@
     font-size: 0.8125rem;
     color: var(--muted, #8995a1);
   }
-  :global(.btn-upload) {
+  .detail-header :global(.btn-upload) {
+    min-height: 0;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -209,7 +210,7 @@
     border-radius: 6px;
     cursor: pointer;
   }
-  :global(.hidden-file-input) {
+  .detail-page :global(.hidden-file-input) {
     display: none;
   }
   .items-grid {
@@ -225,7 +226,7 @@
     display: flex;
     flex-direction: column;
   }
-  :global(.card-image-area) {
+  .item-card :global(.card-image-area) {
     width: 100%;
     aspect-ratio: 1;
     background: #0f1419;
@@ -235,7 +236,7 @@
     display: block;
     text-align: left;
   }
-  :global(.card-image-area:disabled) {
+  .item-card :global(.card-image-area:disabled) {
     cursor: default;
   }
   .item-img {
@@ -263,7 +264,7 @@
     font-weight: 600;
     color: var(--muted);
   }
-  :global(.caption-textarea) {
+  .card-caption-area :global(.caption-textarea) {
     width: 100%;
     min-height: 60px;
     background: var(--control, #14191f);
@@ -319,7 +320,10 @@
     object-fit: contain;
     border-radius: 8px;
   }
-  :global(.btn-close-lightbox) {
+  .lightbox-overlay :global(.btn-close-lightbox) {
+    min-height: 0;
+    width: auto;
+    height: auto;
     position: absolute;
     top: 1rem;
     right: 1rem;

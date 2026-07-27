@@ -200,15 +200,15 @@
     width: 100%;
   }
 
-  :global(.live-header) {
+  .live-dashboard :global(.live-header) {
     margin-bottom: 0.5rem;
   }
 
-  :global(.live-toast) {
+  .live-dashboard :global(.live-toast) {
     margin-bottom: 0.5rem;
   }
 
-  :global(.live-error-alert) {
+  .live-dashboard :global(.live-error-alert) {
     margin-bottom: 0.5rem;
   }
 

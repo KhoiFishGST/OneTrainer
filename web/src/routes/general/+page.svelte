@@ -61,7 +61,7 @@
     padding: 1.5rem;
   }
 
-  :global(.general-header) {
+  .route-page :global(.general-header) {
     margin-bottom: 1rem;
   }
 

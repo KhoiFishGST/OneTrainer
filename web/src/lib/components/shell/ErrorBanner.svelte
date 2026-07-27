@@ -28,25 +28,31 @@
 </script>
 
 {#if message && !dismissed}
-  <Alert tone="error" class="error-banner">
-    <div class="error-text">
-      <strong>Error:</strong>
-      <span>{message}</span>
-    </div>
-    <Button
-      variant="danger"
-      size="small"
-      class="dismiss-btn"
-      aria-label="Dismiss"
-      onclick={handleDismiss}
-    >
-      Dismiss
-    </Button>
-  </Alert>
+  <div class="error-banner-owner">
+    <Alert tone="error" class="error-banner">
+      <div class="error-text">
+        <strong>Error:</strong>
+        <span>{message}</span>
+      </div>
+      <Button
+        variant="danger"
+        size="small"
+        class="dismiss-btn"
+        aria-label="Dismiss"
+        onclick={handleDismiss}
+      >
+        Dismiss
+      </Button>
+    </Alert>
+  </div>
 {/if}
 
 <style>
-  :global(.error-banner) {
+  .error-banner-owner {
+    display: contents;
+  }
+
+  .error-banner-owner :global(.error-banner) {
     background-color: rgba(217, 120, 120, 0.2);
     border-bottom: 1px solid var(--danger);
     color: var(--danger);
@@ -64,7 +70,8 @@
     gap: 8px;
   }
 
-  :global(.dismiss-btn) {
+  .error-banner-owner :global(.dismiss-btn) {
+    min-height: 0;
     background: transparent;
     border: 1px solid var(--danger);
     color: var(--danger);
@@ -74,7 +81,7 @@
     cursor: pointer;
   }
 
-  :global(.dismiss-btn:hover) {
+  .error-banner-owner :global(.dismiss-btn:hover) {
     background-color: var(--danger);
     color: #fff;
   }

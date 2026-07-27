@@ -1441,7 +1441,8 @@
     cursor: pointer;
   }
 
-  :global(.btn-path-action) {
+  .path-action-row :global(.btn-path-action) {
+    min-height: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1460,13 +1461,13 @@
     transition: all 0.15s ease;
   }
 
-  :global(.btn-path-action:hover) {
+  .path-action-row :global(.btn-path-action:hover) {
     background: var(--color-bg-button-hover, var(--panel-raised, #1d242c));
     border-color: var(--color-primary, var(--accent, #3b82f6));
     color: var(--color-text-title, var(--accent, #3b82f6));
   }
 
-  :global(.btn-path-action.btn-accent-action) {
+  .path-action-row :global(.btn-path-action.btn-accent-action) {
     color: var(--color-text-title, var(--accent, #3b82f6));
   }
 
@@ -1483,7 +1484,8 @@
     padding-top: 0.25rem;
   }
 
-  :global(.btn-aug-preview-compact) {
+  .aug-bottom-action-bar :global(.btn-aug-preview-compact) {
+    min-height: 0;
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
@@ -1499,7 +1501,7 @@
     transition: all 0.15s ease;
   }
 
-  :global(.btn-aug-preview-compact:hover) {
+  .aug-bottom-action-bar :global(.btn-aug-preview-compact:hover) {
     opacity: 0.9;
   }
 
@@ -1596,7 +1598,8 @@
     gap: 0.75rem;
   }
 
-  :global(.btn-stats-action) {
+  .stats-toolbar :global(.btn-stats-action) {
+    min-height: 0;
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
@@ -1610,7 +1613,7 @@
     cursor: pointer;
   }
 
-  :global(.btn-stats-action.btn-accent) {
+  .stats-toolbar :global(.btn-stats-action.btn-accent) {
     color: var(--accent, #3b82f6);
     border-color: var(--accent, #3b82f6);
   }
@@ -1924,7 +1927,8 @@
     gap: 0.5rem;
   }
 
-  :global(.nav-arrow-btn) {
+  .nav-controls-bar :global(.nav-arrow-btn) {
+    min-height: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1936,7 +1940,7 @@
     cursor: pointer;
   }
 
-  :global(.nav-arrow-btn:disabled) {
+  .nav-controls-bar :global(.nav-arrow-btn:disabled) {
     opacity: 0.4;
     cursor: not-allowed;
   }
@@ -1993,7 +1997,7 @@
     word-break: break-word;
   }
 
-  :global(.spin) {
+  .concept-modal-body :global(.spin) {
     animation: spin 1s linear infinite;
   }
 

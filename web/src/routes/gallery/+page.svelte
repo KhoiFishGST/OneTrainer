@@ -113,7 +113,7 @@
     width: 100%;
   }
 
-  :global(.gallery-header) {
+  .gallery-page :global(.gallery-header) {
     margin-bottom: 0.5rem;
   }
 

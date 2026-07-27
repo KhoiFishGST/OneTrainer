@@ -276,7 +276,7 @@
     color: var(--text, #f8fafc);
   }
 
-  :global(.defaults-btn) {
+  .header-bar :global(.defaults-btn) {
     height: 38px;
     padding: 0 1rem;
     background: var(--panel-raised, #252d37);
@@ -289,7 +289,7 @@
     transition: all 0.15s ease;
   }
 
-  :global(.defaults-btn:hover) {
+  .header-bar :global(.defaults-btn:hover) {
     background: var(--line, #334155);
     color: var(--accent, #3b82f6);
     border-color: var(--accent, #3b82f6);
@@ -330,7 +330,9 @@
     color: var(--muted, #94a3b8);
   }
 
-  :global(.param-input) {
+  .params-grid :global(.param-input) {
+    min-width: 0;
+    max-width: 100%;
     height: 38px;
     padding: 0 0.75rem;
     background-color: var(--input-bg, #0f1419);
@@ -341,7 +343,7 @@
     outline: none;
   }
 
-  :global(.param-input:focus) {
+  .params-grid :global(.param-input:focus) {
     border-color: var(--accent, #3b82f6);
   }
 </style>

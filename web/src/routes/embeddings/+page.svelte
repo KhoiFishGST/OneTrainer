@@ -153,6 +153,7 @@
               {#if embeddingsList.length > 0}
                 <Button
                   variant="secondary"
+                  class="secondary-btn"
                   title={allToggledOn ? 'Disable training for all embeddings' : 'Enable training for all embeddings'}
                   disabled={!isEmbeddingSupported}
                   onclick={handleToggleAll}
@@ -169,6 +170,7 @@
 
               <Button
                 variant="primary"
+                class="primary-btn"
                 disabled={!isEmbeddingSupported}
                 onclick={handleAddEmbedding}
               >
@@ -187,7 +189,7 @@
               </p>
               <Button
                 variant="primary"
-                class="mt-2"
+                class="primary-btn mt-2"
                 disabled={!isEmbeddingSupported}
                 onclick={handleAddEmbedding}
               >
@@ -220,13 +222,23 @@
     padding: 1.5rem;
   }
 
-  :global(.embeddings-header) {
+  .route-page :global(.embeddings-header) {
     margin-bottom: 1rem;
   }
 
-  :global(.embeddings-warning-alert) {
+  .route-page :global(.embeddings-warning-alert) {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    background-color: var(--color-warning-bg, rgba(234, 179, 8, 0.12));
+    border: 1px solid var(--color-warning-border, rgba(234, 179, 8, 0.3));
+    color: var(--color-warning-text, #fde047);
+    padding: 0.875rem 1rem;
+    border-radius: 6px;
     margin-bottom: 1.25rem;
     max-width: 740px;
+    font-size: 0.875rem;
+    line-height: 1.4;
   }
 
   .warning-icon {
@@ -312,12 +324,13 @@
     gap: 0.5rem;
   }
 
-  .primary-btn,
-  .secondary-btn {
+  .list-section :global(.primary-btn),
+  .list-section :global(.secondary-btn) {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     height: 34px;
+    min-height: 0;
     padding: 0 0.875rem;
     border-radius: 6px;
     font-size: 0.8125rem;
@@ -327,27 +340,27 @@
     border: 1px solid transparent;
   }
 
-  .primary-btn {
+  .list-section :global(.primary-btn) {
     background: var(--accent, #3b82f6);
     color: #ffffff;
   }
 
-  .primary-btn:hover:not(:disabled) {
+  .list-section :global(.primary-btn:hover:not(:disabled)) {
     background: var(--accent-hover, #2563eb);
   }
 
-  .secondary-btn {
+  .list-section :global(.secondary-btn) {
     background: var(--panel-raised, #252d37);
     color: var(--text, #e2e8f0);
     border-color: var(--line, #334155);
   }
 
-  .secondary-btn:hover:not(:disabled) {
+  .list-section :global(.secondary-btn:hover:not(:disabled)) {
     background: var(--line, #334155);
   }
 
-  .primary-btn:disabled,
-  .secondary-btn:disabled {
+  .list-section :global(.primary-btn:disabled),
+  .list-section :global(.secondary-btn:disabled) {
     opacity: 0.5;
     cursor: not-allowed;
   }
@@ -378,7 +391,7 @@
     max-width: 420px;
   }
 
-  .mt-2 {
+  .empty-embeddings-card :global(.mt-2) {
     margin-top: 0.5rem;
   }
 

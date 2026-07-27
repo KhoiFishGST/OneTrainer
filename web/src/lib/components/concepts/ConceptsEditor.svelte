@@ -414,6 +414,7 @@
   }
 
   .search-box :global(.text-input) {
+    min-width: 0;
     background: transparent;
     border: none;
     outline: none;
@@ -421,6 +422,7 @@
     font-size: 0.875rem;
     width: 100%;
     padding: 0;
+    box-shadow: none;
   }
 
   .filter-select-wrapper {
@@ -436,10 +438,11 @@
     cursor: pointer;
   }
 
-  :global(.btn) {
+  .concepts-editor :global(.btn) {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+    min-height: 0;
     padding: 0.5rem 0.875rem;
     border-radius: 6px;
     font-size: 0.875rem;
@@ -449,12 +452,12 @@
     transition: all 0.15s ease;
   }
 
-  :global(.btn-primary) {
+  .concepts-editor :global(.btn-primary) {
     background-color: var(--color-primary, var(--accent, #3b82f6));
     color: white;
   }
 
-  :global(.btn-secondary) {
+  .concepts-editor :global(.btn-secondary) {
     background-color: var(--panel-raised, #1d242c);
     border: 1px solid var(--line, #2d3741);
     color: var(--text, #f8fafc);
@@ -602,10 +605,11 @@
     border-top: 1px solid var(--line, #2d3741);
   }
 
-  :global(.btn-action) {
+  .card-actions :global(.btn-action) {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
+    min-height: 0;
     padding: 0.3rem 0.5rem;
     border-radius: 4px;
     border: 1px solid var(--line, #2d3741);
@@ -616,14 +620,13 @@
     transition: background 0.15s ease;
   }
 
-  :global(.btn-action:hover) {
+  .card-actions :global(.btn-action:hover) {
     background: var(--line, #2d3741);
   }
 
-  :global(.btn-action.delete:hover) {
+  .card-actions :global(.btn-action.delete:hover) {
     background: rgba(239, 68, 68, 0.2);
     color: #f87171;
     border-color: #ef4444;
   }
 </style>
-

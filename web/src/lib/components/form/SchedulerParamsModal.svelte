@@ -76,7 +76,8 @@
     color: var(--text, #f8fafc);
   }
 
-  :global(.text-input) {
+  .scheduler-modal-body :global(.text-input) {
+    min-width: 0;
     height: 38px;
     padding: 0 0.75rem;
     background-color: var(--input-bg, #0f1419);
@@ -87,7 +88,7 @@
     outline: none;
   }
 
-  :global(.text-input:focus) {
+  .scheduler-modal-body :global(.text-input:focus) {
     border-color: var(--accent, #3b82f6);
   }
 

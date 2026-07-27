@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/svelte';
 import { expect, it, vi } from 'vitest';
 import Button from './Button.svelte';
+import buttonSource from './Button.svelte?raw';
 
 it('defaults to type button and forwards presentation, attributes, and clicks', async () => {
   const onclick = vi.fn();
@@ -28,4 +29,10 @@ it('preserves explicit submit type and native disabled behavior', async () => {
   expect(button).toBeDisabled();
   await fireEvent.click(button);
   expect(onclick).not.toHaveBeenCalled();
+});
+
+it('keeps the shared 44px mobile touch target above feature overrides', () => {
+  expect(buttonSource).toMatch(
+    /@media \(max-width: 768px\)[\s\S]*?:where\(\.button\)[\s\S]*?min-height: 44px !important;/,
+  );
 });

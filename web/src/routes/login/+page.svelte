@@ -155,7 +155,7 @@
     margin: 0;
   }
 
-  :global(.security-warning) {
+  .login-container :global(.security-warning) {
     display: flex;
     align-items: flex-start;
     gap: 0.75rem;
@@ -173,13 +173,14 @@
     margin-top: 2px;
   }
 
-  :global(.security-warning) p {
+  .login-container :global(.security-warning p) {
     margin: 0.25rem 0 0;
     color: #fca5a5;
     font-size: 0.75rem;
   }
 
-  :global(.error-banner) {
+  .login-form :global(.error-banner) {
+    display: block;
     background-color: rgba(239, 68, 68, 0.15);
     border: 1px solid #ef4444;
     color: #f87171;
@@ -202,12 +203,30 @@
     color: var(--text, #f3f4f6);
   }
 
-  :global(.submit-btn) {
+  .form-group :global(.text-input) {
+    min-width: 0;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background-color: var(--panel-raised, #111827);
+    border: 1px solid var(--line, #374151);
+    border-radius: 8px;
+    color: var(--text, #f3f4f6);
+    font-size: 0.95rem;
+  }
+
+  .form-group :global(.text-input:focus) {
+    outline: none;
+    border-color: var(--accent, #6366f1);
+    box-shadow: none;
+  }
+
+  .login-form :global(.submit-btn) {
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    min-height: 0;
     padding: 0.75rem 1rem;
     background-color: var(--accent, #6366f1);
     color: white;
@@ -219,11 +238,11 @@
     transition: filter 0.2s ease;
   }
 
-  :global(.submit-btn:hover:not(:disabled)) {
+  .login-form :global(.submit-btn:hover:not(:disabled)) {
     filter: brightness(1.1);
   }
 
-  :global(.submit-btn:disabled) {
+  .login-form :global(.submit-btn:disabled) {
     opacity: 0.6;
     cursor: not-allowed;
   }

@@ -62,7 +62,7 @@
     padding: 1.5rem;
   }
 
-  :global(.model-header) {
+  .route-page :global(.model-header) {
     margin-bottom: 1rem;
   }
 

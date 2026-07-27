@@ -107,6 +107,7 @@
       <Toast
         message={saveStatus.message}
         tone="success"
+        duration={3000}
         onDismiss={() => (saveStatus = null)}
         class="secrets-toast"
       />
@@ -238,23 +239,50 @@
     max-width: 900px;
   }
 
-  :global(.secrets-header) {
+  .secrets-page :global(.secrets-header) {
     margin-bottom: 1.5rem;
   }
 
-  :global(.secrets-insecure-alert) {
+  .secrets-page :global(.secrets-insecure-alert) {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    background-color: rgba(220, 38, 38, 0.15);
+    border: 1px solid #ef4444;
+    border-radius: 8px;
+    padding: 1rem;
     margin-bottom: 1.5rem;
+    color: #f87171;
   }
 
-  :global(.secrets-toast) {
+  .secrets-page :global(.secrets-toast) {
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
     margin-bottom: 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
   }
 
-  :global(.secrets-alert) {
+  .secrets-page :global(.secrets-toast.toast--success) {
+    background-color: rgba(16, 185, 129, 0.15);
+    border: 1px solid #10b981;
+    color: #34d399;
+  }
+
+  .secrets-page :global(.secrets-alert) {
+    display: block;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
     margin-bottom: 1rem;
+    background-color: rgba(239, 68, 68, 0.15);
+    border: 1px solid #ef4444;
+    color: #f87171;
+    font-size: 0.875rem;
+    font-weight: 500;
   }
 
-  :global(.secrets-insecure-alert) :global(.banner-icon) {
+  .secrets-page :global(.secrets-insecure-alert) :global(.banner-icon) {
+    color: #ef4444;
     flex-shrink: 0;
     margin-top: 2px;
   }
@@ -269,6 +297,7 @@
     font-size: 0.875rem;
     line-height: 1.4;
     margin: 0;
+    color: #fca5a5;
   }
 
   .card-grid {
@@ -291,7 +320,7 @@
     margin-bottom: 0.5rem;
   }
 
-  :global(.card-icon) {
+  .card-header :global(.card-icon) {
     color: var(--color-primary, var(--accent, #3b82f6));
   }
 
@@ -328,9 +357,29 @@
     align-items: center;
   }
 
-  :global(.icon-btn) {
+  .input-with-button :global(.text-input) {
+    min-width: 0;
+    width: 100%;
+    padding: 0.625rem 2.5rem 0.625rem 0.75rem;
+    background-color: var(--panel-raised, #111827);
+    border: 1px solid var(--line, #374151);
+    border-radius: 6px;
+    color: var(--text, #f3f4f6);
+    font-size: 0.875rem;
+  }
+
+  .input-with-button :global(.text-input:focus) {
+    outline: none;
+    border-color: var(--color-primary, var(--accent, #3b82f6));
+    box-shadow: none;
+  }
+
+  .input-with-button :global(.icon-btn) {
     position: absolute;
     right: 0.5rem;
+    min-height: 0;
+    width: auto;
+    height: auto;
     background: transparent;
     border: none;
     color: var(--muted, #9ca3af);
@@ -341,7 +390,7 @@
     justify-content: center;
   }
 
-  :global(.icon-btn:hover) {
+  .input-with-button :global(.icon-btn:hover) {
     color: var(--text, #f3f4f6);
   }
 
@@ -361,10 +410,11 @@
     gap: 0.75rem;
   }
 
-  .btn {
+  .card-actions :global(.btn) {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    min-height: 0;
     padding: 0.5rem 1rem;
     border-radius: 6px;
     font-size: 0.875rem;
@@ -373,22 +423,22 @@
     border: none;
   }
 
-  .btn.primary {
+  .card-actions :global(.btn.primary) {
     background-color: var(--color-primary, var(--accent, #3b82f6));
     color: white;
   }
 
-  .btn.primary:hover {
+  .card-actions :global(.btn.primary:hover) {
     filter: brightness(1.1);
   }
 
-  .btn.danger {
+  .card-actions :global(.btn.danger) {
     background-color: rgba(239, 68, 68, 0.2);
     border: 1px solid #ef4444;
     color: #f87171;
   }
 
-  .btn.danger:hover {
+  .card-actions :global(.btn.danger:hover) {
     background-color: rgba(239, 68, 68, 0.3);
   }
 

@@ -20,7 +20,7 @@
 <style>
   :where(.skeleton) {
     width: 100%;
-    background: var(--color-skeleton, var(--line, #374151));
+    background: var(--color-skeleton, #e5e7eb);
     animation: skeleton-pulse 1.5s infinite ease-in-out;
   }
   @keyframes skeleton-pulse {

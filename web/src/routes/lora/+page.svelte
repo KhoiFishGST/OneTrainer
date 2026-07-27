@@ -104,11 +104,11 @@
     padding: 1.5rem;
   }
 
-  :global(.lora-header) {
+  .route-page :global(.lora-header) {
     margin-bottom: 1rem;
   }
 
-  :global(.lora-warning-alert) {
+  .route-page :global(.lora-warning-alert) {
     margin-bottom: 1.25rem;
     max-width: 740px;
   }

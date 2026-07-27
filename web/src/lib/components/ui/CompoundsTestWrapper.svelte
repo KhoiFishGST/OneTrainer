@@ -27,6 +27,13 @@
 {#snippet actions()}<a href="/next">Next</a>{/snippet}
 
 <PageHeader title="Settings" {description} {status} {actions} />
+<TabBar
+  tabs={[{ id: 'page-one', label: 'Page One' }, { id: 'page-two', label: 'Page Two' }]}
+  active="page-one"
+  variant="page"
+  class="page-tabs-test"
+  {onSelect}
+/>
 <TabBar tabs={[{ id: 'one', label: 'One' }, { id: 'two', label: 'Two' }]} {active} variant="dialog" {onSelect} />
 <Alert tone="error">Persistent failure</Alert>
 <Toast {message} {tone} {duration} {onDismiss} />

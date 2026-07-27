@@ -146,6 +146,54 @@ describe('SampleDetailModal Component', () => {
     );
   });
 
+  it.each([
+    ['width', /width/i, '', null],
+    ['height', /height/i, '-', null],
+    ['diffusion_steps', /steps/i, 'abc', null],
+    ['cfg_scale', /cfg scale/i, '1e', null],
+    ['seed', /seed/i, '0x10', null],
+    ['width', /width/i, 'Infinity', null],
+    ['seed', /seed/i, '1e2', 100],
+  ] as const)('preserves raw %s input while editing and normalizes it when saving', async (field, label, raw, saved) => {
+    const onSave = vi.fn();
+    render(SampleDetailModal, {
+      props: {
+        open: true,
+        sample: sampleConfig,
+        mode: 'edit',
+        onSave,
+        onClose: vi.fn(),
+      },
+    });
+
+    const input = screen.getByLabelText(label);
+    await fireEvent.input(input, { target: { value: raw } });
+
+    expect(input).toHaveValue(raw);
+
+    await fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(onSave).toHaveBeenCalledOnce();
+    expect(onSave.mock.calls[0][0][field]).toBe(saved);
+  });
+
+  it('keeps a matching resolution preset active while numeric drafts are raw strings', async () => {
+    render(SampleDetailModal, {
+      props: {
+        open: true,
+        sample: sampleConfig,
+        mode: 'edit',
+        onSave: vi.fn(),
+        onClose: vi.fn(),
+      },
+    });
+
+    await fireEvent.input(screen.getByLabelText(/width/i), { target: { value: '512' } });
+    await fireEvent.input(screen.getByLabelText(/height/i), { target: { value: '512' } });
+
+    expect(screen.getByRole('button', { name: '512' })).toHaveClass('active');
+  });
+
   it('preserves webui_id when editing sample', async () => {
     const onSave = vi.fn();
     const sampleWithId = { ...sampleConfig, webui_id: 'prompt_a' };

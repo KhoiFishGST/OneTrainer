@@ -412,7 +412,8 @@
     color: var(--text, #e6ebef);
   }
 
-  :global(.close-btn) {
+  .picker-header :global(.close-btn) {
+    min-height: 0;
     background: transparent;
     border: none;
     cursor: pointer;
@@ -423,7 +424,7 @@
     align-items: center;
   }
 
-  :global(.close-btn:hover) {
+  .picker-header :global(.close-btn:hover) {
     background: var(--panel-raised, #1d242c);
     color: var(--text, #e6ebef);
   }
@@ -436,8 +437,9 @@
     background: var(--panel, #181e25);
   }
 
-  :global(.path-input) {
+  .picker-path-bar :global(.path-input) {
     flex: 1;
+    min-width: 0;
     padding: 6px 12px;
     background: var(--control, #14191f);
     color: var(--text, #e6ebef);
@@ -446,12 +448,13 @@
     font-size: 0.875rem;
   }
 
-  :global(.path-input:focus) {
+  .picker-path-bar :global(.path-input:focus) {
     outline: none;
     border-color: var(--accent, #3b82f6);
   }
 
-  :global(.nav-btn) {
+  .picker-path-bar :global(.nav-btn) {
+    min-height: 0;
     padding: 6px 16px;
     background: var(--control, #14191f);
     color: var(--text, #e6ebef);
@@ -461,7 +464,7 @@
     cursor: pointer;
   }
 
-  :global(.nav-btn:hover:not(:disabled)) {
+  .picker-path-bar :global(.nav-btn:hover:not(:disabled)) {
     background: var(--panel-raised, #1d242c);
   }
 
@@ -483,7 +486,8 @@
     user-select: none;
   }
 
-  :global(.crumb-btn) {
+  .breadcrumb-bar :global(.crumb-btn) {
+    min-height: 0;
     background: transparent;
     border: none;
     padding: 2px 6px;
@@ -494,18 +498,18 @@
     font-weight: 400;
   }
 
-  :global(.crumb-btn:hover) {
+  .breadcrumb-bar :global(.crumb-btn:hover) {
     background: var(--control, #14191f);
     text-decoration: underline;
   }
 
-  :global(.crumb-btn.active) {
+  .breadcrumb-bar :global(.crumb-btn.active) {
     font-weight: 600;
     color: var(--text, #e6ebef);
     cursor: default;
   }
 
-  :global(.crumb-btn.active:hover) {
+  .breadcrumb-bar :global(.crumb-btn.active:hover) {
     text-decoration: none;
     background: transparent;
   }
@@ -526,7 +530,8 @@
     color: var(--muted, #8995a1);
   }
 
-  :global(.root-btn) {
+  .roots-bar :global(.root-btn) {
+    min-height: 0;
     padding: 2px 8px;
     background: var(--control, #14191f);
     color: var(--text, #e6ebef);
@@ -536,7 +541,8 @@
     cursor: pointer;
   }
 
-  :global(.error-message) {
+  .picker-modal :global(.error-message) {
+    display: block;
     padding: 8px 16px;
     background: rgba(217, 120, 120, 0.15);
     color: var(--danger, #d97878);
@@ -544,7 +550,8 @@
     font-size: 0.875rem;
   }
 
-  :global(.warning-message) {
+  .picker-modal :global(.warning-message) {
+    display: block;
     padding: 8px 16px;
     background: rgba(242, 161, 111, 0.15);
     color: var(--focus, #60a5fa);
@@ -569,7 +576,8 @@
     gap: 4px;
   }
 
-  :global(.dir-item) {
+  .picker-body :global(.dir-item) {
+    min-height: 0;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -584,11 +592,11 @@
     width: 100%;
   }
 
-  :global(.dir-item:hover) {
+  .picker-body :global(.dir-item:hover) {
     background: var(--panel-raised, #1d242c);
   }
 
-  :global(.dir-item.selected) {
+  .picker-body :global(.dir-item.selected) {
     background: var(--accent-soft, #2a2725);
     border-color: var(--accent, #3b82f6);
   }
@@ -602,7 +610,7 @@
     color: var(--muted, #8995a1);
   }
 
-  :global(.parent-item) {
+  .picker-body :global(.parent-item) {
     font-weight: 500;
     color: var(--accent, #3b82f6);
   }
@@ -625,7 +633,8 @@
     background: var(--control, #14191f);
   }
 
-  :global(.cancel-btn) {
+  .picker-footer :global(.cancel-btn) {
+    min-height: 0;
     padding: 8px 16px;
     background: transparent;
     border: 1px solid var(--line, #2d3741);
@@ -635,11 +644,12 @@
     cursor: pointer;
   }
 
-  :global(.cancel-btn:hover) {
+  .picker-footer :global(.cancel-btn:hover) {
     background: var(--panel-raised, #1d242c);
   }
 
-  :global(.select-btn) {
+  .picker-footer :global(.select-btn) {
+    min-height: 0;
     padding: 8px 16px;
     background: var(--accent, #3b82f6);
     color: #ffffff;
@@ -650,11 +660,11 @@
     cursor: pointer;
   }
 
-  :global(.select-btn:hover:not(:disabled)) {
+  .picker-footer :global(.select-btn:hover:not(:disabled)) {
     background: var(--focus, #60a5fa);
   }
 
-  :global(.select-btn:disabled) {
+  .picker-footer :global(.select-btn:disabled) {
     opacity: 0.5;
     cursor: not-allowed;
   }

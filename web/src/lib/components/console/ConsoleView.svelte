@@ -248,7 +248,7 @@
     gap: 2px;
   }
 
-  :global(.channel-btn) {
+  .console-view :global(.channel-btn) {
     background: transparent;
     border: none;
     color: var(--muted, #8b949e);
@@ -260,16 +260,16 @@
     transition: all 0.15s ease;
   }
 
-  :global(.channel-btn:hover) {
+  .console-view :global(.channel-btn:hover) {
     color: var(--text, #c9d1d9);
   }
 
-  :global(.channel-btn.active) {
+  .console-view :global(.channel-btn.active) {
     background-color: var(--accent, #6366f1);
     color: #ffffff;
   }
 
-  :global(.filter-input) {
+  .console-view :global(.filter-input) {
     background-color: var(--input-bg, #0d1117);
     border: 1px solid var(--border-color, #30363d);
     color: var(--text, #c9d1d9);
@@ -279,7 +279,7 @@
     width: 160px;
   }
 
-  :global(.filter-input:focus) {
+  .console-view :global(.filter-input:focus) {
     outline: none;
     border-color: var(--accent, #58a6ff);
   }
@@ -317,7 +317,7 @@
     color: #d29922;
   }
 
-  :global(.btn-action) {
+  .console-view :global(.btn-action) {
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -331,11 +331,11 @@
     text-decoration: none;
   }
 
-  :global(.btn-action:hover) {
+  .console-view :global(.btn-action:hover) {
     background-color: var(--button-hover-bg, #30363d);
   }
 
-  :global(.btn-action.active) {
+  .console-view :global(.btn-action.active) {
     background-color: rgba(210, 153, 34, 0.2);
     color: #d29922;
     border-color: #d29922;
@@ -374,26 +374,26 @@
   }
 
   /* ANSI Color classes */
-  :global(.fg-black) { color: #4e4e4e; }
-  :global(.fg-red) { color: #ff6b6b; }
-  :global(.fg-green) { color: #51cf66; }
-  :global(.fg-yellow) { color: #fcc419; }
-  :global(.fg-blue) { color: #339af0; }
-  :global(.fg-magenta) { color: #cc5de8; }
-  :global(.fg-cyan) { color: #22b8cf; }
-  :global(.fg-white) { color: #e9ecef; }
+  .console-view :global(.fg-black) { color: #4e4e4e; }
+  .console-view :global(.fg-red) { color: #ff6b6b; }
+  .console-view :global(.fg-green) { color: #51cf66; }
+  .console-view :global(.fg-yellow) { color: #fcc419; }
+  .console-view :global(.fg-blue) { color: #339af0; }
+  .console-view :global(.fg-magenta) { color: #cc5de8; }
+  .console-view :global(.fg-cyan) { color: #22b8cf; }
+  .console-view :global(.fg-white) { color: #e9ecef; }
 
-  :global(.bg-black) { background-color: #212529; }
-  :global(.bg-red) { background-color: #c92a2a; }
-  :global(.bg-green) { background-color: #2b8a3e; }
-  :global(.bg-yellow) { background-color: #e67700; }
-  :global(.bg-blue) { background-color: #1864ab; }
-  :global(.bg-magenta) { background-color: #862e9c; }
-  :global(.bg-cyan) { background-color: #0b7285; }
-  :global(.bg-white) { background-color: #f8f9fa; }
+  .console-view :global(.bg-black) { background-color: #212529; }
+  .console-view :global(.bg-red) { background-color: #c92a2a; }
+  .console-view :global(.bg-green) { background-color: #2b8a3e; }
+  .console-view :global(.bg-yellow) { background-color: #e67700; }
+  .console-view :global(.bg-blue) { background-color: #1864ab; }
+  .console-view :global(.bg-magenta) { background-color: #862e9c; }
+  .console-view :global(.bg-cyan) { background-color: #0b7285; }
+  .console-view :global(.bg-white) { background-color: #f8f9fa; }
 
-  :global(.bold) { font-weight: bold; }
-  :global(.dim) { opacity: 0.6; }
-  :global(.italic) { font-style: italic; }
-  :global(.underline) { text-decoration: underline; }
+  .console-view :global(.bold) { font-weight: bold; }
+  .console-view :global(.dim) { opacity: 0.6; }
+  .console-view :global(.italic) { font-style: italic; }
+  .console-view :global(.underline) { text-decoration: underline; }
 </style>
