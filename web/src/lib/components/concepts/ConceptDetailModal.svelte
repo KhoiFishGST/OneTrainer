@@ -100,7 +100,7 @@
     open={isOpen}
     title="Concept Configuration - {draft.name || draft.path || 'New Concept'}"
     applyText="Save Concept Settings"
-    width="wide"
+    width="medium"
     onApply={handleSave}
     {onClose}
   >

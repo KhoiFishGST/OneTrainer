@@ -23,7 +23,7 @@
     applyText?: string;
     cancelText?: string;
     align?: 'top' | 'center';
-    width?: 'default' | 'wide';
+    width?: 'default' | 'medium' | 'wide';
     showFooter?: boolean;
     onClose?: () => void;
     onApply?: () => void;
@@ -117,6 +117,7 @@
   >
     <div
       class="modal-dialog"
+      class:modal-medium={width === 'medium'}
       class:modal-wide={width === 'wide'}
       role="dialog"
       aria-modal="true"
@@ -200,6 +201,10 @@
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
     border: 1px solid var(--line);
     overflow: hidden;
+  }
+
+  .modal-dialog.modal-medium {
+    max-width: 740px;
   }
 
   .modal-dialog.modal-wide {
