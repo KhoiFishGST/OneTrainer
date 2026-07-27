@@ -192,6 +192,10 @@
     }
   }
 
+  let selectBtnLabel = $derived(
+    mode === 'file' ? 'Select File' : mode === 'both' ? 'Select Target' : 'Select Folder'
+  );
+
   function handleClose() {
     if (onClose) {
       onClose();
@@ -343,17 +347,24 @@
       </div>
 
       <div class="picker-footer">
-        <button type="button" class="cancel-btn" onclick={handleClose}>
-          Cancel
-        </button>
-        <button
-          type="button"
-          class="select-btn"
-          disabled={isSelectDisabled}
-          onclick={handleSelect}
-        >
-          Select {selectedPath || currentPath}
-        </button>
+        <div class="footer-path-preview" title={selectedPath || currentPath}>
+          <span class="preview-lbl">Selected:</span>
+          <span class="preview-val">{selectedPath || currentPath}</span>
+        </div>
+        <div class="footer-actions">
+          <button type="button" class="cancel-btn" onclick={handleClose}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="select-btn"
+            disabled={isSelectDisabled}
+            title={selectedPath || currentPath}
+            onclick={handleSelect}
+          >
+            {selectBtnLabel}
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -607,11 +618,43 @@
   .picker-footer {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
+    justify-content: space-between;
+    gap: 12px;
     padding: 12px 16px;
     border-top: 1px solid var(--line, #2d3741);
     background: var(--control, #14191f);
+  }
+
+  .footer-path-preview {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 0.8125rem;
+  }
+
+  .preview-lbl {
+    color: var(--muted, #8995a1);
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  .preview-val {
+    color: var(--text, #e6ebef);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: monospace;
+  }
+
+  .footer-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
   }
 
   .cancel-btn {

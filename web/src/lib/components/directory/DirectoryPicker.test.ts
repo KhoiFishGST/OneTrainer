@@ -26,8 +26,8 @@ it("navigates server directories and selects the current path", async () => {
   expect(await screen.findByRole("button", { name: "workspace" })).toBeVisible();
   await fireEvent.click(screen.getByRole("button", { name: "workspace" }));
 
-  expect(await screen.findByRole("button", { name: "Select /workspace" })).toBeVisible();
-  await fireEvent.click(screen.getByRole("button", { name: "Select /workspace" }));
+  expect(await screen.findByRole("button", { name: "Select Folder" })).toBeVisible();
+  await fireEvent.click(screen.getByRole("button", { name: "Select Folder" }));
 
   expect(onSelect).toHaveBeenCalledWith("/workspace");
 });
