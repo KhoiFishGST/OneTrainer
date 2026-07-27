@@ -6,6 +6,9 @@
   import PathInput from '$lib/components/form/PathInput.svelte';
   import Toggle from '$lib/components/form/Toggle.svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Button from '$lib/components/ui/Button.svelte';
+  import TextInput from '$lib/components/form/TextInput.svelte';
+  import Alert from '$lib/components/ui/Alert.svelte';
   import {
     queryKeys,
     getSafeQueryClient,
@@ -154,14 +157,15 @@
           <div class="thumbnail-overlay">
             <span class="dataset-name">{ds.name}</span>
           </div>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon"
             class="btn-delete"
             aria-label="Delete dataset"
             onclick={(e) => handleDeleteDataset(e, ds.name)}
           >
             <Trash2 size={16} />
-          </button>
+          </Button>
         </div>
         <div class="card-footer">
           <span class="count-badge">
@@ -183,15 +187,14 @@
 >
   <div class="create-modal-content">
     <label for="ds-name-input" class="input-label">Dataset Name</label>
-    <input
+    <TextInput
       id="ds-name-input"
-      type="text"
       placeholder="e.g. Dataset 1"
-      bind:value={newDatasetName}
-      class="text-input"
+      value={newDatasetName}
+      onInput={(val) => (newDatasetName = val)}
     />
     {#if createError}
-      <p class="error-text">{createError}</p>
+      <Alert tone="error" class="error-text">{createError}</Alert>
     {/if}
   </div>
 </ModalDialog>
@@ -315,7 +318,7 @@
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
   }
 
-  .btn-delete {
+  :global(.btn-delete) {
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;
@@ -329,7 +332,7 @@
     transition: opacity 0.15s ease;
   }
 
-  .dataset-card:hover .btn-delete {
+  .dataset-card:hover :global(.btn-delete) {
     opacity: 1;
   }
 
@@ -356,16 +359,7 @@
     font-weight: 500;
   }
 
-  .text-input {
-    background: var(--control, #101419);
-    border: 1px solid var(--line, #2d3741);
-    color: var(--text, #f8fafc);
-    padding: 0.5rem 0.75rem;
-    border-radius: 6px;
-    font-size: 0.875rem;
-  }
-
-  .error-text {
+  :global(.error-text) {
     color: var(--danger, #ef4444);
     font-size: 0.75rem;
     margin: 0;

@@ -1,6 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { Lock, ShieldAlert, ArrowRight } from 'lucide-svelte';
+  import Button from '$lib/components/ui/Button.svelte';
+  import TextInput from '$lib/components/form/TextInput.svelte';
+  import Alert from '$lib/components/ui/Alert.svelte';
 
   let password = $state('');
   let errorMsg = $state('');
@@ -54,42 +57,44 @@
     </div>
 
     {#if isHttpInsecure}
-      <div class="security-warning" role="alert">
+      <Alert tone="warning" class="security-warning">
         <ShieldAlert size={20} class="warning-icon" />
         <div>
           <strong>Insecure HTTP Connection</strong>
           <p>Your password will be transmitted in plain text. Consider enabling HTTPS.</p>
         </div>
-      </div>
+      </Alert>
     {/if}
 
     <form onsubmit={handleLogin} class="login-form">
       {#if errorMsg}
-        <div class="error-banner" role="alert">
-          <span>{errorMsg}</span>
-        </div>
+        <Alert tone="error" class="error-banner">
+          {errorMsg}
+        </Alert>
       {/if}
 
       <div class="form-group">
         <label for="portal-password">Password</label>
-        <input
+        <TextInput
           id="portal-password"
           type="password"
-          bind:value={password}
+          value={password}
+          onInput={(val) => (password = val)}
           placeholder="Enter portal password..."
           required
           autofocus
+          ariaLabel="Password"
         />
       </div>
 
-      <button type="submit" class="submit-btn" disabled={loading || !password}>
+      <Button type="submit" variant="primary" size="large" class="submit-btn" disabled={loading || !password}>
         {#if loading}
           <span>Signing in...</span>
         {:else}
           <span>Sign In</span>
           <ArrowRight size={18} />
         {/if}
-      </button>
+      </Button>
     </form>
   </div>
 </div>
@@ -150,7 +155,7 @@
     margin: 0;
   }
 
-  .security-warning {
+  :global(.security-warning) {
     display: flex;
     align-items: flex-start;
     gap: 0.75rem;
@@ -168,13 +173,13 @@
     margin-top: 2px;
   }
 
-  .security-warning p {
+  :global(.security-warning) p {
     margin: 0.25rem 0 0;
     color: #fca5a5;
     font-size: 0.75rem;
   }
 
-  .error-banner {
+  :global(.error-banner) {
     background-color: rgba(239, 68, 68, 0.15);
     border: 1px solid #ef4444;
     color: #f87171;
@@ -197,21 +202,7 @@
     color: var(--text, #f3f4f6);
   }
 
-  .form-group input {
-    padding: 0.75rem 1rem;
-    background-color: var(--panel-raised, #111827);
-    border: 1px solid var(--line, #374151);
-    border-radius: 8px;
-    color: var(--text, #f3f4f6);
-    font-size: 0.95rem;
-  }
-
-  .form-group input:focus {
-    outline: none;
-    border-color: var(--accent, #6366f1);
-  }
-
-  .submit-btn {
+  :global(.submit-btn) {
     width: 100%;
     display: flex;
     align-items: center;
@@ -228,11 +219,11 @@
     transition: filter 0.2s ease;
   }
 
-  .submit-btn:hover:not(:disabled) {
+  :global(.submit-btn:hover:not(:disabled)) {
     filter: brightness(1.1);
   }
 
-  .submit-btn:disabled {
+  :global(.submit-btn:disabled) {
     opacity: 0.6;
     cursor: not-allowed;
   }

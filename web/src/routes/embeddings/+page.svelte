@@ -6,6 +6,7 @@
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import Alert from '$lib/components/ui/Alert.svelte';
   import FormPageSkeleton from '$lib/components/ui/FormPageSkeleton.svelte';
+  import Button from '$lib/components/ui/Button.svelte';
 
   const ctx = getRouteContext();
 
@@ -150,9 +151,8 @@
 
             <div class="bar-actions">
               {#if embeddingsList.length > 0}
-                <button
-                  type="button"
-                  class="secondary-btn"
+                <Button
+                  variant="secondary"
                   title={allToggledOn ? 'Disable training for all embeddings' : 'Enable training for all embeddings'}
                   disabled={!isEmbeddingSupported}
                   onclick={handleToggleAll}
@@ -164,18 +164,17 @@
                     <ToggleRight size={16} />
                     <span>Enable All</span>
                   {/if}
-                </button>
+                </Button>
               {/if}
 
-              <button
-                type="button"
-                class="primary-btn"
+              <Button
+                variant="primary"
                 disabled={!isEmbeddingSupported}
                 onclick={handleAddEmbedding}
               >
                 <Plus size={16} />
                 <span>Add Embedding</span>
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -186,15 +185,15 @@
               <p class="empty-desc">
                 Click <strong>+ Add Embedding</strong> to add textual inversion embedding configurations to your training run.
               </p>
-              <button
-                type="button"
-                class="primary-btn mt-2"
+              <Button
+                variant="primary"
+                class="mt-2"
                 disabled={!isEmbeddingSupported}
                 onclick={handleAddEmbedding}
               >
                 <Plus size={16} />
                 <span>Add Embedding</span>
-              </button>
+              </Button>
             </div>
           {:else}
             <div class="embeddings-grid">

@@ -5,6 +5,8 @@
   import Alert from '$lib/components/ui/Alert.svelte';
   import Toast from '$lib/components/ui/Toast.svelte';
   import Skeleton from '$lib/components/ui/Skeleton.svelte';
+  import Button from '$lib/components/ui/Button.svelte';
+  import TextInput from '$lib/components/form/TextInput.svelte';
 
   let huggingfaceToken = $state('');
   let hfTokenSet = $state(false);
@@ -135,15 +137,18 @@
         <div class="form-group">
           <label for="hf-token-input">API Token</label>
           <div class="input-with-button">
-            <input
+            <TextInput
               id="hf-token-input"
               type={showHfToken ? 'text' : 'password'}
-              bind:value={huggingfaceToken}
+              value={huggingfaceToken}
+              onInput={(val) => (huggingfaceToken = val)}
               placeholder="hf_..."
               autocomplete="off"
+              ariaLabel="API Token"
             />
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon"
               class="icon-btn"
               onclick={() => (showHfToken = !showHfToken)}
               aria-label={showHfToken ? 'Hide token' : 'Show token'}
@@ -153,7 +158,7 @@
               {:else}
                 <Eye size={18} />
               {/if}
-            </button>
+            </Button>
           </div>
           <span class="status-badge" class:configured={hfTokenSet}>
             {hfTokenSet ? 'Token configured' : 'No token set'}
@@ -161,9 +166,9 @@
         </div>
 
         <div class="card-actions">
-          <button type="button" class="btn primary" onclick={handleSaveHfToken}>
+          <Button variant="primary" class="btn primary" onclick={handleSaveHfToken}>
             <Save size={16} /> Save Token
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -184,15 +189,18 @@
         <div class="form-group">
           <label for="webui-password-input">New Web Portal Password</label>
           <div class="input-with-button">
-            <input
+            <TextInput
               id="webui-password-input"
               type={showWebuiPassword ? 'text' : 'password'}
-              bind:value={webuiPassword}
+              value={webuiPassword}
+              onInput={(val) => (webuiPassword = val)}
               placeholder={webuiPasswordSet ? 'Enter new password to change...' : 'Enter new password...'}
               autocomplete="off"
+              ariaLabel="New Web Portal Password"
             />
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon"
               class="icon-btn"
               onclick={() => (showWebuiPassword = !showWebuiPassword)}
               aria-label={showWebuiPassword ? 'Hide password' : 'Show password'}
@@ -202,7 +210,7 @@
               {:else}
                 <Eye size={18} />
               {/if}
-            </button>
+            </Button>
           </div>
           <span class="status-badge" class:configured={webuiPasswordSet}>
             {webuiPasswordSet ? '✓ Password Protection Enabled' : 'Password Protection Disabled (Open Access)'}
@@ -210,13 +218,13 @@
         </div>
 
         <div class="card-actions">
-          <button type="button" class="btn primary" onclick={handleSavePassword}>
+          <Button variant="primary" class="btn primary" onclick={handleSavePassword}>
             <Save size={16} /> Update Password
-          </button>
+          </Button>
           {#if webuiPasswordSet}
-            <button type="button" class="btn danger" onclick={handleClearPassword}>
+            <Button variant="danger" class="btn danger" onclick={handleClearPassword}>
               Clear Password
-            </button>
+            </Button>
           {/if}
         </div>
       </div>
@@ -320,22 +328,7 @@
     align-items: center;
   }
 
-  .input-with-button input {
-    width: 100%;
-    padding: 0.625rem 2.5rem 0.625rem 0.75rem;
-    background-color: var(--panel-raised, #111827);
-    border: 1px solid var(--line, #374151);
-    border-radius: 6px;
-    color: var(--text, #f3f4f6);
-    font-size: 0.875rem;
-  }
-
-  .input-with-button input:focus {
-    outline: none;
-    border-color: var(--color-primary, var(--accent, #3b82f6));
-  }
-
-  .icon-btn {
+  :global(.icon-btn) {
     position: absolute;
     right: 0.5rem;
     background: transparent;
@@ -348,7 +341,7 @@
     justify-content: center;
   }
 
-  .icon-btn:hover {
+  :global(.icon-btn:hover) {
     color: var(--text, #f3f4f6);
   }
 

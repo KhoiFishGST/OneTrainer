@@ -1,5 +1,8 @@
 <script lang="ts">
   import { ArrowLeft, Upload, Image as ImageIcon, FileText, Trash2, X } from 'lucide-svelte';
+  import Button from '$lib/components/ui/Button.svelte';
+  import FileInput from '$lib/components/form/FileInput.svelte';
+  import TextArea from '$lib/components/form/TextArea.svelte';
   import {
     createDatasetFilesQuery,
     createUploadDatasetFilesMutation,
@@ -16,7 +19,7 @@
   let items = $derived($filesQuery.data?.items || []);
   let datasetPath = $derived($filesQuery.data?.path || '');
   let loading = $derived($filesQuery.isLoading);
-  let fileInput = $state<HTMLInputElement | null>(null);
+  let fileInput = $state<{ open: () => void } | null>(null);
   let isDragging = $state(false);
   let activeLightboxImage = $state<string | null>(null);
 
@@ -82,20 +85,16 @@
       </a>
     </div>
 
-    <button type="button" class="btn-upload" onclick={() => fileInput?.click()}>
+    <Button variant="primary" class="btn-upload" onclick={() => fileInput?.open()}>
       <Upload size={18} />
       <span>Add Files</span>
-    </button>
-    <input
+    </Button>
+    <FileInput
       bind:this={fileInput}
-      type="file"
       multiple
       accept="image/*,.jpg,.jpeg,.png,.webp,.bmp,.gif,.tiff,.txt,.caption"
       class="hidden-file-input"
-      onchange={(e) => {
-        const target = e.target as HTMLInputElement;
-        if (target.files) handleFileUpload(target.files);
-      }}
+      onChange={(files) => files && handleFileUpload(files)}
     />
   </div>
 
@@ -109,8 +108,8 @@
     <div class="items-grid">
       {#each items as item}
         <div class="item-card">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             class="card-image-area"
             disabled={!item.image_name}
             onclick={() => {
@@ -131,15 +130,15 @@
                 <span>Text Only</span>
               </div>
             {/if}
-          </button>
+          </Button>
           <div class="card-caption-area">
             <span class="item-id-label">{item.id}</span>
-            <textarea
+            <TextArea
               class="caption-textarea"
               placeholder="Add caption..."
               value={item.caption_content}
-              onblur={(e) => handleCaptionSave(item.caption_name || `${item.id}.txt`, (e.target as HTMLTextAreaElement).value)}
-            ></textarea>
+              onBlur={(val) => handleCaptionSave(item.caption_name || `${item.id}.txt`, val)}
+            />
           </div>
         </div>
       {/each}
@@ -150,9 +149,9 @@
 {#if activeLightboxImage}
   <div class="lightbox-overlay" onclick={() => (activeLightboxImage = null)} role="presentation">
     <img src={activeLightboxImage} alt="Preview" class="lightbox-img" />
-    <button type="button" class="btn-close-lightbox" onclick={() => (activeLightboxImage = null)}>
+    <Button variant="ghost" size="icon" class="btn-close-lightbox" onclick={() => (activeLightboxImage = null)}>
       <X size={24} />
-    </button>
+    </Button>
   </div>
 {/if}
 
@@ -199,7 +198,7 @@
     font-size: 0.8125rem;
     color: var(--muted, #8995a1);
   }
-  .btn-upload {
+  :global(.btn-upload) {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -210,7 +209,7 @@
     border-radius: 6px;
     cursor: pointer;
   }
-  .hidden-file-input {
+  :global(.hidden-file-input) {
     display: none;
   }
   .items-grid {
@@ -226,7 +225,7 @@
     display: flex;
     flex-direction: column;
   }
-  .card-image-area {
+  :global(.card-image-area) {
     width: 100%;
     aspect-ratio: 1;
     background: #0f1419;
@@ -236,7 +235,7 @@
     display: block;
     text-align: left;
   }
-  .card-image-area:disabled {
+  :global(.card-image-area:disabled) {
     cursor: default;
   }
   .item-img {
@@ -264,7 +263,7 @@
     font-weight: 600;
     color: var(--muted);
   }
-  .caption-textarea {
+  :global(.caption-textarea) {
     width: 100%;
     min-height: 60px;
     background: var(--control, #14191f);
@@ -320,7 +319,7 @@
     object-fit: contain;
     border-radius: 8px;
   }
-  .btn-close-lightbox {
+  :global(.btn-close-lightbox) {
     position: absolute;
     top: 1rem;
     right: 1rem;

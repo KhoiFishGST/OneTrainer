@@ -20,6 +20,8 @@
   import Toast from '$lib/components/ui/Toast.svelte';
   import Alert from '$lib/components/ui/Alert.svelte';
   import FormPageSkeleton from '$lib/components/ui/FormPageSkeleton.svelte';
+  import Button from '$lib/components/ui/Button.svelte';
+  import TextInput from '$lib/components/form/TextInput.svelte';
 
   const ctx = getRouteContext();
   const sampleMutation = createRequestSampleMutation();
@@ -194,16 +196,15 @@
   <div class="route-page">
     <PageHeader title={tab.label || 'Sampling'} class="sampling-header">
       {#snippet actions()}
-        <button
-          type="button"
-          class="btn btn-secondary"
+        <Button
+          variant="secondary"
           disabled={status.state !== 'RUNNING' && status.state !== 'TRAINING' || $sampleMutation.isPending}
           onclick={handleSample}
           title={status.state === 'RUNNING' || status.state === 'TRAINING' ? 'Trigger immediate sample image generation' : 'Active training run required to sample now'}
         >
           <Sparkles size={16} />
           <span>Sample Now</span>
-        </button>
+        </Button>
       {/snippet}
     </PageHeader>
 
@@ -227,14 +228,14 @@
             onChange={handleSelectConfigFile}
           />
         </div>
-        <button
-          type="button"
-          class="btn btn-secondary add-config-btn"
+        <Button
+          variant="secondary"
+          class="add-config-btn"
           onclick={handleOpenAddConfigModal}
         >
           <Plus size={16} />
           <span>+ Add Config</span>
-        </button>
+        </Button>
       </div>
     </div>
 
@@ -279,13 +280,12 @@
 >
   <div class="config-modal-body">
     <label for="new-config-name" class="modal-label">Configuration Name</label>
-    <input
+    <TextInput
       id="new-config-name"
-      type="text"
-      class="text-input"
       placeholder="e.g. portrait_samples.json"
-      bind:value={newConfigName}
-      onkeydown={(e) => {
+      value={newConfigName}
+      onInput={(val) => (newConfigName = val)}
+      onKeyDown={(e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
           handleCreateConfigFile();
@@ -293,7 +293,7 @@
       }}
     />
     {#if configModalError}
-      <div class="modal-error">{configModalError}</div>
+      <Alert tone="error" class="modal-error">{configModalError}</Alert>
     {/if}
   </div>
 </ModalDialog>
@@ -377,7 +377,7 @@
     min-width: 220px;
   }
 
-  .add-config-btn {
+  :global(.add-config-btn) {
     white-space: nowrap;
   }
 
@@ -413,23 +413,7 @@
     color: var(--text, #e6ebef);
   }
 
-  .text-input {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border-radius: 6px;
-    border: 1px solid var(--line, #2d3741);
-    background: var(--control, #14191f);
-    color: var(--text, #e6ebef);
-    font-size: 0.875rem;
-    box-sizing: border-box;
-  }
-
-  .text-input:focus {
-    outline: none;
-    border-color: var(--accent, #3b82f6);
-  }
-
-  .modal-error {
+  :global(.modal-error) {
     font-size: 0.8125rem;
     color: #f87171;
   }

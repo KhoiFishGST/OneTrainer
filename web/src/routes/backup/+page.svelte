@@ -12,6 +12,7 @@
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import Toast from '$lib/components/ui/Toast.svelte';
   import FormPageSkeleton from '$lib/components/ui/FormPageSkeleton.svelte';
+  import Button from '$lib/components/ui/Button.svelte';
 
   const ctx = getRouteContext();
   const backupMutation = createRequestBackupMutation();
@@ -66,27 +67,25 @@
   <div class="route-page">
     <PageHeader title={tab.label || 'Backup'} class="backup-header">
       {#snippet actions()}
-        <button
-          type="button"
-          class="btn btn-secondary"
+        <Button
+          variant="secondary"
           disabled={status.state !== 'RUNNING' && status.state !== 'TRAINING' || $backupMutation.isPending}
           onclick={handleBackup}
           title={status.state === 'RUNNING' || status.state === 'TRAINING' ? 'Trigger immediate model backup checkpoint' : 'Active training run required to backup now'}
         >
           <Archive size={16} />
           <span>Backup Now</span>
-        </button>
+        </Button>
 
-        <button
-          type="button"
-          class="btn btn-secondary"
+        <Button
+          variant="secondary"
           disabled={status.state !== 'RUNNING' && status.state !== 'TRAINING' || $saveMutation.isPending}
           onclick={handleSave}
           title={status.state === 'RUNNING' || status.state === 'TRAINING' ? 'Trigger immediate model save' : 'Active training run required to save model now'}
         >
           <Save size={16} />
           <span>Save Model Now</span>
-        </button>
+        </Button>
       {/snippet}
     </PageHeader>
 
