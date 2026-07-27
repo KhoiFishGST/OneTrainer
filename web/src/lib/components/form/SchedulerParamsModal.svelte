@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
 
   let {
@@ -15,7 +16,9 @@
 
   $effect(() => {
     if (open) {
-      customClassName = values?.custom_learning_rate_scheduler || '';
+      untrack(() => {
+        customClassName = values?.custom_learning_rate_scheduler || '';
+      });
     }
   });
 

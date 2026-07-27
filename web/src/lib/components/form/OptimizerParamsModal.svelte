@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
   import Select from '$lib/components/form/Select.svelte';
   import Toggle from '$lib/components/form/Toggle.svelte';
@@ -128,17 +129,20 @@
 
   $effect(() => {
     if (open) {
-      const opt = values?.optimizer?.optimizer || values?.optimizer || 'ADAMW';
-      localOptimizer = typeof opt === 'string' ? opt : 'ADAMW';
-      localParams = { ...(values?.optimizer_params || {}) };
+      untrack(() => {
+        const opt = values?.optimizer?.optimizer || values?.optimizer || 'ADAMW';
+        localOptimizer = typeof opt === 'string' ? opt : 'ADAMW';
+        const params = { ...(values?.optimizer_params || {}) };
 
-      // Initialize with defaults if empty
-      const defaults = OPTIMIZER_DEFAULTS[localOptimizer] || {};
-      for (const [key, val] of Object.entries(defaults)) {
-        if (localParams[key] === undefined) {
-          localParams[key] = val;
+        // Initialize with defaults if empty
+        const defaults = OPTIMIZER_DEFAULTS[localOptimizer] || {};
+        for (const [key, val] of Object.entries(defaults)) {
+          if (params[key] === undefined) {
+            params[key] = val;
+          }
         }
-      }
+        localParams = params;
+      });
     }
   });
 
