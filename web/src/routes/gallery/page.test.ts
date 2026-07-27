@@ -126,14 +126,15 @@ describe('Gallery Route Page', () => {
 
     render(GalleryPage);
 
-    const combobox = await screen.findByRole('combobox', { name: 'Gallery run' });
-    await waitFor(() => {
-      expect(combobox).toHaveValue('2026-07-26_12-00-00');
-    });
+    const trigger = await screen.findByRole('button', { name: /2026-07-26_12-00-00/ });
+    await fireEvent.click(trigger);
 
-    await fireEvent.change(combobox, {
-      target: { value: '2026-07-26_11-00-00' },
+    await waitFor(() => {
+      expect(screen.getAllByRole('option', { name: '2026-07-26_11-00-00' })[0]).toBeInTheDocument();
     });
+    const options = screen.getAllByRole('option', { name: '2026-07-26_11-00-00' });
+    await fireEvent.click(options[0]);
+
     expect(await screen.findByAltText('Historical checkpoint')).toBeInTheDocument();
   });
 });

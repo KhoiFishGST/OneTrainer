@@ -2,6 +2,7 @@
   import type { GalleryRunModel, GalleryVariant } from '../../api/types';
   import { galleryImageUrl } from '../../api/client';
   import { uiPreferences } from '../../stores/ui-preferences';
+  import Select from '../form/Select.svelte';
   import GalleryImageViewer, { type GallerySelection } from './GalleryImageViewer.svelte';
 
   let {
@@ -85,16 +86,16 @@
         {#if showSortControl && (!limit || limit > 1)}
           <div class="sort-control">
             <label for="gallery-sort-select" class="sort-label">Sort</label>
-            <select
+            <Select
               id="gallery-sort-select"
-              aria-label="Gallery sort order"
-              class="sort-select"
+              ariaLabel="Gallery sort order"
               value={effectiveSortOrder}
-              onchange={(e) => uiPreferences.setGallerySortOrder((e.target as HTMLSelectElement).value as 'asc' | 'desc')}
-            >
-              <option value="asc">Oldest First (Asc)</option>
-              <option value="desc">Newest First (Desc)</option>
-            </select>
+              options={[
+                { value: 'asc', label: 'Oldest First (Asc)' },
+                { value: 'desc', label: 'Newest First (Desc)' },
+              ]}
+              onChange={(val) => uiPreferences.setGallerySortOrder(val as 'asc' | 'desc')}
+            />
           </div>
         {/if}
       </div>

@@ -5,6 +5,7 @@
     createGalleryRunQuery,
   } from '$lib/api/queries';
   import SampleGallery from '$lib/components/training/SampleGallery.svelte';
+  import Select from '$lib/components/form/Select.svelte';
 
   const runsQuery = createGalleryRunsQuery();
   const currentQuery = createGalleryCurrentQuery();
@@ -78,23 +79,20 @@
 
     <div class="header-actions">
       <label for="gallery-run-select" class="select-label">Gallery run</label>
-      <select
+      <Select
         id="gallery-run-select"
-        aria-label="Gallery run"
-        class="run-select"
+        ariaLabel="Gallery run"
         value={selectedRunKey ?? ''}
-        onchange={(e) => {
-          userSelectedKey = (e.target as HTMLSelectElement).value || null;
+        options={availableRuns.map((r) => ({
+          value: r.key,
+          label: `${r.key}${r.active ? ' (Active)' : ''}`,
+        }))}
+        placeholder={availableRuns.length === 0 ? 'No runs available' : 'Select run...'}
+        disabled={availableRuns.length === 0}
+        onChange={(val) => {
+          userSelectedKey = val || null;
         }}
-      >
-        {#if availableRuns.length === 0}
-          <option value="" disabled>No runs available</option>
-        {:else}
-          {#each availableRuns as run (run.key)}
-            <option value={run.key}>{run.key}{run.active ? ' (Active)' : ''}</option>
-          {/each}
-        {/if}
-      </select>
+      />
     </div>
   </div>
 
