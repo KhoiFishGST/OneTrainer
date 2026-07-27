@@ -108,3 +108,9 @@ def test_create_sample_file_rejects_empty_name(client):
     assert resp.status_code == 422
     assert resp.json()["detail"] == "Sample file name cannot be empty"
 
+
+def test_create_sample_file_rejects_path_traversal(client):
+    resp = client.post("/api/samples/files", json={"name": "../evil"})
+    assert resp.status_code == 422
+    assert resp.json()["detail"] == "Invalid sample file name"
+

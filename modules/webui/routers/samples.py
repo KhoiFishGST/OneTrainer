@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any
 
 from modules.webui.atomic_io import write_json_atomic
@@ -36,9 +37,12 @@ async def list_sample_files(request: Request):
 @router.post("/samples/files")
 async def create_sample_file(body: SampleFileCreateRequest, request: Request):
     app_state: AppState = request.app.state.webui
-    clean_name = body.name.strip()
-    if not clean_name:
+    raw_name = body.name.strip()
+    if not raw_name:
         return JSONResponse(status_code=422, content={"detail": "Sample file name cannot be empty"})
+    clean_name = Path(raw_name).name
+    if not clean_name or clean_name in (".", "..") or clean_name != raw_name:
+        return JSONResponse(status_code=422, content={"detail": "Invalid sample file name"})
     filename = clean_name if clean_name.endswith(".json") else f"{clean_name}.json"
     samples_dir = app_state.settings.root_dir / "training_samples"
     samples_dir.mkdir(parents=True, exist_ok=True)
