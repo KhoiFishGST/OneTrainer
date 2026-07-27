@@ -8,19 +8,37 @@
     loading = false,
     error = null,
     title,
+    sortOrder = 'desc',
+    limit = null,
   }: {
     gallery?: GalleryRunModel | null;
     loading?: boolean;
     error?: Error | string | null;
     title?: string;
+    sortOrder?: 'desc' | 'asc';
+    limit?: number | null;
   } = $props();
 
   let selection = $state<GallerySelection | null>(null);
   let isViewerOpen = $state(false);
 
   const sortedBatches = $derived.by(() => {
-    if (!gallery || !gallery.batches) return [];
-    return gallery.batches.slice().sort((a, b) => a.id - b.id);
+    if (!gallery?.batches) return [];
+    const batches = [...gallery.batches];
+    batches.sort((a, b) => {
+      const epochA = a.epoch ?? a.progress?.epoch ?? 0;
+      const epochB = b.epoch ?? b.progress?.epoch ?? 0;
+      if (epochA !== epochB) {
+        return sortOrder === 'asc' ? epochA - epochB : epochB - epochA;
+      }
+      const stepA = a.global_step ?? a.progress?.global_step ?? 0;
+      const stepB = b.global_step ?? b.progress?.global_step ?? 0;
+      if (stepA !== stepB) {
+        return sortOrder === 'asc' ? stepA - stepB : stepB - stepA;
+      }
+      return sortOrder === 'asc' ? a.id - b.id : b.id - a.id;
+    });
+    return limit && limit > 0 ? batches.slice(0, limit) : batches;
   });
 
   const errorMessage = $derived.by(() => {

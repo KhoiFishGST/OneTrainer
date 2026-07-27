@@ -244,13 +244,27 @@ const emptyGallery: GalleryRunModel = {
 };
 
 describe('SampleGallery', () => {
-  it('renders chronological checkpoints and exact per-revision captions', () => {
+  it('renders chronological checkpoints in descending order by default and respects per-revision captions', () => {
     render(SampleGallery, { props: { gallery: galleryWithEditedPrompt } });
     const rows = screen.getAllByTestId('checkpoint-row');
-    expect(rows[0]).toHaveTextContent('Step 0');
-    expect(rows[1]).toHaveTextContent('Step 100');
-    expect(rows[0]).toHaveTextContent('old prompt');
-    expect(rows[1]).toHaveTextContent('edited prompt');
+    expect(rows[0]).toHaveTextContent('Step 100');
+    expect(rows[1]).toHaveTextContent('Step 0');
+    expect(rows[0]).toHaveTextContent('edited prompt');
+    expect(rows[1]).toHaveTextContent('old prompt');
+  });
+
+  it('respects sortOrder="asc"', () => {
+    render(SampleGallery, { props: { gallery: galleryWithEditedPrompt, sortOrder: 'asc' } });
+    const ascRows = screen.getAllByTestId('checkpoint-row');
+    expect(ascRows[0]).toHaveTextContent('Step 0');
+    expect(ascRows[1]).toHaveTextContent('Step 100');
+  });
+
+  it('respects limit prop', () => {
+    render(SampleGallery, { props: { gallery: galleryWithEditedPrompt, limit: 1 } });
+    const limitedRows = screen.getAllByTestId('checkpoint-row');
+    expect(limitedRows).toHaveLength(1);
+    expect(limitedRows[0]).toHaveTextContent('Step 100');
   });
 
   it('renders EMA and non-EMA variant sub-rows with progressive slots', () => {

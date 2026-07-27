@@ -214,7 +214,14 @@
 
   <!-- Live Sample Gallery -->
   <section class="gallery-section">
-    <SampleGallery {gallery} loading={galleryLoading} error={galleryError} title="Live Sample Gallery" />
+    <SampleGallery
+      {gallery}
+      loading={galleryLoading}
+      error={galleryError}
+      title="Live Sample Gallery"
+      sortOrder="desc"
+      limit={1}
+    />
   </section>
 </div>
 
