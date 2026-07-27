@@ -136,7 +136,9 @@
     display: flex;
     align-items: center;
     gap: 0.25rem;
+    flex-wrap: wrap;
     overflow-x: auto;
+    overflow-y: hidden;
     border-bottom: 1px solid var(--color-border, var(--line, #2d3741));
     padding: 0 0.25rem;
   }
