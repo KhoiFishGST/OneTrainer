@@ -23,7 +23,7 @@
     ...attributes
   }: Props = $props();
 
-  function handleClick(event: MouseEvent) {
+  function handleClick(event: MouseEvent & { currentTarget: EventTarget & HTMLButtonElement }) {
     if (disabled) {
       event.preventDefault();
       event.stopImmediatePropagation();

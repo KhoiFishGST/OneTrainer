@@ -1,40 +1,43 @@
 <script lang="ts">
-  let {
-    id,
-    value = '',
-    disabled = false,
-    ariaDescribedBy,
-    placeholder = '',
-    onInput,
-  }: {
-    id: string;
-    value?: number | string;
-    disabled?: boolean;
-    ariaDescribedBy?: string;
-    placeholder?: string;
-    onInput: (val: string) => void;
-  } = $props();
+  import type { HTMLInputAttributes } from 'svelte/elements';
 
-  function handleInput(e: Event) {
-    const val = (e.target as HTMLInputElement).value;
-    onInput(val);
-  }
+  type Props = Omit<
+    HTMLInputAttributes,
+    'type' | 'value' | 'class' | 'oninput' | 'onchange' | 'aria-describedby' | 'aria-label'
+  > & {
+    value?: number | string;
+    class?: string;
+    ariaDescribedBy?: string;
+    ariaLabel?: string;
+    onInput?: (value: string) => void;
+    onChange?: (value: string) => void;
+  };
+
+  let {
+    value = '',
+    class: className = '',
+    ariaDescribedBy,
+    ariaLabel,
+    onInput,
+    onChange,
+    ...attributes
+  }: Props = $props();
 </script>
 
 <input
+  {...attributes}
   type="text"
   inputmode="decimal"
-  {id}
   value={value ?? ''}
-  {disabled}
-  {placeholder}
   aria-describedby={ariaDescribedBy}
-  oninput={handleInput}
-  class="number-input"
+  aria-label={ariaLabel}
+  class={`number-input ${className}`}
+  oninput={(e) => onInput?.(e.currentTarget.value)}
+  onchange={(e) => onChange?.(e.currentTarget.value)}
 />
 
 <style>
-  .number-input {
+  :where(.number-input) {
     width: 180px;
     max-width: 100%;
     padding: 0.5rem 0.75rem;
@@ -45,8 +48,7 @@
     color: var(--color-text, var(--text, #e6ebef));
     box-sizing: border-box;
   }
-
-  .number-input:focus {
+  :where(.number-input:focus) {
     outline: none;
     border-color: var(--color-primary, var(--accent, #3b82f6));
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);

@@ -28,20 +28,19 @@
   checked={value}
   aria-describedby={ariaDescribedBy}
   aria-label={ariaLabel}
-  class={`toggle-input ${className}`}
+  class={`checkbox-input ${className}`}
   onchange={(e) => onChange?.(e.currentTarget.checked)}
 />
 
 <style>
-  :where(.toggle-input) {
-    width: 1.125rem;
-    height: 1.125rem;
-    cursor: pointer;
-    accent-color: var(--color-primary, var(--accent, #3b82f6));
+  :where(.checkbox-input) {
+    width: 1rem;
+    height: 1rem;
     margin: 0;
-    vertical-align: middle;
+    cursor: pointer;
+    accent-color: var(--accent, #3b82f6);
   }
-  :where(.toggle-input:disabled) {
+  :where(.checkbox-input:disabled) {
     cursor: not-allowed;
     opacity: 0.5;
   }
