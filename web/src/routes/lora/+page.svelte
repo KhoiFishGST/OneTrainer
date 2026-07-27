@@ -1,6 +1,9 @@
 <script lang="ts">
   import { getRouteContext } from '$lib/config/context';
   import SchemaForm from '$lib/components/form/SchemaForm.svelte';
+  import FormPanel from '$lib/components/form/FormPanel.svelte';
+  import Field from '$lib/components/form/Field.svelte';
+  import Select from '$lib/components/form/Select.svelte';
 
   const ctx = getRouteContext();
 
@@ -12,24 +15,37 @@
     }
   );
 
-  type LoraSubTab = 'lora' | 'loha' | 'oft' | 'lokr';
+  const peftTypeToGroup: Record<string, string> = {
+    LORA: 'lora',
+    LOHA: 'loha',
+    OFT_2: 'oft',
+    LOKR: 'lokr',
+  };
 
-  const subnavTabs: Array<{ id: LoraSubTab; label: string; peftType: string }> = [
-    { id: 'lora', label: 'LoRA', peftType: 'LORA' },
-    { id: 'loha', label: 'LoHa', peftType: 'LOHA' },
-    { id: 'oft', label: 'OFT v2', peftType: 'OFT_2' },
-    { id: 'lokr', label: 'LoKr', peftType: 'LOKR' },
+  const peftType = $derived(ctx.workspace?.draft?.peft_type ?? 'LORA');
+  const activeSubTab = $derived(peftTypeToGroup[peftType] ?? 'lora');
+
+  const peftOptions = [
+    { value: 'LORA', label: 'LoRA (Low-Rank Adaptation)' },
+    { value: 'LOHA', label: 'LoHa (Low-Rank Hadamard Product)' },
+    { value: 'OFT_2', label: 'OFT v2 (Orthogonal Fine-Tuning)' },
+    { value: 'LOKR', label: 'LoKr (Low-Rank Kronecker Product)' },
   ];
 
-  let activeSubTab = $state<LoraSubTab>('lora');
+  const filteredTab = $derived({
+    ...tab,
+    groups: (tab.groups || []).map((g: any) => ({
+      ...g,
+      fields: (g.fields || []).filter((f: any) => f.id !== 'peft-type' && f.keys?.[0] !== 'peft_type'),
+    })),
+  });
 
   const trainingMethod = $derived(ctx.workspace?.draft?.training_method ?? 'FINE_TUNE');
   const isLoraActive = $derived(trainingMethod === 'LORA');
 
-  function handleTabClick(subtab: { id: LoraSubTab; peftType: string }) {
-    activeSubTab = subtab.id;
+  function handlePeftChange(val: string) {
     if (ctx.workspace && isLoraActive) {
-      ctx.workspace.setRaw('peft_type', subtab.peftType);
+      ctx.workspace.setRaw('peft_type', val);
     }
   }
 </script>
@@ -56,27 +72,23 @@
       </div>
     {/if}
 
-    <!-- Connected Text-Only LoRA Sub-Nav Tabs -->
     <fieldset class="lora-fieldset" disabled={!isLoraActive}>
-      <div class="lora-tab-container">
-        <div class="lora-subnav-tabs" role="tablist">
-          {#each subnavTabs as subtab (subtab.id)}
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeSubTab === subtab.id}
-              class="subnav-btn"
-              class:active={activeSubTab === subtab.id}
-              onclick={() => handleTabClick(subtab)}
-            >
-              {subtab.label}
-            </button>
-          {/each}
-        </div>
+      <div class="lora-container">
+        <FormPanel title="PEFT Options">
+          <Field id="peft-type" label="PEFT Type" tooltip="Parameter-efficient fine-tuning type">
+            {#snippet children({ id, ariaDescribedBy })}
+              <Select
+                {id}
+                value={peftType}
+                options={peftOptions}
+                {ariaDescribedBy}
+                onChange={handlePeftChange}
+              />
+            {/snippet}
+          </Field>
 
-        <div class="tab-panel-body">
           <SchemaForm
-            {tab}
+            tab={filteredTab}
             {activeSubTab}
             hideGroupTitle={true}
             values={ctx.workspace.draft}
@@ -84,7 +96,7 @@
             setRaw={(path: string, val: any) => ctx.workspace?.setRaw(path, val)}
             openDirectory={ctx.openDirectory}
           />
-        </div>
+        </FormPanel>
       </div>
     </fieldset>
   </div>
@@ -156,53 +168,11 @@
     cursor: not-allowed;
   }
 
-  .lora-tab-container {
+  .lora-container {
     display: flex;
     flex-direction: column;
     width: 740px;
     max-width: 100%;
-  }
-
-  .lora-subnav-tabs {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    flex-wrap: wrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    border-bottom: 1px solid var(--color-border, var(--line, #2d3741));
-    padding: 0 0.25rem;
-  }
-
-  .subnav-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.5rem 0.875rem;
-    border: 1px solid transparent;
-    border-bottom: none;
-    border-top-left-radius: 6px;
-    border-top-right-radius: 6px;
-    background: transparent;
-    color: var(--muted, #94a3b8);
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    margin-bottom: -1px;
-    transition: all 0.15s ease;
-    white-space: nowrap;
-  }
-
-  .subnav-btn:hover {
-    color: var(--text, #f8fafc);
-    background-color: var(--panel-raised, #1d242c);
-  }
-
-  .subnav-btn.active {
-    color: var(--color-text-title, var(--accent, #3b82f6));
-    background-color: var(--color-bg-card, var(--panel, #181e25));
-    border-color: var(--color-border, var(--line, #2d3741));
-    border-bottom-color: var(--color-bg-card, var(--panel, #181e25));
   }
 
   .skeleton-container {

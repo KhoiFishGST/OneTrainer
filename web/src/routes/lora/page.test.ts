@@ -83,32 +83,22 @@ vi.mock("$lib/config/context", () => ({
   }),
 }));
 
-describe("LoRA page subnav tabs and disabled state", () => {
-  it("renders 4 PEFT tabs and switches panels when training_method is LORA", async () => {
+describe("LoRA page PEFT Type dropdown and disabled state", () => {
+  it("renders PEFT Type dropdown and switches option fields when training_method is LORA", async () => {
     mockDraft.training_method = "LORA";
+    mockDraft.peft_type = "LORA";
     render(LoraPage);
 
-    const tabs = screen.getAllByRole("tab");
-    expect(tabs.map((t) => t.textContent?.trim())).toEqual([
-      "LoRA",
-      "LoHa",
-      "OFT v2",
-      "LoKr",
-    ]);
+    const peftSelect = screen.getByLabelText("PEFT Type");
+    expect(peftSelect).toBeInTheDocument();
 
-    // LoRA tab active by default
+    // LoRA fields active by default
     expect(screen.getByLabelText("LoRA Rank")).toBeInTheDocument();
     expect(screen.queryByLabelText("OFT Block Size")).not.toBeInTheDocument();
 
-    // Switch to OFT v2 tab
-    await fireEvent.click(screen.getByRole("tab", { name: "OFT v2" }));
-    expect(screen.getByLabelText("OFT Block Size")).toBeInTheDocument();
+    // Switch to OFT_2
+    await fireEvent.change(peftSelect, { target: { value: "OFT_2" } });
     expect(mockSetRaw).toHaveBeenCalledWith("peft_type", "OFT_2");
-
-    // Switch to LoKr tab
-    await fireEvent.click(screen.getByRole("tab", { name: "LoKr" }));
-    expect(screen.getByLabelText("LoKr Dimension")).toBeInTheDocument();
-    expect(mockSetRaw).toHaveBeenCalledWith("peft_type", "LOKR");
   });
 
   it("renders warning banner and disables controls when training_method is FINE_TUNE", () => {
