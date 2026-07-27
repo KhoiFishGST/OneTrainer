@@ -235,7 +235,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1rem 1.25rem;
+    padding: 0.625rem 0.75rem;
     border-bottom: 1px solid var(--line, #334155);
   }
 
@@ -310,8 +310,8 @@
     display: flex;
     flex-direction: row;
     align-items: stretch;
-    gap: 1rem;
-    padding: 1.25rem 1rem;
+    gap: 0.5rem;
+    padding: 0.75rem 0.75rem;
     border-bottom: 1px solid var(--line);
   }
 
@@ -328,7 +328,7 @@
     background: var(--control);
     border: 1px solid var(--line);
     border-radius: 6px;
-    padding: 0.75rem 0.375rem;
+    padding: 0.5rem 0.25rem;
     user-select: none;
     flex-shrink: 0;
   }
@@ -346,13 +346,13 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem;
   }
 
   .variant-subrow {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.375rem;
   }
 
   .variant-label {
@@ -361,13 +361,13 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--accent);
-    margin: 0.25rem 0 0 0;
+    margin: 0.15rem 0 0 0;
   }
 
   .variant-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, max(180px, calc(20% - 0.8rem))), 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, max(180px, calc(20% - 0.4rem))), 1fr));
+    gap: 0.5rem;
   }
 
   .sample-slot-container {
