@@ -12,6 +12,7 @@
   import TimeInput from './TimeInput.svelte';
 
   import FormPanel from './FormPanel.svelte';
+  import SectionDivider from './SectionDivider.svelte';
 
   export type ControlType = 'toggle' | 'text' | 'number' | 'select' | 'directory' | 'time';
 
@@ -126,129 +127,142 @@
   }
 </script>
 
-{#snippet renderGroup(group: any)}
-  {@const visibleFields = (group.fields || []).filter((f: any) => f.visible !== false)}
+{#snippet renderFields(fields: any[], isComponentsGroup = false)}
+  {@const visibleFields = (fields || []).filter((f: any) => f.visible !== false)}
+  {#if visibleFields.length > 0}
+    <div class="group-fields" class:components-table={isComponentsGroup}>
+      {#each visibleFields as field (field.id)}
+        {@const controlType = normalizeControl(field.control)}
+        {@const primaryKey = field.keys?.[0] ?? field.id}
+        {@const error = getFieldError(field)}
+        {@const fieldValue = getFieldValue(field, 0)}
+        {@const isFullWidth = ['base_model_name', 'model_type', 'output_model_destination'].includes(primaryKey)}
 
-  <FormPanel title={group.title || group.label} isComponentsGroup={group.id === 'model_components'} hideTitle={hideGroupTitle}>
-    {#if visibleFields.length > 0}
-      <div class="group-fields" class:components-table={group.id === 'model_components'}>
-        {#each visibleFields as field (field.id)}
-          {@const controlType = normalizeControl(field.control)}
-          {@const primaryKey = field.keys?.[0] ?? field.id}
-          {@const error = getFieldError(field)}
-          {@const fieldValue = getFieldValue(field, 0)}
-          {@const isFullWidth = ['base_model_name', 'model_type', 'output_model_destination'].includes(primaryKey)}
-
-          <Field
-            id={field.id}
-            label={field.label}
-            tooltip={field.tooltip}
-            {error}
-            inline={false}
-            fullWidth={isFullWidth}
-          >
-            {#snippet children({ id, ariaDescribedBy })}
-              {#if controlType === 'toggle'}
-                <Toggle
+        <Field
+          id={field.id}
+          label={field.label}
+          tooltip={field.tooltip}
+          {error}
+          inline={false}
+          fullWidth={isFullWidth}
+        >
+          {#snippet children({ id, ariaDescribedBy })}
+            {#if controlType === 'toggle'}
+              <Toggle
+                {id}
+                value={fieldValue}
+                {ariaDescribedBy}
+                onChange={(val) => setRaw(primaryKey, val)}
+              />
+            {:else if controlType === 'text'}
+              <TextInput
+                {id}
+                value={fieldValue}
+                {ariaDescribedBy}
+                onInput={(val) => setRaw(primaryKey, val)}
+              />
+            {:else if controlType === 'number'}
+              <NumberInput
+                {id}
+                value={fieldValue}
+                {ariaDescribedBy}
+                onInput={(val) => setRaw(primaryKey, val)}
+              />
+            {:else if controlType === 'select'}
+              {@const hasGear = primaryKey === 'optimizer' || primaryKey === 'optimizer.optimizer' || primaryKey === 'learning_rate_scheduler'}
+              {#if hasGear}
+                <div class="control-with-action">
+                  <div class="control-target">
+                    <Select
+                      {id}
+                      value={fieldValue}
+                      options={field.options || []}
+                      {ariaDescribedBy}
+                      onChange={(val) => setRaw(primaryKey, val)}
+                    />
+                  </div>
+                  {#if primaryKey === 'optimizer' || primaryKey === 'optimizer.optimizer'}
+                    <button
+                      type="button"
+                      class="action-btn gear-btn"
+                      title="Configure advanced optimizer parameters"
+                      onclick={() => onOpenOptimizerParams?.()}
+                    >
+                      <Settings size={16} />
+                    </button>
+                  {:else if primaryKey === 'learning_rate_scheduler'}
+                    <button
+                      type="button"
+                      class="action-btn gear-btn"
+                      disabled={fieldValue !== 'CUSTOM'}
+                      title={fieldValue === 'CUSTOM'
+                        ? 'Configure custom scheduler parameters'
+                        : 'Custom scheduler parameters are only available when Learning Rate Scheduler is set to CUSTOM'}
+                      onclick={() => fieldValue === 'CUSTOM' && onOpenSchedulerParams?.()}
+                    >
+                      <Settings size={16} />
+                    </button>
+                  {/if}
+                </div>
+              {:else}
+                <Select
                   {id}
                   value={fieldValue}
+                  options={field.options || []}
                   {ariaDescribedBy}
                   onChange={(val) => setRaw(primaryKey, val)}
                 />
-              {:else if controlType === 'text'}
-                <TextInput
-                  {id}
-                  value={fieldValue}
-                  {ariaDescribedBy}
-                  onInput={(val) => setRaw(primaryKey, val)}
-                />
-              {:else if controlType === 'number'}
-                <NumberInput
-                  {id}
-                  value={fieldValue}
-                  {ariaDescribedBy}
-                  onInput={(val) => setRaw(primaryKey, val)}
-                />
-              {:else if controlType === 'select'}
-                {@const hasGear = primaryKey === 'optimizer' || primaryKey === 'optimizer.optimizer' || primaryKey === 'learning_rate_scheduler'}
-                {#if hasGear}
-                  <div class="control-with-action">
-                    <div class="control-target">
-                      <Select
-                        {id}
-                        value={fieldValue}
-                        options={field.options || []}
-                        {ariaDescribedBy}
-                        onChange={(val) => setRaw(primaryKey, val)}
-                      />
-                    </div>
-                    {#if primaryKey === 'optimizer' || primaryKey === 'optimizer.optimizer'}
-                      <button
-                        type="button"
-                        class="action-btn gear-btn"
-                        title="Configure advanced optimizer parameters"
-                        onclick={() => onOpenOptimizerParams?.()}
-                      >
-                        <Settings size={16} />
-                      </button>
-                    {:else if primaryKey === 'learning_rate_scheduler'}
-                      <button
-                        type="button"
-                        class="action-btn gear-btn"
-                        disabled={fieldValue !== 'CUSTOM'}
-                        title={fieldValue === 'CUSTOM'
-                          ? 'Configure custom scheduler parameters'
-                          : 'Custom scheduler parameters are only available when Learning Rate Scheduler is set to CUSTOM'}
-                        onclick={() => fieldValue === 'CUSTOM' && onOpenSchedulerParams?.()}
-                      >
-                        <Settings size={16} />
-                      </button>
-                    {/if}
-                  </div>
-                {:else}
-                  <Select
-                    {id}
-                    value={fieldValue}
-                    options={field.options || []}
-                    {ariaDescribedBy}
-                    onChange={(val) => setRaw(primaryKey, val)}
-                  />
-                {/if}
-              {:else if controlType === 'directory'}
-                <DirectoryInput
-                  {id}
-                  value={fieldValue}
-                  {ariaDescribedBy}
-                  onInput={(val) => setRaw(primaryKey, val)}
-                  onOpenDirectory={openDirectory ? (path, cb) => openDirectory(path, cb ?? ((s) => setRaw(primaryKey, s))) : undefined}
-                />
-              {:else if controlType === 'time'}
-                {@const unitKey = field.keys?.[1] ?? `${primaryKey}_unit`}
-                {@const unitValue = getFieldValue(field, 1) ?? 'MINUTE'}
-                <TimeInput
-                  {id}
-                  value={fieldValue}
-                  unit={unitValue}
-                  unitOptions={field.options}
-                  {ariaDescribedBy}
-                  onValueInput={(val) => setRaw(primaryKey, val)}
-                  onUnitChange={(unit) => setRaw(unitKey, unit)}
-                />
               {/if}
-            {/snippet}
-          </Field>
-        {/each}
-      </div>
-    {/if}
+            {:else if controlType === 'directory'}
+              <DirectoryInput
+                {id}
+                value={fieldValue}
+                {ariaDescribedBy}
+                onInput={(val) => setRaw(primaryKey, val)}
+                onOpenDirectory={openDirectory ? (path, cb) => openDirectory(path, cb ?? ((s) => setRaw(primaryKey, s))) : undefined}
+              />
+            {:else if controlType === 'time'}
+              {@const unitKey = field.keys?.[1] ?? `${primaryKey}_unit`}
+              {@const unitValue = getFieldValue(field, 1) ?? 'MINUTE'}
+              <TimeInput
+                {id}
+                value={fieldValue}
+                unit={unitValue}
+                unitOptions={field.options}
+                {ariaDescribedBy}
+                onValueInput={(val) => setRaw(primaryKey, val)}
+                onUnitChange={(unit) => setRaw(unitKey, unit)}
+              />
+            {/if}
+          {/snippet}
+        </Field>
+      {/each}
+    </div>
+  {/if}
+{/snippet}
+
+{#snippet renderGroup(group: any)}
+  <FormPanel title={group.title || group.label} isComponentsGroup={group.id === 'model_components'} hideTitle={hideGroupTitle}>
+    {@render renderFields(group.fields, group.id === 'model_components')}
   </FormPanel>
 {/snippet}
 
 <div class="schema-form" class:is-training-tab={tab?.id === 'training' && !activeSubTab}>
   {#if tab?.groups}
     {#if activeSubTab}
-      {#each tab.groups.filter((g) => isGroupInSubTab(g.id, activeSubTab)) as group (group.id)}
-        {@render renderGroup(group)}
-      {/each}
+      {@const matchingGroups = tab.groups.filter((g) => isGroupInSubTab(g.id, activeSubTab))}
+      {#if matchingGroups.length === 1}
+        {@render renderGroup(matchingGroups[0])}
+      {:else if matchingGroups.length > 1}
+        <FormPanel hideTitle={hideGroupTitle}>
+          {#each matchingGroups as group, index (group.id)}
+            {#if index > 0}
+              <SectionDivider title={group.title || group.label || ''} />
+            {/if}
+            {@render renderFields(group.fields || [], group.id === 'model_components')}
+          {/each}
+        </FormPanel>
+      {/if}
     {:else if tab.id === 'training'}
       <div class="training-column col-1">
         {#each tab.groups.filter((g) => ['base_settings', 'text_encoders', 'embeddings'].includes(g.id)) as group (group.id)}
