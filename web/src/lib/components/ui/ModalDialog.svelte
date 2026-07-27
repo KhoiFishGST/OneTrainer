@@ -7,7 +7,7 @@
     title = '',
     applyText = 'Apply',
     cancelText = 'Cancel',
-    align = 'top',
+    align = 'center',
     width = 'default',
     showFooter = true,
     onClose,
@@ -111,7 +111,7 @@
 {#if open}
   <div
     class="modal-backdrop"
-    class:align-center={align === 'center'}
+    class:align-top={align === 'top'}
     onclick={handleBackdropClick}
     role="presentation"
   >
@@ -177,15 +177,15 @@
     z-index: 1000;
     background: rgba(0, 0, 0, 0.6);
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
-    padding: 3.5rem 1rem 1rem;
+    padding: 1rem;
     overflow-y: auto;
   }
 
-  .modal-backdrop.align-center {
-    align-items: center;
-    padding: 1rem;
+  .modal-backdrop.align-top {
+    align-items: flex-start;
+    padding: 3.5rem 1rem 1rem;
   }
 
   .modal-dialog {

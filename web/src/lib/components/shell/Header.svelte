@@ -1,5 +1,6 @@
 <script lang="ts">
   import Select from '../form/Select.svelte';
+  import ModalDialog from '../ui/ModalDialog.svelte';
   import {
     createMetaQuery,
     createPresetsQuery,
@@ -383,40 +384,27 @@
   </div>
 {/if}
 
-{#if showSaveDialog}
-  <div class="modal-overlay" role="presentation" onclick={() => (showSaveDialog = false)}></div>
-  <div class="modal-content" role="dialog" aria-label="Save Preset">
-    <h3>Save Preset</h3>
-    {#if saveError}
-      <p class="error-msg">{saveError}</p>
-    {/if}
-    <label class="modal-field">
-      <span>Preset Name</span>
-      <input
-        type="text"
-        aria-label="Preset Name"
-        bind:value={presetName}
-        placeholder="My Custom Preset"
-      />
-    </label>
-    <div class="modal-actions">
-      <button
-        type="button"
-        class="btn btn-secondary"
-        onclick={() => (showSaveDialog = false)}
-      >
-        Cancel
-      </button>
-      <button
-        type="button"
-        class="btn btn-primary"
-        onclick={handleSavePreset}
-      >
-        Save
-      </button>
-    </div>
-  </div>
-{/if}
+<ModalDialog
+  open={showSaveDialog}
+  title="Save Preset"
+  applyText="Save"
+  cancelText="Cancel"
+  onClose={() => (showSaveDialog = false)}
+  onApply={handleSavePreset}
+>
+  {#if saveError}
+    <p class="error-msg">{saveError}</p>
+  {/if}
+  <label class="modal-field">
+    <span>Preset Name</span>
+    <input
+      type="text"
+      aria-label="Preset Name"
+      bind:value={presetName}
+      placeholder="My Custom Preset"
+    />
+  </label>
+</ModalDialog>
 
 <style>
   .header {
