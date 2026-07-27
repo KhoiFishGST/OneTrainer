@@ -218,7 +218,7 @@
       {gallery}
       loading={galleryLoading}
       error={galleryError}
-      title="Live Sample Gallery"
+      title="Latest Sample Set"
       sortOrder="desc"
       limit={1}
     />

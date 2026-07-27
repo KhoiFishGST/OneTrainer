@@ -96,7 +96,7 @@ describe('Live Dashboard Page', () => {
 
   it('renders current gallery on Live without a run selector', async () => {
     render(LivePage);
-    expect(await screen.findByText('Live Sample Gallery')).toBeInTheDocument();
+    expect(await screen.findByText('Latest Sample Set')).toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: 'Gallery run' })).not.toBeInTheDocument();
   });
 });
