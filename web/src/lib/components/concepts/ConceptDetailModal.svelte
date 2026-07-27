@@ -3,7 +3,7 @@
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
   import Select from '$lib/components/form/Select.svelte';
   import DatasetPickerModal from '$lib/components/datasets/DatasetPickerModal.svelte';
-  import { Settings, Image as ImageIcon, FileText, BarChart2, Check, X, FolderKanban } from 'lucide-svelte';
+  import { FolderKanban } from 'lucide-svelte';
 
   let {
     concept,
@@ -100,47 +100,52 @@
     open={isOpen}
     title="Concept Configuration - {draft.name || draft.path || 'New Concept'}"
     applyText="Save Concept Settings"
+    width="wide"
     onApply={handleSave}
     {onClose}
   >
     <div class="concept-modal-body">
       <!-- Tabs Header -->
-      <div class="modal-nav-tabs">
+      <div class="subnav-tabs" role="tablist">
         <button
           type="button"
-          class="nav-tab"
+          role="tab"
+          aria-selected={activeTab === 'general'}
+          class="subnav-btn"
           class:active={activeTab === 'general'}
           onclick={() => (activeTab = 'general')}
         >
-          <Settings size={16} />
-          <span>General</span>
+          General
         </button>
         <button
           type="button"
-          class="nav-tab"
+          role="tab"
+          aria-selected={activeTab === 'image'}
+          class="subnav-btn"
           class:active={activeTab === 'image'}
           onclick={() => (activeTab = 'image')}
         >
-          <ImageIcon size={16} />
-          <span>Image Augmentations</span>
+          Image Augmentations
         </button>
         <button
           type="button"
-          class="nav-tab"
+          role="tab"
+          aria-selected={activeTab === 'text'}
+          class="subnav-btn"
           class:active={activeTab === 'text'}
           onclick={() => (activeTab = 'text')}
         >
-          <FileText size={16} />
-          <span>Text Augmentations</span>
+          Text Augmentations
         </button>
         <button
           type="button"
-          class="nav-tab"
+          role="tab"
+          aria-selected={activeTab === 'stats'}
+          class="subnav-btn"
           class:active={activeTab === 'stats'}
           onclick={() => (activeTab = 'stats')}
         >
-          <BarChart2 size={16} />
-          <span>Dataset Stats & Gallery</span>
+          Dataset Stats & Gallery
         </button>
       </div>
 
@@ -396,43 +401,45 @@
     gap: 1.25rem;
   }
 
-  .modal-nav-tabs {
+  .subnav-tabs {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    border-bottom: 1px solid var(--line, #2d3741);
-    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-border, var(--line, #2d3741));
+    margin-bottom: 0.5rem;
   }
 
-  .nav-tab {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.875rem;
-    border-radius: 6px;
-    border: none;
+  .subnav-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
     background: transparent;
     color: var(--muted, #94a3b8);
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
+    margin-bottom: -1px;
     transition: all 0.15s ease;
+    white-space: nowrap;
   }
 
-  .nav-tab:hover {
+  .subnav-btn:hover {
     color: var(--text, #f8fafc);
     background-color: var(--panel-raised, #1d242c);
   }
 
-  .nav-tab.active {
+  .subnav-btn.active {
     color: var(--color-text-title, var(--accent, #3b82f6));
     background-color: var(--panel-raised, #1d242c);
-    font-weight: 600;
+    border-color: var(--color-border, var(--line, #2d3741));
+    border-bottom-color: var(--panel-raised, #1d242c);
   }
 
   .tab-content {
-    height: 380px;
-    max-height: 380px;
+    height: 480px;
+    max-height: 480px;
     overflow-y: auto;
     padding: 0.5rem 0.25rem;
     box-sizing: border-box;
