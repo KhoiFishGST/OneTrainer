@@ -218,21 +218,24 @@
 
             <Field id="concept-path" label="Path" tooltip="Path where the training data is located">
               {#snippet children({ id, ariaDescribedBy })}
-                <div class="directory-picker-row">
-                  <DirectoryInput
-                    {id}
-                    value={d.path || ''}
-                    {ariaDescribedBy}
-                    onInput={(val) => { d.path = val; }}
-                    onOpenDirectory={(curr) => handleBrowsePath('dir', 'concept', curr)}
-                    placeholder="/path/to/dataset/images"
-                  />
+                <div class="control-with-action">
+                  <div class="control-target">
+                    <DirectoryInput
+                      {id}
+                      value={d.path || ''}
+                      {ariaDescribedBy}
+                      onInput={(val) => { d.path = val; }}
+                      onOpenDirectory={(curr) => handleBrowsePath('dir', 'concept', curr)}
+                      placeholder="/path/to/dataset/images"
+                    />
+                  </div>
                   <button
                     type="button"
-                    class="btn-select-dataset"
+                    class="action-btn select-dataset-btn"
+                    title="Select dataset from library"
                     onclick={() => (showDatasetPicker = true)}
                   >
-                    <FolderKanban size={15} />
+                    <FolderKanban size={16} />
                     <span>Select Dataset</span>
                   </button>
                 </div>
@@ -692,38 +695,15 @@
     width: 100%;
   }
 
-  .directory-picker-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    width: 100%;
-  }
-
-  .directory-picker-row :global(.directory-input-wrapper) {
-    flex: 1;
-  }
-
-  .btn-select-dataset {
+  :global(.select-dataset-btn) {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
     gap: 0.375rem;
-    height: 38px;
-    padding: 0 0.875rem;
-    background: var(--panel-raised, #1d242c);
-    border: 1px solid var(--line, #2d3741);
-    border-radius: 6px;
-    color: var(--color-text-title, var(--accent, #3b82f6));
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
+    padding: 0 0.75rem;
     white-space: nowrap;
-    transition: all 0.15s ease;
-  }
-
-  .btn-select-dataset:hover {
-    background: var(--line, #2d3741);
-    color: var(--text, #ffffff);
+    color: var(--color-text-title, var(--accent, #3b82f6));
+    font-size: 0.8125rem;
+    font-weight: 500;
   }
 
   .stats-preview-container {
