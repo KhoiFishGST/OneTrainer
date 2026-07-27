@@ -165,11 +165,51 @@
   .field-control-side :global(.text-input),
   .field-control-side :global(.number-input),
   .field-control-side :global(.directory-input-wrapper),
-  .field-control-side :global(.time-input-group) {
+  .field-control-side :global(.time-input-group),
+  .field-control-side :global(.control-with-action) {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 100% !important;
     box-sizing: border-box;
+  }
+
+  .field-control-side :global(.control-with-action) {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  .field-control-side :global(.control-with-action .control-target) {
+    flex: 1 1 0%;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .field-control-side :global(.control-with-action .action-btn) {
+    flex: 0 0 auto;
+    height: 38px;
+    padding: 0 0.6rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border, var(--line, #2d3741));
+    border-radius: 6px;
+    background: var(--color-bg-button, var(--control, #14191f));
+    color: var(--color-text, var(--text, #e6ebef));
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: all 0.15s ease;
+  }
+
+  .field-control-side :global(.control-with-action .action-btn:hover:not(:disabled)) {
+    background: var(--color-bg-button-hover, var(--panel-raised, #1d242c));
+    border-color: var(--accent, #3b82f6);
+    color: var(--accent, #3b82f6);
+  }
+
+  .field-control-side :global(.control-with-action .action-btn:disabled) {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 
   .field-control-side :global(.toggle-input) {

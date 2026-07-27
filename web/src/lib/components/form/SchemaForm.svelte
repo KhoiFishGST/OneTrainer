@@ -170,39 +170,50 @@
                   onInput={(val) => setRaw(primaryKey, val)}
                 />
               {:else if controlType === 'select'}
-                <div class="inline-select-container">
-                  <div class="select-grow">
-                    <Select
-                      {id}
-                      value={fieldValue}
-                      options={field.options || []}
-                      {ariaDescribedBy}
-                      onChange={(val) => setRaw(primaryKey, val)}
-                    />
+                {@const hasGear = primaryKey === 'optimizer' || primaryKey === 'optimizer.optimizer' || primaryKey === 'learning_rate_scheduler'}
+                {#if hasGear}
+                  <div class="control-with-action">
+                    <div class="control-target">
+                      <Select
+                        {id}
+                        value={fieldValue}
+                        options={field.options || []}
+                        {ariaDescribedBy}
+                        onChange={(val) => setRaw(primaryKey, val)}
+                      />
+                    </div>
+                    {#if primaryKey === 'optimizer' || primaryKey === 'optimizer.optimizer'}
+                      <button
+                        type="button"
+                        class="action-btn gear-btn"
+                        title="Configure advanced optimizer parameters"
+                        onclick={() => onOpenOptimizerParams?.()}
+                      >
+                        <Settings size={16} />
+                      </button>
+                    {:else if primaryKey === 'learning_rate_scheduler'}
+                      <button
+                        type="button"
+                        class="action-btn gear-btn"
+                        disabled={fieldValue !== 'CUSTOM'}
+                        title={fieldValue === 'CUSTOM'
+                          ? 'Configure custom scheduler parameters'
+                          : 'Custom scheduler parameters are only available when Learning Rate Scheduler is set to CUSTOM'}
+                        onclick={() => fieldValue === 'CUSTOM' && onOpenSchedulerParams?.()}
+                      >
+                        <Settings size={16} />
+                      </button>
+                    {/if}
                   </div>
-                  {#if primaryKey === 'optimizer' || primaryKey === 'optimizer.optimizer'}
-                    <button
-                      type="button"
-                      class="gear-btn"
-                      title="Configure advanced optimizer parameters"
-                      onclick={() => onOpenOptimizerParams?.()}
-                    >
-                      <Settings size={16} />
-                    </button>
-                  {:else if primaryKey === 'learning_rate_scheduler'}
-                    <button
-                      type="button"
-                      class="gear-btn"
-                      disabled={fieldValue !== 'CUSTOM'}
-                      title={fieldValue === 'CUSTOM'
-                        ? 'Configure custom scheduler parameters'
-                        : 'Custom scheduler parameters are only available when Learning Rate Scheduler is set to CUSTOM'}
-                      onclick={() => fieldValue === 'CUSTOM' && onOpenSchedulerParams?.()}
-                    >
-                      <Settings size={16} />
-                    </button>
-                  {/if}
-                </div>
+                {:else}
+                  <Select
+                    {id}
+                    value={fieldValue}
+                    options={field.options || []}
+                    {ariaDescribedBy}
+                    onChange={(val) => setRaw(primaryKey, val)}
+                  />
+                {/if}
               {:else if controlType === 'directory'}
                 <DirectoryInput
                   {id}
