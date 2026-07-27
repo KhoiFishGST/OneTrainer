@@ -48,9 +48,20 @@
     embeddingsList.length > 0 && embeddingsList.every((e) => e.train !== false)
   );
 
+  function generateUUID(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  }
+
   function createNewEmbedding(): Record<string, any> {
     return {
-      uuid: typeof crypto !== 'undefined' ? crypto.randomUUID() : Math.random().toString(36).substring(2),
+      uuid: generateUUID(),
       model_name: '',
       placeholder: '<embedding>',
       token_count: 1,
@@ -79,7 +90,7 @@
     const source = embeddingsList[index] || {};
     const cloned = {
       ...JSON.parse(JSON.stringify(source)),
-      uuid: typeof crypto !== 'undefined' ? crypto.randomUUID() : Math.random().toString(36).substring(2),
+      uuid: generateUUID(),
     };
     const current = [...embeddingsList, cloned];
     ctx.workspace.setRaw('additional_embeddings', current);
