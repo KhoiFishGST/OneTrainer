@@ -4,6 +4,9 @@
   import FormPanel from '$lib/components/form/FormPanel.svelte';
   import Field from '$lib/components/form/Field.svelte';
   import Select from '$lib/components/form/Select.svelte';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Alert from '$lib/components/ui/Alert.svelte';
+  import FormPageSkeleton from '$lib/components/ui/FormPageSkeleton.svelte';
 
   const ctx = getRouteContext();
 
@@ -51,25 +54,19 @@
 </script>
 
 {#if !ctx.workspace}
-  <div class="skeleton-container" aria-label="Loading configuration">
-    <div class="skeleton-row"></div>
-    <div class="skeleton-row"></div>
-    <div class="skeleton-row"></div>
-  </div>
+  <FormPageSkeleton />
 {:else}
   <div class="route-page">
-    <div class="page-header">
-      <h1 class="page-title">{tab.label || 'LoRA'}</h1>
-    </div>
+    <PageHeader title={tab.label || 'LoRA'} class="lora-header" />
 
     {#if !isLoraActive}
-      <div class="disabled-warning-banner" role="alert">
+      <Alert tone="warning" class="lora-warning-alert">
         <span class="warning-icon" aria-hidden="true">⚠️</span>
         <div class="warning-text">
           LoRA / PEFT options are disabled because the current training method is <strong>{trainingMethod}</strong>.
           Switch your Training Method to <strong>LORA</strong> in <em>Training &gt; Base</em> to enable editing these settings.
         </div>
-      </div>
+      </Alert>
     {/if}
 
     <fieldset class="lora-fieldset" disabled={!isLoraActive}>
@@ -107,33 +104,12 @@
     padding: 1.5rem;
   }
 
-  .page-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+  :global(.lora-header) {
     margin-bottom: 1rem;
   }
 
-  .page-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin: 0;
-    color: var(--color-text-title, var(--accent, #3b82f6));
-  }
-
-  .disabled-warning-banner {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    background-color: var(--color-warning-bg, rgba(234, 179, 8, 0.12));
-    border: 1px solid var(--color-warning-border, rgba(234, 179, 8, 0.3));
-    color: var(--color-warning-text, #fde047);
-    padding: 0.875rem 1rem;
-    border-radius: 6px;
+  :global(.lora-warning-alert) {
     margin-bottom: 1.25rem;
-    font-size: 0.875rem;
-    line-height: 1.4;
     max-width: 740px;
   }
 
@@ -161,7 +137,7 @@
     filter: grayscale(0.5);
   }
 
-  .lora-fieldset:disabled button,
+  .lora-fieldset:disabled :global(button),
   .lora-fieldset:disabled :global(input),
   .lora-fieldset:disabled :global(select) {
     pointer-events: none;
@@ -173,29 +149,5 @@
     flex-direction: column;
     width: 740px;
     max-width: 100%;
-  }
-
-  .skeleton-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    padding: 1.5rem;
-  }
-
-  .skeleton-row {
-    height: 3rem;
-    background: var(--color-skeleton, #e5e7eb);
-    border-radius: 6px;
-    animation: pulse 1.5s infinite ease-in-out;
-  }
-
-  @keyframes pulse {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-    }
   }
 </style>

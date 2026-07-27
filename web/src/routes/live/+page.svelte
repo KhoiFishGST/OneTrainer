@@ -12,6 +12,9 @@
   import MetricsChart from '$lib/components/charts/MetricsChart.svelte';
   import GpuMonitor from '$lib/components/training/GpuMonitor.svelte';
   import SampleGallery from '$lib/components/training/SampleGallery.svelte';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Toast from '$lib/components/ui/Toast.svelte';
+  import Alert from '$lib/components/ui/Alert.svelte';
 
   const sampleMutation = createRequestSampleMutation();
   const backupMutation = createRequestBackupMutation();
@@ -19,14 +22,9 @@
   const galleryQuery = createGalleryCurrentQuery();
 
   let toast = $state<{ message: string; type: 'success' | 'error' } | null>(null);
-  let toastTimeout: any;
 
   function triggerToast(message: string, type: 'success' | 'error' = 'success') {
-    if (toastTimeout) clearTimeout(toastTimeout);
     toast = { message, type };
-    toastTimeout = setTimeout(() => {
-      toast = null;
-    }, 4000);
   }
 
   const status = $derived($trainingStore.status);
@@ -94,25 +92,27 @@
 </script>
 
 <div class="live-dashboard" data-testid="live-dashboard">
-  <div class="page-header">
-    <div class="header-title-group">
-      <h1 class="page-title">Live Training Dashboard</h1>
-      <span class="status-badge status-{(status.state || 'IDLE').toLowerCase()}">
-        {status.state || 'IDLE'}
+  <PageHeader title="Live Training Dashboard" class="live-header">
+    {#snippet status()}
+      <span class="status-badge status-{($trainingStore.status?.state || 'IDLE').toLowerCase()}">
+        {$trainingStore.status?.state || 'IDLE'}
       </span>
-    </div>
-  </div>
+    {/snippet}
+  </PageHeader>
 
   {#if toast}
-    <div class="toast-banner {toast.type} toast-{toast.type}" role="status">
-      {toast.message}
-    </div>
+    <Toast
+      message={toast.message}
+      tone={toast.type}
+      onDismiss={() => (toast = null)}
+      class="live-toast"
+    />
   {/if}
 
   {#if status.error_message}
-    <div class="error-banner" role="alert">
+    <Alert tone="error" class="live-error-alert">
       <strong>Training Error:</strong> {status.error_message}
-    </div>
+    </Alert>
   {/if}
 
   <!-- Progress Card -->
@@ -200,81 +200,16 @@
     width: 100%;
   }
 
-  .page-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+  :global(.live-header) {
     margin-bottom: 0.5rem;
-    flex-wrap: wrap;
   }
 
-  .header-title-group {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+  :global(.live-toast) {
+    margin-bottom: 0.5rem;
   }
 
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.4rem 0.85rem;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    border: 1px solid transparent;
-    transition: background-color 0.15s ease, opacity 0.15s ease;
-  }
-
-  .btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .btn-secondary {
-    background-color: var(--panel-raised, var(--control, #14191f));
-    color: var(--text, #e6ebef);
-    border-color: var(--line, #2d3741);
-  }
-
-  .btn-secondary:hover:not(:disabled) {
-    background-color: var(--line, #2d3741);
-  }
-
-  .toast-banner {
-    padding: 0.75rem 1.25rem;
-    border-radius: 8px;
-    font-size: 0.9375rem;
-    font-weight: 500;
-  }
-
-  .toast-banner.success,
-  .toast-success {
-    background-color: rgba(16, 185, 129, 0.15);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    color: #34d399;
-  }
-
-  .toast-banner.error,
-  .toast-error {
-    background-color: rgba(239, 68, 68, 0.15);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    color: #fca5a5;
-  }
-
-  .page-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin: 0;
-    color: var(--color-text-title, var(--accent, #3b82f6));
+  :global(.live-error-alert) {
+    margin-bottom: 0.5rem;
   }
 
   .status-badge {
@@ -316,15 +251,6 @@
     background-color: rgba(16, 185, 129, 0.15);
     color: #10b981;
     border: 1px solid rgba(16, 185, 129, 0.3);
-  }
-
-  .error-banner {
-    background-color: rgba(239, 68, 68, 0.15);
-    border: 1px solid var(--danger, #ef4444);
-    color: #fca5a5;
-    padding: 0.875rem 1.25rem;
-    border-radius: 8px;
-    font-size: 0.9375rem;
   }
 
   .dashboard-card {

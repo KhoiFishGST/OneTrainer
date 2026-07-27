@@ -1,6 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { ShieldAlert, Key, Eye, EyeOff, Save, Check, Lock, Unlock } from 'lucide-svelte';
+  import { ShieldAlert, Key, Eye, EyeOff, Save, Lock, Unlock } from 'lucide-svelte';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Alert from '$lib/components/ui/Alert.svelte';
+  import Toast from '$lib/components/ui/Toast.svelte';
+  import Skeleton from '$lib/components/ui/Skeleton.svelte';
 
   let huggingfaceToken = $state('');
   let hfTokenSet = $state(false);
@@ -54,7 +58,6 @@
         hfTokenSet = data.huggingface_token_set;
         webuiPasswordSet = data.webui_password_set;
         saveStatus = { type: 'success', message: 'Secrets saved successfully!' };
-        setTimeout(() => (saveStatus = null), 3000);
       } else {
         saveStatus = { type: 'error', message: 'Failed to save secrets.' };
       }
@@ -83,12 +86,10 @@
 </script>
 
 <div class="secrets-page">
-  <div class="page-header">
-    <h1 class="page-title">Secrets & Security Settings</h1>
-  </div>
+  <PageHeader title="Secrets & Security Settings" class="secrets-header" />
 
   {#if isHttpInsecure}
-    <div class="security-warning-banner" role="alert">
+    <Alert tone="error" class="secrets-insecure-alert">
       <ShieldAlert size={24} class="banner-icon" />
       <div class="banner-text">
         <strong>Insecure Connection (HTTP) Detected</strong>
@@ -96,19 +97,28 @@
           Your connection to OneTrainer is not encrypted. Passwords and API tokens entered on this page could be intercepted over the network in plain text. Consider enabling HTTPS or putting OneTrainer behind a secure reverse proxy (such as Caddy or Nginx).
         </p>
       </div>
-    </div>
+    </Alert>
   {/if}
 
   {#if saveStatus}
-    <div class="toast-banner {saveStatus.type}">
-      <span>{saveStatus.message}</span>
-    </div>
+    {#if saveStatus.type === 'success'}
+      <Toast
+        message={saveStatus.message}
+        tone="success"
+        onDismiss={() => (saveStatus = null)}
+        class="secrets-toast"
+      />
+    {:else}
+      <Alert tone="error" class="secrets-alert">
+        <span>{saveStatus.message}</span>
+      </Alert>
+    {/if}
   {/if}
 
   {#if loading}
-    <div class="skeleton-container">
-      <div class="skeleton-row"></div>
-      <div class="skeleton-row"></div>
+    <div role="status" aria-label="Loading secrets" class="skeleton-container">
+      <Skeleton height="120px" />
+      <Skeleton height="120px" />
     </div>
   {:else}
     <div class="card-grid">
@@ -220,35 +230,23 @@
     max-width: 900px;
   }
 
-  .page-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+  :global(.secrets-header) {
     margin-bottom: 1.5rem;
   }
 
-  .page-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin: 0;
-    color: var(--color-text-title, var(--accent, #3b82f6));
-  }
-
-  .security-warning-banner {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    background-color: rgba(220, 38, 38, 0.15);
-    border: 1px solid #ef4444;
-    border-radius: 8px;
-    padding: 1rem;
+  :global(.secrets-insecure-alert) {
     margin-bottom: 1.5rem;
-    color: #f87171;
   }
 
-  .security-warning-banner .banner-icon {
-    color: #ef4444;
+  :global(.secrets-toast) {
+    margin-bottom: 1rem;
+  }
+
+  :global(.secrets-alert) {
+    margin-bottom: 1rem;
+  }
+
+  :global(.secrets-insecure-alert) :global(.banner-icon) {
     flex-shrink: 0;
     margin-top: 2px;
   }
@@ -263,27 +261,6 @@
     font-size: 0.875rem;
     line-height: 1.4;
     margin: 0;
-    color: #fca5a5;
-  }
-
-  .toast-banner {
-    padding: 0.75rem 1rem;
-    border-radius: 6px;
-    margin-bottom: 1rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-  }
-
-  .toast-banner.success {
-    background-color: rgba(16, 185, 129, 0.15);
-    border: 1px solid #10b981;
-    color: #34d399;
-  }
-
-  .toast-banner.error {
-    background-color: rgba(239, 68, 68, 0.15);
-    border: 1px solid #ef4444;
-    color: #f87171;
   }
 
   .card-grid {
@@ -306,7 +283,7 @@
     margin-bottom: 0.5rem;
   }
 
-  .card-icon {
+  :global(.card-icon) {
     color: var(--color-primary, var(--accent, #3b82f6));
   }
 
@@ -426,17 +403,5 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-  }
-
-  .skeleton-row {
-    height: 120px;
-    background: var(--line, #374151);
-    border-radius: 8px;
-    animation: pulse 1.5s infinite ease-in-out;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
   }
 </style>

@@ -6,6 +6,7 @@
   } from '$lib/api/queries';
   import SampleGallery from '$lib/components/training/SampleGallery.svelte';
   import Select from '$lib/components/form/Select.svelte';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
 
   const runsQuery = createGalleryRunsQuery();
   const currentQuery = createGalleryCurrentQuery();
@@ -72,12 +73,8 @@
 </script>
 
 <div class="gallery-page" data-testid="gallery-page">
-  <div class="page-header">
-    <div class="header-title-group">
-      <h1 class="page-title">Sample Gallery</h1>
-    </div>
-
-    <div class="header-actions">
+  <PageHeader title="Sample Gallery" class="gallery-header">
+    {#snippet actions()}
       <label for="gallery-run-select" class="select-label">Gallery run</label>
       <Select
         id="gallery-run-select"
@@ -93,8 +90,8 @@
           userSelectedKey = val || null;
         }}
       />
-    </div>
-  </div>
+    {/snippet}
+  </PageHeader>
 
   <section class="gallery-content">
     <SampleGallery
@@ -116,32 +113,8 @@
     width: 100%;
   }
 
-  .page-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+  :global(.gallery-header) {
     margin-bottom: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  .header-title-group {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .page-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin: 0;
-    color: var(--color-text-title, var(--accent, #3b82f6));
-  }
-
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
   }
 
   .select-label {

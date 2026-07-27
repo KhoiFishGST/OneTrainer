@@ -9,20 +9,18 @@
     createRequestBackupMutation,
     createRequestSaveMutation,
   } from '$lib/api/queries';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import Toast from '$lib/components/ui/Toast.svelte';
+  import FormPageSkeleton from '$lib/components/ui/FormPageSkeleton.svelte';
 
   const ctx = getRouteContext();
   const backupMutation = createRequestBackupMutation();
   const saveMutation = createRequestSaveMutation();
 
   let toast = $state<{ message: string; type: 'success' | 'error' } | null>(null);
-  let toastTimeout: any;
 
   function triggerToast(message: string, type: 'success' | 'error' = 'success') {
-    if (toastTimeout) clearTimeout(toastTimeout);
     toast = { message, type };
-    toastTimeout = setTimeout(() => {
-      toast = null;
-    }, 4000);
   }
 
   onMount(async () => {
@@ -63,16 +61,11 @@
 </script>
 
 {#if !ctx.workspace}
-  <div class="skeleton-container" aria-label="Loading configuration">
-    <div class="skeleton-row"></div>
-    <div class="skeleton-row"></div>
-    <div class="skeleton-row"></div>
-  </div>
+  <FormPageSkeleton />
 {:else}
   <div class="route-page">
-    <div class="page-header">
-      <h1 class="page-title">{tab.label || 'Backup'}</h1>
-      <div class="header-actions">
+    <PageHeader title={tab.label || 'Backup'} class="backup-header">
+      {#snippet actions()}
         <button
           type="button"
           class="btn btn-secondary"
@@ -94,13 +87,16 @@
           <Save size={16} />
           <span>Save Model Now</span>
         </button>
-      </div>
-    </div>
+      {/snippet}
+    </PageHeader>
 
     {#if toast}
-      <div class="toast-banner {toast.type} toast-{toast.type}" role="status">
-        {toast.message}
-      </div>
+      <Toast
+        message={toast.message}
+        tone={toast.type}
+        onDismiss={() => (toast = null)}
+        class="backup-toast"
+      />
     {/if}
 
     <SchemaForm
@@ -118,26 +114,12 @@
     padding: 1.5rem;
   }
 
-  .page-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+  :global(.backup-header) {
     margin-bottom: 1.5rem;
-    flex-wrap: wrap;
   }
 
-  .page-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin: 0;
-    color: var(--color-text-title, var(--accent, #3b82f6));
-  }
-
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  :global(.backup-toast) {
+    margin-bottom: 1rem;
   }
 
   .btn {
@@ -166,51 +148,5 @@
 
   .btn-secondary:hover:not(:disabled) {
     background-color: var(--line, #2d3741);
-  }
-
-  .toast-banner {
-    padding: 0.75rem 1.25rem;
-    border-radius: 8px;
-    font-size: 0.9375rem;
-    font-weight: 500;
-    margin-bottom: 1rem;
-  }
-
-  .toast-banner.success,
-  .toast-success {
-    background-color: rgba(16, 185, 129, 0.15);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    color: #34d399;
-  }
-
-  .toast-banner.error,
-  .toast-error {
-    background-color: rgba(239, 68, 68, 0.15);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    color: #fca5a5;
-  }
-
-  .skeleton-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    padding: 1.5rem;
-  }
-
-  .skeleton-row {
-    height: 3rem;
-    background: var(--color-skeleton, #e5e7eb);
-    border-radius: 6px;
-    animation: pulse 1.5s infinite ease-in-out;
-  }
-
-  @keyframes pulse {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-    }
   }
 </style>

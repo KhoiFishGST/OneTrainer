@@ -5,6 +5,7 @@
   import AddCard from '$lib/components/ui/AddCard.svelte';
   import PathInput from '$lib/components/form/PathInput.svelte';
   import Toggle from '$lib/components/form/Toggle.svelte';
+  import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import {
     queryKeys,
     getSafeQueryClient,
@@ -94,9 +95,7 @@
 </script>
 
 <div class="route-page">
-  <div class="page-header">
-    <h1 class="page-title">Datasets</h1>
-  </div>
+  <PageHeader title="Datasets" />
 
   <div class="options-panel">
     <div class="base-dir-row">
@@ -205,19 +204,6 @@
     gap: 1.5rem;
   }
 
-  .page-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .page-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin: 0;
-    color: var(--color-text-title, var(--accent, #3b82f6));
-  }
-
   .options-panel {
     display: flex;
     flex-direction: column;
@@ -293,7 +279,6 @@
     border-color: var(--accent, #3b82f6);
     transform: translateY(-2px);
   }
-
 
   .dataset-card {
     height: 220px;
