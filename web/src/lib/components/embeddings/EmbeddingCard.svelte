@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Trash2, Copy, Folder } from 'lucide-svelte';
   import Toggle from '$lib/components/form/Toggle.svelte';
+  import TimeInput from '$lib/components/form/TimeInput.svelte';
 
   interface EmbeddingConfig {
     uuid?: string;
@@ -146,25 +147,14 @@
 
       <div class="field-item flex-1">
         <label for={`stop-after-${index}`} class="field-label">Stop Training After</label>
-        <div class="time-input-group">
-          <input
-            id={`stop-after-${index}`}
-            type="number"
-            min="0"
-            class="text-input time-num"
-            bind:value={embedding.stop_training_after}
-            {disabled}
-          />
-          <select
-            class="select-input time-unit"
-            bind:value={embedding.stop_training_after_unit}
-            {disabled}
-          >
-            <option value="NEVER">Never</option>
-            <option value="EPOCHS">Epochs</option>
-            <option value="STEPS">Steps</option>
-          </select>
-        </div>
+        <TimeInput
+          id={`stop-after-${index}`}
+          value={embedding.stop_training_after ?? 0}
+          unit={embedding.stop_training_after_unit ?? 'NEVER'}
+          {disabled}
+          onValueInput={(val) => (embedding.stop_training_after = Number(val) || 0)}
+          onUnitChange={(unit) => (embedding.stop_training_after_unit = unit)}
+        />
       </div>
 
       <div class="field-item flex-1">
