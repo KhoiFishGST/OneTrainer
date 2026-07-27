@@ -98,11 +98,22 @@ export function createApi(base = '') {
         body: JSON.stringify(data),
       }),
 
-    saveConfigFile: (name: string, overwrite = false) =>
-      request<{ filename: string }>(`${base}/api/config/save_file`, {
-        method: 'POST',
-        body: JSON.stringify({ name, overwrite }),
-      }),
+    saveConfigFile: async (name: string, overwrite = false) => {
+      try {
+        return await request<{ filename: string }>(`${base}/api/config/save_file`, {
+          method: 'POST',
+          body: JSON.stringify({ name, overwrite }),
+        });
+      } catch (err: any) {
+        if (err?.status === 404) {
+          return await request<{ filename: string }>(`${base}/api/presets/save`, {
+            method: 'POST',
+            body: JSON.stringify({ name }),
+          });
+        }
+        throw err;
+      }
+    },
 
     loadConfigFile: (path: string, base_revision: string) =>
       request<ConfigResponse>(`${base}/api/config/load_file`, {

@@ -239,19 +239,19 @@
 
       <button
         type="button"
-        class="btn btn-secondary"
+        class="header-btn"
         onclick={handleLoadConfig}
       >
-        <FolderOpen size={16} />
+        <FolderOpen size={15} />
         <span>Load</span>
       </button>
 
       <button
         type="button"
-        class="btn btn-secondary"
+        class="header-btn"
         onclick={openSavePresetModal}
       >
-        <Save size={16} />
+        <Save size={15} />
         <span>Save</span>
       </button>
     </div>
@@ -493,6 +493,35 @@
   .btn-danger {
     background-color: var(--danger);
     color: #fff;
+  }
+
+  .header-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 4px;
+    background-color: var(--control, #14191f);
+    color: var(--text, #e6ebef);
+    border: 1px solid var(--line, #2d3741);
+    cursor: pointer;
+    white-space: nowrap;
+    align-self: flex-end;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  }
+
+  .header-btn:hover {
+    background-color: var(--panel-raised, #1d242c);
+    border-color: var(--accent, #3b82f6);
+    color: var(--accent, #3b82f6);
+  }
+
+  .header-btn:active {
+    transform: translateY(1px);
   }
 
   .modal-overlay {

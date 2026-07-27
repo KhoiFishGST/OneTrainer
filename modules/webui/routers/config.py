@@ -61,6 +61,8 @@ async def put_config(body: ConfigPutRequest, request: Request):
 
 
 @router.post("/config/save_file")
+@router.post("/config/save")
+@router.post("/presets/save_file")
 async def save_file_config(body: ConfigSaveFileRequest, request: Request):
     app_state: AppState = request.app.state.webui
     clean_name = body.name.strip()
