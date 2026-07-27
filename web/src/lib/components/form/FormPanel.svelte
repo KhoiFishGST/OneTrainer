@@ -4,16 +4,18 @@
   let {
     title = '',
     isComponentsGroup = false,
+    hideTitle = false,
     children,
   }: {
     title?: string;
     isComponentsGroup?: boolean;
+    hideTitle?: boolean;
     children?: Snippet;
   } = $props();
 </script>
 
 <section class="form-panel" class:is-components-group={isComponentsGroup}>
-  {#if title}
+  {#if title && !hideTitle}
     <h3 class="panel-title">{title}</h3>
   {/if}
 

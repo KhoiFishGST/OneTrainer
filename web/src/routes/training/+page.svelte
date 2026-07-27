@@ -3,7 +3,6 @@
   import SchemaForm from '$lib/components/form/SchemaForm.svelte';
   import OptimizerSchedulerModal from '$lib/components/form/OptimizerSchedulerModal.svelte';
   import type { SchemaField } from '$lib/config/validation';
-  import { SlidersHorizontal, Cpu, Activity } from 'lucide-svelte';
 
   const ctx = getRouteContext();
 
@@ -15,8 +14,29 @@
     }
   );
 
+  type TrainingSubTab =
+    | 'base'
+    | 'execution'
+    | 'text'
+    | 'denoise'
+    | 'layer'
+    | 'noise'
+    | 'masking'
+    | 'loss';
+
+  const subnavTabs: Array<{ id: TrainingSubTab; label: string }> = [
+    { id: 'base', label: 'Base' },
+    { id: 'execution', label: 'Execution' },
+    { id: 'text', label: 'Text' },
+    { id: 'denoise', label: 'Denoise' },
+    { id: 'layer', label: 'Layer' },
+    { id: 'noise', label: 'Noise' },
+    { id: 'masking', label: 'Masking' },
+    { id: 'loss', label: 'Loss' },
+  ];
+
   let modalOpen = $state(false);
-  let activeSubTab = $state<'general_opt' | 'components' | 'noise_loss'>('general_opt');
+  let activeSubTab = $state<TrainingSubTab>('base');
 
   const optimizerFields: SchemaField[] = [
     { id: 'learning_rate', keys: ['learning_rate'], label: 'Learning Rate', control: 'number' },
@@ -54,45 +74,35 @@
       </button>
     </div>
 
-    <!-- Training Sub-Nav Tabs -->
-    <div class="training-subnav-tabs">
-      <button
-        type="button"
-        class="subnav-btn"
-        class:active={activeSubTab === 'general_opt'}
-        onclick={() => (activeSubTab = 'general_opt')}
-      >
-        <SlidersHorizontal size={16} />
-        <span>General & Optimization</span>
-      </button>
-      <button
-        type="button"
-        class="subnav-btn"
-        class:active={activeSubTab === 'components'}
-        onclick={() => (activeSubTab = 'components')}
-      >
-        <Cpu size={16} />
-        <span>Model Components & Architecture</span>
-      </button>
-      <button
-        type="button"
-        class="subnav-btn"
-        class:active={activeSubTab === 'noise_loss'}
-        onclick={() => (activeSubTab = 'noise_loss')}
-      >
-        <Activity size={16} />
-        <span>Noise, Timesteps & Loss</span>
-      </button>
-    </div>
+    <!-- Connected Text-Only Training Sub-Nav Tabs -->
+    <div class="training-tab-container">
+      <div class="training-subnav-tabs" role="tablist">
+        {#each subnavTabs as subtab (subtab.id)}
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeSubTab === subtab.id}
+            class="subnav-btn"
+            class:active={activeSubTab === subtab.id}
+            onclick={() => (activeSubTab = subtab.id)}
+          >
+            {subtab.label}
+          </button>
+        {/each}
+      </div>
 
-    <SchemaForm
-      {tab}
-      {activeSubTab}
-      values={ctx.workspace.draft}
-      issues={ctx.workspace.errors}
-      setRaw={(path, val) => ctx.workspace?.setRaw(path, val)}
-      openDirectory={ctx.openDirectory}
-    />
+      <div class="tab-panel-body">
+        <SchemaForm
+          {tab}
+          {activeSubTab}
+          hideGroupTitle={true}
+          values={ctx.workspace.draft}
+          issues={ctx.workspace.errors}
+          setRaw={(path, val) => ctx.workspace?.setRaw(path, val)}
+          openDirectory={ctx.openDirectory}
+        />
+      </div>
+    </div>
 
     <OptimizerSchedulerModal
       bind:open={modalOpen}
@@ -115,28 +125,52 @@
     margin-bottom: 1rem;
   }
 
+  .training-tab-container {
+    display: flex;
+    flex-direction: column;
+    width: 740px;
+    max-width: 100%;
+  }
+
   .training-subnav-tabs {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
-    border-bottom: 1px solid var(--line, #2d3741);
-    padding-bottom: 0.5rem;
+    gap: 0.25rem;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--color-border, var(--line, #2d3741));
+    padding: 0 0.25rem;
   }
 
   .subnav-btn {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    justify-content: center;
     padding: 0.5rem 0.875rem;
-    border-radius: 6px;
-    border: none;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
     background: transparent;
     color: var(--muted, #94a3b8);
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
+    margin-bottom: -1px;
     transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .subnav-btn:hover {
+    color: var(--text, #f8fafc);
+    background-color: var(--panel-raised, #1d242c);
+  }
+
+  .subnav-btn.active {
+    color: var(--color-text-title, var(--accent, #3b82f6));
+    background-color: var(--color-bg-card, var(--panel, #181e25));
+    border-color: var(--color-border, var(--line, #2d3741));
+    border-bottom-color: var(--color-bg-card, var(--panel, #181e25));
+    font-weight: 600;
   }
 
   .subnav-btn:hover {

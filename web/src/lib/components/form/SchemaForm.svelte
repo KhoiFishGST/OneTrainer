@@ -21,6 +21,7 @@
     setRaw,
     openDirectory,
     activeSubTab,
+    hideGroupTitle = false,
   }: {
     tab?: SchemaTab;
     values?: Record<string, any>;
@@ -28,6 +29,7 @@
     setRaw: (path: string, val: any) => void;
     openDirectory?: (path: string, onSelect?: (selectedPath: string) => void) => void;
     activeSubTab?: string;
+    hideGroupTitle?: boolean;
   } = $props();
 
   function normalizeControl(control?: string): ControlType {
@@ -56,26 +58,46 @@
 
   function isGroupInSubTab(groupId: string, subTab?: string): boolean {
     if (!subTab) return true;
-    if (subTab === 'general_opt') {
-      return ['base_settings', 'execution'].includes(groupId);
+    switch (subTab) {
+      case 'base':
+        return groupId === 'base_settings';
+      case 'execution':
+        return groupId === 'execution';
+      case 'text':
+        return (
+          ['text_encoders', 'embeddings'].includes(groupId) ||
+          groupId.startsWith('text_encoder')
+        );
+      case 'denoise':
+        return groupId === 'denoising_model';
+      case 'layer':
+        return groupId === 'layer_filtering';
+      case 'noise':
+        return groupId === 'noise_and_timesteps';
+      case 'masking':
+        return groupId === 'masking_and_conditioning';
+      case 'loss':
+        return groupId === 'loss';
+      // Fallback for legacy subtab IDs if any:
+      case 'general_opt':
+        return ['base_settings', 'execution'].includes(groupId);
+      case 'components':
+        return (
+          ['denoising_model', 'text_encoders', 'embeddings', 'layer_filtering'].includes(groupId) ||
+          groupId.startsWith('text_encoder')
+        );
+      case 'noise_loss':
+        return ['noise_and_timesteps', 'loss', 'masking_and_conditioning'].includes(groupId);
+      default:
+        return true;
     }
-    if (subTab === 'components') {
-      return (
-        ['denoising_model', 'text_encoders', 'embeddings', 'layer_filtering'].includes(groupId) ||
-        groupId.startsWith('text_encoder')
-      );
-    }
-    if (subTab === 'noise_loss') {
-      return ['noise_and_timesteps', 'loss', 'masking_and_conditioning'].includes(groupId);
-    }
-    return true;
   }
 </script>
 
 {#snippet renderGroup(group: any)}
   {@const visibleFields = (group.fields || []).filter((f: any) => f.visible !== false)}
 
-  <FormPanel title={group.title || group.label} isComponentsGroup={group.id === 'model_components'}>
+  <FormPanel title={group.title || group.label} isComponentsGroup={group.id === 'model_components'} hideTitle={hideGroupTitle}>
     {#if visibleFields.length > 0}
       <div class="group-fields" class:components-table={group.id === 'model_components'}>
         {#each visibleFields as field (field.id)}
