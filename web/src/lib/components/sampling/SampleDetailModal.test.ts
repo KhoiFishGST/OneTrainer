@@ -67,11 +67,11 @@ describe('SampleDetailModal Component', () => {
 
     expect(promptInput).toHaveValue('a beautiful cat in a garden');
     expect(negPromptInput).toHaveValue('blurry, ugly');
-    expect(widthInput).toHaveValue(512);
-    expect(heightInput).toHaveValue(512);
-    expect(stepsInput).toHaveValue(30);
-    expect(cfgInput).toHaveValue(7.5);
-    expect(seedInput).toHaveValue(-1);
+    expect(widthInput).toHaveValue('512');
+    expect(heightInput).toHaveValue('512');
+    expect(stepsInput).toHaveValue('30');
+    expect(cfgInput).toHaveValue('7.5');
+    expect(seedInput).toHaveValue('-1');
     expect(schedulerSelect).toHaveValue('EULER_A');
     expect(enabledToggle).toBeChecked();
   });
@@ -93,14 +93,14 @@ describe('SampleDetailModal Component', () => {
     const widthInput = screen.getByLabelText(/width/i);
     const heightInput = screen.getByLabelText(/height/i);
 
-    expect(widthInput).toHaveValue(768);
-    expect(heightInput).toHaveValue(768);
+    expect(widthInput).toHaveValue('768');
+    expect(heightInput).toHaveValue('768');
 
     const preset1024Btn = screen.getByRole('button', { name: '1024' });
     await fireEvent.click(preset1024Btn);
 
-    expect(widthInput).toHaveValue(1024);
-    expect(heightInput).toHaveValue(1024);
+    expect(widthInput).toHaveValue('1024');
+    expect(heightInput).toHaveValue('1024');
   });
 
   it('emits onSave with updated sample object when save button is clicked', async () => {
@@ -118,6 +118,16 @@ describe('SampleDetailModal Component', () => {
     const promptInput = screen.getByLabelText(/^prompt$/i);
     await fireEvent.input(promptInput, { target: { value: 'a hyperrealistic dog in space' } });
 
+    const widthInput = screen.getByLabelText(/width/i);
+    const stepsInput = screen.getByLabelText(/steps/i);
+    const cfgInput = screen.getByLabelText(/cfg scale/i);
+    const seedInput = screen.getByLabelText(/seed/i);
+
+    await fireEvent.input(widthInput, { target: { value: '768' } });
+    await fireEvent.input(stepsInput, { target: { value: '40' } });
+    await fireEvent.input(cfgInput, { target: { value: '8.5' } });
+    await fireEvent.input(seedInput, { target: { value: '123' } });
+
     const applyBtn = screen.getByRole('button', { name: /save/i });
     await fireEvent.click(applyBtn);
 
@@ -125,11 +135,11 @@ describe('SampleDetailModal Component', () => {
       expect.objectContaining({
         prompt: 'a hyperrealistic dog in space',
         negative_prompt: 'blurry, ugly',
-        width: 512,
+        width: 768,
         height: 512,
-        diffusion_steps: 30,
-        cfg_scale: 7.5,
-        seed: -1,
+        diffusion_steps: 40,
+        cfg_scale: 8.5,
+        seed: 123,
         noise_scheduler: 'EULER_A',
         enabled: true,
       })

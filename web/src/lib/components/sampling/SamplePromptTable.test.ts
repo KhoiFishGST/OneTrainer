@@ -54,11 +54,12 @@ describe('SamplePromptTable Component', () => {
     const onUpdate = vi.fn();
     render(SamplePromptTable, { samples: sampleData, onUpdate });
 
-    const numInputs = screen.getAllByRole('spinbutton');
-    // Row 0 inputs: numInputs[0] is width (512), numInputs[1] is height (768), numInputs[2] is seed (-1)
-    const widthInput = numInputs[0];
-    const heightInput = numInputs[1];
-    const seedInput = numInputs[2];
+    const widthInput = document.getElementById('sample-width-0') as HTMLInputElement;
+    const heightInput = document.getElementById('sample-height-0') as HTMLInputElement;
+    const seedInput = document.getElementById('sample-seed-0') as HTMLInputElement;
+
+    await fireEvent.input(widthInput, { target: { value: '640' } });
+    expect(onUpdate).not.toHaveBeenCalled();
 
     await fireEvent.change(widthInput, { target: { value: '640' } });
     expect(onUpdate).toHaveBeenCalledWith(0, expect.objectContaining({ width: 640 }));

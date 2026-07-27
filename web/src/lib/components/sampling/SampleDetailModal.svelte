@@ -1,6 +1,10 @@
 <script lang="ts">
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
+  import Button from '$lib/components/ui/Button.svelte';
   import Select from '$lib/components/form/Select.svelte';
+  import Checkbox from '$lib/components/form/Checkbox.svelte';
+  import NumberInput from '$lib/components/form/NumberInput.svelte';
+  import TextArea from '$lib/components/form/TextArea.svelte';
 
   let {
     open = false,
@@ -57,6 +61,12 @@
     }
   });
 
+  function setDraftNumber(key: 'width' | 'height' | 'diffusion_steps' | 'cfg_scale' | 'seed', value: string) {
+    if (value.trim() === '') return;
+    const parsed = Number(value);
+    if (!Number.isNaN(parsed)) draft[key] = parsed;
+  }
+
   function setPresetResolution(res: number) {
     draft.width = res;
     draft.height = res;
@@ -78,30 +88,32 @@
     <div class="sample-modal-body">
       <div class="form-row">
         <label for="sample-prompt">Prompt</label>
-        <textarea
+        <TextArea
           id="sample-prompt"
-          bind:value={draft.prompt}
-          rows="3"
+          value={draft.prompt}
+          onInput={(val) => (draft.prompt = val)}
+          rows={3}
           placeholder="Enter generation prompt..."
-        ></textarea>
+        />
       </div>
 
       <div class="form-row">
         <label for="sample-negative-prompt">Negative Prompt</label>
-        <textarea
+        <TextArea
           id="sample-negative-prompt"
-          bind:value={draft.negative_prompt}
-          rows="2"
+          value={draft.negative_prompt}
+          onInput={(val) => (draft.negative_prompt = val)}
+          rows={2}
           placeholder="Enter negative prompt..."
-        ></textarea>
+        />
       </div>
 
       <div class="form-row inline">
         <label for="sample-enabled">Enabled</label>
-        <input
+        <Checkbox
           id="sample-enabled"
-          type="checkbox"
-          bind:checked={draft.enabled}
+          value={draft.enabled}
+          onChange={(val) => (draft.enabled = val)}
         />
       </div>
 
@@ -109,52 +121,49 @@
         <div class="resolution-header">
           <span class="section-label">Resolution</span>
           <div class="preset-buttons">
-            <button
+            <Button
               type="button"
-              class="preset-btn"
-              class:active={draft.width === 512 && draft.height === 512}
+              class={`preset-btn ${draft.width === 512 && draft.height === 512 ? 'active' : ''}`}
               onclick={() => setPresetResolution(512)}
             >
               512
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              class="preset-btn"
-              class:active={draft.width === 768 && draft.height === 768}
+              class={`preset-btn ${draft.width === 768 && draft.height === 768 ? 'active' : ''}`}
               onclick={() => setPresetResolution(768)}
             >
               768
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              class="preset-btn"
-              class:active={draft.width === 1024 && draft.height === 1024}
+              class={`preset-btn ${draft.width === 1024 && draft.height === 1024 ? 'active' : ''}`}
               onclick={() => setPresetResolution(1024)}
             >
               1024
-            </button>
+            </Button>
           </div>
         </div>
 
         <div class="form-grid-2">
           <div class="form-row">
             <label for="sample-width">Width</label>
-            <input
+            <NumberInput
               id="sample-width"
-              type="number"
               step="64"
               min="64"
-              bind:value={draft.width}
+              value={draft.width}
+              onInput={(val) => setDraftNumber('width', val)}
             />
           </div>
           <div class="form-row">
             <label for="sample-height">Height</label>
-            <input
+            <NumberInput
               id="sample-height"
-              type="number"
               step="64"
               min="64"
-              bind:value={draft.height}
+              value={draft.height}
+              onInput={(val) => setDraftNumber('height', val)}
             />
           </div>
         </div>
@@ -163,23 +172,23 @@
       <div class="form-grid-2">
         <div class="form-row">
           <label for="sample-steps">Diffusion Steps</label>
-          <input
+          <NumberInput
             id="sample-steps"
-            type="number"
             min="1"
             max="150"
-            bind:value={draft.diffusion_steps}
+            value={draft.diffusion_steps}
+            onInput={(val) => setDraftNumber('diffusion_steps', val)}
           />
         </div>
         <div class="form-row">
           <label for="sample-cfg">CFG Scale</label>
-          <input
+          <NumberInput
             id="sample-cfg"
-            type="number"
             step="0.5"
             min="1"
             max="30"
-            bind:value={draft.cfg_scale}
+            value={draft.cfg_scale}
+            onInput={(val) => setDraftNumber('cfg_scale', val)}
           />
         </div>
       </div>
@@ -187,10 +196,10 @@
       <div class="form-grid-2">
         <div class="form-row">
           <label for="sample-seed">Seed (-1 for random)</label>
-          <input
+          <NumberInput
             id="sample-seed"
-            type="number"
-            bind:value={draft.seed}
+            value={draft.seed}
+            onInput={(val) => setDraftNumber('seed', val)}
           />
         </div>
         <div class="form-row">
@@ -232,8 +241,8 @@
     color: var(--text, #f8fafc);
   }
 
-  .form-row textarea,
-  .form-row input[type='number'] {
+  :global(.form-row .textarea-input),
+  :global(.form-row .number-input) {
     padding: 0.5rem 0.75rem;
     background-color: var(--control, #14191f);
     border: 1px solid var(--line, #2d3741);
@@ -243,8 +252,8 @@
     font-family: inherit;
   }
 
-  .form-row textarea:focus,
-  .form-row input[type='number']:focus {
+  :global(.form-row .textarea-input:focus),
+  :global(.form-row .number-input:focus) {
     outline: none;
     border-color: var(--accent, #3b82f6);
   }
@@ -282,7 +291,7 @@
     gap: 0.375rem;
   }
 
-  .preset-btn {
+  :global(.preset-btn) {
     padding: 0.25rem 0.625rem;
     font-size: 0.75rem;
     font-weight: 600;
@@ -294,12 +303,12 @@
     transition: all 0.15s ease;
   }
 
-  .preset-btn:hover {
+  :global(.preset-btn:hover) {
     color: var(--text, #f8fafc);
     border-color: var(--accent, #3b82f6);
   }
 
-  .preset-btn.active {
+  :global(.preset-btn.active) {
     background: var(--accent, #3b82f6);
     color: #ffffff;
     border-color: var(--accent, #3b82f6);
