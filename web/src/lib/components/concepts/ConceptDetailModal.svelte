@@ -147,7 +147,7 @@
         {#if activeTab === 'general' && draft}
           {@const d = draft}
           <div class="form-grid">
-            <div class="form-row-group">
+            <div class="form-row-2col">
               <Field id="concept-name" label="Concept Name">
                 {#snippet children({ id, ariaDescribedBy })}
                   <TextInput
@@ -159,58 +159,47 @@
                   />
                 {/snippet}
               </Field>
-              <Field id="concept-enabled" label="Enabled" inline={true}>
+              <Field id="concept-type" label="Concept Type">
                 {#snippet children({ id, ariaDescribedBy })}
-                  <Toggle
+                  <Select
                     {id}
-                    value={d.enabled}
+                    value={d.type}
+                    options={[
+                      { value: 'STANDARD', label: 'STANDARD (Finetune training target)' },
+                      { value: 'VALIDATION', label: 'VALIDATION (Validation dataset)' },
+                      { value: 'PRIOR_PREDICTION', label: 'PRIOR_PREDICTION (Prior preservation regularization)' },
+                    ]}
                     {ariaDescribedBy}
-                    onChange={(val) => { d.enabled = val; }}
+                    onChange={(v) => { d.type = v; }}
                   />
                 {/snippet}
               </Field>
             </div>
 
-            <Field id="concept-type" label="Concept Type">
-              {#snippet children({ id, ariaDescribedBy })}
-                <Select
-                  {id}
-                  value={d.type}
-                  options={[
-                    { value: 'STANDARD', label: 'STANDARD (Finetune training target)' },
-                    { value: 'VALIDATION', label: 'VALIDATION (Validation dataset)' },
-                    { value: 'PRIOR_PREDICTION', label: 'PRIOR_PREDICTION (Prior preservation regularization)' },
-                  ]}
-                  {ariaDescribedBy}
-                  onChange={(v) => { d.type = v; }}
-                />
-              {/snippet}
-            </Field>
-
             <Field id="concept-path" label="Dataset Directory Path">
               {#snippet children({ id, ariaDescribedBy })}
-                <DirectoryInput
-                  {id}
-                  value={d.path || ''}
-                  {ariaDescribedBy}
-                  onInput={(val) => { d.path = val; }}
-                  onOpenDirectory={openDirectory ? (path, cb) => openDirectory('dir', path).then((s: string | null) => s && (cb ? cb(s) : (d.path = s))) : undefined}
-                  placeholder="/path/to/dataset/images"
-                />
+                <div class="directory-picker-row">
+                  <DirectoryInput
+                    {id}
+                    value={d.path || ''}
+                    {ariaDescribedBy}
+                    onInput={(val) => { d.path = val; }}
+                    onOpenDirectory={openDirectory ? (path, cb) => openDirectory('dir', path).then((s: string | null) => s && (cb ? cb(s) : (d.path = s))) : undefined}
+                    placeholder="/path/to/dataset/images"
+                  />
+                  <button
+                    type="button"
+                    class="btn-select-dataset"
+                    onclick={() => (showDatasetPicker = true)}
+                  >
+                    <FolderKanban size={15} />
+                    <span>Select Dataset</span>
+                  </button>
+                </div>
               {/snippet}
             </Field>
 
-            <div class="form-row-group align-center">
-              <div class="form-row">
-                <button
-                  type="button"
-                  class="btn-select-dataset"
-                  onclick={() => (showDatasetPicker = true)}
-                >
-                  <FolderKanban size={14} />
-                  <span>Select Dataset</span>
-                </button>
-              </div>
+            <div class="form-row-2col">
               <Field id="concept-subdirs" label="Include Subdirectories" inline={true}>
                 {#snippet children({ id, ariaDescribedBy })}
                   <Toggle
@@ -221,9 +210,6 @@
                   />
                 {/snippet}
               </Field>
-            </div>
-
-            <div class="form-row-group">
               <Field id="concept-prompt-source" label="Prompt Source">
                 {#snippet children({ id, ariaDescribedBy })}
                   <Select
@@ -239,6 +225,9 @@
                   />
                 {/snippet}
               </Field>
+            </div>
+
+            <div class="form-row-2col">
               <Field id="concept-balancing-strategy" label="Balancing Strategy">
                 {#snippet children({ id, ariaDescribedBy })}
                   <Select
@@ -253,24 +242,25 @@
                   />
                 {/snippet}
               </Field>
+              {#if d.text.prompt_source === 'concept'}
+                <Field id="concept-prompt-path" label="Single Prompt File Path">
+                  {#snippet children({ id, ariaDescribedBy })}
+                    <DirectoryInput
+                      {id}
+                      value={d.text.prompt_path || ''}
+                      {ariaDescribedBy}
+                      onInput={(val) => { d.text.prompt_path = val; }}
+                      onOpenDirectory={openDirectory ? (path, cb) => openDirectory('file', path).then((s: string | null) => s && (cb ? cb(s) : (d.text.prompt_path = s))) : undefined}
+                      placeholder="/path/to/prompts.txt"
+                    />
+                  {/snippet}
+                </Field>
+              {:else}
+                <div></div>
+              {/if}
             </div>
 
-            {#if d.text.prompt_source === 'concept'}
-              <Field id="concept-prompt-path" label="Single Prompt File Path">
-                {#snippet children({ id, ariaDescribedBy })}
-                  <DirectoryInput
-                    {id}
-                    value={d.text.prompt_path || ''}
-                    {ariaDescribedBy}
-                    onInput={(val) => { d.text.prompt_path = val; }}
-                    onOpenDirectory={openDirectory ? (path, cb) => openDirectory('file', path).then((s: string | null) => s && (cb ? cb(s) : (d.text.prompt_path = s))) : undefined}
-                    placeholder="/path/to/prompts.txt"
-                  />
-                {/snippet}
-              </Field>
-            {/if}
-
-            <div class="form-row-group">
+            <div class="form-row-2col">
               <Field id="concept-balancing" label="Balancing Value">
                 {#snippet children({ id, ariaDescribedBy })}
                   <NumberInput
@@ -296,18 +286,17 @@
         {:else if activeTab === 'image' && draft && draft.image}
           {@const img = draft.image}
           <div class="form-grid">
-            <Field id="aug-crop-jitter" label="Crop Jitter" inline={true}>
-              {#snippet children({ id, ariaDescribedBy })}
-                <Toggle
-                  {id}
-                  value={img.enable_crop_jitter}
-                  {ariaDescribedBy}
-                  onChange={(val) => { img.enable_crop_jitter = val; }}
-                />
-              {/snippet}
-            </Field>
-
-            <div class="form-row-group">
+            <div class="form-row-2col">
+              <Field id="aug-crop-jitter" label="Crop Jitter" inline={true}>
+                {#snippet children({ id, ariaDescribedBy })}
+                  <Toggle
+                    {id}
+                    value={img.enable_crop_jitter}
+                    {ariaDescribedBy}
+                    onChange={(val) => { img.enable_crop_jitter = val; }}
+                  />
+                {/snippet}
+              </Field>
               <Field id="aug-rand-flip" label="Random Flip" inline={true}>
                 {#snippet children({ id, ariaDescribedBy })}
                   <Toggle
@@ -318,6 +307,9 @@
                   />
                 {/snippet}
               </Field>
+            </div>
+
+            <div class="form-row-2col">
               <Field id="aug-fix-flip" label="Fixed Flip" inline={true}>
                 {#snippet children({ id, ariaDescribedBy })}
                   <Toggle
@@ -328,9 +320,6 @@
                   />
                 {/snippet}
               </Field>
-            </div>
-
-            <div class="form-row-group">
               <Field id="aug-rand-rot" label="Random Rotate" inline={true}>
                 {#snippet children({ id, ariaDescribedBy })}
                   <Toggle
@@ -341,6 +330,9 @@
                   />
                 {/snippet}
               </Field>
+            </div>
+
+            <div class="form-row-2col">
               <Field id="aug-rot-angle" label="Max Rotate Angle (°)">
                 {#snippet children({ id, ariaDescribedBy })}
                   <NumberInput
@@ -351,9 +343,6 @@
                   />
                 {/snippet}
               </Field>
-            </div>
-
-            <div class="form-row-group">
               <Field id="aug-rand-bright" label="Random Brightness" inline={true}>
                 {#snippet children({ id, ariaDescribedBy })}
                   <Toggle
@@ -364,6 +353,9 @@
                   />
                 {/snippet}
               </Field>
+            </div>
+
+            <div class="form-row-2col">
               <Field id="aug-bright-strength" label="Max Brightness Strength">
                 {#snippet children({ id, ariaDescribedBy })}
                   <NumberInput
@@ -374,9 +366,6 @@
                   />
                 {/snippet}
               </Field>
-            </div>
-
-            <div class="form-row-group">
               <Field id="aug-rand-contrast" label="Random Contrast" inline={true}>
                 {#snippet children({ id, ariaDescribedBy })}
                   <Toggle
@@ -387,6 +376,9 @@
                   />
                 {/snippet}
               </Field>
+            </div>
+
+            <div class="form-row-2col">
               <Field id="aug-contrast-strength" label="Max Contrast Strength">
                 {#snippet children({ id, ariaDescribedBy })}
                   <NumberInput
@@ -397,9 +389,6 @@
                   />
                 {/snippet}
               </Field>
-            </div>
-
-            <div class="form-row-group">
               <Field id="aug-rand-res-override" label="Resolution Override" inline={true}>
                 {#snippet children({ id, ariaDescribedBy })}
                   <Toggle
@@ -410,6 +399,9 @@
                   />
                 {/snippet}
               </Field>
+            </div>
+
+            {#if img.enable_resolution_override}
               <Field id="aug-res-val" label="Target Resolution (e.g. 512, 1024x1024)">
                 {#snippet children({ id, ariaDescribedBy })}
                   <TextInput
@@ -420,23 +412,22 @@
                   />
                 {/snippet}
               </Field>
-            </div>
+            {/if}
           </div>
         {:else if activeTab === 'text' && draft && draft.text}
           {@const txt = draft.text}
           <div class="form-grid">
-            <Field id="aug-tag-shuffle" label="Tag Shuffling" inline={true}>
-              {#snippet children({ id, ariaDescribedBy })}
-                <Toggle
-                  {id}
-                  value={txt.enable_tag_shuffling}
-                  {ariaDescribedBy}
-                  onChange={(val) => { txt.enable_tag_shuffling = val; }}
-                />
-              {/snippet}
-            </Field>
-
-            <div class="form-row-group">
+            <div class="form-row-2col">
+              <Field id="aug-tag-shuffle" label="Tag Shuffling" inline={true}>
+                {#snippet children({ id, ariaDescribedBy })}
+                  <Toggle
+                    {id}
+                    value={txt.enable_tag_shuffling}
+                    {ariaDescribedBy}
+                    onChange={(val) => { txt.enable_tag_shuffling = val; }}
+                  />
+                {/snippet}
+              </Field>
               <Field id="aug-tag-delim" label="Tag Delimiter">
                 {#snippet children({ id, ariaDescribedBy })}
                   <TextInput
@@ -448,6 +439,9 @@
                   />
                 {/snippet}
               </Field>
+            </div>
+
+            <div class="form-row-2col">
               <Field id="aug-keep-tags" label="Keep Tags Count">
                 {#snippet children({ id, ariaDescribedBy })}
                   <NumberInput
@@ -458,21 +452,20 @@
                   />
                 {/snippet}
               </Field>
+              <Field id="aug-dropout-enable" label="Tag Dropout Enabled" inline={true}>
+                {#snippet children({ id, ariaDescribedBy })}
+                  <Toggle
+                    {id}
+                    value={txt.tag_dropout_enable}
+                    {ariaDescribedBy}
+                    onChange={(val) => { txt.tag_dropout_enable = val; }}
+                  />
+                {/snippet}
+              </Field>
             </div>
 
-            <Field id="aug-dropout-enable" label="Tag Dropout Enabled" inline={true}>
-              {#snippet children({ id, ariaDescribedBy })}
-                <Toggle
-                  {id}
-                  value={txt.tag_dropout_enable}
-                  {ariaDescribedBy}
-                  onChange={(val) => { txt.tag_dropout_enable = val; }}
-                />
-              {/snippet}
-            </Field>
-
             {#if txt.tag_dropout_enable}
-              <div class="form-row-group">
+              <div class="form-row-2col">
                 <Field id="aug-dropout-mode" label="Dropout Mode">
                   {#snippet children({ id, ariaDescribedBy })}
                     <Select
@@ -536,19 +529,28 @@
   .concept-modal-body {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1rem;
+  }
+
+  .concept-modal-body :global(.text-input),
+  .concept-modal-body :global(.number-input),
+  .concept-modal-body :global(.select-input),
+  .concept-modal-body :global(.directory-input-wrapper) {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
   }
 
   .subnav-tabs {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.25rem;
     border-bottom: 1px solid var(--color-border, var(--line, #2d3741));
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
   }
 
   .subnav-btn {
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 0.875rem;
     border: 1px solid transparent;
     border-bottom: none;
     border-top-left-radius: 6px;
@@ -570,17 +572,16 @@
 
   .subnav-btn.active {
     color: var(--color-text-title, var(--accent, #3b82f6));
-    background-color: var(--panel-raised, #1d242c);
+    background-color: var(--color-bg-card, var(--panel, #181e25));
     border-color: var(--color-border, var(--line, #2d3741));
-    border-bottom-color: var(--panel-raised, #1d242c);
+    border-bottom-color: var(--color-bg-card, var(--panel, #181e25));
   }
 
   .tab-content {
-    height: 480px;
+    min-height: 440px;
     max-height: 480px;
     overflow-y: auto;
     padding: 0.5rem 0.25rem;
-    box-sizing: border-box;
   }
 
   .form-grid {
@@ -589,35 +590,45 @@
     gap: 1rem;
   }
 
-  .form-row-group {
+  .form-row-2col {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
+    gap: 1.25rem;
+    align-items: flex-end;
   }
 
-  .form-row {
+  .directory-picker-row {
     display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .directory-picker-row :global(.directory-input-wrapper) {
+    flex: 1;
   }
 
   .btn-select-dataset {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
-    padding: 0.5rem 0.75rem;
+    justify-content: center;
+    gap: 0.375rem;
+    height: 38px;
+    padding: 0 0.875rem;
     background: var(--panel-raised, #1d242c);
     border: 1px solid var(--line, #2d3741);
     border-radius: 6px;
     color: var(--color-text-title, var(--accent, #3b82f6));
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
     white-space: nowrap;
+    transition: all 0.15s ease;
   }
 
   .btn-select-dataset:hover {
     background: var(--line, #2d3741);
+    color: var(--text, #ffffff);
   }
 
   .stats-preview-container {
