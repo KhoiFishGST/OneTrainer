@@ -96,7 +96,13 @@
 </script>
 
 {#if isOpen && draft}
-  <ModalDialog open={isOpen} title="Concept Configuration - {draft.name || draft.path || 'New Concept'}" {onClose}>
+  <ModalDialog
+    open={isOpen}
+    title="Concept Configuration - {draft.name || draft.path || 'New Concept'}"
+    applyText="Save Concept Settings"
+    onApply={handleSave}
+    {onClose}
+  >
     <div class="concept-modal-body">
       <!-- Tabs Header -->
       <div class="modal-nav-tabs">
@@ -142,14 +148,15 @@
       <div class="tab-content">
         {#if activeTab === 'general'}
           <div class="form-grid">
-            <div class="form-row">
-              <label for="concept-name">Concept Name</label>
-              <input id="concept-name" type="text" bind:value={draft.name} placeholder="e.g. MyCharacter" />
-            </div>
-
-            <div class="form-row inline">
-              <label for="concept-enabled">Enabled</label>
-              <input id="concept-enabled" type="checkbox" bind:checked={draft.enabled} />
+            <div class="form-row-group">
+              <div class="form-row">
+                <label for="concept-name">Concept Name</label>
+                <input id="concept-name" type="text" bind:value={draft.name} placeholder="e.g. MyCharacter" />
+              </div>
+              <div class="form-row inline-field">
+                <label for="concept-enabled">Enabled</label>
+                <input id="concept-enabled" type="checkbox" bind:checked={draft.enabled} />
+              </div>
             </div>
 
             <div class="form-row">
@@ -170,6 +177,14 @@
               <label for="concept-path">Dataset Directory Path</label>
               <div class="path-input-group">
                 <input id="concept-path" type="text" bind:value={draft.path} placeholder="/path/to/dataset/images" />
+                {#if openDirectory}
+                  <button type="button" class="btn-browse" onclick={handleBrowsePath}>Browse</button>
+                {/if}
+              </div>
+            </div>
+
+            <div class="form-row-group align-center">
+              <div class="form-row">
                 <button
                   type="button"
                   class="btn-select-dataset"
@@ -178,29 +193,39 @@
                   <FolderKanban size={14} />
                   <span>Select Dataset</span>
                 </button>
-                {#if openDirectory}
-                  <button type="button" class="btn-browse" onclick={handleBrowsePath}>Browse</button>
-                {/if}
+              </div>
+              <div class="form-row inline-field">
+                <label for="concept-subdirs">Include Subdirectories</label>
+                <input id="concept-subdirs" type="checkbox" bind:checked={draft.include_subdirectories} />
               </div>
             </div>
 
-            <div class="form-row inline">
-              <label for="concept-subdirs">Include Subdirectories</label>
-              <input id="concept-subdirs" type="checkbox" bind:checked={draft.include_subdirectories} />
-            </div>
-
-            <div class="form-row">
-              <label for="concept-prompt-source">Prompt Source</label>
-              <Select
-                id="concept-prompt-source"
-                value={draft.text.prompt_source}
-                options={[
-                  { value: 'sample', label: 'From text file per sample (.txt / .caption)' },
-                  { value: 'concept', label: 'From single text file' },
-                  { value: 'filename', label: 'From image file name' },
-                ]}
-                onChange={(v) => { if (draft) draft.text.prompt_source = v; }}
-              />
+            <div class="form-row-group">
+              <div class="form-row">
+                <label for="concept-prompt-source">Prompt Source</label>
+                <Select
+                  id="concept-prompt-source"
+                  value={draft.text.prompt_source}
+                  options={[
+                    { value: 'sample', label: 'From text file per sample (.txt / .caption)' },
+                    { value: 'concept', label: 'From single text file' },
+                    { value: 'filename', label: 'From image file name' },
+                  ]}
+                  onChange={(v) => { if (draft) draft.text.prompt_source = v; }}
+                />
+              </div>
+              <div class="form-row">
+                <label for="concept-balancing-strategy">Balancing Strategy</label>
+                <Select
+                  id="concept-balancing-strategy"
+                  value={draft.balancing_strategy}
+                  options={[
+                    { value: 'REPEATS', label: 'REPEATS (Multiply dataset epoch count)' },
+                    { value: 'SAMPLES', label: 'SAMPLES (Exact sample target count)' },
+                  ]}
+                  onChange={(v) => { if (draft) draft.balancing_strategy = v; }}
+                />
+              </div>
             </div>
 
             {#if draft.text.prompt_source === 'concept'}
@@ -221,22 +246,9 @@
                 <input id="concept-balancing" type="number" step="0.1" bind:value={draft.balancing} />
               </div>
               <div class="form-row">
-                <label for="concept-balancing-strategy">Balancing Strategy</label>
-                <Select
-                  id="concept-balancing-strategy"
-                  value={draft.balancing_strategy}
-                  options={[
-                    { value: 'REPEATS', label: 'REPEATS (Multiply dataset epoch count)' },
-                    { value: 'SAMPLES', label: 'SAMPLES (Exact sample target count)' },
-                  ]}
-                  onChange={(v) => { if (draft) draft.balancing_strategy = v; }}
-                />
+                <label for="concept-loss-weight">Loss Weight</label>
+                <input id="concept-loss-weight" type="number" step="0.05" bind:value={draft.loss_weight} />
               </div>
-            </div>
-
-            <div class="form-row">
-              <label for="concept-loss-weight">Loss Weight</label>
-              <input id="concept-loss-weight" type="number" step="0.05" bind:value={draft.loss_weight} />
             </div>
           </div>
         {:else if activeTab === 'image'}
@@ -363,16 +375,6 @@
           </div>
         {/if}
       </div>
-
-      <!-- Modal Actions -->
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" onclick={onClose}>
-          <X size={16} /> Cancel
-        </button>
-        <button type="button" class="btn btn-primary" onclick={handleSave}>
-          <Check size={16} /> Save Concept Settings
-        </button>
-      </div>
     </div>
   </ModalDialog>
 
@@ -429,8 +431,11 @@
   }
 
   .tab-content {
-    min-height: 380px;
-    padding: 0.5rem 0;
+    height: 380px;
+    max-height: 380px;
+    overflow-y: auto;
+    padding: 0.5rem 0.25rem;
+    box-sizing: border-box;
   }
 
   .form-grid {
@@ -568,37 +573,5 @@
     background: rgba(59, 130, 246, 0.15);
     color: var(--color-text-title, var(--accent, #3b82f6));
     border: 1px solid rgba(59, 130, 246, 0.3);
-  }
-
-  .modal-footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.75rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--line, #2d3741);
-  }
-
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    border: 1px solid transparent;
-  }
-
-  .btn-primary {
-    background-color: var(--color-primary, var(--accent, #3b82f6));
-    color: white;
-  }
-
-  .btn-secondary {
-    background-color: var(--panel-raised, #1d242c);
-    border: 1px solid var(--line, #2d3741);
-    color: var(--text, #f8fafc);
   }
 </style>
