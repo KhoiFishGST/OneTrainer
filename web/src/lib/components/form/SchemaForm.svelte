@@ -96,6 +96,15 @@
         return groupId === 'quantization';
       case 'vae':
         return groupId === 'vae_autoencoders';
+      // LoRA route subtabs:
+      case 'lora':
+        return groupId === 'lora';
+      case 'loha':
+        return groupId === 'loha';
+      case 'oft':
+        return groupId === 'oft';
+      case 'lokr':
+        return groupId === 'lokr';
       // Fallback for legacy subtab IDs if any:
       case 'general_opt':
         return ['base_settings', 'execution'].includes(groupId);

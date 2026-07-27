@@ -1,9 +1,9 @@
-import pytest
 from modules.util.config.TrainConfig import TrainConfig
 from modules.webui.schema import SchemaRegistry
 
 DEPRECATED_OR_INTERNAL = {
-    "version", "config_version", "saved_version", "optimizer_defaults", "concept_file_name", "concepts", "datasets_dir", "cloud"
+    "version", "config_version", "saved_version", "optimizer_defaults", "concept_file_name", "concepts", "datasets_dir", "cloud",
+    "embedding", "additional_embeddings", "embedding_learning_rate", "preserve_embedding_norm", "embedding_weight_dtype"
 }
 
 def test_all_train_config_fields_covered():
