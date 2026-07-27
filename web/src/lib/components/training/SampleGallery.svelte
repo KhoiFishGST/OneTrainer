@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { GalleryRunModel, GalleryVariant } from '../../api/types';
   import { galleryImageUrl } from '../../api/client';
+  import { uiPreferences } from '../../stores/ui-preferences';
   import GalleryImageViewer, { type GallerySelection } from './GalleryImageViewer.svelte';
 
   let {
@@ -8,8 +9,9 @@
     loading = false,
     error = null,
     title,
-    sortOrder = 'desc',
+    sortOrder,
     limit = null,
+    showSortControl = true,
   }: {
     gallery?: GalleryRunModel | null;
     loading?: boolean;
@@ -17,10 +19,13 @@
     title?: string;
     sortOrder?: 'desc' | 'asc';
     limit?: number | null;
+    showSortControl?: boolean;
   } = $props();
 
   let selection = $state<GallerySelection | null>(null);
   let isViewerOpen = $state(false);
+
+  const effectiveSortOrder = $derived(sortOrder ?? $uiPreferences.gallerySortOrder);
 
   const sortedBatches = $derived.by(() => {
     if (!gallery?.batches) return [];
@@ -29,14 +34,14 @@
       const epochA = a.epoch ?? a.progress?.epoch ?? 0;
       const epochB = b.epoch ?? b.progress?.epoch ?? 0;
       if (epochA !== epochB) {
-        return sortOrder === 'asc' ? epochA - epochB : epochB - epochA;
+        return effectiveSortOrder === 'asc' ? epochA - epochB : epochB - epochA;
       }
       const stepA = a.global_step ?? a.progress?.global_step ?? 0;
       const stepB = b.global_step ?? b.progress?.global_step ?? 0;
       if (stepA !== stepB) {
-        return sortOrder === 'asc' ? stepA - stepB : stepB - stepA;
+        return effectiveSortOrder === 'asc' ? stepA - stepB : stepB - stepA;
       }
-      return sortOrder === 'asc' ? a.id - b.id : b.id - a.id;
+      return effectiveSortOrder === 'asc' ? a.id - b.id : b.id - a.id;
     });
     return limit && limit > 0 ? batches.slice(0, limit) : batches;
   });
@@ -73,9 +78,25 @@
 
 <div class="sample-gallery-container" data-testid="sample-gallery">
   <div class="gallery-single-panel" data-testid="checkpoints-list">
-    {#if title}
+    {#if title || showSortControl}
       <div class="panel-header">
-        <h3 class="panel-title">{title}</h3>
+        <h3 class="panel-title">{title || 'Sample Gallery'}</h3>
+
+        {#if showSortControl && (!limit || limit > 1)}
+          <div class="sort-control">
+            <label for="gallery-sort-select" class="sort-label">Sort</label>
+            <select
+              id="gallery-sort-select"
+              aria-label="Gallery sort order"
+              class="sort-select"
+              value={effectiveSortOrder}
+              onchange={(e) => uiPreferences.setGallerySortOrder((e.target as HTMLSelectElement).value as 'asc' | 'desc')}
+            >
+              <option value="asc">Oldest First (Asc)</option>
+              <option value="desc">Newest First (Desc)</option>
+            </select>
+          </div>
+        {/if}
       </div>
     {/if}
 
@@ -222,6 +243,33 @@
     font-size: 1rem;
     font-weight: 600;
     color: var(--color-text-title, var(--accent, #3b82f6));
+  }
+
+  .sort-control {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .sort-label {
+    font-size: 0.8125rem;
+    color: var(--muted, #94a3b8);
+    font-weight: 500;
+  }
+
+  .sort-select {
+    background-color: var(--control, #0f172a);
+    color: var(--text, #f8fafc);
+    border: 1px solid var(--line, #334155);
+    border-radius: 4px;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+  }
+
+  .sort-select:hover {
+    border-color: var(--accent, #3b82f6);
   }
 
   .gallery-state {

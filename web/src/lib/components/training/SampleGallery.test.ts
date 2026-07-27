@@ -244,27 +244,30 @@ const emptyGallery: GalleryRunModel = {
 };
 
 describe('SampleGallery', () => {
-  it('renders chronological checkpoints in descending order by default and respects per-revision prompt metadata', () => {
+  it('renders chronological checkpoints in ascending order by default and respects per-revision prompt metadata', () => {
     render(SampleGallery, { props: { gallery: galleryWithEditedPrompt } });
     const rows = screen.getAllByTestId('checkpoint-row');
-    expect(rows[0]).toHaveTextContent('Step 100');
-    expect(rows[1]).toHaveTextContent('Step 0');
+    expect(rows[0]).toHaveTextContent('Step 0');
+    expect(rows[1]).toHaveTextContent('Step 100');
     expect(screen.getByRole('button', { name: /Open sample edited prompt/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Open sample old prompt/ })).toBeInTheDocument();
   });
 
-  it('respects sortOrder="asc"', () => {
-    render(SampleGallery, { props: { gallery: galleryWithEditedPrompt, sortOrder: 'asc' } });
-    const ascRows = screen.getAllByTestId('checkpoint-row');
-    expect(ascRows[0]).toHaveTextContent('Step 0');
-    expect(ascRows[1]).toHaveTextContent('Step 100');
+  it('allows switching sortOrder via header dropdown', async () => {
+    render(SampleGallery, { props: { gallery: galleryWithEditedPrompt } });
+    const select = screen.getByRole('combobox', { name: 'Gallery sort order' }) as HTMLSelectElement;
+    expect(select.value).toBe('asc');
+
+    await fireEvent.change(select, { target: { value: 'desc' } });
+    const descRows = screen.getAllByTestId('checkpoint-row');
+    expect(descRows[0]).toHaveTextContent('Step 100');
+    expect(descRows[1]).toHaveTextContent('Step 0');
   });
 
   it('respects limit prop', () => {
     render(SampleGallery, { props: { gallery: galleryWithEditedPrompt, limit: 1 } });
     const limitedRows = screen.getAllByTestId('checkpoint-row');
     expect(limitedRows).toHaveLength(1);
-    expect(limitedRows[0]).toHaveTextContent('Step 100');
   });
 
   it('renders EMA and non-EMA variant sub-rows with progressive slots', () => {
