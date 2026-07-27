@@ -117,3 +117,21 @@ it('triggers save when pressing Enter in the save config input modal', async () 
 
   expect(saveConfigFileSpy).toHaveBeenCalledWith('my_enter_config', false);
 });
+
+it('flattens nested preset tree objects into dropdown options', () => {
+  const mockPresetsData = [
+    {
+      label: 'SD 1.5',
+      children: [
+        { label: 'Fine Tune', id: 'preset_1' },
+      ],
+    },
+    { label: 'Direct Preset', id: 'preset_2' },
+  ];
+
+  render(HeaderTestWrapper, { presetsData: mockPresetsData });
+
+  const presetsSelect = screen.getByRole('combobox', { name: 'Presets' });
+  expect(presetsSelect).toHaveTextContent('SD 1.5 / Fine Tune');
+  expect(presetsSelect).toHaveTextContent('Direct Preset');
+});

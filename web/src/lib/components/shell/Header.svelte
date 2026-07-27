@@ -72,16 +72,15 @@
     const list: Array<{ id: string; label: string }> = [];
 
     function traverse(nodes: any[], prefix = '') {
+      if (!Array.isArray(nodes)) return;
       for (const node of nodes) {
-        if (Array.isArray(node)) {
-          const [name, children] = node;
-          if (typeof children === 'string') {
-            const label = prefix ? `${prefix} / ${name}` : name;
-            list.push({ id: children, label });
-          } else if (Array.isArray(children)) {
-            const nextPrefix = prefix ? `${prefix} / ${name}` : name;
-            traverse(children, nextPrefix);
-          }
+        if (!node) continue;
+        if (node.children && Array.isArray(node.children)) {
+          const nextPrefix = prefix ? `${prefix} / ${node.label}` : node.label;
+          traverse(node.children, nextPrefix);
+        } else if (node.id) {
+          const label = prefix ? `${prefix} / ${node.label}` : node.label;
+          list.push({ id: node.id, label });
         }
       }
     }
