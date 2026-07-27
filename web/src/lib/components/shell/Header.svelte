@@ -2,6 +2,9 @@
   import { Save, FolderOpen, RotateCcw, RefreshCw, AlertTriangle } from 'lucide-svelte';
   import Select from '../form/Select.svelte';
   import ModalDialog from '../ui/ModalDialog.svelte';
+  import TextInput from '../form/TextInput.svelte';
+  import Alert from '../ui/Alert.svelte';
+  import Button from '../ui/Button.svelte';
   import {
     createMetaQuery,
     createPresetsQuery,
@@ -236,23 +239,23 @@
         </div>
       </div>
 
-      <button
-        type="button"
+      <Button
+        variant="secondary"
         class="header-btn"
         onclick={handleLoadConfig}
       >
         <FolderOpen size={15} />
         <span>Load</span>
-      </button>
+      </Button>
 
-      <button
-        type="button"
+      <Button
+        variant="secondary"
         class="header-btn"
         onclick={openSavePresetModal}
       >
         <Save size={15} />
         <span>Save</span>
-      </button>
+      </Button>
     </div>
   </div>
 
@@ -268,32 +271,32 @@
         </span>
       {:else if workspace.state === 'failed'}
         <span class="state-badge state-failed">Save Failed</span>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
           class="btn btn-secondary"
           onclick={() => workspace.retry()}
         >
           <RotateCcw size={14} />
           <span>Retry</span>
-        </button>
+        </Button>
       {:else if workspace.state === 'conflict'}
         <span class="state-badge state-conflict">Conflict</span>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
           class="btn btn-secondary"
           onclick={() => workspace.reloadServer(true)}
         >
           <RefreshCw size={14} />
           <span>Reload</span>
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="danger"
           class="btn btn-danger"
           onclick={() => workspace.overwriteServer()}
         >
           <AlertTriangle size={14} />
           <span>Overwrite</span>
-        </button>
+        </Button>
       {/if}
     {/if}
 
@@ -308,15 +311,15 @@
 </header>
 
 {#if saveError && !showSaveDialog && !showOverwriteDialog}
-  <div class="save-error-toast" role="alert">
+  <Alert tone="error" class="save-error-toast">
     {saveError}
-  </div>
+  </Alert>
 {/if}
 
 {#if trainingState === 'FAILED' && $trainingStore.status?.error_message}
-  <div class="save-error-toast" role="alert">
+  <Alert tone="error" class="save-error-toast">
     {$trainingStore.status.error_message}
-  </div>
+  </Alert>
 {/if}
 
 <ModalDialog
@@ -332,14 +335,14 @@
   {/if}
   <label class="modal-field">
     <span>Configuration Name</span>
-    <input
-      type="text"
-      aria-label="Preset Name"
-      bind:value={presetName}
+    <TextInput
+      ariaLabel="Preset Name"
+      value={presetName}
       placeholder="my_config"
-      onkeydown={(e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
+      onInput={(value) => (presetName = value)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
           handleSavePreset();
         }
       }}
@@ -359,13 +362,13 @@
   <p>Do you want to overwrite it?</p>
 
   <div class="modal-extra-actions" style="margin-top: 12px; display: flex; gap: 8px; justify-content: flex-end;">
-    <button
-      type="button"
+    <Button
+      variant="danger"
       class="btn btn-danger"
       onclick={handleConfirmOverwrite}
     >
       Overwrite
-    </button>
+    </Button>
   </div>
 </ModalDialog>
 
@@ -476,7 +479,7 @@
     color: var(--danger);
   }
 
-  .btn {
+  :global(.btn) {
     padding: 6px 12px;
     border-radius: 4px;
     font-size: 0.875rem;
@@ -489,18 +492,18 @@
     color: #fff;
   }
 
-  .btn-secondary {
+  :global(.btn-secondary) {
     background-color: var(--control);
     color: var(--text);
     border-color: var(--line);
   }
 
-  .btn-danger {
+  :global(.btn-danger) {
     background-color: var(--danger);
     color: #fff;
   }
 
-  .header-btn {
+  :global(.header-btn) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -519,13 +522,13 @@
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
   }
 
-  .header-btn:hover {
+  :global(.header-btn:hover) {
     background-color: var(--panel-raised, #1d242c);
     border-color: var(--accent, #3b82f6);
     color: var(--accent, #3b82f6);
   }
 
-  .header-btn:active {
+  :global(.header-btn:active) {
     transform: translateY(1px);
   }
 
@@ -557,7 +560,7 @@
     margin-bottom: 12px;
   }
 
-  .modal-field input {
+  .modal-field :global(.text-input) {
     padding: 8px;
     border-radius: 4px;
     border: 1px solid var(--line);
@@ -572,7 +575,7 @@
   }
 
   .error-msg,
-  .save-error-toast {
+  :global(.save-error-toast) {
     color: var(--danger);
     font-size: 0.875rem;
   }

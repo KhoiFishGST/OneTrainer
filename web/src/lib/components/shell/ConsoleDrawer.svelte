@@ -4,6 +4,7 @@
   import { Maximize2, X } from 'lucide-svelte';
   import ConsoleView from '$lib/components/console/ConsoleView.svelte';
   import { consoleStore, type ConsoleStore } from '$lib/events/console-store.svelte';
+  import Button from '../ui/Button.svelte';
 
   let {
     open = false,
@@ -112,9 +113,15 @@
         </a>
       </div>
       {#if onClose}
-        <button type="button" class="btn-icon" onclick={onClose} title="Close Console Drawer">
+        <Button
+          variant="ghost"
+          size="icon"
+          class="btn-icon"
+          onclick={onClose}
+          title="Close Console Drawer"
+        >
           <X size={14} />
-        </button>
+        </Button>
       {/if}
     </div>
 
@@ -184,7 +191,7 @@
     color: var(--text-muted, #8b949e);
   }
 
-  .btn-icon {
+  :global(.btn-icon) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -197,7 +204,7 @@
     text-decoration: none;
   }
 
-  .btn-icon:hover {
+  :global(.btn-icon:hover) {
     color: var(--text, #c9d1d9);
     background-color: var(--button-hover-bg, #21262d);
   }

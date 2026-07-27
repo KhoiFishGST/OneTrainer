@@ -1,4 +1,7 @@
 <script lang="ts">
+  import Alert from '../ui/Alert.svelte';
+  import Button from '../ui/Button.svelte';
+
   let {
     message = '',
     onDismiss,
@@ -25,24 +28,25 @@
 </script>
 
 {#if message && !dismissed}
-  <div class="error-banner" role="alert">
+  <Alert tone="error" class="error-banner">
     <div class="error-text">
       <strong>Error:</strong>
       <span>{message}</span>
     </div>
-    <button
-      type="button"
+    <Button
+      variant="danger"
+      size="small"
       class="dismiss-btn"
       aria-label="Dismiss"
       onclick={handleDismiss}
     >
       Dismiss
-    </button>
-  </div>
+    </Button>
+  </Alert>
 {/if}
 
 <style>
-  .error-banner {
+  :global(.error-banner) {
     background-color: rgba(217, 120, 120, 0.2);
     border-bottom: 1px solid var(--danger);
     color: var(--danger);
@@ -60,7 +64,7 @@
     gap: 8px;
   }
 
-  .dismiss-btn {
+  :global(.dismiss-btn) {
     background: transparent;
     border: 1px solid var(--danger);
     color: var(--danger);
@@ -70,7 +74,7 @@
     cursor: pointer;
   }
 
-  .dismiss-btn:hover {
+  :global(.dismiss-btn:hover) {
     background-color: var(--danger);
     color: #fff;
   }

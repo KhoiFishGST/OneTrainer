@@ -18,6 +18,7 @@
     X,
     Key,
   } from 'lucide-svelte';
+  import Button from '../ui/Button.svelte';
 
   let {
     currentPath = '/live',
@@ -65,28 +66,28 @@
 </script>
 
 {#if mobile}
-  <button
-    type="button"
+  <Button
+    variant="ghost"
     class="mobile-toggle-btn"
     aria-label="Open navigation"
     onclick={() => (drawerOpen = true)}
   >
     <Menu size={20} />
-  </button>
+  </Button>
 
   {#if drawerOpen}
     <div class="drawer-overlay" onclick={() => (drawerOpen = false)} role="presentation"></div>
     <div class="drawer-content" role="dialog" aria-label="Navigation">
       <div class="drawer-header">
         <span class="drawer-title">Navigation</span>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           class="close-btn"
           aria-label="Close navigation"
           onclick={() => (drawerOpen = false)}
         >
           <X size={20} />
-        </button>
+        </Button>
       </div>
       <nav class="drawer-nav" aria-label="Mobile Navigation">
         {#each navItems as item}
@@ -114,10 +115,9 @@
           {/if}
         {/each}
         {#if onToggleConsole}
-          <button
-            type="button"
-            class="nav-item console-nav-btn"
-            class:active={isConsoleOpen}
+          <Button
+            variant="ghost"
+            class={`nav-item console-nav-btn${isConsoleOpen ? ' active' : ''}`}
             onclick={() => {
               onToggleConsole();
               drawerOpen = false;
@@ -125,7 +125,7 @@
           >
             <Terminal size={20} class="nav-icon" />
             <span class="nav-label">Console</span>
-          </button>
+          </Button>
         {/if}
       </nav>
     </div>
@@ -133,14 +133,14 @@
 {:else}
   <aside class="rail" class:expanded style="--rail-width: {expanded ? 'var(--rail-expanded)' : 'var(--rail-compact)'}">
     <div class="rail-header">
-      <button
-        type="button"
+      <Button
+        variant="ghost"
         class="rail-toggle-btn"
         aria-label="Expand navigation"
         onclick={toggleExpand}
       >
         <PanelLeft size={20} />
-      </button>
+      </Button>
     </div>
     <nav class="rail-nav" aria-label="Sidebar">
       {#each navItems as item}
@@ -169,16 +169,15 @@
     </nav>
     {#if onToggleConsole}
       <div class="rail-footer">
-        <button
-          type="button"
-          class="nav-item console-nav-btn"
-          class:active={isConsoleOpen}
+        <Button
+          variant="ghost"
+          class={`nav-item console-nav-btn${isConsoleOpen ? ' active' : ''}`}
           onclick={onToggleConsole}
           title="Toggle Console Drawer"
         >
           <Terminal size={20} class="nav-icon" />
           <span class="nav-label">Console</span>
-        </button>
+        </Button>
       </div>
     {/if}
   </aside>
@@ -205,8 +204,8 @@
     border-bottom: 1px solid var(--line);
   }
 
-  .rail-toggle-btn,
-  .mobile-toggle-btn {
+  :global(.rail-toggle-btn),
+  :global(.mobile-toggle-btn) {
     background: transparent;
     border: none;
     color: var(--muted);
@@ -218,8 +217,8 @@
     justify-content: center;
   }
 
-  .rail-toggle-btn:hover,
-  .mobile-toggle-btn:hover {
+  :global(.rail-toggle-btn:hover),
+  :global(.mobile-toggle-btn:hover) {
     color: var(--text);
     background-color: var(--panel-raised);
   }
@@ -239,7 +238,7 @@
     margin-top: auto;
   }
 
-  .console-nav-btn {
+  :global(.console-nav-btn) {
     width: 100%;
     background: transparent;
     border: none;
@@ -248,7 +247,7 @@
     font-family: inherit;
   }
 
-  .nav-item {
+  :global(.nav-item) {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -261,7 +260,7 @@
     overflow: hidden;
   }
 
-  .nav-item :global(.nav-icon) {
+  :global(.nav-item) :global(.nav-icon) {
     flex-shrink: 0;
     width: 20px;
     height: 20px;
@@ -280,18 +279,18 @@
     pointer-events: none;
   }
 
-  .nav-item:hover:not(.disabled) {
+  :global(.nav-item:hover:not(.disabled)) {
     color: var(--text);
     background-color: var(--panel-raised);
   }
 
-  .nav-item.active {
+  :global(.nav-item.active) {
     color: var(--accent);
     background-color: var(--accent-soft);
     font-weight: 500;
   }
 
-  .nav-item.disabled {
+  :global(.nav-item.disabled) {
     opacity: 0.5;
     cursor: not-allowed;
   }
@@ -332,7 +331,7 @@
     color: var(--text);
   }
 
-  .close-btn {
+  :global(.close-btn) {
     background: transparent;
     border: none;
     color: var(--muted);

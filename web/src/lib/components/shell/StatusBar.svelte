@@ -6,6 +6,7 @@
     Sparkles,
     Archive,
   } from 'lucide-svelte';
+  import Button from '../ui/Button.svelte';
   import { trainingStore } from '../../events/training-store';
   import { api } from '../../api/client';
 
@@ -64,89 +65,89 @@
   <div class="status-bar-right">
     <div class="training-action-buttons">
       {#if trainingState === 'IDLE' || trainingState === 'COMPLETED' || trainingState === 'FAILED'}
-        <button
-          type="button"
+        <Button
+          variant="primary"
           class="btn btn-primary"
           onclick={handleStartTraining}
         >
           <Play size={16} />
           <span>Start Training</span>
-        </button>
+        </Button>
       {:else if trainingState === 'TRAINING'}
-        <button
-          type="button"
+        <Button
+          variant="secondary"
           class="btn btn-secondary"
           onclick={handlePauseTraining}
         >
           <Pause size={16} />
           <span>Pause</span>
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="danger"
           class="btn btn-danger"
           onclick={handleStopTraining}
         >
           <Square size={16} />
           <span>Stop</span>
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="secondary"
           class="btn btn-secondary"
           onclick={handleSample}
         >
           <Sparkles size={16} />
           <span>Sample</span>
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="secondary"
           class="btn btn-secondary"
           onclick={handleBackup}
         >
           <Archive size={16} />
           <span>Backup</span>
-        </button>
+        </Button>
       {:else if trainingState === 'PAUSED'}
-        <button
-          type="button"
+        <Button
+          variant="primary"
           class="btn btn-primary"
           onclick={handleResumeTraining}
         >
           <Play size={16} />
           <span>Resume</span>
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="danger"
           class="btn btn-danger"
           onclick={handleStopTraining}
         >
           <Square size={16} />
           <span>Stop</span>
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="secondary"
           class="btn btn-secondary"
           onclick={handleSample}
         >
           <Sparkles size={16} />
           <span>Sample</span>
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="secondary"
           class="btn btn-secondary"
           onclick={handleBackup}
         >
           <Archive size={16} />
           <span>Backup</span>
-        </button>
+        </Button>
       {:else if trainingState === 'STOPPING'}
-        <button
-          type="button"
+        <Button
+          variant="danger"
           class="btn btn-danger"
           disabled
         >
           <Square size={16} />
           <span>Stop</span>
-        </button>
+        </Button>
       {/if}
     </div>
   </div>
@@ -178,7 +179,7 @@
     margin-left: 4px;
   }
 
-  .btn {
+  :global(.btn) {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
@@ -192,54 +193,54 @@
     user-select: none;
   }
 
-  .btn:disabled {
+  :global(.btn:disabled) {
     opacity: 0.5;
     cursor: not-allowed;
   }
 
-  .btn-primary {
+  :global(.btn-primary) {
     background-color: var(--accent, #3b82f6);
     color: #ffffff;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   }
 
-  .btn-primary:hover:not(:disabled) {
+  :global(.btn-primary:hover:not(:disabled)) {
     background-color: #2563eb;
     box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
   }
 
-  .btn-primary:active:not(:disabled) {
+  :global(.btn-primary:active:not(:disabled)) {
     transform: translateY(1px);
   }
 
-  .btn-secondary {
+  :global(.btn-secondary) {
     background-color: var(--panel-raised, var(--control, #14191f));
     color: var(--text, #e6ebef);
     border-color: var(--line, #2d3741);
   }
 
-  .btn-secondary:hover:not(:disabled) {
+  :global(.btn-secondary:hover:not(:disabled)) {
     background-color: var(--line, #2d3741);
     color: #ffffff;
     border-color: var(--muted, #475569);
   }
 
-  .btn-secondary:active:not(:disabled) {
+  :global(.btn-secondary:active:not(:disabled)) {
     transform: translateY(1px);
   }
 
-  .btn-danger {
+  :global(.btn-danger) {
     background-color: var(--danger, #ef4444);
     color: #ffffff;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   }
 
-  .btn-danger:hover:not(:disabled) {
+  :global(.btn-danger:hover:not(:disabled)) {
     background-color: #dc2626;
     box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
   }
 
-  .btn-danger:active:not(:disabled) {
+  :global(.btn-danger:active:not(:disabled)) {
     transform: translateY(1px);
   }
 </style>
