@@ -1,4 +1,14 @@
 <script lang="ts">
+  import {
+    Play,
+    Pause,
+    Square,
+    Sparkles,
+    Archive,
+    RotateCcw,
+    RefreshCw,
+    AlertTriangle,
+  } from 'lucide-svelte';
   import { getRouteContext } from '../../config/context';
   import type { ConfigWorkspace } from '../../config/workspace.svelte';
   import { trainingStore } from '../../events/training-store';
@@ -78,7 +88,8 @@
           class="btn btn-secondary"
           onclick={() => workspace.retry()}
         >
-          Retry
+          <RotateCcw size={16} />
+          <span>Retry</span>
         </button>
       {/if}
 
@@ -88,14 +99,16 @@
           class="btn btn-secondary"
           onclick={() => workspace.reloadServer(true)}
         >
-          Reload
+          <RefreshCw size={16} />
+          <span>Reload</span>
         </button>
         <button
           type="button"
           class="btn btn-danger"
           onclick={() => workspace.overwriteServer()}
         >
-          Overwrite
+          <AlertTriangle size={16} />
+          <span>Overwrite</span>
         </button>
       {/if}
     {/if}
@@ -107,7 +120,8 @@
           class="btn btn-primary"
           onclick={handleStartTraining}
         >
-          Start Training
+          <Play size={16} />
+          <span>Start Training</span>
         </button>
       {:else if trainingState === 'TRAINING'}
         <button
@@ -115,28 +129,32 @@
           class="btn btn-secondary"
           onclick={handlePauseTraining}
         >
-          Pause
+          <Pause size={16} />
+          <span>Pause</span>
         </button>
         <button
           type="button"
           class="btn btn-danger"
           onclick={handleStopTraining}
         >
-          Stop
+          <Square size={16} />
+          <span>Stop</span>
         </button>
         <button
           type="button"
           class="btn btn-secondary"
           onclick={handleSample}
         >
-          Sample
+          <Sparkles size={16} />
+          <span>Sample</span>
         </button>
         <button
           type="button"
           class="btn btn-secondary"
           onclick={handleBackup}
         >
-          Backup
+          <Archive size={16} />
+          <span>Backup</span>
         </button>
       {:else if trainingState === 'PAUSED'}
         <button
@@ -144,28 +162,32 @@
           class="btn btn-primary"
           onclick={handleResumeTraining}
         >
-          Resume
+          <Play size={16} />
+          <span>Resume</span>
         </button>
         <button
           type="button"
           class="btn btn-danger"
           onclick={handleStopTraining}
         >
-          Stop
+          <Square size={16} />
+          <span>Stop</span>
         </button>
         <button
           type="button"
           class="btn btn-secondary"
           onclick={handleSample}
         >
-          Sample
+          <Sparkles size={16} />
+          <span>Sample</span>
         </button>
         <button
           type="button"
           class="btn btn-secondary"
           onclick={handleBackup}
         >
-          Backup
+          <Archive size={16} />
+          <span>Backup</span>
         </button>
       {:else if trainingState === 'STOPPING'}
         <button
@@ -173,7 +195,8 @@
           class="btn btn-danger"
           disabled
         >
-          Stop
+          <Square size={16} />
+          <span>Stop</span>
         </button>
       {/if}
     </div>
@@ -206,102 +229,68 @@
     margin-left: 4px;
   }
 
-  .state-badge {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-  }
-
-  .state-saved {
-    background-color: rgba(101, 185, 141, 0.15);
-    color: var(--success);
-  }
-
-  .state-unsaved {
-    background-color: rgba(59, 130, 246, 0.15);
-    color: var(--accent);
-  }
-
-  .state-saving {
-    background-color: rgba(137, 149, 161, 0.15);
-    color: var(--muted);
-  }
-
-  .state-conflict,
-  .state-failed {
-    background-color: rgba(217, 120, 120, 0.15);
-    color: var(--danger);
-  }
-
-  .status-pill {
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .status-idle {
-    background-color: var(--panel-raised, rgba(255, 255, 255, 0.05));
-    color: var(--muted, #888);
-    border: 1px solid var(--line, #444);
-  }
-
-  .status-starting,
-  .status-training {
-    background-color: rgba(59, 130, 246, 0.15);
-    color: #3b82f6;
-    border: 1px solid rgba(59, 130, 246, 0.3);
-  }
-
-  .status-paused {
-    background-color: rgba(245, 158, 11, 0.15);
-    color: #f59e0b;
-    border: 1px solid rgba(245, 158, 11, 0.3);
-  }
-
-  .status-stopping {
-    background-color: rgba(239, 68, 68, 0.15);
-    color: #ef4444;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-  }
-
-  .status-completed {
-    background-color: rgba(16, 185, 129, 0.15);
-    color: #10b981;
-    border: 1px solid rgba(16, 185, 129, 0.3);
-  }
-
-  .status-failed {
-    background-color: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
-    border: 1px solid rgba(239, 68, 68, 0.4);
-  }
-
   .btn {
-    padding: 6px 12px;
-    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 6px;
     font-size: 0.875rem;
+    font-weight: 500;
     cursor: pointer;
     border: 1px solid transparent;
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+    user-select: none;
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .btn-primary {
-    background-color: var(--accent);
-    color: #fff;
+    background-color: var(--accent, #3b82f6);
+    color: #ffffff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background-color: #2563eb;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+  }
+
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(1px);
   }
 
   .btn-secondary {
-    background-color: var(--control);
-    color: var(--text);
-    border-color: var(--line);
+    background-color: var(--panel-raised, var(--control, #14191f));
+    color: var(--text, #e6ebef);
+    border-color: var(--line, #2d3741);
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background-color: var(--line, #2d3741);
+    color: #ffffff;
+    border-color: var(--muted, #475569);
+  }
+
+  .btn-secondary:active:not(:disabled) {
+    transform: translateY(1px);
   }
 
   .btn-danger {
-    background-color: var(--danger);
-    color: #fff;
+    background-color: var(--danger, #ef4444);
+    color: #ffffff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  .btn-danger:hover:not(:disabled) {
+    background-color: #dc2626;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+  }
+
+  .btn-danger:active:not(:disabled) {
+    transform: translateY(1px);
   }
 </style>
