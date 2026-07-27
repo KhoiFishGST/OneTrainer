@@ -370,17 +370,5 @@
     border-color: var(--accent, #3b82f6);
   }
 
-  .time-input-group {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
 
-  .time-num {
-    width: 80px;
-  }
-
-  .time-unit {
-    flex: 1;
-  }
 </style>

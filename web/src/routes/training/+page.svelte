@@ -1,8 +1,8 @@
 <script lang="ts">
   import { getRouteContext } from '$lib/config/context';
   import SchemaForm from '$lib/components/form/SchemaForm.svelte';
-  import OptimizerSchedulerModal from '$lib/components/form/OptimizerSchedulerModal.svelte';
-  import type { SchemaField } from '$lib/config/validation';
+  import OptimizerParamsModal from '$lib/components/form/OptimizerParamsModal.svelte';
+  import SchedulerParamsModal from '$lib/components/form/SchedulerParamsModal.svelte';
 
   const ctx = getRouteContext();
 
@@ -35,18 +35,24 @@
     { id: 'loss', label: 'Loss' },
   ];
 
-  let modalOpen = $state(false);
+  let optimizerModalOpen = $state(false);
+  let schedulerModalOpen = $state(false);
   let activeSubTab = $state<TrainingSubTab>('base');
 
-  const optimizerFields: SchemaField[] = [
-    { id: 'learning_rate', keys: ['learning_rate'], label: 'Learning Rate', control: 'number' },
-    { id: 'beta1', keys: ['optimizer_params', 'beta1'], label: 'Beta 1', control: 'number' },
-    { id: 'beta2', keys: ['optimizer_params', 'beta2'], label: 'Beta 2', control: 'number' },
-    { id: 'weight_decay', keys: ['optimizer_params', 'weight_decay'], label: 'Weight Decay', control: 'number' },
-    { id: 'epsilon', keys: ['optimizer_params', 'epsilon'], label: 'Epsilon', control: 'number' },
-  ];
-
   function handleSaveOptimizer(updatedValues: Record<string, any>) {
+    if (ctx.workspace) {
+      if (updatedValues.optimizer) {
+        ctx.workspace.setRaw('optimizer.optimizer', updatedValues.optimizer);
+      }
+      if (updatedValues.optimizer_params) {
+        for (const [key, val] of Object.entries(updatedValues.optimizer_params)) {
+          ctx.workspace.setRaw(`optimizer.${key}`, val);
+        }
+      }
+    }
+  }
+
+  function handleSaveScheduler(updatedValues: Record<string, any>) {
     if (ctx.workspace) {
       for (const [key, val] of Object.entries(updatedValues)) {
         ctx.workspace.setRaw(key, val);
@@ -65,13 +71,6 @@
   <div class="route-page">
     <div class="page-header">
       <h1 class="page-title">{tab.label || 'Training'}</h1>
-      <button
-        type="button"
-        class="opt-modal-btn"
-        onclick={() => (modalOpen = true)}
-      >
-        Configure Optimizer / Scheduler
-      </button>
     </div>
 
     <!-- Connected Text-Only Training Sub-Nav Tabs -->
@@ -98,17 +97,24 @@
           hideGroupTitle={true}
           values={ctx.workspace.draft}
           issues={ctx.workspace.errors}
-          setRaw={(path, val) => ctx.workspace?.setRaw(path, val)}
+          setRaw={(path: string, val: any) => ctx.workspace?.setRaw(path, val)}
           openDirectory={ctx.openDirectory}
+          onOpenOptimizerParams={() => (optimizerModalOpen = true)}
+          onOpenSchedulerParams={() => (schedulerModalOpen = true)}
         />
       </div>
     </div>
 
-    <OptimizerSchedulerModal
-      bind:open={modalOpen}
-      fields={optimizerFields}
+    <OptimizerParamsModal
+      bind:open={optimizerModalOpen}
       values={ctx.workspace.draft}
       onSave={handleSaveOptimizer}
+    />
+
+    <SchedulerParamsModal
+      bind:open={schedulerModalOpen}
+      values={ctx.workspace.draft}
+      onSave={handleSaveScheduler}
     />
   </div>
 {/if}
@@ -193,21 +199,7 @@
     color: var(--color-text-title, var(--accent, #3b82f6));
   }
 
-  .opt-modal-btn {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--color-primary-text, #ffffff);
-    background-color: var(--color-primary, #2563eb);
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.15s ease;
-  }
 
-  .opt-modal-btn:hover {
-    background-color: var(--color-primary-hover, #1d4ed8);
-  }
 
   .skeleton-container {
     display: flex;

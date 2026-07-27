@@ -60,7 +60,7 @@
           hideGroupTitle={true}
           values={ctx.workspace.draft}
           issues={ctx.workspace.errors}
-          setRaw={(path, val) => ctx.workspace?.setRaw(path, val)}
+          setRaw={(path: string, val: any) => ctx.workspace?.setRaw(path, val)}
           openDirectory={ctx.openDirectory}
         />
       </div>
