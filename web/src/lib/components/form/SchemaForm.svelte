@@ -62,7 +62,7 @@
       case 'base':
         return groupId === 'base_settings';
       case 'execution':
-        return groupId === 'execution';
+        return groupId === 'execution' || groupId === 'execution_hardware';
       case 'text':
         return (
           ['text_encoders', 'embeddings'].includes(groupId) ||
@@ -78,6 +78,17 @@
         return groupId === 'masking_and_conditioning';
       case 'loss':
         return groupId === 'loss';
+      // General route subtabs:
+      case 'workspace':
+        return groupId === 'workspace';
+      case 'debug':
+        return groupId === 'debug';
+      case 'tensors':
+        return groupId === 'tensorboard';
+      case 'validation':
+        return groupId === 'validation';
+      case 'multi_gpu':
+        return groupId === 'multi_gpu';
       // Fallback for legacy subtab IDs if any:
       case 'general_opt':
         return ['base_settings', 'execution'].includes(groupId);
@@ -176,7 +187,7 @@
 
 <div class="schema-form" class:is-training-tab={tab?.id === 'training' && !activeSubTab}>
   {#if tab?.groups}
-    {#if tab.id === 'training' && activeSubTab}
+    {#if activeSubTab}
       {#each tab.groups.filter((g) => isGroupInSubTab(g.id, activeSubTab)) as group (group.id)}
         {@render renderGroup(group)}
       {/each}
