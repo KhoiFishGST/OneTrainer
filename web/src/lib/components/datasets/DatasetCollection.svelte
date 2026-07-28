@@ -80,17 +80,17 @@
         </Table.Header>
         <Table.Body>
           {#each datasets as ds (ds.name)}
-            <Table.Row class="hover:bg-muted/50 cursor-pointer" onclick={() => window.location.href = `/datasets/${encodeURIComponent(ds.name)}`}>
+            <Table.Row class="hover:bg-muted/50 relative">
               <Table.Cell class="font-medium">
-                <a href="/datasets/{encodeURIComponent(ds.name)}" class="flex items-center gap-3 no-underline text-foreground" onclick={(e) => e.stopPropagation()}>
+                <a href="/datasets/{encodeURIComponent(ds.name)}" class="flex items-center gap-3 no-underline text-foreground after:absolute after:inset-0">
                   {#if ds.thumbnail_url}
-                    <img src={ds.thumbnail_url} alt={ds.name} class="w-10 h-10 rounded object-cover border border-border flex-shrink-0" />
+                    <img src={ds.thumbnail_url} alt={ds.name} class="w-10 h-10 rounded object-cover border border-border flex-shrink-0 relative z-10" />
                   {:else}
-                    <div class="w-10 h-10 rounded bg-muted flex items-center justify-center text-muted-foreground flex-shrink-0">
+                    <div class="w-10 h-10 rounded bg-muted flex items-center justify-center text-muted-foreground flex-shrink-0 relative z-10">
                       <FolderOpen size={20} />
                     </div>
                   {/if}
-                  <span class="font-semibold text-foreground hover:underline">{ds.name}</span>
+                  <span class="font-semibold text-foreground hover:underline relative z-10">{ds.name}</span>
                 </a>
               </Table.Cell>
               <Table.Cell class="text-muted-foreground text-xs font-mono truncate max-w-[250px]">
@@ -105,7 +105,7 @@
                 <Button
                   variant="ghost"
                   size="icon"
-                  class="btn-delete text-destructive hover:text-destructive hover:bg-destructive/10"
+                  class="btn-delete text-destructive hover:text-destructive hover:bg-destructive/10 relative z-10"
                   aria-label="Delete dataset"
                   title="Delete dataset"
                   disabled={isDeleting || isPendingDelete}

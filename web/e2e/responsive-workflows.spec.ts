@@ -42,6 +42,22 @@ test.describe("Responsive Workflows & Accessibility Controls", () => {
       // Logo must be visible and not covered
       await expect(page.locator("header img[alt='OneTrainer Logo']")).toBeVisible();
     });
+
+    test("opening a dataset does not reload the document", async ({ page }) => {
+      await page.goto("/datasets");
+      await page.waitForLoadState("networkidle");
+      await page.evaluate(() => {
+        (window as any).__spaMarker = "alive";
+      });
+
+      const target = page.locator("tbody tr, [data-dataset-card]").first();
+      await expect(target).toBeVisible();
+      await target.click();
+
+      await page.waitForURL(/\/datasets\/.+/);
+      const marker = await page.evaluate(() => (window as any).__spaMarker ?? "GONE");
+      expect(marker).toBe("alive");
+    });
   });
 
 
