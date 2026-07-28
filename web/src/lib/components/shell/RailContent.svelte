@@ -38,6 +38,7 @@
     isConsoleOpen = false,
     expanded = false,
     onToggleExpand,
+    isStandalone = false,
   } = $props<{
     currentPath?: string;
     mobile?: boolean;
@@ -45,6 +46,7 @@
     isConsoleOpen?: boolean;
     expanded?: boolean;
     onToggleExpand?: () => void;
+    isStandalone?: boolean;
   }>();
 
   const sidebar = useSidebar();
@@ -72,7 +74,7 @@
   ];
 </script>
 
-{#if mobile}
+{#if mobile && isStandalone}
   <div class="mobile-toggle-owner">
     <Button
       variant="ghost"
@@ -87,7 +89,7 @@
 
 <Sidebar
   {mobile}
-  class={cn('rail', expanded && 'expanded')}
+  class={cn('rail', expanded && 'expanded', mobile && 'p-4')}
   style="--rail-width: {expanded ? 'var(--rail-expanded)' : 'var(--rail-compact)'}"
 >
   {#if !mobile}
@@ -214,7 +216,7 @@
   .mobile-toggle-owner :global(.mobile-toggle-btn) {
     background: transparent;
     border: none;
-    color: var(--muted-foreground, #8d99a6);
+    color: var(--muted-foreground);
     cursor: pointer;
     padding: 8px;
     border-radius: 4px;
@@ -255,13 +257,12 @@
     font-family: inherit;
   }
 
-  :global(.rail) :global(.nav-item),
-  :global(.drawer-content) :global(.nav-item) {
+  :global(.nav-item) {
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 8px 10px;
-    color: var(--muted-foreground, #8d99a6);
+    color: var(--muted-foreground);
     text-decoration: none;
     border-radius: 4px;
     font-size: 0.875rem;
@@ -269,8 +270,7 @@
     overflow: hidden;
   }
 
-  :global(.rail) :global(.nav-item) :global(.nav-icon),
-  :global(.drawer-content) :global(.nav-item) :global(.nav-icon) {
+  :global(.nav-item) :global(.nav-icon) {
     flex-shrink: 0;
     width: 20px;
     height: 20px;
@@ -289,30 +289,20 @@
     pointer-events: none;
   }
 
-  :global(.rail) :global(.nav-item:hover:not(.disabled)),
-  :global(.drawer-content) :global(.nav-item:hover:not(.disabled)) {
+  :global(.nav-item:hover:not(.disabled)) {
     color: var(--text);
     background-color: var(--panel-raised);
   }
 
-  :global(.rail) :global(.nav-item.active),
-  :global(.drawer-content) :global(.nav-item.active) {
+  :global(.nav-item.active) {
     color: var(--accent);
     background-color: var(--accent-soft);
     font-weight: 500;
   }
 
-  :global(.rail) :global(.nav-item.disabled),
-  :global(.drawer-content) :global(.nav-item.disabled) {
+  :global(.nav-item.disabled) {
     opacity: 0.5;
     cursor: not-allowed;
-  }
-
-  :global(.drawer-content) {
-    background-color: var(--panel);
-    border-right: 1px solid var(--line);
-    display: flex;
-    flex-direction: column;
   }
 
   .mobile-toggle-owner {

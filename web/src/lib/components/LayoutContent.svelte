@@ -19,6 +19,7 @@
   import ErrorBanner from './shell/ErrorBanner.svelte';
   import DirectoryPicker from './directory/DirectoryPicker.svelte';
   import Toaster from '$lib/components/ui/sonner/sonner.svelte';
+  import { SidebarProvider } from '$lib/components/ui/sidebar';
   import { toast } from 'svelte-sonner';
   import { consoleStore } from '$lib/events/console-store.svelte';
   import { EventClient } from '$lib/events/client';
@@ -177,7 +178,7 @@
     {@render children()}
   {/if}
 {:else}
-  <div class="app-shell">
+  <SidebarProvider class="app-shell">
     <Header />
     {#if isApiError}
       <ErrorBanner message={errorMessage} />
@@ -218,11 +219,11 @@
         pickerOpen = false;
       }}
     />
-  </div>
+  </SidebarProvider>
 {/if}
 
 <style>
-  .app-shell {
+  :global(.app-shell) {
     display: flex;
     flex-direction: column;
     height: 100vh;

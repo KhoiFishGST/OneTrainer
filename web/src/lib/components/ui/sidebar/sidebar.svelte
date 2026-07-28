@@ -48,7 +48,7 @@
 			data-mobile="true"
 			aria-label="Navigation"
 			class={cn(
-				"bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden drawer-content",
+				"bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden",
 				className
 			)}
 			style="--sidebar-width: {SIDEBAR_WIDTH_MOBILE};"
@@ -58,7 +58,7 @@
 				<Sheet.Title>Navigation</Sheet.Title>
 				<Sheet.Description>Displays the mobile sidebar.</Sheet.Description>
 			</Sheet.Header>
-			<div class="flex h-full w-full flex-col p-4">
+			<div class="flex h-full w-full flex-col">
 				{@render children?.()}
 			</div>
 		</Sheet.Content>

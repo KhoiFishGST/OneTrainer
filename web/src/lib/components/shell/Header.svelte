@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { Save, FolderOpen, RotateCcw, RefreshCw, AlertTriangle } from 'lucide-svelte';
+  import { Save, FolderOpen, RotateCcw, RefreshCw, AlertTriangle, Menu } from 'lucide-svelte';
   import Select from '../form/ValueSelect.svelte';
   import ResponsiveDialogDrawer from '$lib/components/overlays/ResponsiveDialogDrawer.svelte';
   import { Input as TextInput } from '../ui/input/index.js';
   import { Alert } from '$lib/components/ui/alert';
   import { Button } from '$lib/components/ui/button';
+  import { useSidebar } from '$lib/components/ui/sidebar';
   import {
     createMetaQuery,
     createPresetsQuery,
@@ -18,6 +19,13 @@
   import ThemeToggle from './ThemeToggle.svelte';
 
   import * as AlertDialog from '../ui/alert-dialog/index.js';
+
+  let sidebar: any = null;
+  try {
+    sidebar = useSidebar();
+  } catch {
+    // context not provided in isolated unit test
+  }
 
   let {
     workspace: workspaceProp = null,
@@ -216,6 +224,16 @@
 
 <header class="header">
   <div class="header-left">
+    {#if sidebar}
+      <Button
+        variant="ghost"
+        class="mobile-toggle-btn md:hidden"
+        aria-label="Open navigation"
+        onclick={() => sidebar.setOpenMobile(true)}
+      >
+        <Menu size={20} />
+      </Button>
+    {/if}
     <div class="brand">
       <img src="/logo.png" alt="OneTrainer Logo" class="brand-logo" />
       <span class="app-title">OneTrainer</span>
@@ -421,6 +439,23 @@
     display: flex;
     align-items: center;
     gap: 16px;
+  }
+
+  .header :global(.mobile-toggle-btn) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    color: var(--muted-foreground);
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .header :global(.mobile-toggle-btn:hover) {
+    color: var(--foreground);
+    background-color: var(--accent);
   }
 
   .header-right {

@@ -223,6 +223,7 @@
     align-items: center;
     justify-content: flex-end;
     padding: 6px 16px;
+    padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
     font-size: 0.875rem;
     z-index: 50;
   }

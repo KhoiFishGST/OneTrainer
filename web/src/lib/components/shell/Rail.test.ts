@@ -54,6 +54,17 @@ describe('Rail component', () => {
     expect(dialog).toBeVisible();
     expect(dialog).toHaveAttribute('aria-modal', 'true');
 
+    // Focus an element inside dialog and dispatch Tab key event(s) to verify focus remains trapped inside the open mobile drawer
+    const firstLink = screen.getByRole('link', { name: 'Live' });
+    firstLink.focus();
+    expect(dialog.contains(document.activeElement)).toBe(true);
+
+    await fireEvent.keyDown(firstLink, { key: 'Tab' });
+    expect(dialog.contains(document.activeElement)).toBe(true);
+
+    await fireEvent.keyDown(document.activeElement || firstLink, { key: 'Tab', shiftKey: true });
+    expect(dialog.contains(document.activeElement)).toBe(true);
+
     expect(
       document.body.style.overflow === 'hidden' ||
       document.body.hasAttribute('data-scroll-locked') ||
