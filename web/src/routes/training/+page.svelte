@@ -58,7 +58,7 @@
   function handleSaveScheduler(updatedValues: Record<string, any>) {
     if (ctx.workspace) {
       for (const [key, val] of Object.entries(updatedValues)) {
-        ctx.workspace.setRaw(`optimizer.${key}`, val);
+        ctx.workspace.setRaw(key, val);
       }
     }
   }

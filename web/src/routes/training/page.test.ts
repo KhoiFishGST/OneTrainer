@@ -19,6 +19,13 @@ const mockSchema = {
               label: "Learning Rate",
               control: "number",
             },
+            {
+              id: "learning_rate_scheduler",
+              keys: ["learning_rate_scheduler"],
+              label: "LR Scheduler",
+              control: "select",
+              options: ["CONSTANT", "CUSTOM"],
+            },
           ],
         },
         {
@@ -113,6 +120,7 @@ const mockSchema = {
 const mockSetRaw = vi.fn();
 let mockDraft = {
   learning_rate: 0.0001,
+  learning_rate_scheduler: "CUSTOM",
   train_dtype: "fp16",
   text_encoder: { learning_rate: 0.00005 },
   unet: { learning_rate: 0.0001 },
@@ -194,5 +202,21 @@ describe("Training page subnav tabs and draft retention", () => {
     const lrInput = screen.getByLabelText("Learning Rate");
     await fireEvent.input(lrInput, { target: { value: "0.0005" } });
     expect(mockSetRaw).toHaveBeenCalledWith("learning_rate", "0.0005");
+  });
+
+  it("saves custom scheduler params without adding optimizer. prefix", async () => {
+    render(TrainingPage);
+
+    const gearBtn = screen.getByTitle("Configure custom scheduler parameters");
+    await fireEvent.click(gearBtn);
+
+    const input = screen.getByLabelText("Class Name");
+    await fireEvent.input(input, { target: { value: "pkg.Custom" } });
+
+    const applyBtn = screen.getByRole("button", { name: "Apply Parameters" });
+    await fireEvent.click(applyBtn);
+
+    expect(mockSetRaw).toHaveBeenCalledWith("custom_learning_rate_scheduler", "pkg.Custom");
+    expect(mockSetRaw).not.toHaveBeenCalledWith("optimizer.custom_learning_rate_scheduler", expect.anything());
   });
 });

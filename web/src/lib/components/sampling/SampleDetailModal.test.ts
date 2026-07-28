@@ -72,7 +72,7 @@ describe('SampleDetailModal Component', () => {
     expect(stepsInput).toHaveValue('30');
     expect(cfgInput).toHaveValue('7.5');
     expect(seedInput).toHaveValue('-1');
-    expect(schedulerSelect).toHaveValue('EULER_A');
+    expect(schedulerSelect).toHaveValue('0');
     expect(enabledToggle).toBeChecked();
   });
 

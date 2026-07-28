@@ -163,8 +163,8 @@ it("renders toggle, text, number, select, and time controls correctly", async ()
 
   // Select
   const select = screen.getByLabelText("Optimizer");
-  expect(select).toHaveValue("adamw");
-  await fireEvent.change(select, { target: { value: "sgd" } });
+  expect(select).toHaveValue("0");
+  await fireEvent.change(select, { target: { value: "1" } });
   expect(setRaw).toHaveBeenCalledWith("optimizer", "sgd");
 
   // Directory button click
@@ -179,7 +179,7 @@ it("renders toggle, text, number, select, and time controls correctly", async ()
   expect(setRaw).toHaveBeenCalledWith("save_every_value", "10");
 
   const unitSelect = screen.getByLabelText("Time unit");
-  await fireEvent.change(unitSelect, { target: { value: "HOUR" } });
+  await fireEvent.change(unitSelect, { target: { value: "5" } });
   expect(setRaw).toHaveBeenCalledWith("save_every_unit", "HOUR");
 });
 
@@ -285,8 +285,8 @@ it("supports plain string options in select controls", async () => {
   });
 
   const select = screen.getByLabelText("Option");
-  expect(select).toHaveValue("sgd");
-  await fireEvent.change(select, { target: { value: "adamw" } });
+  expect(select).toHaveValue("1");
+  await fireEvent.change(select, { target: { value: "0" } });
   expect(setRaw).toHaveBeenCalledWith("opt", "adamw");
 });
 
@@ -355,8 +355,8 @@ it("supports multi-key time values and units", async () => {
   expect(setRaw).toHaveBeenCalledWith("save_every_value", "20");
 
   const unitSelect = screen.getByLabelText("Time unit");
-  expect(unitSelect).toHaveValue("STEP");
-  await fireEvent.change(unitSelect, { target: { value: "EPOCH" } });
+  expect(unitSelect).toHaveValue("1");
+  await fireEvent.change(unitSelect, { target: { value: "0" } });
   expect(setRaw).toHaveBeenCalledWith("save_every_unit", "EPOCH");
 });
 

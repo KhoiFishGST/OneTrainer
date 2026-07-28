@@ -58,7 +58,7 @@ describe('OptimizerSchedulerModal', () => {
     expect(screen.getByLabelText('Learning Rate')).toHaveValue(0.0001);
     expect(screen.getByLabelText('Beta 1')).toHaveValue(0.9);
     expect(screen.getByLabelText('Use Decoupled Weight Decay')).toBeChecked();
-    expect(screen.getByLabelText('Optimizer Type')).toHaveValue('adamw');
+    expect(screen.getByLabelText('Optimizer Type')).toHaveValue('0');
   });
 
   it('calls onSave with updated values when Save button is clicked', async () => {

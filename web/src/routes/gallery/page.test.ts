@@ -129,7 +129,7 @@ describe('Gallery Route Page', () => {
     expect(await screen.findByAltText('Active run prompt')).toBeInTheDocument();
 
     const select = await screen.findByRole('combobox', { name: 'Gallery run' }) as HTMLSelectElement;
-    await fireEvent.change(select, { target: { value: '2026-07-26_11-00-00' } });
+    await fireEvent.change(select, { target: { value: '1' } });
 
     await waitFor(async () => {
       expect(await screen.findByAltText('Historical checkpoint')).toBeInTheDocument();

@@ -48,7 +48,7 @@ describe('Header component', () => {
     });
 
     const modelSelect = screen.getByRole('combobox', { name: 'Model Type' });
-    await fireEvent.change(modelSelect, { target: { value: 'FLUX_1' } });
+    await fireEvent.change(modelSelect, { target: { value: '1' } });
 
     // Verify training_method was coerced to FINE_TUNE (first supported method for FLUX_1)
     expect(setRawCalls).toEqual([

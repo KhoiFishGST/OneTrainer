@@ -256,9 +256,9 @@ describe('SampleGallery', () => {
   it('allows switching sortOrder via header dropdown', async () => {
     render(SampleGallery, { props: { gallery: galleryWithEditedPrompt } });
     const select = screen.getByRole('combobox', { name: 'Gallery sort order' }) as HTMLSelectElement;
-    expect(select.value).toBe('asc');
+    expect(select.value).toBe('0');
 
-    await fireEvent.change(select, { target: { value: 'desc' } });
+    await fireEvent.change(select, { target: { value: '1' } });
     const descRows = screen.getAllByTestId('checkpoint-row');
     expect(descRows[0]).toHaveTextContent('Step 100');
     expect(descRows[1]).toHaveTextContent('Step 0');

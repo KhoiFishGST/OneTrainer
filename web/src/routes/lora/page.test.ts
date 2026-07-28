@@ -97,7 +97,7 @@ describe("LoRA page PEFT Type dropdown and disabled state", () => {
     expect(screen.queryByLabelText("OFT Block Size")).not.toBeInTheDocument();
 
     // Switch to OFT_2
-    await fireEvent.change(peftSelect, { target: { value: "OFT_2" } });
+    await fireEvent.change(peftSelect, { target: { value: "2" } });
     expect(mockSetRaw).toHaveBeenCalledWith("peft_type", "OFT_2");
   });
 

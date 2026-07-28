@@ -13,9 +13,9 @@ describe('ValueSelect', () => {
     });
     const select = document.querySelector('#fruit') as HTMLSelectElement;
     expect(select).toBeInTheDocument();
-    expect(select.value).toBe('banana');
+    expect(select.value).toBe('1');
 
-    await fireEvent.change(select, { target: { value: 'cherry' } });
+    await fireEvent.change(select, { target: { value: '2' } });
     expect(onChange).toHaveBeenCalledWith('cherry');
   });
 
@@ -29,9 +29,9 @@ describe('ValueSelect', () => {
     });
     const select = document.querySelector('#numeric-select') as HTMLSelectElement;
     expect(select).toBeInTheDocument();
-    expect(select.value).toBe('200');
+    expect(select.value).toBe('1');
 
-    await fireEvent.change(select, { target: { value: '100' } });
+    await fireEvent.change(select, { target: { value: '0' } });
     expect(onChange).toHaveBeenCalledWith(100);
   });
 
@@ -49,9 +49,9 @@ describe('ValueSelect', () => {
     });
     const select = document.querySelector('#num-select') as HTMLSelectElement;
     expect(select).toBeInTheDocument();
-    expect(select.value).toBe('20');
+    expect(select.value).toBe('1');
 
-    await fireEvent.change(select, { target: { value: '10' } });
+    await fireEvent.change(select, { target: { value: '0' } });
     expect(onChange).toHaveBeenCalledWith(10);
   });
 
@@ -66,7 +66,7 @@ describe('ValueSelect', () => {
       options
     });
     const select = document.querySelector('#loose-select') as HTMLSelectElement;
-    expect(select.value).toBe('200');
+    expect(select.value).toBe('1');
   });
 
   it('renders placeholder as disabled option and marks it selected when value is unselected/empty', () => {
@@ -101,7 +101,7 @@ describe('ValueSelect', () => {
     const options = select.querySelectorAll('option');
     const placeholderOpt = options[0];
     expect(placeholderOpt.selected).toBe(false);
-    expect(select.value).toBe('b');
+    expect(select.value).toBe('1');
   });
 
   it('forwards disabled, required, aria-describedby, blur and keydown events', async () => {
@@ -126,5 +126,54 @@ describe('ValueSelect', () => {
 
     await fireEvent.keyDown(select, { key: 'ArrowDown' });
     expect(onKeyDown).toHaveBeenCalled();
+  });
+
+  it('renders unique DOM option values for collision options and emits correct typed value', async () => {
+    const onChange = vi.fn();
+    const options = [
+      { value: 1, label: 'Numeric one' },
+      { value: '1', label: 'String one' }
+    ];
+    render(ValueSelect, {
+      id: 'collision-select',
+      value: '1',
+      options,
+      onChange
+    });
+    const select = document.querySelector('#collision-select') as HTMLSelectElement;
+    expect(select).toBeInTheDocument();
+
+    const optionElements = Array.from(select.querySelectorAll('option'));
+    const domValues = optionElements.map((opt) => opt.value);
+    expect(new Set(domValues).size).toBe(optionElements.length);
+    expect(domValues).toEqual(['0', '1']);
+
+    expect(select.value).toBe('1');
+
+    await fireEvent.change(select, { target: { value: '1' } });
+    expect(onChange).toHaveBeenCalledWith('1');
+  });
+
+  it('renders selected disabled option labeled Unknown: removed-value when value is not in options', () => {
+    const options = [
+      { value: 1, label: 'Numeric one' },
+      { value: '1', label: 'String one' }
+    ];
+    render(ValueSelect, {
+      id: 'unknown-select',
+      value: 'removed-value',
+      options
+    });
+    const select = document.querySelector('#unknown-select') as HTMLSelectElement;
+    expect(select).toBeInTheDocument();
+
+    const optionElements = Array.from(select.querySelectorAll('option'));
+    expect(optionElements.length).toBe(3);
+    const unknownOpt = optionElements[0];
+    expect(unknownOpt.value).toBe('__unknown__');
+    expect(unknownOpt.textContent?.trim()).toBe('Unknown: removed-value');
+    expect(unknownOpt.disabled).toBe(true);
+    expect(unknownOpt.selected).toBe(true);
+    expect(select.value).toBe('__unknown__');
   });
 });

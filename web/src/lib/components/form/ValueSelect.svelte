@@ -44,58 +44,46 @@
     return String(opt);
   }
 
-  function getOptionValueString(opt: unknown, index: number): string {
-    const optVal = getOptValue(opt);
-    const str = String(optVal ?? '');
-    if (str === '[object Object]' || str === '') {
-      return String(index);
-    }
-    return str;
-  }
-
   const parsedOptions = $derived(
     options.map((opt, index) => ({
+      index,
+      optionValue: String(index),
       value: getOptValue(opt),
-      label: getOptLabel(opt),
-      optionValue: getOptionValueString(opt, index)
+      label: getOptLabel(opt)
     }))
   );
 
   const selectedIndex = $derived.by(() => {
     if (value === undefined || value === null) return -1;
+    const strictIdx = options.findIndex((opt) => getOptValue(opt) === value);
+    if (strictIdx !== -1) return strictIdx;
+
     const targetStr = String(value);
     return options.findIndex(
       (opt) => String(getOptValue(opt)) === targetStr
     );
   });
 
+  const isUnknown = $derived(
+    selectedIndex === -1 && value !== undefined && value !== null && value !== ''
+  );
+
   const selectedSelectValue = $derived(
     selectedIndex !== -1
-      ? getOptionValueString(options[selectedIndex], selectedIndex)
-      : placeholder !== undefined
-        ? ''
-        : options.length > 0
-          ? getOptionValueString(options[0], 0)
-          : ''
+      ? String(selectedIndex)
+      : isUnknown
+        ? '__unknown__'
+        : ''
   );
 
   function handleChange(event: Event) {
     const target = (event.currentTarget || event.target) as HTMLSelectElement | null;
     const selectedVal = target?.value;
 
-    if (selectedVal !== undefined && selectedVal !== null && selectedVal !== '') {
-      let selectedOpt = options.find(
-        (o) => String(getOptValue(o)) === selectedVal
-      );
-
-      if (selectedOpt === undefined) {
-        const idx = Number(selectedVal);
-        if (!Number.isNaN(idx) && idx >= 0 && idx < options.length) {
-          selectedOpt = options[idx];
-        }
-      }
-
-      if (selectedOpt !== undefined) {
+    if (selectedVal !== undefined && selectedVal !== null && selectedVal !== '' && selectedVal !== '__unknown__') {
+      const idx = Number(selectedVal);
+      if (!Number.isNaN(idx) && idx >= 0 && idx < options.length) {
+        const selectedOpt = options[idx];
         const newValue = getOptValue(selectedOpt);
         value = newValue;
         onChange?.(newValue);
@@ -114,13 +102,18 @@
   onchange={handleChange}
   {...restProps}
 >
+  {#if isUnknown}
+    <NativeSelectOption value="__unknown__" disabled selected={true}>
+      Unknown: {String(value)}
+    </NativeSelectOption>
+  {/if}
   {#if placeholder}
-    <NativeSelectOption value="" disabled selected={selectedIndex === -1}>
+    <NativeSelectOption value="" disabled selected={selectedIndex === -1 && !isUnknown}>
       {placeholder}
     </NativeSelectOption>
   {/if}
-  {#each parsedOptions as opt, index (index)}
-    <NativeSelectOption value={opt.optionValue}>
+  {#each parsedOptions as opt (opt.index)}
+    <NativeSelectOption value={opt.optionValue} selected={selectedIndex === opt.index}>
       {opt.label}
     </NativeSelectOption>
   {/each}
