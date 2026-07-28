@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { fireEvent, render, screen } from "@testing-library/svelte";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import TrainingPage from "./+page.svelte";
 
 const mockSchema = {
@@ -111,21 +111,22 @@ const mockSchema = {
 };
 
 const mockSetRaw = vi.fn();
+let mockDraft = {
+  learning_rate: 0.0001,
+  train_dtype: "fp16",
+  text_encoder: { learning_rate: 0.00005 },
+  unet: { learning_rate: 0.0001 },
+  layer_filter: "",
+  offset_noise_weight: 0,
+  masked_training: false,
+  mse_strength: 1.0,
+};
 
 vi.mock("$lib/config/context", () => ({
   getRouteContext: () => ({
     schema: mockSchema,
     workspace: {
-      draft: {
-        learning_rate: 0.0001,
-        train_dtype: "fp16",
-        text_encoder: { learning_rate: 0.00005 },
-        unet: { learning_rate: 0.0001 },
-        layer_filter: "",
-        offset_noise_weight: 0,
-        masked_training: false,
-        mse_strength: 1.0,
-      },
+      draft: mockDraft,
       errors: [],
       setRaw: mockSetRaw,
     },
@@ -133,7 +134,11 @@ vi.mock("$lib/config/context", () => ({
   }),
 }));
 
-describe("Training page subnav tabs", () => {
+describe("Training page subnav tabs and draft retention", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("renders 8 text-only tabs without icons and switches between panels", async () => {
     render(TrainingPage);
 
@@ -181,5 +186,13 @@ describe("Training page subnav tabs", () => {
     // Switch to Loss tab
     await fireEvent.click(screen.getByRole("tab", { name: "Loss" }));
     expect(screen.getByLabelText("MSE Loss Strength")).toBeInTheDocument();
+  });
+
+  it("retains drafts and communicates edits to workspace setRaw", async () => {
+    render(TrainingPage);
+
+    const lrInput = screen.getByLabelText("Learning Rate");
+    await fireEvent.input(lrInput, { target: { value: "0.0005" } });
+    expect(mockSetRaw).toHaveBeenCalledWith("learning_rate", "0.0005");
   });
 });

@@ -1,5 +1,7 @@
 <script lang="ts">
   import ResponsiveDialogDrawer from './ResponsiveDialogDrawer.svelte';
+  import Button from '$lib/components/ui/Button.svelte';
+  import { Input } from '$lib/components/ui/input/index.js';
 
   let {
     open = true,
@@ -18,13 +20,13 @@
   let text = $state('draft content');
 </script>
 
-<button id="trigger-btn">Open Trigger</button>
+<Button id="trigger-btn">Open Trigger</Button>
 <ResponsiveDialogDrawer {open} {title} {description} {onOpenChange}>
   <div data-testid="content">
     <p>Parent count: {parentCount}</p>
-    <input data-testid="draft-input" bind:value={text} />
+    <Input data-testid="draft-input" value={text} onInput={(v) => text = v} />
   </div>
   {#snippet footer()}
-    <button data-testid="footer-btn">Submit</button>
+    <Button data-testid="footer-btn">Submit</Button>
   {/snippet}
 </ResponsiveDialogDrawer>

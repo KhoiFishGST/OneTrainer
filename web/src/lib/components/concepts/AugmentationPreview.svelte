@@ -60,9 +60,9 @@
     <div class="aug-preview-dialog">
       <div class="aug-preview-header">
         <h3 class="aug-preview-title">Image Augmentations Live Test - Sample #{previewIndex + 1}</h3>
-        <button type="button" class="close-btn" onclick={onClose} aria-label="Close">
+        <Button type="button" variant="ghost" size="icon" class="close-btn" onclick={onClose} aria-label="Close">
           <X size={18} />
-        </button>
+        </Button>
       </div>
 
       <div class="aug-preview-modal-body">

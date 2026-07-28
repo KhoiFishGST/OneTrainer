@@ -7,6 +7,7 @@
   import Skeleton from '$lib/components/ui/Skeleton.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
+  import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 
   let huggingfaceToken = $state('');
   let hfTokenSet = $state(false);
@@ -19,6 +20,7 @@
   let isHttpInsecure = $state(false);
   let saveStatus = $state<{ type: 'success' | 'error'; message: string } | null>(null);
   let loading = $state(true);
+  let isConfirmClearOpen = $state(false);
 
   onMount(async () => {
     if (typeof window !== 'undefined') {
@@ -223,13 +225,35 @@
             <Save size={16} /> Update Password
           </Button>
           {#if webuiPasswordSet}
-            <Button variant="danger" class="btn danger" onclick={handleClearPassword}>
+            <Button variant="danger" class="btn danger" onclick={() => (isConfirmClearOpen = true)}>
               Clear Password
             </Button>
           {/if}
         </div>
       </div>
     </div>
+
+    <AlertDialog.Root open={isConfirmClearOpen} onOpenChange={(v) => (isConfirmClearOpen = v)}>
+      <AlertDialog.Content>
+        <AlertDialog.Header>
+          <AlertDialog.Title>Clear Web Portal Password?</AlertDialog.Title>
+          <AlertDialog.Description>
+            Are you sure you want to clear password protection? This will allow open access to your instance.
+          </AlertDialog.Description>
+        </AlertDialog.Header>
+        <AlertDialog.Footer>
+          <AlertDialog.Cancel onclick={() => (isConfirmClearOpen = false)}>Cancel</AlertDialog.Cancel>
+          <AlertDialog.Action
+            onclick={() => {
+              isConfirmClearOpen = false;
+              handleClearPassword();
+            }}
+          >
+            Confirm Clear
+          </AlertDialog.Action>
+        </AlertDialog.Footer>
+      </AlertDialog.Content>
+    </AlertDialog.Root>
   {/if}
 </div>
 
