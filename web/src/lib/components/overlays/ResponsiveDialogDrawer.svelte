@@ -5,7 +5,7 @@
   import * as Drawer from '$lib/components/ui/drawer';
 
   let {
-    open = false,
+    open = $bindable(false),
     onOpenChange = () => {},
     title,
     description,
@@ -26,7 +26,7 @@
 </script>
 
 {#if !mobile}
-  <Dialog.Root {open} {onOpenChange}>
+  <Dialog.Root bind:open {onOpenChange}>
     <Dialog.Content class={className}>
       {#if title || description}
         <Dialog.Header>
@@ -49,7 +49,7 @@
     </Dialog.Content>
   </Dialog.Root>
 {:else}
-  <Drawer.Root {open} {onOpenChange}>
+  <Drawer.Root bind:open {onOpenChange}>
     <Drawer.Content class={className}>
       {#if title || description}
         <Drawer.Header>

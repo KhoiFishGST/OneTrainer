@@ -3,6 +3,8 @@ import { render, screen, fireEvent } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ResponsiveDialogDrawerTestWrapper from './ResponsiveDialogDrawerTestWrapper.svelte';
 
+const mediaListeners = new Set<(e: MediaQueryListEvent) => void>();
+
 function mockMatchMedia(matches: boolean) {
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
@@ -10,13 +12,18 @@ function mockMatchMedia(matches: boolean) {
       matches,
       media: query,
       onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
+      addListener: vi.fn((cb) => mediaListeners.add(cb)),
+      removeListener: vi.fn((cb) => mediaListeners.delete(cb)),
+      addEventListener: vi.fn((type, cb) => {
+        if (type === 'change' || !type) mediaListeners.add(cb);
+      }),
+      removeEventListener: vi.fn((type, cb) => {
+        if (type === 'change' || !type) mediaListeners.delete(cb);
+      }),
       dispatchEvent: vi.fn(),
     })),
   });
+  mediaListeners.forEach((cb) => cb({ matches } as MediaQueryListEvent));
 }
 
 describe('ResponsiveDialogDrawer', () => {
@@ -78,7 +85,7 @@ describe('ResponsiveDialogDrawer', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
 
     await rerender({ open: false });
-    // Expect focus to return or trigger focus handling
+    expect(document.activeElement).toBe(trigger);
     document.body.removeChild(trigger);
   });
 });

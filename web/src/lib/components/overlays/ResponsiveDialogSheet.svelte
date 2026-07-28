@@ -5,7 +5,7 @@
   import * as Sheet from '$lib/components/ui/sheet';
 
   let {
-    open = false,
+    open = $bindable(false),
     onOpenChange = () => {},
     title,
     description,
@@ -26,7 +26,7 @@
 </script>
 
 {#if !mobile}
-  <Dialog.Root {open} {onOpenChange}>
+  <Dialog.Root bind:open {onOpenChange}>
     <Dialog.Content class={className}>
       {#if title || description}
         <Dialog.Header>
@@ -49,7 +49,7 @@
     </Dialog.Content>
   </Dialog.Root>
 {:else}
-  <Sheet.Root {open} {onOpenChange}>
+  <Sheet.Root bind:open {onOpenChange}>
     <Sheet.Content class={`full-screen inset-0 w-full h-dvh p-safe ${className}`}>
       {#if title || description}
         <Sheet.Header>
