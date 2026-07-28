@@ -234,14 +234,14 @@
 
 <style>
   .metrics-chart-card {
-    background-color: var(--panel, #1e293b);
-    border: 1px solid var(--line, #334155);
+    background-color: var(--card, #1e293b);
+    border: 1px solid var(--border, #334155);
     border-radius: 8px;
     padding: 16px;
     display: flex;
     flex-direction: column;
     gap: 12px;
-    color: var(--text, #f8fafc);
+    color: var(--foreground, #f8fafc);
   }
 
   .chart-header {
@@ -256,7 +256,7 @@
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
-    color: var(--color-text-title, var(--accent, #3b82f6));
+    color: var(--primary, #3b82f6);
   }
 
   .chart-controls {
@@ -271,20 +271,22 @@
     align-items: center;
     gap: 8px;
     font-size: 0.8125rem;
-    color: var(--muted, #94a3b8);
+    color: var(--muted-foreground, #94a3b8);
   }
 
+  /* Bits UI boundary: style Slider child component */
   .chart-controls :global(.ema-slider) {
     width: 90px;
-    accent-color: var(--accent, #3b82f6);
+    accent-color: var(--primary, #3b82f6);
     cursor: pointer;
   }
 
+  /* Bits UI boundary: style Button child component */
   .chart-controls :global(.btn-control) {
     min-height: 0;
-    background-color: var(--control, #0f172a);
-    color: var(--text, #f8fafc);
-    border: 1px solid var(--line, #334155);
+    background-color: var(--muted, #0f172a);
+    color: var(--foreground, #f8fafc);
+    border: 1px solid var(--border, #334155);
     border-radius: 4px;
     padding: 4px 10px;
     font-size: 0.8125rem;
@@ -292,13 +294,15 @@
     transition: background-color 0.15s ease;
   }
 
+  /* Bits UI boundary: style Button child component hover state */
   .chart-controls :global(.btn-control:hover) {
-    background-color: var(--panel-raised, #1e293b);
-    border-color: var(--accent, #3b82f6);
+    background-color: var(--card, #1e293b);
+    border-color: var(--primary, #3b82f6);
   }
 
   /* Responsive 44px touch targets on mobile viewports */
   @media (max-width: 768px) {
+    /* Bits UI boundary: style Button child component mobile touch target */
     .chart-controls :global(.btn-control) {
       min-height: 44px;
       padding: 8px 14px;
@@ -320,9 +324,9 @@
     align-items: center;
     justify-content: center;
     height: 200px;
-    color: var(--muted, #94a3b8);
+    color: var(--muted-foreground, #94a3b8);
     font-size: 0.875rem;
-    border: 1px dashed var(--line, #334155);
+    border: 1px dashed var(--border, #334155);
     border-radius: 6px;
   }
 </style>

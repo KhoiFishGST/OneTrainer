@@ -227,8 +227,8 @@
   .gallery-single-panel {
     display: flex;
     flex-direction: column;
-    background: var(--panel, #1e293b);
-    border: 1px solid var(--line, #334155);
+    background: var(--card, #1e293b);
+    border: 1px solid var(--border, #334155);
     border-radius: 8px;
     overflow: hidden;
   }
@@ -238,14 +238,14 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.625rem 0.75rem;
-    border-bottom: 1px solid var(--line, #334155);
+    border-bottom: 1px solid var(--border, #334155);
   }
 
   .panel-title {
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
-    color: var(--color-text-title, var(--accent, #3b82f6));
+    color: var(--primary, #3b82f6);
   }
 
   .sort-control {
@@ -256,7 +256,7 @@
 
   .sort-label {
     font-size: 0.8125rem;
-    color: var(--muted, #94a3b8);
+    color: var(--muted-foreground, #94a3b8);
     font-weight: 500;
   }
 
@@ -265,10 +265,10 @@
     align-items: center;
     justify-content: center;
     padding: 3rem 1.5rem;
-    background: var(--panel);
-    border: 1px solid var(--line);
+    background: var(--card);
+    border: 1px solid var(--border);
     border-radius: 8px;
-    color: var(--muted);
+    color: var(--muted-foreground);
   }
 
   .error-state {
@@ -282,15 +282,6 @@
     margin: 0;
   }
 
-  .gallery-single-panel {
-    display: flex;
-    flex-direction: column;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-
   .checkpoint-row {
     content-visibility: auto;
     contain-intrinsic-size: 1px 300px;
@@ -299,7 +290,7 @@
     align-items: stretch;
     gap: 0.5rem;
     padding: 0.75rem 0.75rem;
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid var(--border);
   }
 
   .checkpoint-row:last-child {
@@ -312,8 +303,8 @@
     justify-content: center;
     writing-mode: vertical-lr;
     transform: rotate(180deg);
-    background: var(--control);
-    border: 1px solid var(--line);
+    background: var(--muted);
+    border: 1px solid var(--border);
     border-radius: 6px;
     padding: 0.5rem 0.25rem;
     user-select: none;
@@ -323,7 +314,7 @@
   .epoch-badge-text {
     font-size: 0.8125rem;
     font-weight: 600;
-    color: var(--text);
+    color: var(--foreground);
     letter-spacing: 0.05em;
     white-space: nowrap;
   }
@@ -347,7 +338,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--accent);
+    color: var(--primary);
     margin: 0.15rem 0 0 0;
   }
 
@@ -364,11 +355,12 @@
     max-width: 100%;
   }
 
+  /* Bits UI boundary: style sample card Button component */
   .sample-slot-container :global(.sample-card) {
     display: flex;
     flex-direction: column;
-    background: var(--control);
-    border: 1px solid var(--line);
+    background: var(--muted);
+    border: 1px solid var(--border);
     border-radius: 6px;
     overflow: hidden;
     text-align: left;
@@ -376,14 +368,16 @@
     padding: 0;
   }
 
+  /* Bits UI boundary: style ready card Button hover state */
   .sample-slot-container :global(.ready-card) {
     cursor: pointer;
     transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   }
 
+  /* Bits UI boundary: style ready card Button hover border */
   .sample-slot-container :global(.ready-card:hover) {
     transform: translateY(-2px);
-    border-color: var(--accent);
+    border-color: var(--primary);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   }
 
@@ -412,6 +406,7 @@
     transition: opacity 0.15s ease;
   }
 
+  /* Bits UI boundary: style overlay on ready card hover */
   .sample-slot-container :global(.ready-card:hover .card-overlay) {
     opacity: 1;
   }
@@ -443,7 +438,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--control);
+    background: var(--muted);
     padding: 0.5rem;
     text-align: center;
   }
@@ -451,7 +446,7 @@
   .status-text {
     font-size: 0.85rem;
     font-weight: 500;
-    color: var(--muted);
+    color: var(--muted-foreground);
   }
 
   .status-error .status-text {
@@ -459,7 +454,7 @@
   }
 
   .status-pending .status-text {
-    color: var(--accent);
+    color: var(--primary);
   }
 
   @media (max-width: 768px) {

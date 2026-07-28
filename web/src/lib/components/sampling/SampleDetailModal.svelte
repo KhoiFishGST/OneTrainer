@@ -292,24 +292,26 @@
   .form-row label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--text, #f8fafc);
+    color: var(--foreground, #f8fafc);
   }
 
+  /* Bits UI boundary: style TextArea / NumberInput child components */
   .form-row :global(.textarea-input),
   .form-row :global(.number-input) {
     padding: 0.5rem 0.75rem;
-    background-color: var(--control, #14191f);
-    border: 1px solid var(--line, #2d3741);
+    background-color: var(--muted, #14191f);
+    border: 1px solid var(--border, #2d3741);
     border-radius: 6px;
-    color: var(--text, #f8fafc);
+    color: var(--foreground, #f8fafc);
     font-size: 0.875rem;
     font-family: inherit;
   }
 
+  /* Bits UI boundary: style TextArea / NumberInput child components focus state */
   .form-row :global(.textarea-input:focus),
   .form-row :global(.number-input:focus) {
     outline: none;
-    border-color: var(--accent, #3b82f6);
+    border-color: var(--primary, #3b82f6);
   }
 
   .form-grid-2 {
@@ -323,8 +325,8 @@
     flex-direction: column;
     gap: 0.75rem;
     padding: 0.75rem;
-    background-color: var(--control, #14191f);
-    border: 1px solid var(--line, #2d3741);
+    background-color: var(--muted, #14191f);
+    border: 1px solid var(--border, #2d3741);
     border-radius: 6px;
   }
 
@@ -337,7 +339,7 @@
   .section-label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--text, #f8fafc);
+    color: var(--foreground, #f8fafc);
   }
 
   .preset-buttons {
@@ -345,27 +347,30 @@
     gap: 0.375rem;
   }
 
+  /* Bits UI boundary: style preset Button child components */
   .preset-buttons :global(.preset-btn) {
     min-height: 0;
     padding: 0.25rem 0.625rem;
     font-size: 0.75rem;
     font-weight: 600;
     border-radius: 4px;
-    border: 1px solid var(--line, #2d3741);
-    background: var(--panel-raised, #1d242c);
-    color: var(--muted, #94a3b8);
+    border: 1px solid var(--border, #2d3741);
+    background: var(--card, #1d242c);
+    color: var(--muted-foreground, #94a3b8);
     cursor: pointer;
     transition: all 0.15s ease;
   }
 
+  /* Bits UI boundary: style preset Button child component hover state */
   .preset-buttons :global(.preset-btn:hover) {
-    color: var(--text, #f8fafc);
-    border-color: var(--accent, #3b82f6);
+    color: var(--foreground, #f8fafc);
+    border-color: var(--primary, #3b82f6);
   }
 
+  /* Bits UI boundary: style preset Button child component active state */
   .preset-buttons :global(.preset-btn.active) {
-    background: var(--accent, #3b82f6);
+    background: var(--primary, #3b82f6);
     color: #ffffff;
-    border-color: var(--accent, #3b82f6);
+    border-color: var(--primary, #3b82f6);
   }
 </style>

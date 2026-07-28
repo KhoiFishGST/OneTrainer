@@ -54,10 +54,11 @@
     display: contents;
   }
 
+  /* Bits UI boundary: style child Alert component */
   .error-banner-owner :global(.error-banner) {
-    background-color: rgba(217, 120, 120, 0.2);
-    border-bottom: 1px solid var(--danger);
-    color: var(--danger);
+    background-color: rgba(239, 68, 68, 0.2);
+    border-bottom: 1px solid var(--destructive);
+    color: var(--destructive);
     padding: 10px 16px;
     display: flex;
     align-items: center;
@@ -72,19 +73,21 @@
     gap: 8px;
   }
 
+  /* Bits UI boundary: style child Button component */
   .error-banner-owner :global(.dismiss-btn) {
     min-height: 0;
     background: transparent;
-    border: 1px solid var(--danger);
-    color: var(--danger);
+    border: 1px solid var(--destructive);
+    color: var(--destructive);
     padding: 4px 10px;
     border-radius: 4px;
     font-size: 0.75rem;
     cursor: pointer;
   }
 
+  /* Bits UI boundary: style child Button hover state */
   .error-banner-owner :global(.dismiss-btn:hover) {
-    background-color: var(--danger);
+    background-color: var(--destructive);
     color: #fff;
   }
 </style>

@@ -57,31 +57,6 @@
   --rail-expanded: 160px;
   --status-height: 52px;
 
-  /* Legacy theme aliases preserved during migration */
-  --bg: #f5f7fa;
-  --panel: #ffffff;
-  --panel-raised: #f0f4f8;
-  --control: #ffffff;
-  --line: #d6dee8;
-  --text: #17202a;
-  --muted-text: #657384;
-  --accent-color: #2563eb;
-  --danger: #dc2626;
-  --success: #65b98d;
-  --focus: #2563eb;
-
-  --color-bg-card: var(--panel);
-  --color-bg-input: var(--control);
-  --color-bg-secondary: var(--panel-raised);
-  --color-bg-button: var(--control);
-  --color-bg-button-hover: var(--panel-raised);
-  --color-text: var(--text);
-  --color-text-title: var(--primary);
-  --color-text-muted: var(--muted-foreground);
-  --color-border: var(--border);
-  --color-primary: var(--primary);
-  --color-error: var(--danger);
-
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
   font-size: 14px;
 }
@@ -109,18 +84,6 @@
   --border: #2b3948;
   --input: #2b3948;
   --ring: #60a5fa;
-
-  --bg: #0c1118;
-  --panel: #151c24;
-  --panel-raised: #18212b;
-  --control: #151c24;
-  --line: #2b3948;
-  --text: #e8edf2;
-  --muted-text: #8d99a6;
-  --accent-color: #3b82f6;
-  --danger: #d97878;
-  --success: #65b98d;
-  --focus: #60a5fa;
 }
 
 *,

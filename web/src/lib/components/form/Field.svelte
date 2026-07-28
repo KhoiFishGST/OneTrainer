@@ -162,13 +162,13 @@
   }
 
   .field-label-side.has-tooltip .field-label {
-    text-decoration: underline dotted var(--color-border, var(--line, #475569));
+    text-decoration: underline dotted var(--border, #475569);
     text-underline-offset: 3px;
     transition: color 0.15s ease;
   }
 
   .field-label-side.has-tooltip:hover .field-label {
-    color: var(--color-text-title, var(--accent, #3b82f6));
+    color: var(--primary, #3b82f6);
   }
 
   .field-control-side {
@@ -194,7 +194,7 @@
     }
   }
 
-
+  /* Bits UI boundary: style child input components */
   .field-control-side :global(.text-input),
   .field-control-side :global(.number-input),
   .field-control-side :global(.directory-input-wrapper),
@@ -206,18 +206,21 @@
     box-sizing: border-box;
   }
 
+  /* Bits UI boundary: style control action wrapper */
   .field-control-side :global(.control-with-action) {
     display: flex;
     align-items: center;
     gap: 0.375rem;
   }
 
+  /* Bits UI boundary: style control target */
   .field-control-side :global(.control-with-action .control-target) {
     flex: 1 1 0%;
     min-width: 0;
     width: 100%;
   }
 
+  /* Bits UI boundary: style action button component */
   .field-control-side :global(.control-with-action .action-btn) {
     flex: 0 0 auto;
     height: 38px;
@@ -225,26 +228,29 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--color-border, var(--line, #2d3741));
+    border: 1px solid var(--border, #2d3741);
     border-radius: 6px;
-    background: var(--color-bg-button, var(--control, #14191f));
-    color: var(--color-text, var(--text, #e6ebef));
+    background: var(--muted, #14191f);
+    color: var(--foreground, #e6ebef);
     cursor: pointer;
     box-sizing: border-box;
     transition: all 0.15s ease;
   }
 
+  /* Bits UI boundary: style action button hover state */
   .field-control-side :global(.control-with-action .action-btn:hover:not(:disabled)) {
-    background: var(--color-bg-button-hover, var(--panel-raised, #1d242c));
-    border-color: var(--accent, #3b82f6);
-    color: var(--accent, #3b82f6);
+    background: var(--card, #1d242c);
+    border-color: var(--primary, #3b82f6);
+    color: var(--primary, #3b82f6);
   }
 
+  /* Bits UI boundary: style action button disabled state */
   .field-control-side :global(.control-with-action .action-btn:disabled) {
     opacity: 0.4;
     cursor: not-allowed;
   }
 
+  /* Bits UI boundary: style toggle input component */
   .field-control-side :global(.toggle-input) {
     margin-left: 0.25rem;
     margin-right: auto;
@@ -253,7 +259,7 @@
   .field-label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--color-text, var(--text, #e6ebef));
+    color: var(--foreground, #e6ebef);
   }
 
   .field-tooltip {
@@ -265,9 +271,9 @@
     font-size: 0.75rem;
     line-height: 1.4;
     padding: 0.5rem 0.75rem;
-    background: var(--panel-raised, #1a212a);
-    color: var(--text, #f1f5f9);
-    border: 1px solid var(--line, #3b4754);
+    background: var(--popover, #1a212a);
+    color: var(--popover-foreground, #f1f5f9);
+    border: 1px solid var(--border, #3b4754);
     border-radius: 6px;
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
     max-width: 320px;
@@ -283,7 +289,7 @@
     left: 14px;
     border-width: 5px;
     border-style: solid;
-    border-color: var(--line, #3b4754) transparent transparent transparent;
+    border-color: var(--border, #3b4754) transparent transparent transparent;
   }
 
   @keyframes fadeIn {
@@ -299,7 +305,7 @@
 
   .field-error {
     font-size: 0.75rem;
-    color: var(--color-error, var(--danger, #d97878));
+    color: var(--destructive, #d97878);
     font-weight: 500;
   }
 

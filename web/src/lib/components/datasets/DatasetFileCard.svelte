@@ -68,9 +68,10 @@
 </Card.Root>
 
 <style>
+  /* Bits UI boundary: style Card root component */
   :global(.item-card) {
-    background: var(--panel, #182026) !important;
-    border: 1px solid var(--line, #2d3741) !important;
+    background: var(--card, #182026) !important;
+    border: 1px solid var(--border, #2d3741) !important;
     border-radius: 8px !important;
     overflow: hidden;
     display: flex;
@@ -78,6 +79,7 @@
     padding: 0 !important;
   }
 
+  /* Bits UI boundary: style Card image Button component */
   :global(.card-image-area) {
     width: 100%;
     aspect-ratio: 1;
@@ -90,6 +92,7 @@
     border-radius: 0 !important;
   }
 
+  /* Bits UI boundary: style Card image Button component disabled state */
   :global(.card-image-area:disabled) {
     cursor: default;
   }
@@ -106,10 +109,11 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: var(--muted);
+    color: var(--muted-foreground);
     gap: 0.5rem;
   }
 
+  /* Bits UI boundary: style Card content component */
   :global(.card-caption-area) {
     padding: 0.75rem !important;
     display: flex;
@@ -120,16 +124,17 @@
   .item-id-label {
     font-size: 0.75rem;
     font-weight: 600;
-    color: var(--muted);
+    color: var(--muted-foreground);
   }
 
+  /* Bits UI boundary: style TextArea child component */
   :global(.caption-textarea) {
     width: 100%;
     min-height: 60px;
-    background: var(--control, #14191f) !important;
-    border: 1px solid var(--line, #2d3741) !important;
+    background: var(--muted, #14191f) !important;
+    border: 1px solid var(--border, #2d3741) !important;
     border-radius: 4px !important;
-    color: var(--text) !important;
+    color: var(--foreground) !important;
     padding: 0.5rem !important;
     font-size: 0.8125rem !important;
     resize: vertical;

@@ -163,7 +163,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
-    color: var(--muted, #8995a1);
+    color: var(--muted-foreground, #8995a1);
     text-decoration: none;
     font-size: 0.875rem;
     margin-top: 0.25rem;
@@ -171,27 +171,28 @@
   }
 
   .btn-back:hover {
-    color: var(--text, #e6ebef);
+    color: var(--foreground, #e6ebef);
   }
 
   .dataset-title {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--color-text-title, var(--accent, #3b82f6));
+    color: var(--primary, #3b82f6);
     margin: 0;
   }
 
   .dataset-path {
     font-size: 0.8125rem;
-    color: var(--muted, #8995a1);
+    color: var(--muted-foreground, #8995a1);
   }
 
+  /* Bits UI boundary: style upload Button component */
   .detail-header :global(.btn-upload) {
     min-height: 0;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    background: var(--accent, #3b82f6);
+    background: var(--primary, #3b82f6);
     color: #ffffff;
     border: none;
     padding: 0.5rem 1rem;
@@ -199,6 +200,7 @@
     cursor: pointer;
   }
 
+  /* Bits UI boundary: style hidden file input component */
   .detail-page :global(.hidden-file-input) {
     display: none;
   }
@@ -209,22 +211,25 @@
     gap: 1.25rem;
   }
 
+  /* Bits UI boundary: style Empty root component */
   :global(.empty-state) {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 4rem 2rem !important;
-    color: var(--muted) !important;
+    color: var(--muted-foreground) !important;
     gap: 0.75rem;
   }
 
+  /* Bits UI boundary: style Empty title component */
   :global(.empty-title) {
     font-size: 1.125rem !important;
     font-weight: 600 !important;
-    color: var(--text) !important;
+    color: var(--foreground) !important;
   }
 
+  /* Bits UI boundary: style Empty subtext component */
   :global(.empty-sub) {
     font-size: 0.875rem !important;
   }
@@ -233,14 +238,14 @@
     position: absolute;
     inset: 0;
     background: rgba(15, 23, 42, 0.9);
-    border: 3px dashed var(--accent, #3b82f6);
+    border: 3px dashed var(--primary, #3b82f6);
     z-index: 500;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 1rem;
-    color: var(--accent);
+    color: var(--primary);
   }
 
   .lightbox-overlay {
@@ -260,6 +265,7 @@
     border-radius: 8px;
   }
 
+  /* Bits UI boundary: style lightbox close Button component */
   .lightbox-overlay :global(.btn-close-lightbox) {
     min-height: 0;
     width: auto;

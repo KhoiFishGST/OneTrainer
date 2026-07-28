@@ -68,21 +68,23 @@
     width: 100%;
   }
 
+  /* Bits UI boundary: style NumberInput child component */
   .time-input-group :global(.time-value-input) {
     flex: 1;
     min-width: 0;
     padding: 0.5rem 0.75rem;
-    border: 1px solid var(--color-border, var(--line, #2d3741));
+    border: 1px solid var(--border, #2d3741);
     border-radius: 6px;
     font-size: 0.875rem;
-    background: var(--color-bg-input, var(--control, #14191f));
-    color: var(--color-text, var(--text, #e6ebef));
+    background: var(--muted, #14191f);
+    color: var(--foreground, #e6ebef);
     box-sizing: border-box;
   }
 
+  /* Bits UI boundary: style NumberInput child component focus state */
   .time-input-group :global(.time-value-input:focus) {
     outline: none;
-    border-color: var(--color-primary, var(--accent, #3b82f6));
+    border-color: var(--primary, #3b82f6);
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
   }
 </style>

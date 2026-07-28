@@ -163,8 +163,8 @@
 
 <style>
   .console-drawer {
-    background-color: var(--panel-raised, #161b22);
-    border-top: 1px solid var(--line, #30363d);
+    background-color: var(--card, #161b22);
+    border-top: 1px solid var(--border, #30363d);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -184,14 +184,14 @@
   }
 
   .resize-handle:hover .handle-bar {
-    background-color: var(--accent, #58a6ff);
+    background-color: var(--primary, #58a6ff);
   }
 
   .handle-bar {
     width: 36px;
     height: 4px;
     border-radius: 2px;
-    background-color: var(--line, #30363d);
+    background-color: var(--border, #30363d);
     transition: background-color 0.2s ease;
   }
 
@@ -200,8 +200,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 2px 12px;
-    background-color: var(--panel-bg, #0d1117);
-    border-bottom: 1px solid var(--line, #30363d);
+    background-color: var(--card, #0d1117);
+    border-bottom: 1px solid var(--border, #30363d);
   }
 
   .header-left {
@@ -214,27 +214,30 @@
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
-    color: var(--text-muted, #8b949e);
+    color: var(--muted-foreground, #8b949e);
   }
 
+  /* Bits UI boundary: style drawer icon buttons */
   .drawer-header :global(.btn-icon) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     background: transparent;
     border: none;
-    color: var(--text-muted, #8b949e);
+    color: var(--muted-foreground, #8b949e);
     cursor: pointer;
     padding: 2px;
     border-radius: 4px;
     text-decoration: none;
   }
 
+  /* Bits UI boundary: style drawer icon button hover */
   .drawer-header :global(.btn-icon:hover) {
-    color: var(--text, #c9d1d9);
-    background-color: var(--button-hover-bg, #21262d);
+    color: var(--foreground, #c9d1d9);
+    background-color: var(--muted, #21262d);
   }
 
+  /* Bits UI boundary: style drawer button component */
   .drawer-header :global(button.btn-icon) {
     min-height: 0;
     width: auto;

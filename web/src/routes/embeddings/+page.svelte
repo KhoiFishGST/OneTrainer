@@ -170,7 +170,7 @@
               {/if}
 
               <Button
-                variant="default"
+                type="button"
                 class="primary-btn"
                 disabled={!isEmbeddingSupported}
                 onclick={handleAddEmbedding}
@@ -181,31 +181,33 @@
             </div>
           </div>
 
-          <!-- Embeddings Grid / Cards -->
+          <!-- Additional Embeddings Cards -->
           {#if embeddingsList.length === 0}
-            <Empty.Root class="empty-embeddings-card border border-dashed p-8 rounded-lg bg-card text-center">
-              <Empty.Title class="empty-title text-base font-semibold">No Additional Embeddings</Empty.Title>
-              <Empty.Description class="empty-desc text-sm text-muted-foreground max-w-md mx-auto mb-4">
-                Click <strong>+ Add Embedding</strong> to add textual inversion embedding configurations to your training run.
+            <Empty.Root class="border border-dashed p-8 rounded-lg bg-card text-center">
+              <Empty.Title class="text-lg font-semibold">
+                No Additional Embeddings
+              </Empty.Title>
+              <Empty.Description class="text-sm text-muted-foreground max-w-md mx-auto mb-4">
+                Add an embedding placeholder to train new textual inversion tokens alongside your model.
               </Empty.Description>
               <Empty.Content>
                 <Button
-                  variant="default"
+                  type="button"
                   class="primary-btn"
                   disabled={!isEmbeddingSupported}
                   onclick={handleAddEmbedding}
                 >
                   <Plus size={16} />
-                  <span>Add Embedding</span>
+                  <span>Add First Embedding</span>
                 </Button>
               </Empty.Content>
             </Empty.Root>
           {:else}
             <div class="embeddings-grid">
-              {#each embeddingsList as item, i (item.uuid || i)}
+              {#each embeddingsList as emb, idx (emb.uuid || idx)}
                 <EmbeddingCard
-                  embedding={item}
-                  index={i}
+                  embedding={ctx.workspace.draft.additional_embeddings[idx]}
+                  index={idx}
                   disabled={!isEmbeddingSupported}
                   onRemove={handleRemoveEmbedding}
                   onClone={handleCloneEmbedding}
@@ -222,81 +224,67 @@
 
 <style>
   .route-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
     padding: 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
   }
 
-  .route-page :global(.embeddings-header) {
-    margin-bottom: 1rem;
-  }
-
-  .route-page :global(.embeddings-warning-alert) {
+  :global(.embeddings-warning-alert) {
     display: flex;
     align-items: flex-start;
     gap: 0.75rem;
-    background-color: var(--color-warning-bg, rgba(234, 179, 8, 0.12));
-    border: 1px solid var(--color-warning-border, rgba(234, 179, 8, 0.3));
-    color: var(--color-warning-text, #fde047);
-    padding: 0.875rem 1rem;
-    border-radius: 6px;
-    margin-bottom: 1.25rem;
-    max-width: 740px;
-    font-size: 0.875rem;
-    line-height: 1.4;
+    background-color: rgba(234, 179, 8, 0.1);
+    border: 1px solid rgba(234, 179, 8, 0.3);
+    color: #eab308;
+    border-radius: 8px;
+    padding: 1rem;
   }
 
   .warning-icon {
-    font-size: 1.125rem;
+    font-size: 1.25rem;
     line-height: 1;
-    flex-shrink: 0;
   }
 
-  .warning-text strong {
-    color: var(--text-emphasis, #ffffff);
+  .warning-text {
+    font-size: 0.875rem;
+    line-height: 1.5;
   }
 
   .embeddings-fieldset {
     border: none;
     padding: 0;
     margin: 0;
-    min-width: 0;
-    transition: opacity 0.2s ease, filter 0.2s ease;
+    width: 100%;
   }
 
   .embeddings-fieldset:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-    filter: grayscale(0.5);
-  }
-
-  .embeddings-fieldset:disabled :global(button),
-  .embeddings-fieldset:disabled :global(input),
-  .embeddings-fieldset:disabled :global(select) {
+    opacity: 0.6;
     pointer-events: none;
-    cursor: not-allowed;
   }
 
   .embeddings-layout {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
-    width: 740px;
-    max-width: 100%;
+    gap: 2rem;
   }
 
   .list-section {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.25rem;
   }
 
   .list-action-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.75rem 1rem;
-    background-color: var(--panel, #181e25);
-    border: 1px solid var(--line, #2d3741);
-    border-radius: 8px;
+    gap: 1rem;
+    flex-wrap: wrap;
   }
 
   .list-title-group {
@@ -309,14 +297,14 @@
     font-size: 1rem;
     font-weight: 600;
     margin: 0;
-    color: var(--text, #f8fafc);
+    color: var(--foreground, #f8fafc);
   }
 
   .count-badge {
     font-size: 0.75rem;
     font-weight: 700;
-    color: var(--accent, #3b82f6);
-    background: var(--accent-soft, rgba(59, 130, 246, 0.15));
+    color: var(--primary, #3b82f6);
+    background: rgba(59, 130, 246, 0.15);
     padding: 0.125rem 0.5rem;
     border-radius: 12px;
   }
@@ -327,6 +315,7 @@
     gap: 0.5rem;
   }
 
+  /* Bits UI boundary: style primary / secondary Button components */
   .list-section :global(.primary-btn),
   .list-section :global(.secondary-btn) {
     display: inline-flex;
@@ -343,32 +332,36 @@
     border: 1px solid transparent;
   }
 
+  /* Bits UI boundary: style primary Button component */
   .list-section :global(.primary-btn) {
-    background: var(--accent, #3b82f6);
+    background: var(--primary, #3b82f6);
     color: #ffffff;
   }
 
+  /* Bits UI boundary: style primary Button component hover state */
   .list-section :global(.primary-btn:hover:not(:disabled)) {
-    background: var(--accent-hover, #2563eb);
+    background: var(--primary, #2563eb);
+    opacity: 0.9;
   }
 
+  /* Bits UI boundary: style secondary Button component */
   .list-section :global(.secondary-btn) {
-    background: var(--panel-raised, #252d37);
-    color: var(--text, #e2e8f0);
-    border-color: var(--line, #334155);
+    background: var(--card, #252d37);
+    color: var(--foreground, #e2e8f0);
+    border-color: var(--border, #334155);
   }
 
+  /* Bits UI boundary: style secondary Button component hover state */
   .list-section :global(.secondary-btn:hover:not(:disabled)) {
-    background: var(--line, #334155);
+    background: var(--border, #334155);
   }
 
+  /* Bits UI boundary: style Button component disabled state */
   .list-section :global(.primary-btn:disabled),
   .list-section :global(.secondary-btn:disabled) {
     opacity: 0.5;
     cursor: not-allowed;
   }
-
-
 
   .embeddings-grid {
     display: flex;

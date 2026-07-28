@@ -114,8 +114,8 @@
 
 <style>
   .gpu-monitor-panel {
-    background: var(--panel, #1e1e24);
-    border: 1px solid var(--line, #2e2e38);
+    background: var(--card, #1e1e24);
+    border: 1px solid var(--border, #2e2e38);
     border-radius: 8px;
     padding: 1.25rem;
     display: flex;
@@ -133,7 +133,7 @@
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
-    color: var(--color-text-title, var(--accent, #3b82f6));
+    color: var(--primary, #3b82f6);
   }
 
   .status-indicator {
@@ -159,7 +159,7 @@
   .empty-state {
     padding: 1.5rem;
     text-align: center;
-    color: var(--muted, #8a8a9a);
+    color: var(--muted-foreground, #8a8a9a);
     font-size: 0.875rem;
   }
 
@@ -170,8 +170,8 @@
   }
 
   .meter-card {
-    background: var(--panel-raised, #262630);
-    border: 1px solid var(--line, #2e2e38);
+    background: var(--muted, #262630);
+    border: 1px solid var(--border, #2e2e38);
     border-radius: 6px;
     padding: 0.875rem;
     display: flex;
@@ -187,19 +187,19 @@
   }
 
   .meter-label {
-    color: var(--muted, #8a8a9a);
+    color: var(--muted-foreground, #8a8a9a);
     font-weight: 500;
   }
 
   .meter-value {
-    color: var(--text, #f0f0f5);
+    color: var(--foreground, #f0f0f5);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
 
   .progress-bar-bg {
     height: 8px;
-    background: var(--control, #15151a);
+    background: var(--muted, #15151a);
     border-radius: 4px;
     overflow: hidden;
     position: relative;
@@ -235,6 +235,6 @@
     display: flex;
     justify-content: flex-end;
     font-size: 0.75rem;
-    color: var(--muted, #8a8a9a);
+    color: var(--muted-foreground, #8a8a9a);
   }
 </style>

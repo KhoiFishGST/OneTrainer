@@ -165,8 +165,8 @@
   }
 
   .aug-preview-dialog {
-    background: var(--panel, #181e25);
-    border: 1px solid var(--line, #2d3741);
+    background: var(--card, #181e25);
+    border: 1px solid var(--border, #2d3741);
     border-radius: 12px;
     width: 100%;
     max-width: 640px;
@@ -181,20 +181,20 @@
     align-items: center;
     justify-content: space-between;
     padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--line, #2d3741);
+    border-bottom: 1px solid var(--border, #2d3741);
   }
 
   .aug-preview-title {
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
-    color: var(--text, #f8fafc);
+    color: var(--foreground, #f8fafc);
   }
 
   .close-btn {
     background: transparent;
     border: none;
-    color: var(--muted, #94a3b8);
+    color: var(--muted-foreground, #94a3b8);
     cursor: pointer;
     padding: 0.25rem;
     border-radius: 4px;
@@ -204,8 +204,8 @@
   }
 
   .close-btn:hover {
-    color: var(--text, #f8fafc);
-    background: var(--panel-raised, #252d37);
+    color: var(--foreground, #f8fafc);
+    background: var(--muted, #252d37);
   }
 
   .aug-preview-modal-body {
@@ -225,7 +225,7 @@
     align-items: center;
     gap: 0.5rem;
     font-size: 0.875rem;
-    color: var(--text, #f8fafc);
+    color: var(--foreground, #f8fafc);
     cursor: pointer;
   }
 
@@ -239,8 +239,8 @@
     position: relative;
     width: 100%;
     height: 320px;
-    background: var(--control, #14191f);
-    border: 1px solid var(--line, #2d3741);
+    background: var(--muted, #14191f);
+    border: 1px solid var(--border, #2d3741);
     border-radius: 6px;
     display: flex;
     align-items: center;
@@ -258,7 +258,7 @@
     position: absolute;
     inset: 0;
     background: rgba(0, 0, 0, 0.6);
-    color: var(--text, #f8fafc);
+    color: var(--foreground, #f8fafc);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -281,10 +281,11 @@
 
   .nav-idx-lbl {
     font-size: 0.75rem;
-    color: var(--text, #f8fafc);
+    color: var(--foreground, #f8fafc);
     font-weight: 600;
   }
 
+  /* Bits UI boundary: style navigation arrow Button components */
   .nav-controls-bar :global(.nav-arrow-btn) {
     display: inline-flex;
     align-items: center;
@@ -300,6 +301,7 @@
     cursor: pointer;
   }
 
+  /* Bits UI boundary: style navigation arrow Button components disabled state */
   .nav-controls-bar :global(.nav-arrow-btn:disabled) {
     opacity: 0.4;
     cursor: not-allowed;
@@ -309,9 +311,9 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    background: var(--panel, #181e25);
+    background: var(--card, #181e25);
     padding: 0.75rem;
-    border: 1px solid var(--line, #2d3741);
+    border: 1px solid var(--border, #2d3741);
     border-radius: 6px;
     font-size: 0.8125rem;
   }
@@ -328,20 +330,20 @@
   }
 
   .meta-lbl {
-    color: var(--muted, #94a3b8);
+    color: var(--muted-foreground, #94a3b8);
     font-weight: 500;
   }
 
   .meta-val {
-    color: var(--text, #f8fafc);
+    color: var(--foreground, #f8fafc);
   }
 
   .prompt-output-box {
-    background: var(--control, #14191f);
-    border: 1px solid var(--line, #2d3741);
+    background: var(--muted, #14191f);
+    border: 1px solid var(--border, #2d3741);
     padding: 0.5rem;
     border-radius: 4px;
-    color: var(--text, #f8fafc);
+    color: var(--foreground, #f8fafc);
     font-family: monospace;
     font-size: 0.75rem;
     word-break: break-all;
@@ -354,7 +356,7 @@
     align-items: center;
     justify-content: flex-end;
     padding: 0.875rem 1.25rem;
-    border-top: 1px solid var(--line, #2d3741);
-    background: var(--panel-raised, #1d242c);
+    border-top: 1px solid var(--border, #2d3741);
+    background: var(--muted, #1d242c);
   }
 </style>

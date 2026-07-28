@@ -105,15 +105,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: var(--bg-root, #0b0f19);
+    background-color: var(--background, #0b0f19);
     padding: 1.5rem;
   }
 
   .login-container {
     width: 100%;
     max-width: 400px;
-    background-color: var(--panel, #1f2937);
-    border: 1px solid var(--line, #374151);
+    background-color: var(--card, #1f2937);
+    border: 1px solid var(--border, #374151);
     border-radius: 12px;
     padding: 2rem;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -128,8 +128,8 @@
     width: 56px;
     height: 56px;
     margin: 0 auto 1rem;
-    background-color: var(--panel-raised, #111827);
-    border: 1px solid var(--line, #374151);
+    background-color: var(--muted, #111827);
+    border: 1px solid var(--border, #374151);
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -145,16 +145,17 @@
   .brand-title {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--text, #f3f4f6);
+    color: var(--foreground, #f3f4f6);
     margin: 0 0 0.25rem;
   }
 
   .brand-subtitle {
     font-size: 0.875rem;
-    color: var(--muted, #9ca3af);
+    color: var(--muted-foreground, #9ca3af);
     margin: 0;
   }
 
+  /* Bits UI boundary: style security warning Alert component */
   .login-container :global(.security-warning) {
     display: flex;
     align-items: flex-start;
@@ -173,12 +174,14 @@
     margin-top: 2px;
   }
 
+  /* Bits UI boundary: style security warning text */
   .login-container :global(.security-warning p) {
     margin: 0.25rem 0 0;
     color: #fca5a5;
     font-size: 0.75rem;
   }
 
+  /* Bits UI boundary: style error banner Alert component */
   .login-form :global(.error-banner) {
     display: block;
     background-color: rgba(239, 68, 68, 0.15);
@@ -200,26 +203,29 @@
   .form-group label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--text, #f3f4f6);
+    color: var(--foreground, #f3f4f6);
   }
 
+  /* Bits UI boundary: style TextInput child component */
   .form-group :global(.text-input) {
     min-width: 0;
     width: 100%;
     padding: 0.75rem 1rem;
-    background-color: var(--panel-raised, #111827);
-    border: 1px solid var(--line, #374151);
+    background-color: var(--muted, #111827);
+    border: 1px solid var(--border, #374151);
     border-radius: 8px;
-    color: var(--text, #f3f4f6);
+    color: var(--foreground, #f3f4f6);
     font-size: 0.95rem;
   }
 
+  /* Bits UI boundary: style TextInput focus state */
   .form-group :global(.text-input:focus) {
     outline: none;
-    border-color: var(--accent, #6366f1);
+    border-color: var(--primary, #6366f1);
     box-shadow: none;
   }
 
+  /* Bits UI boundary: style submit Button component */
   .login-form :global(.submit-btn) {
     width: 100%;
     display: flex;
@@ -228,7 +234,7 @@
     gap: 0.5rem;
     min-height: 0;
     padding: 0.75rem 1rem;
-    background-color: var(--accent, #6366f1);
+    background-color: var(--primary, #6366f1);
     color: white;
     border: none;
     border-radius: 8px;
@@ -238,10 +244,12 @@
     transition: filter 0.2s ease;
   }
 
+  /* Bits UI boundary: style submit Button component hover state */
   .login-form :global(.submit-btn:hover:not(:disabled)) {
     filter: brightness(1.1);
   }
 
+  /* Bits UI boundary: style submit Button component disabled state */
   .login-form :global(.submit-btn:disabled) {
     opacity: 0.6;
     cursor: not-allowed;

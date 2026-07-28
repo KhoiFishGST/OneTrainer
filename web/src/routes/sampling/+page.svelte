@@ -208,21 +208,22 @@
     deleteSampleError = null;
     isDeletingSample = true;
 
+    const targetIndex = samples.findIndex(
+      (s: any) =>
+        s === sampleToDeleteTarget ||
+        (s.webui_id && s.webui_id === sampleToDeleteTarget.webui_id)
+    );
+    const updated = samples.filter((_: any, i: number) => i !== targetIndex);
+
     try {
-      const targetWebuiId = sampleToDeleteTarget.webui_id;
-      const currentIndex = samples.findIndex((s: any) =>
-        targetWebuiId ? s.webui_id === targetWebuiId : s === sampleToDeleteTarget
-      );
-
-      if (currentIndex === -1) {
-        throw new Error('Sample prompt no longer exists');
-      }
-
-      const updated = samples.filter((_: any, i: number) => i !== currentIndex);
       await $updateSamplesMutation.mutateAsync({ samples: updated, file: currentConfigFile });
-      triggerToast('Sample prompt deleted', 'success');
+      const identity = getSampleIdentity(sampleToDeleteTarget, targetIndex);
+      if (drafts[identity]) {
+        delete drafts[identity];
+      }
       isDeleteConfirmOpen = false;
       sampleToDeleteTarget = null;
+      triggerToast('Sample prompt deleted', 'success');
     } catch (err: any) {
       deleteSampleError = err?.message || 'Failed to delete sample prompt';
     } finally {
@@ -230,132 +231,134 @@
     }
   }
 
-  async function handleSaveSample(savedSample: any) {
+  async function handleSaveSampleModal(sampleData: any) {
     let updated: any[];
-    if (modalMode === 'add' || editingIndex === -1) {
-      const { webui_id: _, ...newSample } = savedSample;
-      updated = [...samples, newSample];
+    if (modalMode === 'add') {
+      updated = [...samples, sampleData];
     } else {
-      updated = samples.map((s: any, i: number) => (i === editingIndex ? savedSample : s));
+      updated = samples.map((s: any, i: number) => (i === editingIndex ? sampleData : s));
     }
     try {
       await $updateSamplesMutation.mutateAsync({ samples: updated, file: currentConfigFile });
       isModalOpen = false;
-      triggerToast(modalMode === 'add' ? 'Sample prompt added' : 'Sample prompt saved', 'success');
+      triggerToast(
+        modalMode === 'add' ? 'Sample prompt added' : 'Sample prompt updated',
+        'success'
+      );
     } catch (err: any) {
       triggerToast(err?.message || 'Failed to save sample prompt', 'error');
-      throw err;
     }
   }
 </script>
 
 {#if !ctx.workspace}
-  <FormPageSkeleton />
+  <FormPageSkeleton label="Loading sampling configuration" />
 {:else}
   <div class="route-page">
-    <PageHeader title={tab.label || 'Sampling'} class="sampling-header">
+    <PageHeader title={tab.label || 'Sampling'}>
       {#snippet actions()}
         <Button
-          variant="secondary"
-          class="btn btn-secondary"
-          disabled={status.state !== 'RUNNING' && status.state !== 'TRAINING' || $sampleMutation.isPending}
+          type="button"
+          variant="default"
+          disabled={$sampleMutation.isPending || queued}
           onclick={handleSample}
-          title={status.state === 'RUNNING' || status.state === 'TRAINING' ? 'Trigger immediate sample image generation' : 'Active training run required to sample now'}
         >
           <Sparkles size={16} />
-          <span>Sample Now</span>
+          <span>{queued ? 'Sample Queued' : $sampleMutation.isPending ? 'Requesting...' : 'Sample Now'}</span>
         </Button>
       {/snippet}
     </PageHeader>
 
+    {#if queued}
+      <Alert role="status" class="queued-alert">
+        <span>Sample prompt changes are queued for the next sampling batch.</span>
+      </Alert>
+    {/if}
+
     <div class="config-bar">
       <div class="config-selector">
-        <label for="sample-config-select" class="config-label">Sample Configuration:</label>
+        <label for="sample-config-select" class="config-label">
+          Sample Definition File
+        </label>
         <div class="select-wrapper">
           <Select
             id="sample-config-select"
             value={currentConfigFile}
-            options={sampleFileOptions.length > 0 ? sampleFileOptions : [{ value: 'samples.json', label: 'samples.json' }]}
+            options={sampleFileOptions}
             onChange={handleSelectConfigFile}
           />
         </div>
         <Button
+          type="button"
           variant="secondary"
-          class="btn btn-secondary add-config-btn"
+          class="add-config-btn"
           onclick={handleOpenAddConfigModal}
         >
           <Plus size={16} />
-          <span>+ Add Config</span>
+          <span>Add Config</span>
         </Button>
       </div>
     </div>
 
     <div class="options-panel">
-      <SchemaForm
-        {tab}
-        values={ctx.workspace.draft}
-        issues={ctx.workspace.errors}
-        setRaw={(path: string, val: any) => ctx.workspace?.setRaw(path, val)}
-        openDirectory={ctx.openDirectory}
-      />
+      {#if (tab.groups?.length ?? 0) > 0}
+        <SchemaForm
+          {tab}
+          values={ctx.workspace.draft}
+          issues={ctx.workspace.errors}
+          setRaw={(path: string, val: any) => ctx.workspace?.setRaw(path, val)}
+          openDirectory={ctx.openDirectory}
+        />
+      {/if}
     </div>
 
-    <div class="section-divider">
-      <h2 class="section-title">Sample Prompts ({samples.length})</h2>
+    <div class="prompts-section">
+      <div class="section-divider">
+        <h2 class="section-title">Sample Prompts ({samples.length})</h2>
+      </div>
+
+      {#if mobile}
+        <SamplePromptCards
+          {samples}
+          {drafts}
+          onUpdate={handleUpdateSample}
+          onDraftChange={handleDraftChange}
+          onEditModal={handleEditSample}
+          onClone={handleCloneSample}
+          onDelete={promptDeleteSample}
+          onAdd={handleAddSample}
+        />
+      {:else}
+        <SamplePromptTable
+          {samples}
+          {drafts}
+          onUpdate={handleUpdateSample}
+          onDraftChange={handleDraftChange}
+          onEditModal={handleEditSample}
+          onClone={handleCloneSample}
+          onDelete={promptDeleteSample}
+          onAdd={handleAddSample}
+        />
+      {/if}
     </div>
-
-    {#if queued}
-      <Alert role="status" class="sampling-queued-alert">
-        Sample prompt changes are queued for the next sampling batch.
-      </Alert>
-    {/if}
-
-    {#if !mobile}
-      <SamplePromptTable
-        {samples}
-        {drafts}
-        onUpdate={handleUpdateSample}
-        onDraftChange={handleDraftChange}
-        onEditModal={handleEditSample}
-        onClone={handleCloneSample}
-        onDelete={promptDeleteSample}
-        onAdd={handleAddSample}
-      />
-    {:else}
-      <SamplePromptCards
-        {samples}
-        {drafts}
-        onUpdate={handleUpdateSample}
-        onDraftChange={handleDraftChange}
-        onEditModal={handleEditSample}
-        onClone={handleCloneSample}
-        onDelete={promptDeleteSample}
-        onAdd={handleAddSample}
-      />
-    {/if}
   </div>
 {/if}
 
 <ResponsiveDialogDrawer
-  bind:open={isConfigModalOpen}
+  open={isConfigModalOpen}
   onOpenChange={(val) => {
     if (!val) isConfigModalOpen = false;
   }}
-  title="Add Sample Configuration"
+  title="New Sample Definition File"
+  class="max-w-md"
 >
   <div class="config-modal-body">
-    <label for="new-config-name" class="modal-label">Configuration Name</label>
+    <label for="new-config-filename-input" class="modal-label">Filename</label>
     <TextInput
-      id="new-config-name"
-      placeholder="e.g. portrait_samples.json"
+      id="new-config-filename-input"
       value={newConfigName}
       onInput={(val) => (newConfigName = val)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          handleCreateConfigFile();
-        }
-      }}
+      placeholder="e.g. portrait_samples.json"
     />
     {#if configModalError}
       <Alert variant="destructive" class="modal-error">{configModalError}</Alert>
@@ -382,11 +385,21 @@
   {/snippet}
 </ResponsiveDialogDrawer>
 
-{#if isDeleteConfirmOpen && sampleToDeleteTarget}
-  <AlertDialog.Root open={isDeleteConfirmOpen} onOpenChange={(v) => { if (!v && !isDeletingSample) { isDeleteConfirmOpen = false; sampleToDeleteTarget = null; deleteSampleError = null; } }}>
+{#if isModalOpen}
+  <SampleDetailModal
+    open={isModalOpen}
+    sample={editingSample}
+    mode={modalMode}
+    onSave={handleSaveSampleModal}
+    onClose={() => (isModalOpen = false)}
+  />
+{/if}
+
+{#if isDeleteConfirmOpen}
+  <AlertDialog.Root open={isDeleteConfirmOpen} onOpenChange={(v) => { if (!v && !isDeletingSample) isDeleteConfirmOpen = false; }}>
     <AlertDialog.Content>
       <AlertDialog.Header>
-        <AlertDialog.Title>Delete Sample Prompt</AlertDialog.Title>
+        <AlertDialog.Title>Delete Sample Prompt?</AlertDialog.Title>
         <AlertDialog.Description>
           Are you sure you want to delete this sample prompt?
         </AlertDialog.Description>
@@ -397,24 +410,14 @@
         </Alert>
       {/if}
       <AlertDialog.Footer>
-        <AlertDialog.Cancel disabled={isDeletingSample} onclick={() => { isDeleteConfirmOpen = false; sampleToDeleteTarget = null; deleteSampleError = null; }}>
-          Cancel
-        </AlertDialog.Cancel>
-        <AlertDialog.Action disabled={$updateSamplesMutation.isPending || isDeletingSample} onclick={confirmDeleteSample}>
+        <AlertDialog.Cancel disabled={isDeletingSample} onclick={() => (isDeleteConfirmOpen = false)}>Cancel</AlertDialog.Cancel>
+        <AlertDialog.Action disabled={isDeletingSample} onclick={confirmDeleteSample}>
           Delete
         </AlertDialog.Action>
       </AlertDialog.Footer>
     </AlertDialog.Content>
   </AlertDialog.Root>
 {/if}
-
-<SampleDetailModal
-  open={isModalOpen}
-  sample={editingSample}
-  mode={modalMode}
-  onSave={handleSaveSample}
-  onClose={() => (isModalOpen = false)}
-/>
 
 <style>
   .dialog-actions-footer {
@@ -427,58 +430,34 @@
 
   .route-page {
     padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
   }
 
-  .route-page :global(.sampling-header) {
-    margin-bottom: 1.5rem;
-  }
-
-  .route-page :global(.sampling-queued-alert) {
-    display: block;
-    padding: 0.75rem 1.25rem;
-    border-radius: 8px;
-    font-size: 0.9375rem;
-    font-weight: 500;
-    margin-bottom: 1rem;
-    background-color: rgba(59, 130, 246, 0.15);
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    color: var(--accent, #60a5fa);
-  }
-
-  .route-page :global(.btn) {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-height: 0;
-    padding: 0.4rem 0.85rem;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    border: 1px solid transparent;
-    transition: background-color 0.15s ease, opacity 0.15s ease;
-  }
-
+  /* Bits UI boundary: style disabled Button component */
   .route-page :global(.btn:disabled) {
     opacity: 0.5;
     cursor: not-allowed;
   }
 
+  /* Bits UI boundary: style secondary Button component */
   .route-page :global(.btn-secondary) {
-    background-color: var(--panel-raised, var(--control, #14191f));
-    color: var(--text, #e6ebef);
-    border-color: var(--line, #2d3741);
+    background-color: var(--card, #14191f);
+    color: var(--foreground, #e6ebef);
+    border-color: var(--border, #2d3741);
   }
 
+  /* Bits UI boundary: style secondary Button component hover state */
   .route-page :global(.btn-secondary:hover:not(:disabled)) {
-    background-color: var(--line, #2d3741);
+    background-color: var(--border, #2d3741);
   }
 
   .config-bar {
     margin-bottom: 1.5rem;
     padding: 1rem;
-    background: var(--panel-raised, #1d242c);
-    border: 1px solid var(--line, #2d3741);
+    background: var(--card, #1d242c);
+    border: 1px solid var(--border, #2d3741);
     border-radius: 8px;
   }
 
@@ -492,7 +471,7 @@
   .config-label {
     font-size: 0.875rem;
     font-weight: 600;
-    color: var(--text, #e6ebef);
+    color: var(--foreground, #e6ebef);
     white-space: nowrap;
   }
 
@@ -500,6 +479,7 @@
     min-width: 220px;
   }
 
+  /* Bits UI boundary: style add config Button component */
   .config-selector :global(.add-config-btn) {
     white-space: nowrap;
   }
@@ -514,14 +494,14 @@
   .section-divider {
     margin-bottom: 1rem;
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--line, #2d3741);
+    border-bottom: 1px solid var(--border, #2d3741);
   }
 
   .section-title {
     font-size: 1.125rem;
     font-weight: 600;
     margin: 0;
-    color: var(--text, #f8fafc);
+    color: var(--foreground, #f8fafc);
   }
 
   .config-modal-body {
@@ -530,30 +510,33 @@
     gap: 0.5rem;
   }
 
+  /* Bits UI boundary: style TextInput child component */
   .config-modal-body :global(.text-input) {
     min-width: 0;
     width: 100%;
     padding: 0.5rem 0.75rem;
     border-radius: 6px;
-    border: 1px solid var(--line, #2d3741);
-    background: var(--control, #14191f);
-    color: var(--text, #e6ebef);
+    border: 1px solid var(--border, #2d3741);
+    background: var(--muted, #14191f);
+    color: var(--foreground, #e6ebef);
     font-size: 0.875rem;
     box-sizing: border-box;
   }
 
+  /* Bits UI boundary: style TextInput focus state */
   .config-modal-body :global(.text-input:focus) {
     outline: none;
-    border-color: var(--accent, #3b82f6);
+    border-color: var(--primary, #3b82f6);
     box-shadow: none;
   }
 
   .modal-label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--text, #e6ebef);
+    color: var(--foreground, #e6ebef);
   }
 
+  /* Bits UI boundary: style modal error Alert component */
   .config-modal-body :global(.modal-error) {
     display: block;
     padding: 0;
@@ -564,4 +547,3 @@
     color: #f87171;
   }
 </style>
-

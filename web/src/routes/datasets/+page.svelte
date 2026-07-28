@@ -211,10 +211,10 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    background: var(--panel, #182026);
+    background: var(--card, #182026);
     padding: 1rem 1.25rem;
     border-radius: 8px;
-    border: 1px solid var(--line, #2d3741);
+    border: 1px solid var(--border, #2d3741);
     width: 740px;
     max-width: 100%;
     box-sizing: border-box;
@@ -229,7 +229,7 @@
   .base-dir-label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--muted, #8995a1);
+    color: var(--muted-foreground, #8995a1);
     white-space: nowrap;
   }
 
@@ -239,7 +239,7 @@
 
   .toggles-divider {
     height: 1px;
-    background: var(--line, #2d3741);
+    background: var(--border, #2d3741);
   }
 
   .toggles-row {
@@ -257,7 +257,7 @@
 
   .toggle-label {
     font-size: 0.875rem;
-    color: var(--text, #e6ebef);
+    color: var(--foreground, #e6ebef);
   }
 
   .create-modal-content {
@@ -272,8 +272,9 @@
     font-weight: 500;
   }
 
+  /* Bits UI boundary: style error text Alert component */
   .create-modal-content :global(.error-text) {
-    color: var(--danger, #ef4444);
+    color: var(--destructive, #ef4444);
     font-size: 0.75rem;
     margin: 0;
   }

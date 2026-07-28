@@ -281,10 +281,10 @@
   .aug-matrix-wrapper {
     display: flex;
     flex-direction: column;
-    border: 1px solid var(--line, #2d3741);
+    border: 1px solid var(--border, #2d3741);
     border-radius: 8px;
     overflow: hidden;
-    background: var(--panel, #181e25);
+    background: var(--card, #181e25);
   }
 
   .aug-matrix-header {
@@ -292,13 +292,13 @@
     grid-template-columns: 1.8fr 0.8fr 0.8fr 1.6fr;
     gap: 0.5rem;
     padding: 0.625rem 0.875rem;
-    background: var(--panel-raised, #1d242c);
-    border-bottom: 1px solid var(--line, #2d3741);
+    background: var(--muted, #1d242c);
+    border-bottom: 1px solid var(--border, #2d3741);
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--muted, #94a3b8);
+    color: var(--muted-foreground, #94a3b8);
   }
 
   .aug-matrix-header .col-sw {
@@ -311,7 +311,7 @@
     gap: 0.5rem;
     align-items: center;
     padding: 0.625rem 0.875rem;
-    border-bottom: 1px solid var(--line, #2d3741);
+    border-bottom: 1px solid var(--border, #2d3741);
   }
 
   .aug-matrix-row:last-child {
@@ -325,14 +325,14 @@
   .col-lbl {
     font-size: 0.8125rem;
     font-weight: 500;
-    color: var(--text, #e6ebef);
+    color: var(--foreground, #e6ebef);
   }
 
   .col-sw {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--muted, #94a3b8);
+    color: var(--muted-foreground, #94a3b8);
   }
 
   .col-val {
@@ -347,6 +347,7 @@
     padding-top: 0.25rem;
   }
 
+  /* Bits UI boundary: style preview Button child component */
   .aug-bottom-action-bar :global(.btn-aug-preview-compact) {
     min-height: 0;
     display: inline-flex;
@@ -354,8 +355,8 @@
     gap: 0.375rem;
     height: 32px;
     padding: 0 0.75rem;
-    background: var(--accent, #3b82f6);
-    border: 1px solid var(--accent, #3b82f6);
+    background: var(--primary, #3b82f6);
+    border: 1px solid var(--primary, #3b82f6);
     border-radius: 5px;
     color: #ffffff;
     font-size: 0.75rem;
@@ -364,6 +365,7 @@
     transition: all 0.15s ease;
   }
 
+  /* Bits UI boundary: style preview Button child component hover state */
   .aug-bottom-action-bar :global(.btn-aug-preview-compact:hover) {
     opacity: 0.9;
   }

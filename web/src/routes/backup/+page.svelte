@@ -117,14 +117,17 @@
     padding: 1.5rem;
   }
 
+  /* Bits UI boundary: style backup header component */
   .route-page :global(.backup-header) {
     margin-bottom: 1.5rem;
   }
 
+  /* Bits UI boundary: style backup toast component */
   .route-page :global(.backup-toast) {
     margin-bottom: 1rem;
   }
 
+  /* Bits UI boundary: style Button component */
   .route-page :global(.btn) {
     display: inline-flex;
     align-items: center;
@@ -139,18 +142,21 @@
     transition: background-color 0.15s ease, opacity 0.15s ease;
   }
 
+  /* Bits UI boundary: style disabled Button component */
   .route-page :global(.btn:disabled) {
     opacity: 0.5;
     cursor: not-allowed;
   }
 
+  /* Bits UI boundary: style secondary Button component */
   .route-page :global(.btn-secondary) {
-    background-color: var(--panel-raised, var(--control, #14191f));
-    color: var(--text, #e6ebef);
-    border-color: var(--line, #2d3741);
+    background-color: var(--card, #14191f);
+    color: var(--foreground, #e6ebef);
+    border-color: var(--border, #2d3741);
   }
 
+  /* Bits UI boundary: style secondary Button component hover state */
   .route-page :global(.btn-secondary:hover:not(:disabled)) {
-    background-color: var(--line, #2d3741);
+    background-color: var(--border, #2d3741);
   }
 </style>

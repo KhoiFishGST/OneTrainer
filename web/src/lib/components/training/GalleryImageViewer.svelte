@@ -304,7 +304,7 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    color: var(--text);
+    color: var(--foreground);
   }
 
   .viewer-header-info {
@@ -317,7 +317,7 @@
   .checkpoint-title {
     font-size: 1.25rem;
     font-weight: 600;
-    color: var(--text);
+    color: var(--foreground);
   }
 
   .revision-boundary-badge {
@@ -356,10 +356,11 @@
   }
 
   .viewer-no-image {
-    color: var(--muted);
+    color: var(--muted-foreground);
     font-size: 0.9rem;
   }
 
+  /* Bits UI boundary: style navigation Button component */
   .viewer-main-content :global(.nav-btn) {
     min-height: 0;
     position: absolute;
@@ -378,10 +379,12 @@
     transition: background 0.15s ease, opacity 0.15s ease;
   }
 
+  /* Bits UI boundary: style navigation Button hover state */
   .viewer-main-content :global(.nav-btn:hover:not(:disabled)) {
     background: rgba(0, 0, 0, 0.85);
   }
 
+  /* Bits UI boundary: style navigation Button disabled state */
   .viewer-main-content :global(.nav-btn:disabled) {
     opacity: 0.25;
     cursor: not-allowed;
@@ -399,10 +402,10 @@
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
-    background: var(--panel);
+    background: var(--card);
     border-radius: 8px;
     padding: 1rem;
-    border: 1px solid var(--line);
+    border: 1px solid var(--border);
     overflow-y: auto;
     max-height: 65vh;
   }
@@ -418,24 +421,24 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--muted);
+    color: var(--muted-foreground);
     margin: 0;
   }
 
   .prompt-text {
     font-size: 0.875rem;
-    color: var(--text);
+    color: var(--foreground);
     line-height: 1.4;
     margin: 0;
     word-break: break-word;
-    background: var(--control);
+    background: var(--muted);
     padding: 0.6rem 0.75rem;
     border-radius: 6px;
-    border: 1px solid var(--line);
+    border: 1px solid var(--border);
   }
 
   .prompt-text.negative {
-    color: var(--muted);
+    color: var(--muted-foreground);
   }
 
   .metadata-grid {
@@ -443,7 +446,7 @@
     grid-template-columns: 1fr 1fr;
     gap: 0.75rem;
     padding-top: 0.5rem;
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--border);
   }
 
   .meta-item {
@@ -454,13 +457,13 @@
 
   .meta-label {
     font-size: 0.75rem;
-    color: var(--muted);
+    color: var(--muted-foreground);
   }
 
   .meta-value {
     font-size: 0.85rem;
     font-weight: 500;
-    color: var(--text);
+    color: var(--foreground);
   }
 
   .uppercase {
@@ -469,7 +472,7 @@
 
   .original-link-container {
     padding-top: 0.5rem;
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--border);
     margin-top: auto;
   }
 
@@ -477,7 +480,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    color: var(--accent);
+    color: var(--primary);
     text-decoration: none;
     font-size: 0.875rem;
     font-weight: 500;

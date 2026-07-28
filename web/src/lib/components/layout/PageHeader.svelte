@@ -48,10 +48,10 @@
     font-size: 1.5rem;
     font-weight: 700;
     margin: 0;
-    color: var(--color-text-title, var(--accent, #3b82f6));
+    color: var(--primary, #3b82f6);
   }
   :where(.page-description) {
-    color: var(--muted, #8995a1);
+    color: var(--muted-foreground, #8995a1);
   }
   :where(.page-status),
   :where(.header-actions) {

@@ -175,46 +175,51 @@
   .table-container {
     width: 100%;
     overflow-x: auto;
-    background: var(--panel-bg, #1e242b);
+    background: var(--card, #1e242b);
     border-radius: 6px;
-    border: 1px solid var(--line, #2d3741);
+    border: 1px solid var(--border, #2d3741);
   }
 
+  /* Bits UI / Table boundary: style prompt table component */
   :global(.prompt-table) {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
   }
 
+  /* Bits UI / Table boundary: style table columns */
   :global(.col-active) { width: 44px; text-align: center; }
   :global(.col-dim) { width: 68px; }
   :global(.col-seed) { width: 116px; }
   :global(.col-prompt) { width: auto; }
   :global(.col-actions) { width: 100px; text-align: right; }
 
+  /* Bits UI / Table boundary: style table number inputs */
   :global(.prompt-table .num-input) {
     width: 100%;
     height: 30px;
-    background: var(--bg-dark, #13171c);
-    border: 1px solid var(--line, #2d3741);
-    color: var(--text, #fff);
+    background: var(--muted, #13171c);
+    border: 1px solid var(--border, #2d3741);
+    color: var(--foreground, #fff);
     border-radius: 4px;
     padding: 0 6px;
   }
 
+  /* Bits UI / Table boundary: style table text inputs */
   :global(.prompt-table .prompt-input) {
     min-width: 0;
     width: 100%;
     height: 30px;
-    background: var(--bg-dark, #13171c);
-    border: 1px solid var(--line, #2d3741);
-    color: var(--text, #fff);
+    background: var(--muted, #13171c);
+    border: 1px solid var(--border, #2d3741);
+    color: var(--foreground, #fff);
     border-radius: 4px;
     padding: 0 8px;
     font-size: 0.875rem;
   }
 
   .seed-cell { display: flex; align-items: center; gap: 4px; }
+  /* Bits UI / Table boundary: style dice button */
   .seed-cell :global(.dice-btn) {
     min-height: 0;
     height: 30px;
@@ -222,29 +227,32 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--bg-dark, #13171c);
-    border: 1px solid var(--line, #2d3741);
-    color: var(--text-muted, #8b9bb4);
+    background: var(--muted, #13171c);
+    border: 1px solid var(--border, #2d3741);
+    color: var(--muted-foreground, #8b9bb4);
     border-radius: 4px;
     cursor: pointer;
     flex-shrink: 0;
   }
 
+  /* Bits UI / Table boundary: style active dice button */
   .seed-cell :global(.dice-btn.active) {
     color: #10b981;
     border-color: #10b981;
     background: rgba(16, 185, 129, 0.1);
   }
 
+  /* Bits UI / Table boundary: style column action icon buttons */
   :global(.col-actions .btn-icon) {
     min-height: 0;
     background: none;
     border: none;
-    color: var(--text-muted, #8b9bb4);
+    color: var(--muted-foreground, #8b9bb4);
     cursor: pointer;
     padding: 4px;
   }
 
+  /* Bits UI / Table boundary: style column action icon button hover states */
   :global(.col-actions .btn-icon:hover) { color: #fff; }
   :global(.col-actions .btn-icon.danger:hover) { color: #ef4444; }
 
@@ -254,21 +262,24 @@
     background: rgba(0,0,0,0.1);
   }
 
+  /* Bits UI / Table boundary: style add button component */
   .add-row :global(.add-btn) {
     min-height: 0;
     display: inline-flex;
     align-items: center;
     gap: 6px;
     background: none;
-    border: 1px dashed var(--line, #2d3741);
-    color: var(--accent, #3b82f6);
+    border: 1px dashed var(--border, #2d3741);
+    color: var(--primary, #3b82f6);
     padding: 6px 16px;
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.875rem;
   }
 
+  /* Bits UI / Table boundary: style add button hover */
   .add-row :global(.add-btn:hover) { background: rgba(59, 130, 246, 0.1); }
 
+  /* Bits UI / Table boundary: style disabled table rows */
   :global(tr.disabled) { opacity: 0.5; }
 </style>

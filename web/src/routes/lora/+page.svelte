@@ -104,10 +104,12 @@
     padding: 1.5rem;
   }
 
+  /* Bits UI boundary: style lora header component */
   .route-page :global(.lora-header) {
     margin-bottom: 1rem;
   }
 
+  /* Bits UI boundary: style warning Alert component */
   .route-page :global(.lora-warning-alert) {
     margin-bottom: 1.25rem;
     max-width: 740px;
@@ -120,7 +122,7 @@
   }
 
   .warning-text strong {
-    color: var(--text-emphasis, #ffffff);
+    color: var(--foreground, #ffffff);
   }
 
   .lora-fieldset {

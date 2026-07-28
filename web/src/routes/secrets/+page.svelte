@@ -293,10 +293,12 @@
     max-width: 900px;
   }
 
+  /* Bits UI boundary: style secrets header component */
   .secrets-page :global(.secrets-header) {
     margin-bottom: 1.5rem;
   }
 
+  /* Bits UI boundary: style insecure Alert component */
   .secrets-page :global(.secrets-insecure-alert) {
     display: flex;
     align-items: flex-start;
@@ -309,6 +311,7 @@
     color: #f87171;
   }
 
+  /* Bits UI boundary: style toast component */
   .secrets-page :global(.secrets-toast) {
     padding: 0.75rem 1rem;
     border-radius: 6px;
@@ -323,6 +326,7 @@
     color: #34d399;
   }
 
+  /* Bits UI boundary: style alert component */
   .secrets-page :global(.secrets-alert) {
     display: block;
     padding: 0.75rem 1rem;
@@ -361,8 +365,8 @@
   }
 
   .settings-card {
-    background-color: var(--panel, #1f2937);
-    border: 1px solid var(--line, #374151);
+    background-color: var(--card, #1f2937);
+    border: 1px solid var(--border, #374151);
     border-radius: 8px;
     padding: 1.5rem;
   }
@@ -374,20 +378,21 @@
     margin-bottom: 0.5rem;
   }
 
+  /* Bits UI boundary: style card icon component */
   .card-header :global(.card-icon) {
-    color: var(--color-primary, var(--accent, #3b82f6));
+    color: var(--primary, #3b82f6);
   }
 
   .card-title {
     font-size: 1.125rem;
     font-weight: 600;
-    color: var(--color-text-title, var(--accent, #3b82f6));
+    color: var(--primary, #3b82f6);
     margin: 0;
   }
 
   .card-description {
     font-size: 0.875rem;
-    color: var(--muted, #9ca3af);
+    color: var(--muted-foreground, #9ca3af);
     margin-bottom: 1.25rem;
     line-height: 1.4;
   }
@@ -402,7 +407,7 @@
   .form-group label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--text, #f3f4f6);
+    color: var(--foreground, #f3f4f6);
   }
 
   .input-with-button {
@@ -411,23 +416,26 @@
     align-items: center;
   }
 
+  /* Bits UI boundary: style TextInput child component */
   .input-with-button :global(.text-input) {
     min-width: 0;
     width: 100%;
     padding: 0.625rem 2.5rem 0.625rem 0.75rem;
-    background-color: var(--panel-raised, #111827);
-    border: 1px solid var(--line, #374151);
+    background-color: var(--muted, #111827);
+    border: 1px solid var(--border, #374151);
     border-radius: 6px;
-    color: var(--text, #f3f4f6);
+    color: var(--foreground, #f3f4f6);
     font-size: 0.875rem;
   }
 
+  /* Bits UI boundary: style TextInput focus state */
   .input-with-button :global(.text-input:focus) {
     outline: none;
-    border-color: var(--color-primary, var(--accent, #3b82f6));
+    border-color: var(--primary, #3b82f6);
     box-shadow: none;
   }
 
+  /* Bits UI boundary: style icon Button component */
   .input-with-button :global(.icon-btn) {
     position: absolute;
     right: 0.5rem;
@@ -436,7 +444,7 @@
     height: auto;
     background: transparent;
     border: none;
-    color: var(--muted, #9ca3af);
+    color: var(--muted-foreground, #9ca3af);
     cursor: pointer;
     padding: 0.25rem;
     display: flex;
@@ -444,13 +452,14 @@
     justify-content: center;
   }
 
+  /* Bits UI boundary: style icon Button component hover state */
   .input-with-button :global(.icon-btn:hover) {
-    color: var(--text, #f3f4f6);
+    color: var(--foreground, #f3f4f6);
   }
 
   .status-badge {
     font-size: 0.75rem;
-    color: var(--muted, #9ca3af);
+    color: var(--muted-foreground, #9ca3af);
     margin-top: 0.25rem;
   }
 
@@ -464,6 +473,7 @@
     gap: 0.75rem;
   }
 
+  /* Bits UI boundary: style action Button component */
   .card-actions :global(.btn) {
     display: flex;
     align-items: center;
@@ -477,21 +487,25 @@
     border: none;
   }
 
+  /* Bits UI boundary: style primary action Button component */
   .card-actions :global(.btn.primary) {
-    background-color: var(--color-primary, var(--accent, #3b82f6));
+    background-color: var(--primary, #3b82f6);
     color: white;
   }
 
+  /* Bits UI boundary: style primary action Button hover state */
   .card-actions :global(.btn.primary:hover) {
     filter: brightness(1.1);
   }
 
+  /* Bits UI boundary: style danger action Button component */
   .card-actions :global(.btn.danger) {
     background-color: rgba(239, 68, 68, 0.2);
     border: 1px solid #ef4444;
     color: #f87171;
   }
 
+  /* Bits UI boundary: style danger action Button hover state */
   .card-actions :global(.btn.danger:hover) {
     background-color: rgba(239, 68, 68, 0.3);
   }

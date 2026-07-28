@@ -188,23 +188,26 @@
     gap: 1rem;
   }
 
+  /* Bits UI boundary: style Card root component */
   :global(.sample-card) {
-    background: var(--panel-bg, #1e242b) !important;
-    border: 1px solid var(--line, #2d3741) !important;
+    background: var(--card, #1e242b) !important;
+    border: 1px solid var(--border, #2d3741) !important;
     border-radius: 8px !important;
     padding: 1rem !important;
   }
 
+  /* Bits UI boundary: style disabled Card component */
   :global(.sample-card.disabled) {
     opacity: 0.6;
   }
 
+  /* Bits UI boundary: style Card header component */
   :global(.card-header) {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 0 0.75rem 0 !important;
-    border-bottom: 1px solid var(--line, #2d3741);
+    border-bottom: 1px solid var(--border, #2d3741);
   }
 
   .card-header-left {
@@ -213,6 +216,7 @@
     gap: 0.75rem;
   }
 
+  /* Bits UI boundary: style Card badge component */
   :global(.sample-badge) {
     font-size: 0.75rem !important;
     font-weight: 600 !important;
@@ -224,18 +228,21 @@
     gap: 0.25rem;
   }
 
+  /* Bits UI boundary: style Card action button component */
   .card-actions :global(.btn-icon) {
     min-height: 0;
     background: none;
     border: none;
-    color: var(--text-muted, #8b9bb4);
+    color: var(--muted-foreground, #8b9bb4);
     cursor: pointer;
     padding: 4px;
   }
 
+  /* Bits UI boundary: style Card action button hover */
   .card-actions :global(.btn-icon:hover) { color: #fff; }
   .card-actions :global(.btn-icon.danger:hover) { color: #ef4444; }
 
+  /* Bits UI boundary: style Card body component */
   :global(.card-body) {
     display: flex;
     flex-direction: column;
@@ -252,7 +259,7 @@
   .field-label {
     font-size: 0.75rem;
     font-weight: 500;
-    color: var(--text-muted, #8b9bb4);
+    color: var(--muted-foreground, #8b9bb4);
   }
 
   .params-grid {
@@ -267,17 +274,19 @@
     gap: 0.375rem;
   }
 
+  /* Bits UI boundary: style NumberInput child component */
   :global(.num-input) {
     width: 100%;
     height: 30px;
-    background: var(--bg-dark, #13171c);
-    border: 1px solid var(--line, #2d3741);
-    color: var(--text, #fff);
+    background: var(--muted, #13171c);
+    border: 1px solid var(--border, #2d3741);
+    color: var(--foreground, #fff);
     border-radius: 4px;
     padding: 0 6px;
   }
 
   .seed-cell { display: flex; align-items: center; gap: 4px; }
+  /* Bits UI boundary: style dice Button component */
   .seed-cell :global(.dice-btn) {
     min-height: 0;
     height: 30px;
@@ -285,14 +294,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--bg-dark, #13171c);
-    border: 1px solid var(--line, #2d3741);
-    color: var(--text-muted, #8b9bb4);
+    background: var(--muted, #13171c);
+    border: 1px solid var(--border, #2d3741);
+    color: var(--muted-foreground, #8b9bb4);
     border-radius: 4px;
     cursor: pointer;
     flex-shrink: 0;
   }
 
+  /* Bits UI boundary: style active dice Button component */
   .seed-cell :global(.dice-btn.active) {
     color: #10b981;
     border-color: #10b981;
@@ -306,19 +316,21 @@
     border-radius: 6px;
   }
 
+  /* Bits UI boundary: style Add button component */
   .add-row :global(.add-btn) {
     min-height: 0;
     display: inline-flex;
     align-items: center;
     gap: 6px;
     background: none;
-    border: 1px dashed var(--line, #2d3741);
-    color: var(--accent, #3b82f6);
+    border: 1px dashed var(--border, #2d3741);
+    color: var(--primary, #3b82f6);
     padding: 6px 16px;
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.875rem;
   }
 
+  /* Bits UI boundary: style Add button hover state */
   .add-row :global(.add-btn:hover) { background: rgba(59, 130, 246, 0.1); }
 </style>

@@ -192,10 +192,11 @@
 </Sidebar>
 
 <style>
+  /* Bits UI / Sidebar boundary: style rail sidebar component */
   :global(.rail) {
     width: var(--rail-width);
-    background-color: var(--panel);
-    border-right: 1px solid var(--line);
+    background-color: var(--card);
+    border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -204,12 +205,13 @@
     user-select: none;
   }
 
+  /* Bits UI / Sidebar boundary: style rail header component */
   :global(.rail-header) {
     height: 48px;
     display: flex;
     align-items: center;
     padding: 0 8px;
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid var(--border);
   }
 
   :global(.rail-header) :global(.rail-toggle-btn),
@@ -227,10 +229,11 @@
 
   :global(.rail-header) :global(.rail-toggle-btn:hover),
   .mobile-toggle-owner :global(.mobile-toggle-btn:hover) {
-    color: var(--text);
-    background-color: var(--panel-raised);
+    color: var(--foreground);
+    background-color: var(--muted);
   }
 
+  /* Bits UI / Sidebar boundary: style rail nav component */
   :global(.rail-nav) {
     display: flex;
     flex-direction: column;
@@ -240,9 +243,10 @@
     flex: 1;
   }
 
+  /* Bits UI / Sidebar boundary: style rail footer component */
   :global(.rail-footer) {
     padding: 8px 4px;
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--border);
     margin-top: auto;
   }
 
@@ -257,6 +261,7 @@
     font-family: inherit;
   }
 
+  /* Bits UI / Sidebar boundary: style navigation items */
   :global(.nav-item) {
     display: flex;
     align-items: center;
@@ -290,8 +295,8 @@
   }
 
   :global(.nav-item:hover:not(.disabled)) {
-    color: var(--text);
-    background-color: var(--panel-raised);
+    color: var(--foreground);
+    background-color: var(--muted);
   }
 
   :global(.nav-item.active) {
@@ -301,18 +306,7 @@
   }
 
   :global(.nav-item.disabled) {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
-  }
-
-  .mobile-toggle-owner {
-    display: contents;
-  }
-
-  :global(.drawer-nav) {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    overflow-y: auto;
   }
 </style>

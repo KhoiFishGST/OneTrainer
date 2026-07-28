@@ -438,8 +438,8 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    background: var(--panel, #181e25);
-    border: 1px solid var(--line, #2d3741);
+    background: var(--card, #181e25);
+    border: 1px solid var(--border, #2d3741);
     padding: 1.25rem;
     border-radius: 8px;
     width: 740px;
@@ -465,7 +465,7 @@
 
   .toolbar-divider {
     height: 1px;
-    background: var(--line, #2d3741);
+    background: var(--border, #2d3741);
     width: 100%;
   }
 
@@ -473,20 +473,21 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    background: var(--control, #14191f);
-    border: 1px solid var(--line, #2d3741);
+    background: var(--muted, #14191f);
+    border: 1px solid var(--border, #2d3741);
     border-radius: 6px;
     padding: 0.4rem 0.75rem;
     flex: 1;
     min-width: 220px;
   }
 
+  /* Bits UI boundary: style TextInput child component */
   .search-box :global(.text-input) {
     min-width: 0;
     background: transparent;
     border: none;
     outline: none;
-    color: var(--text, #f8fafc);
+    color: var(--foreground, #f8fafc);
     font-size: 0.875rem;
     width: 100%;
     padding: 0;
@@ -502,7 +503,7 @@
     align-items: center;
     gap: 0.5rem;
     font-size: 0.875rem;
-    color: var(--text, #e6ebef);
+    color: var(--foreground, #e6ebef);
     cursor: pointer;
   }
 
@@ -512,21 +513,24 @@
     gap: 1.25rem;
   }
 
+  /* Bits UI boundary: style Card root component */
   :global(.concept-card) {
     display: flex;
     flex-direction: row !important;
-    background: var(--panel, #181e25);
-    border: 1px solid var(--line, #2d3741);
+    background: var(--card, #181e25);
+    border: 1px solid var(--border, #2d3741);
     border-radius: 8px;
     overflow: hidden;
     transition: border-color 0.15s ease, transform 0.15s ease;
     cursor: pointer;
   }
 
+  /* Bits UI boundary: style Card hover state */
   :global(.concept-card:hover) {
-    border-color: var(--color-text-title, var(--accent, #3b82f6));
+    border-color: var(--primary, #3b82f6);
   }
 
+  /* Bits UI boundary: style Card disabled state */
   :global(.concept-card.disabled) {
     opacity: 0.6;
   }
@@ -534,7 +538,7 @@
   .thumbnail-wrapper {
     width: 130px;
     position: relative;
-    background: var(--control, #14191f);
+    background: var(--muted, #14191f);
     flex-shrink: 0;
   }
 
@@ -544,6 +548,7 @@
     object-fit: cover;
   }
 
+  /* Bits UI boundary: style Type Badge component */
   :global(.type-badge) {
     position: absolute;
     top: 6px;
@@ -554,10 +559,11 @@
     border-radius: 4px;
     text-transform: uppercase;
     background: rgba(0, 0, 0, 0.7) !important;
-    color: var(--accent, #3b82f6) !important;
+    color: var(--primary, #3b82f6) !important;
     border: 1px solid rgba(59, 130, 246, 0.4) !important;
   }
 
+  /* Bits UI boundary: style Card Content component */
   :global(.card-content) {
     flex: 1;
     padding: 0.875rem 1rem !important;
@@ -578,7 +584,7 @@
     margin: 0;
     font-size: 0.9375rem;
     font-weight: 600;
-    color: var(--color-text-title, var(--accent, #3b82f6));
+    color: var(--primary, #3b82f6);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -587,7 +593,7 @@
   .concept-path {
     margin: 0;
     font-size: 0.75rem;
-    color: var(--muted, #94a3b8);
+    color: var(--muted-foreground, #94a3b8);
     word-break: break-all;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -601,13 +607,14 @@
     gap: 0.35rem;
   }
 
+  /* Bits UI boundary: style Meta Tag Badge component */
   :global(.meta-tag) {
     font-size: 0.6875rem !important;
     padding: 0.15rem 0.4rem !important;
     border-radius: 4px !important;
-    background: var(--panel-raised, #1d242c) !important;
-    color: var(--text, #f8fafc) !important;
-    border: 1px solid var(--line, #2d3741) !important;
+    background: var(--muted, #1d242c) !important;
+    color: var(--foreground, #f8fafc) !important;
+    border: 1px solid var(--border, #2d3741) !important;
   }
 
   .card-actions {
@@ -615,9 +622,10 @@
     align-items: center;
     gap: 0.35rem;
     padding-top: 0.35rem;
-    border-top: 1px solid var(--line, #2d3741);
+    border-top: 1px solid var(--border, #2d3741);
   }
 
+  /* Bits UI boundary: style action Button component */
   .card-actions :global(.btn-action) {
     display: inline-flex;
     align-items: center;
@@ -625,38 +633,42 @@
     min-height: 0;
     padding: 0.3rem 0.5rem;
     border-radius: 4px;
-    border: 1px solid var(--line, #2d3741);
-    background: var(--panel-raised, #1d242c);
-    color: var(--text, #f8fafc);
+    border: 1px solid var(--border, #2d3741);
+    background: var(--card, #1d242c);
+    color: var(--foreground, #f8fafc);
     font-size: 0.75rem;
     cursor: pointer;
     transition: background 0.15s ease;
   }
 
+  /* Bits UI boundary: style action Button component hover state */
   .card-actions :global(.btn-action:hover) {
-    background: var(--line, #2d3741);
+    background: var(--border, #2d3741);
   }
 
+  /* Bits UI boundary: style delete Button component hover state */
   .card-actions :global(.btn-action.delete:hover) {
     background: rgba(239, 68, 68, 0.2);
     color: #f87171;
     border-color: #ef4444;
   }
 
+  /* Bits UI boundary: style Dropdown trigger Button component */
   :global(.dropdown-trigger-btn) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 0.3rem;
     border-radius: 4px;
-    border: 1px solid var(--line, #2d3741);
-    background: var(--panel-raised, #1d242c);
-    color: var(--muted, #94a3b8);
+    border: 1px solid var(--border, #2d3741);
+    background: var(--card, #1d242c);
+    color: var(--muted-foreground, #94a3b8);
     cursor: pointer;
   }
 
+  /* Bits UI boundary: style Dropdown trigger Button component hover state */
   :global(.dropdown-trigger-btn:hover) {
-    color: var(--text, #f8fafc);
-    background: var(--line, #2d3741);
+    color: var(--foreground, #f8fafc);
+    background: var(--border, #2d3741);
   }
 </style>

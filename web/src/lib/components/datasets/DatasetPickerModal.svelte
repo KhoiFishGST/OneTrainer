@@ -130,6 +130,7 @@
 {/if}
 
 <style>
+  /* Bits UI boundary: style ScrollArea root component */
   :global(.picker-body) {
     min-height: 280px;
     max-height: 480px;
@@ -143,7 +144,7 @@
     justify-content: center;
     min-height: 240px;
     gap: 1rem;
-    color: var(--color-text-muted, #94a3b8);
+    color: var(--muted-foreground, #94a3b8);
   }
 
   .skeleton-grid {
@@ -153,6 +154,7 @@
     width: 100%;
   }
 
+  /* Bits UI boundary: style Empty root component */
   :global(.picker-empty) {
     display: flex;
     flex-direction: column;
@@ -160,16 +162,18 @@
     justify-content: center;
     min-height: 240px;
     gap: 0.75rem;
-    color: var(--color-text-muted, #94a3b8);
+    color: var(--muted-foreground, #94a3b8);
     text-align: center;
   }
 
+  /* Bits UI boundary: style Empty title component */
   :global(.empty-title) {
     font-size: 1rem !important;
     font-weight: 600 !important;
-    color: var(--color-text, #f8fafc) !important;
+    color: var(--foreground, #f8fafc) !important;
   }
 
+  /* Bits UI boundary: style Empty sub component */
   :global(.empty-sub) {
     font-size: 0.875rem !important;
   }
@@ -180,12 +184,13 @@
     gap: 1rem;
   }
 
+  /* Bits UI boundary: style dataset card button component */
   .dataset-grid :global(.dataset-card) {
     position: relative;
     border-radius: 10px;
     overflow: hidden;
-    background: var(--color-bg-card, #1e293b);
-    border: 2px solid var(--color-border, #334155);
+    background: var(--card, #1e293b);
+    border: 2px solid var(--border, #334155);
     padding: 0;
     cursor: pointer;
     text-align: left;
@@ -194,13 +199,15 @@
     flex-direction: column;
   }
 
+  /* Bits UI boundary: style dataset card button hover state */
   .dataset-grid :global(.dataset-card:hover) {
     transform: translateY(-2px);
-    border-color: var(--color-primary-hover, #60a5fa);
+    border-color: var(--primary, #60a5fa);
   }
 
+  /* Bits UI boundary: style dataset card button selected state */
   .dataset-grid :global(.dataset-card.selected) {
-    border-color: var(--color-primary, #3b82f6);
+    border-color: var(--primary, #3b82f6);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
   }
 
@@ -227,7 +234,7 @@
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;
-    background: var(--color-primary, #3b82f6);
+    background: var(--primary, #3b82f6);
     color: #ffffff;
     width: 24px;
     height: 24px;
@@ -245,7 +252,7 @@
   .card-title {
     font-size: 0.9375rem;
     font-weight: 600;
-    color: var(--color-text, #f8fafc);
+    color: var(--foreground, #f8fafc);
     margin: 0 0 0.25rem 0;
     white-space: nowrap;
     overflow: hidden;
@@ -254,7 +261,7 @@
 
   .card-meta {
     font-size: 0.75rem;
-    color: var(--color-text-muted, #94a3b8);
+    color: var(--muted-foreground, #94a3b8);
     margin: 0;
   }
 </style>

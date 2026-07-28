@@ -223,8 +223,8 @@
     flex-direction: column;
     height: 100%;
     width: 100%;
-    background-color: var(--bg-dark, #0d1117);
-    color: var(--text-dark, #c9d1d9);
+    background-color: var(--background, #0d1117);
+    color: var(--foreground, #c9d1d9);
     font-family: monospace;
     font-size: 0.8125rem;
     overflow: hidden;
@@ -235,8 +235,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 6px 12px;
-    background-color: var(--panel-bg, #161b22);
-    border-bottom: 1px solid var(--border-color, #30363d);
+    background-color: var(--card, #161b22);
+    border-bottom: 1px solid var(--border, #30363d);
     gap: 8px;
     flex-wrap: wrap;
   }
@@ -249,17 +249,18 @@
 
   .channel-selector {
     display: flex;
-    background-color: var(--input-bg, #0d1117);
-    border: 1px solid var(--border-color, #30363d);
+    background-color: var(--muted, #0d1117);
+    border: 1px solid var(--border, #30363d);
     border-radius: 4px;
     padding: 2px;
     gap: 2px;
   }
 
+  /* Bits UI boundary: style channel button component */
   .console-view :global(.channel-btn) {
     background: transparent;
     border: none;
-    color: var(--muted-text, #8b949e);
+    color: var(--muted-foreground, #8b949e);
     padding: 2px 8px;
     font-size: 0.75rem;
     font-weight: 500;
@@ -268,28 +269,32 @@
     transition: all 0.15s ease;
   }
 
+  /* Bits UI boundary: style channel button hover */
   .console-view :global(.channel-btn:hover) {
-    color: var(--text, #c9d1d9);
+    color: var(--foreground, #c9d1d9);
   }
 
+  /* Bits UI boundary: style channel button active state */
   .console-view :global(.channel-btn.active) {
-    background-color: var(--accent, #6366f1);
+    background-color: var(--primary, #6366f1);
     color: #ffffff;
   }
 
+  /* Bits UI boundary: style filter input component */
   .console-view :global(.filter-input) {
-    background-color: var(--input-bg, #0d1117);
-    border: 1px solid var(--border-color, #30363d);
-    color: var(--text, #c9d1d9);
+    background-color: var(--muted, #0d1117);
+    border: 1px solid var(--border, #30363d);
+    color: var(--foreground, #c9d1d9);
     padding: 4px 8px;
     border-radius: 4px;
     font-size: 0.75rem;
     width: 160px;
   }
 
+  /* Bits UI boundary: style filter input focus state */
   .console-view :global(.filter-input:focus) {
     outline: none;
-    border-color: var(--accent, #58a6ff);
+    border-color: var(--primary, #58a6ff);
   }
 
   .status-indicators {
@@ -297,6 +302,7 @@
     gap: 4px;
   }
 
+  /* Bits UI boundary: style status tag Badge component */
   .console-view :global(.status-tag) {
     padding: 2px 6px;
     border-radius: 4px;
@@ -305,48 +311,55 @@
     text-transform: uppercase;
   }
 
+  /* Bits UI boundary: style status-connected state */
   .console-view :global(.status-connected) {
     background-color: rgba(46, 160, 67, 0.2);
     color: #3fb950;
     border-color: rgba(46, 160, 67, 0.3);
   }
 
+  /* Bits UI boundary: style status-connecting state */
   .console-view :global(.status-connecting) {
     background-color: rgba(210, 153, 34, 0.2);
     color: #d29922;
     border-color: rgba(210, 153, 34, 0.3);
   }
 
+  /* Bits UI boundary: style status-disconnected state */
   .console-view :global(.status-disconnected) {
     background-color: rgba(248, 81, 73, 0.2);
     color: #f85149;
     border-color: rgba(248, 81, 73, 0.3);
   }
 
+  /* Bits UI boundary: style status gap/paused state */
   .console-view :global(.status-gap), .console-view :global(.status-paused) {
     background-color: rgba(210, 153, 34, 0.2);
     color: #d29922;
     border-color: rgba(210, 153, 34, 0.3);
   }
 
+  /* Bits UI boundary: style action button component */
   .console-view :global(.btn-action) {
     display: inline-flex;
     align-items: center;
     gap: 4px;
     padding: 4px 8px;
-    background-color: var(--button-bg, #21262d);
-    color: var(--text, #c9d1d9);
-    border: 1px solid var(--border-color, #30363d);
+    background-color: var(--muted, #21262d);
+    color: var(--foreground, #c9d1d9);
+    border: 1px solid var(--border, #30363d);
     border-radius: 4px;
     font-size: 0.75rem;
     cursor: pointer;
     text-decoration: none;
   }
 
+  /* Bits UI boundary: style action button hover state */
   .console-view :global(.btn-action:hover) {
-    background-color: var(--button-hover-bg, #30363d);
+    background-color: var(--border, #30363d);
   }
 
+  /* Bits UI boundary: style action button active state */
   .console-view :global(.btn-action.active) {
     background-color: rgba(210, 153, 34, 0.2);
     color: #d29922;
@@ -385,7 +398,7 @@
     opacity: 0.85;
   }
 
-  /* ANSI Color classes */
+  /* ANSI terminal boundary: ANSI foreground color classes */
   .console-view :global(.fg-black) { color: #4e4e4e; }
   .console-view :global(.fg-red) { color: #ff6b6b; }
   .console-view :global(.fg-green) { color: #51cf66; }
@@ -395,6 +408,7 @@
   .console-view :global(.fg-cyan) { color: #22b8cf; }
   .console-view :global(.fg-white) { color: #e9ecef; }
 
+  /* ANSI terminal boundary: ANSI background color classes */
   .console-view :global(.bg-black) { background-color: #212529; }
   .console-view :global(.bg-red) { background-color: #c92a2a; }
   .console-view :global(.bg-green) { background-color: #2b8a3e; }
@@ -404,6 +418,7 @@
   .console-view :global(.bg-cyan) { background-color: #0b7285; }
   .console-view :global(.bg-white) { background-color: #f8f9fa; }
 
+  /* ANSI terminal boundary: ANSI text formatting styles */
   .console-view :global(.bold) { font-weight: bold; }
   .console-view :global(.dim) { opacity: 0.6; }
   .console-view :global(.italic) { font-style: italic; }

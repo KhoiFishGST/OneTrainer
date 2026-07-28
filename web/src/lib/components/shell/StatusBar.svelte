@@ -217,8 +217,8 @@
   .status-bar {
     min-height: var(--status-height, 52px);
     height: auto;
-    background-color: var(--panel);
-    border-top: 1px solid var(--line);
+    background-color: var(--card);
+    border-top: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -242,6 +242,7 @@
     flex-wrap: wrap;
   }
 
+  /* Bits UI boundary: style action buttons */
   .training-action-buttons :global(.btn) {
     display: inline-flex;
     align-items: center;
@@ -258,59 +259,70 @@
   }
 
   @media (max-width: 767px) {
+    /* Bits UI boundary: style mobile buttons and dropdown items */
     .training-action-buttons :global(.btn),
     :global(.phone-action-item) {
       min-height: 44px;
     }
   }
 
+  /* Bits UI boundary: style disabled action button */
   .training-action-buttons :global(.btn:disabled) {
     opacity: 0.5;
     cursor: not-allowed;
   }
 
+  /* Bits UI boundary: style primary action button */
   .training-action-buttons :global(.btn-primary) {
-    background-color: var(--accent, #3b82f6);
+    background-color: var(--primary, #3b82f6);
     color: #ffffff;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   }
 
+  /* Bits UI boundary: style primary action button hover */
   .training-action-buttons :global(.btn-primary:hover:not(:disabled)) {
     background-color: #2563eb;
     box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
   }
 
+  /* Bits UI boundary: style primary action button active */
   .training-action-buttons :global(.btn-primary:active:not(:disabled)) {
     transform: translateY(1px);
   }
 
+  /* Bits UI boundary: style secondary action button */
   .training-action-buttons :global(.btn-secondary) {
-    background-color: var(--panel-raised, var(--control, #14191f));
-    color: var(--text, #e6ebef);
-    border-color: var(--line, #2d3741);
+    background-color: var(--muted, #14191f);
+    color: var(--foreground, #e6ebef);
+    border-color: var(--border, #2d3741);
   }
 
+  /* Bits UI boundary: style secondary action button hover */
   .training-action-buttons :global(.btn-secondary:hover:not(:disabled)) {
-    background-color: var(--line, #2d3741);
+    background-color: var(--border, #2d3741);
     color: #ffffff;
-    border-color: var(--muted, #475569);
+    border-color: var(--border, #475569);
   }
 
+  /* Bits UI boundary: style secondary action button active */
   .training-action-buttons :global(.btn-secondary:active:not(:disabled)) {
     transform: translateY(1px);
   }
 
+  /* Bits UI boundary: style danger action button */
   .training-action-buttons :global(.btn-danger) {
-    background-color: var(--danger, #ef4444);
+    background-color: var(--destructive, #ef4444);
     color: #ffffff;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   }
 
+  /* Bits UI boundary: style danger action button hover */
   .training-action-buttons :global(.btn-danger:hover:not(:disabled)) {
     background-color: #dc2626;
     box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
   }
 
+  /* Bits UI boundary: style danger action button active */
   .training-action-buttons :global(.btn-danger:active:not(:disabled)) {
     transform: translateY(1px);
   }

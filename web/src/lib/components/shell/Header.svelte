@@ -425,8 +425,8 @@
   .header {
     min-height: 56px;
     height: auto;
-    background-color: var(--panel);
-    border-bottom: 1px solid var(--line);
+    background-color: var(--card);
+    border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -441,6 +441,7 @@
     gap: 16px;
   }
 
+  /* Bits UI boundary: style mobile toggle Button component */
   .header :global(.mobile-toggle-btn) {
     display: inline-flex;
     align-items: center;
@@ -453,9 +454,10 @@
     cursor: pointer;
   }
 
+  /* Bits UI boundary: style mobile toggle Button component hover state */
   .header :global(.mobile-toggle-btn:hover) {
     color: var(--foreground);
-    background-color: var(--accent);
+    background-color: var(--muted);
   }
 
   .header-right {
@@ -468,7 +470,7 @@
   .header-divider {
     width: 1px;
     height: 24px;
-    background-color: var(--line, #2d3741);
+    background-color: var(--border, #2d3741);
   }
 
   .brand {
@@ -522,25 +524,26 @@
 
   .state-saved {
     background-color: rgba(101, 185, 141, 0.15);
-    color: var(--success);
+    color: #10b981;
   }
 
   .state-unsaved {
     background-color: rgba(59, 130, 246, 0.15);
-    color: var(--accent);
+    color: var(--primary);
   }
 
   .state-saving {
     background-color: rgba(137, 149, 161, 0.15);
-    color: var(--muted);
+    color: var(--muted-foreground);
   }
 
   .state-conflict,
   .state-failed {
     background-color: rgba(217, 120, 120, 0.15);
-    color: var(--danger);
+    color: var(--destructive);
   }
 
+  /* Bits UI boundary: style header Button component */
   .header :global(.btn),
   .modal-extra-actions :global(.btn) {
     min-height: 0;
@@ -552,22 +555,25 @@
   }
 
   .btn-primary {
-    background-color: var(--accent);
+    background-color: var(--primary);
     color: #fff;
   }
 
+  /* Bits UI boundary: style secondary Button component */
   .header :global(.btn-secondary) {
-    background-color: var(--control);
-    color: var(--text);
-    border-color: var(--line);
+    background-color: var(--muted);
+    color: var(--foreground);
+    border-color: var(--border);
   }
 
+  /* Bits UI boundary: style danger Button component */
   .header :global(.btn-danger),
   .modal-extra-actions :global(.btn-danger) {
-    background-color: var(--danger);
+    background-color: var(--destructive);
     color: #fff;
   }
 
+  /* Bits UI boundary: style selector header Button component */
   .selectors :global(.header-btn) {
     display: inline-flex;
     align-items: center;
@@ -579,19 +585,20 @@
     font-size: 0.875rem;
     font-weight: 500;
     border-radius: 4px;
-    background-color: var(--control, #14191f);
-    color: var(--text, #e6ebef);
-    border: 1px solid var(--line, #2d3741);
+    background-color: var(--muted, #14191f);
+    color: var(--foreground, #e6ebef);
+    border: 1px solid var(--border, #2d3741);
     cursor: pointer;
     white-space: nowrap;
     align-self: flex-end;
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
   }
 
+  /* Bits UI boundary: style selector header Button component hover state */
   .selectors :global(.header-btn:hover) {
-    background-color: var(--panel-raised, #1d242c);
-    border-color: var(--accent, #3b82f6);
-    color: var(--accent, #3b82f6);
+    background-color: var(--card, #1d242c);
+    border-color: var(--primary, #3b82f6);
+    color: var(--primary, #3b82f6);
   }
 
   .selectors :global(.header-btn:active) {
@@ -605,18 +612,20 @@
     margin-bottom: 12px;
   }
 
+  /* Bits UI boundary: style text input component */
   .modal-field :global(.text-input) {
     min-width: 0;
     padding: 8px;
     border-radius: 4px;
-    border: 1px solid var(--line);
-    background-color: var(--control);
-    color: var(--text);
+    border: 1px solid var(--border);
+    background-color: var(--muted);
+    color: var(--foreground);
   }
 
+  /* Bits UI boundary: style error toast component */
   .error-msg,
   .header-alert-owner :global(.save-error-toast) {
-    color: var(--danger);
+    color: var(--destructive);
     font-size: 0.875rem;
   }
 
@@ -628,7 +637,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: var(--success, #10b981);
+    color: #10b981;
     padding: 4px;
     border-radius: 4px;
     opacity: 0.9;
@@ -654,9 +663,9 @@
   }
 
   .status-idle {
-    background-color: var(--panel-raised, rgba(255, 255, 255, 0.05));
+    background-color: var(--muted, rgba(255, 255, 255, 0.05));
     color: var(--muted-foreground, #8d99a6);
-    border: 1px solid var(--line, #444);
+    border: 1px solid var(--border, #444);
   }
 
   .status-starting,

@@ -286,10 +286,11 @@
     margin-right: auto;
     font-size: 0.8125rem;
     font-weight: 500;
-    color: var(--color-text, var(--text, #e6ebef));
+    color: var(--foreground, #e6ebef);
     cursor: pointer;
   }
 
+  /* Bits UI boundary: style path action Button child component */
   .path-action-row :global(.btn-path-action) {
     min-height: 0;
     display: inline-flex;
@@ -298,10 +299,10 @@
     gap: 0.375rem;
     height: 38px;
     padding: 0 0.875rem;
-    background: var(--color-bg-button, var(--control, #14191f));
-    border: 1px solid var(--color-border, var(--line, #2d3741));
+    background: var(--muted, #14191f);
+    border: 1px solid var(--border, #2d3741);
     border-radius: 6px;
-    color: var(--color-text, var(--text, #e6ebef));
+    color: var(--foreground, #e6ebef);
     font-size: 0.8125rem;
     font-weight: 500;
     cursor: pointer;
@@ -310,13 +311,15 @@
     transition: all 0.15s ease;
   }
 
+  /* Bits UI boundary: style path action Button child component hover state */
   .path-action-row :global(.btn-path-action:hover) {
-    background: var(--color-bg-button-hover, var(--panel-raised, #1d242c));
-    border-color: var(--color-primary, var(--accent, #3b82f6));
-    color: var(--color-text-title, var(--accent, #3b82f6));
+    background: var(--card, #1d242c);
+    border-color: var(--primary, #3b82f6);
+    color: var(--primary, #3b82f6);
   }
 
+  /* Bits UI boundary: style accent path action Button child component */
   .path-action-row :global(.btn-path-action.btn-accent-action) {
-    color: var(--color-text-title, var(--accent, #3b82f6));
+    color: var(--primary, #3b82f6);
   }
 </style>

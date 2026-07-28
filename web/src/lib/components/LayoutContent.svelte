@@ -223,16 +223,16 @@
 {/if}
 
 <style>
+  /* Bits UI / SidebarProvider boundary: style app shell root container */
   :global(.app-shell) {
     display: flex;
     flex-direction: column;
     height: 100vh;
     width: 100vw;
     overflow: hidden;
-    background-color: var(--bg);
-    color: var(--text);
+    background-color: var(--background);
+    color: var(--foreground);
   }
-
 
   .shell-body {
     flex: 1;

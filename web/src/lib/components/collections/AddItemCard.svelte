@@ -28,6 +28,7 @@
 </Button>
 
 <style>
+  /* Bits UI boundary: style child Button component */
   :global(.add-item-card),
   :global(.add-card) {
     min-height: 220px;
@@ -37,7 +38,7 @@
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
-    border: 2px dashed var(--line, #2d3741);
+    border: 2px dashed var(--border, #2d3741);
     border-radius: 8px;
     background: transparent;
     cursor: pointer;
@@ -46,13 +47,15 @@
     padding: 1.5rem;
   }
 
+  /* Bits UI boundary: style child Button hover state */
   :global(.add-item-card:hover:not(:disabled)),
   :global(.add-card:hover:not(:disabled)) {
-    border-color: var(--accent, #3b82f6);
+    border-color: var(--primary, #3b82f6);
     background: rgba(59, 130, 246, 0.05);
     transform: translateY(-2px);
   }
 
+  /* Bits UI boundary: style child Button disabled state */
   :global(.add-item-card:disabled),
   :global(.add-card:disabled) {
     opacity: 0.5;
@@ -60,12 +63,12 @@
   }
 
   .add-icon-wrapper {
-    color: var(--accent, #3b82f6);
+    color: var(--primary, #3b82f6);
   }
 
   .add-label {
     font-size: 0.9375rem;
     font-weight: 600;
-    color: var(--text, #f8fafc);
+    color: var(--foreground, #f8fafc);
   }
 </style>

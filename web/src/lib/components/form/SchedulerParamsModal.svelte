@@ -98,31 +98,33 @@
   .field-label {
     font-size: 0.8125rem;
     font-weight: 600;
-    color: var(--text, #f8fafc);
+    color: var(--foreground, #f8fafc);
   }
 
+  /* Bits UI boundary: style TextInput child component */
   .scheduler-modal-body :global(.text-input) {
     min-width: 0;
     height: 38px;
     padding: 0 0.75rem;
-    background-color: var(--input-bg, #0f1419);
-    border: 1px solid var(--line, #2d3741);
+    background-color: var(--muted, #0f1419);
+    border: 1px solid var(--border, #2d3741);
     border-radius: 6px;
-    color: var(--text, #f8fafc);
+    color: var(--foreground, #f8fafc);
     font-size: 0.875rem;
     outline: none;
   }
 
+  /* Bits UI boundary: style TextInput child component focus state */
   .scheduler-modal-body :global(.text-input:focus) {
-    border-color: var(--accent, #3b82f6);
+    border-color: var(--primary, #3b82f6);
   }
 
   .field-help {
     font-size: 0.75rem;
-    color: var(--muted, #94a3b8);
+    color: var(--muted-foreground, #94a3b8);
 
     & code {
-      background: var(--panel-raised, rgba(255, 255, 255, 0.05));
+      background: var(--muted, rgba(255, 255, 255, 0.05));
       padding: 0.1rem 0.3rem;
       border-radius: 3px;
     }

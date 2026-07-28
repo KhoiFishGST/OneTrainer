@@ -193,14 +193,17 @@
     width: 100%;
   }
 
+  /* Bits UI boundary: style header component */
   .live-dashboard :global(.live-header) {
     margin-bottom: 0.5rem;
   }
 
+  /* Bits UI boundary: style toast component */
   .live-dashboard :global(.live-toast) {
     margin-bottom: 0.5rem;
   }
 
+  /* Bits UI boundary: style error Alert component */
   .live-dashboard :global(.live-error-alert) {
     margin-bottom: 0.5rem;
   }
@@ -215,9 +218,9 @@
   }
 
   .status-idle {
-    background-color: var(--panel-raised, rgba(255, 255, 255, 0.05));
-    color: var(--muted, #94a3b8);
-    border: 1px solid var(--line, #334155);
+    background-color: var(--card, rgba(255, 255, 255, 0.05));
+    color: var(--muted-foreground, #94a3b8);
+    border: 1px solid var(--border, #334155);
   }
 
   .status-starting,
@@ -247,8 +250,8 @@
   }
 
   .dashboard-card {
-    background-color: var(--panel, #1e293b);
-    border: 1px solid var(--line, #334155);
+    background-color: var(--card, #1e293b);
+    border: 1px solid var(--border, #334155);
     border-radius: 8px;
     padding: 1.25rem;
   }
@@ -257,7 +260,7 @@
     margin: 0;
     font-size: 1.125rem;
     font-weight: 600;
-    color: var(--color-text-title, var(--accent, #3b82f6));
+    color: var(--primary, #3b82f6);
   }
 
   .progress-card {
@@ -275,7 +278,7 @@
   .stat-highlight {
     font-size: 1.25rem;
     font-weight: 700;
-    color: var(--color-primary, var(--accent, #3b82f6));
+    color: var(--primary, #3b82f6);
   }
 
   .progress-bar-container {
@@ -284,11 +287,11 @@
 
   .progress-bar-track {
     height: 12px;
-    background-color: var(--control, #0f172a);
+    background-color: var(--muted, #0f172a);
     border-radius: 6px;
     overflow: hidden;
     position: relative;
-    border: 1px solid var(--line, #334155);
+    border: 1px solid var(--border, #334155);
   }
 
   .progress-bar-fill {
@@ -313,7 +316,7 @@
 
   .stat-label {
     font-size: 0.75rem;
-    color: var(--muted, #94a3b8);
+    color: var(--muted-foreground, #94a3b8);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-weight: 600;
@@ -322,19 +325,13 @@
   .stat-value {
     font-size: 1rem;
     font-weight: 600;
-    color: var(--text, #f8fafc);
+    color: var(--foreground, #f8fafc);
     font-variant-numeric: tabular-nums;
   }
 
   .charts-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 1.5rem;
-  }
-
-  @media (max-width: 768px) {
-    .charts-grid {
-      grid-template-columns: 1fr;
-    }
   }
 </style>
