@@ -17,6 +17,8 @@
   import { api } from '../../api/client';
   import ThemeToggle from './ThemeToggle.svelte';
 
+  import * as AlertDialog from '../ui/alert-dialog/index.js';
+
   let {
     workspace: workspaceProp = null,
     metaData: metaDataProp = null,
@@ -47,6 +49,8 @@
   let showSaveDialog = $state(false);
   let showOverwriteDialog = $state(false);
   let saveError = $state<string | null>(null);
+  let isOverwritePending = $state(false);
+  let overwriteError = $state<string | null>(null);
 
   const modelTypes = $derived(
     metaData?.model_types?.map((mt: any) => ({
@@ -153,6 +157,7 @@
 
   async function openSavePresetModal() {
     saveError = null;
+    overwriteError = null;
     if (workspace) {
       try {
         await workspace.beforePresetSave();
@@ -166,18 +171,34 @@
 
   async function executeSaveConfig(overwrite = false) {
     if (!presetName.trim()) return;
+    if (overwrite) {
+      if (isOverwritePending) return;
+      isOverwritePending = true;
+      overwriteError = null;
+    } else {
+      saveError = null;
+    }
+
     try {
       await api.saveConfigFile(presetName.trim(), overwrite);
       showSaveDialog = false;
       showOverwriteDialog = false;
       presetName = '';
       saveError = null;
+      overwriteError = null;
     } catch (err: any) {
       const status = err?.status ?? err?.statusCode;
       if (status === 409 || err?.detail?.exists) {
+        overwriteError = null;
         showOverwriteDialog = true;
+      } else if (overwrite) {
+        overwriteError = err?.message ?? 'Failed to overwrite configuration file';
       } else {
         saveError = err?.message ?? 'Failed to save configuration file';
+      }
+    } finally {
+      if (overwrite) {
+        isOverwritePending = false;
       }
     }
   }
@@ -358,21 +379,29 @@
   {/snippet}
 </ResponsiveDialogDrawer>
 
-<ResponsiveDialogDrawer
-  open={showOverwriteDialog}
-  onOpenChange={(v) => { if (!v) showOverwriteDialog = false; }}
-  title="File Already Exists"
->
-  <p>The configuration file <strong>{presetName}.json</strong> already exists in <code>training_configs</code>.</p>
-  <p>Do you want to overwrite it?</p>
-
-  {#snippet footer()}
-    <div class="flex items-center justify-end gap-2 p-2">
-      <Button variant="secondary" onclick={() => (showOverwriteDialog = false)}>Cancel</Button>
-      <Button variant="destructive" onclick={handleConfirmOverwrite}>Overwrite</Button>
-    </div>
-  {/snippet}
-</ResponsiveDialogDrawer>
+{#if showOverwriteDialog}
+  <AlertDialog.Root open={showOverwriteDialog} onOpenChange={(v) => { if (!v && !isOverwritePending) showOverwriteDialog = false; }}>
+    <AlertDialog.Content>
+      <AlertDialog.Header>
+        <AlertDialog.Title>File Already Exists</AlertDialog.Title>
+        <AlertDialog.Description>
+          The configuration file <strong>{presetName}.json</strong> already exists in <code>training_configs</code>. Do you want to overwrite it?
+        </AlertDialog.Description>
+      </AlertDialog.Header>
+      {#if overwriteError}
+        <Alert variant="destructive" class="my-2">
+          <span>{overwriteError}</span>
+        </Alert>
+      {/if}
+      <AlertDialog.Footer>
+        <AlertDialog.Cancel disabled={isOverwritePending} onclick={() => (showOverwriteDialog = false)}>Cancel</AlertDialog.Cancel>
+        <AlertDialog.Action disabled={isOverwritePending} onclick={handleConfirmOverwrite}>
+          Overwrite
+        </AlertDialog.Action>
+      </AlertDialog.Footer>
+    </AlertDialog.Content>
+  </AlertDialog.Root>
+{/if}
 
 <style>
   .header {

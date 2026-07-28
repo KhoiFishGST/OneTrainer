@@ -1,7 +1,6 @@
-import '@testing-library/jest-dom/vitest';
-import { render, screen, fireEvent } from '@testing-library/svelte';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { readable } from 'svelte/store';
+import { readable, writable } from 'svelte/store';
 import SamplingPage from './+page.svelte';
 import {
   createSamplesQuery,
@@ -236,11 +235,16 @@ describe('SamplingPage', () => {
     expect(updatedSamples[1]).not.toHaveProperty('webui_id');
   });
 
-  it('triggers AlertDialog for sample deletion, and leaves editor open on failed save', async () => {
-    const mutateAsync = vi
-      .fn()
-      .mockResolvedValueOnce({}) // Deletion resolves
-      .mockRejectedValueOnce(new Error('Save failed')); // Save rejects
+  it('triggers AlertDialog for sample deletion, handles pending state, prevents duplicate calls, retains error on failure, and closes on resolution', async () => {
+    let resolveMutation: (v?: any) => void = () => {};
+    let rejectMutation: (e: any) => void = () => {};
+
+    const mutateAsync = vi.fn().mockImplementation(() => {
+      return new Promise((res, rej) => {
+        resolveMutation = res;
+        rejectMutation = rej;
+      });
+    });
 
     vi.mocked(createSamplesQuery).mockReturnValue(
       readable({
@@ -267,7 +271,7 @@ describe('SamplingPage', () => {
 
     render(SamplingPage);
 
-    // 1. Delete button opens AlertDialog
+    // 1. Click delete button
     const deleteBtn = screen.getAllByTitle('Delete sample prompt')[0];
     await fireEvent.click(deleteBtn);
 
@@ -275,22 +279,95 @@ describe('SamplingPage', () => {
     expect(alertDialog).toBeInTheDocument();
     expect(screen.getByText(/Are you sure you want to delete this sample prompt\?/i)).toBeInTheDocument();
 
-    // Confirm deletion inside AlertDialog
+    // 2. Click confirm delete
     const confirmDeleteBtn = screen.getByRole('button', { name: /^delete$/i });
     await fireEvent.click(confirmDeleteBtn);
-    expect(mutateAsync).toHaveBeenCalled();
 
-    // 2. Open edit modal and attempt saving which fails
-    const editBtn = screen.getAllByTitle('Edit sample prompt')[0];
-    await fireEvent.click(editBtn);
+    expect(mutateAsync).toHaveBeenCalledTimes(1);
 
-    const editDialog = screen.getByRole('dialog');
-    expect(editDialog).toBeInTheDocument();
+    // Dialog remains open and confirm button is disabled while pending
+    expect(alertDialog).toBeInTheDocument();
+    expect(confirmDeleteBtn).toBeDisabled();
 
-    const saveBtn = screen.getByRole('button', { name: /save/i });
-    await fireEvent.click(saveBtn);
+    // Duplicate click does not add calls
+    await fireEvent.click(confirmDeleteBtn);
+    expect(mutateAsync).toHaveBeenCalledTimes(1);
 
-    // After failed save, dialog should STILL be open
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    // Reject promise -> error shown, dialog remains open
+    await act(async () => {
+      rejectMutation(new Error('Sample delete error'));
+    });
+
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    expect(await screen.findByText('Sample delete error')).toBeInTheDocument();
+    expect(confirmDeleteBtn).not.toBeDisabled();
+
+    // Retry
+    await fireEvent.click(confirmDeleteBtn);
+    expect(mutateAsync).toHaveBeenCalledTimes(2);
+
+    // Resolve promise -> dialog closes
+    await act(async () => {
+      resolveMutation({});
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    });
+  });
+
+  it('removes item by webui_id identity when query result is reordered while deletion dialog is open', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({});
+    const samplesStore = writable({
+      data: {
+        samples: [
+          { webui_id: 'id_alpha', prompt: 'Alpha Prompt', enabled: true },
+          { webui_id: 'id_beta', prompt: 'Beta Prompt', enabled: true },
+        ],
+        queued: false,
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    vi.mocked(createSamplesQuery).mockReturnValue(samplesStore as any);
+    vi.mocked(createUpdateSamplesMutation).mockReturnValue(
+      readable({ mutateAsync, isPending: false }) as any
+    );
+
+    render(SamplingPage);
+
+    // Click delete on first item (Alpha, webui_id: 'id_alpha', index 0)
+    const deleteBtns = screen.getAllByTitle('Delete sample prompt');
+    await fireEvent.click(deleteBtns[0]);
+
+    const alertDialog = await screen.findByRole('alertdialog');
+    expect(alertDialog).toBeInTheDocument();
+
+    // Reorder store while dialog is open (Beta becomes index 0, Alpha becomes index 1)
+    await act(() => {
+      samplesStore.set({
+        data: {
+          samples: [
+            { webui_id: 'id_beta', prompt: 'Beta Prompt', enabled: true },
+            { webui_id: 'id_alpha', prompt: 'Alpha Prompt', enabled: true },
+          ],
+          queued: false,
+        },
+        isLoading: false,
+        isError: false,
+      });
+    });
+
+    // Click confirm delete
+    const confirmDeleteBtn = screen.getByRole('button', { name: /^delete$/i });
+    await fireEvent.click(confirmDeleteBtn);
+
+    expect(mutateAsync).toHaveBeenCalledTimes(1);
+
+    // Payload should remove Alpha (webui_id: 'id_alpha'), leaving Beta
+    const payload = mutateAsync.mock.calls[0][0];
+    expect(payload.samples).toHaveLength(1);
+    expect(payload.samples[0].webui_id).toBe('id_beta');
   });
 });

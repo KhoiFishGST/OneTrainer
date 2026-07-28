@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/svelte';
+import { fireEvent, render, screen, waitFor, act, within } from '@testing-library/svelte';
+import { tick } from 'svelte';
 import { expect, it, describe, vi } from 'vitest';
 import HeaderTestWrapper from './HeaderTestWrapper.svelte';
 import { trainingStore } from '../../events/training-store';
@@ -142,5 +143,86 @@ describe('Header component', () => {
     expect(screen.getByRole('button', { name: /Switch to (light|dark) theme/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Load' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+  });
+
+  it('presents overwrite confirmation in an Alert Dialog, guards pending state, prevents duplicate calls, retains error on failure, and closes on resolution', async () => {
+    let resolveSave: (v?: any) => void = () => {};
+    let rejectSave: (e: any) => void = () => {};
+
+    const saveConfigFileSpy = vi.spyOn(api, 'saveConfigFile').mockImplementation((_name: string, overwrite?: boolean) => {
+      if (!overwrite) {
+        // Initial save attempt reports 409 conflict
+        const err: any = new Error('File exists');
+        err.status = 409;
+        err.detail = { exists: true };
+        return Promise.reject(err);
+      }
+      return new Promise((res, rej) => {
+        resolveSave = res;
+        rejectSave = rej;
+      });
+    });
+
+    const mockWorkspace = {
+      draft: { model_type: 'STABLE_DIFFUSION_15', training_method: 'FINE_TUNE' },
+      state: 'saved',
+      beforePresetSave: vi.fn().mockResolvedValue(undefined),
+    } as any;
+
+    render(HeaderTestWrapper, { workspace: mockWorkspace });
+
+    // Open save modal
+    await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    const input = screen.getByPlaceholderText('my_config');
+    await fireEvent.input(input, { target: { value: 'existing_preset' } });
+
+    // Trigger save (will fail with 409 and open overwrite dialog)
+    const modalSaveBtn = within(screen.getByRole('dialog')).getByRole('button', { name: /^Save$/i });
+    await fireEvent.click(modalSaveBtn);
+
+    // Overwrite dialog should be an Alert Dialog
+    const alertDialog = await screen.findByRole('alertdialog');
+    expect(alertDialog).toBeInTheDocument();
+    expect(screen.getByText(/already exists in/i)).toBeInTheDocument();
+
+    const overwriteBtn = within(alertDialog).getByRole('button', { name: 'Overwrite' });
+    const cancelBtn = within(alertDialog).getByRole('button', { name: 'Cancel' });
+
+    // Click overwrite
+    await fireEvent.click(overwriteBtn);
+    await tick();
+
+    expect(saveConfigFileSpy).toHaveBeenLastCalledWith('existing_preset', true);
+
+    // While pending, Alert Dialog remains open, Overwrite and Cancel buttons are disabled
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    expect(overwriteBtn).toBeDisabled();
+    expect(cancelBtn).toBeDisabled();
+
+    // Duplicate click while pending does not invoke API again
+    const callsCount = saveConfigFileSpy.mock.calls.length;
+    await fireEvent.click(overwriteBtn);
+    expect(saveConfigFileSpy.mock.calls.length).toBe(callsCount);
+
+    // Reject save -> error message retains dialog open
+    await act(async () => {
+      rejectSave(new Error('Failed to overwrite preset'));
+    });
+
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    expect(await screen.findByText(/Failed to overwrite preset/i)).toBeInTheDocument();
+    expect(overwriteBtn).not.toBeDisabled();
+
+    // Click overwrite again to retry
+    await fireEvent.click(overwriteBtn);
+
+    // Resolve save -> closes Alert Dialog
+    await act(async () => {
+      resolveSave({ filename: 'training_configs/existing_preset.json' });
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    });
   });
 });

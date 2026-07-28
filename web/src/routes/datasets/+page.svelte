@@ -90,6 +90,7 @@
       await $deleteMutation.mutateAsync(name);
     } catch (err) {
       console.error('Failed to delete dataset', err);
+      throw err;
     }
   }
 </script>

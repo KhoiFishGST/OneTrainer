@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/svelte';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/svelte';
 import { expect, test, vi } from 'vitest';
 import { readable } from 'svelte/store';
 import DatasetsPage from './+page.svelte';
@@ -29,8 +29,17 @@ test('renders Data page title, base directory input, and dataset cards', async (
   expect(await screen.findByText('Dataset Alpha')).toBeInTheDocument();
 });
 
-test('dataset deletion opens AlertDialog instead of confirm, handles pending state and retains state on failure', async () => {
-  const deleteMutateAsync = vi.fn().mockRejectedValueOnce(new Error('Delete failed'));
+test('dataset deletion opens AlertDialog, handles pending state, prevents duplicate calls, retains error on failure, and closes on resolution', async () => {
+  let resolveDelete: (v?: any) => void = () => {};
+  let rejectDelete: (e: any) => void = () => {};
+
+  const deleteMutateAsync = vi.fn().mockImplementation(() => {
+    return new Promise((res, rej) => {
+      resolveDelete = res;
+      rejectDelete = rej;
+    });
+  });
+
   vi.spyOn(queries, 'createDatasetsQuery').mockReturnValue(
     readable({
       data: {
@@ -74,8 +83,36 @@ test('dataset deletion opens AlertDialog instead of confirm, handles pending sta
   const confirmDeleteBtn = screen.getByRole('button', { name: /^delete$/i });
   await fireEvent.click(confirmDeleteBtn);
 
+  expect(deleteMutateAsync).toHaveBeenCalledTimes(1);
   expect(deleteMutateAsync).toHaveBeenCalledWith('Dataset Alpha');
 
-  // Since mutation rejected with failure, dataset retains visible state
-  expect(await screen.findByText('Dataset Alpha')).toBeInTheDocument();
+  // Confirmation remains open while pending and action button is disabled
+  expect(alertDialog).toBeInTheDocument();
+  expect(confirmDeleteBtn).toBeDisabled();
+
+  // Second click while pending does not trigger additional call
+  await fireEvent.click(confirmDeleteBtn);
+  expect(deleteMutateAsync).toHaveBeenCalledTimes(1);
+
+  // Rejection keeps dialog open with error message
+  await act(async () => {
+    rejectDelete(new Error('Delete dataset failed'));
+  });
+
+  expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+  expect(await screen.findByText('Delete dataset failed')).toBeInTheDocument();
+  expect(confirmDeleteBtn).not.toBeDisabled();
+
+  // Click delete again to retry
+  await fireEvent.click(confirmDeleteBtn);
+  expect(deleteMutateAsync).toHaveBeenCalledTimes(2);
+
+  // Resolving promise closes dialog
+  await act(async () => {
+    resolveDelete();
+  });
+
+  await waitFor(() => {
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+  });
 });

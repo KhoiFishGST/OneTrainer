@@ -30,7 +30,7 @@
     openDirectory,
   }: {
     concepts?: Concept[];
-    onChange?: (concepts: Concept[]) => void;
+    onChange?: (concepts: Concept[]) => Promise<void> | void;
     disabled?: boolean;
     openDirectory?: (mode: 'file' | 'dir', currentPath?: string) => Promise<string | null>;
   } = $props();
@@ -44,9 +44,9 @@
 
   let deleteTargetIndex = $state<number | null>(null);
 
-  function notifyChange(newConcepts: Concept[]) {
+  function notifyChange(newConcepts: Concept[]): Promise<void> | void {
     concepts = newConcepts;
-    onChange?.(newConcepts);
+    return onChange?.(newConcepts);
   }
 
   function handleAddConcept() {
@@ -126,13 +126,14 @@
     deleteTargetIndex = null;
   }
 
-  function handleSaveConcept(updatedConcept: Concept) {
+  async function handleSaveConcept(updatedConcept: Concept) {
+    let updatedList: Concept[];
     if (editingIndex !== null && editingIndex >= 0 && editingIndex < concepts.length) {
-      const updatedList = concepts.map((c, i) => (i === editingIndex ? updatedConcept : c));
-      notifyChange(updatedList);
+      updatedList = concepts.map((c, i) => (i === editingIndex ? updatedConcept : c));
     } else {
-      notifyChange([...concepts, updatedConcept]);
+      updatedList = [...concepts, updatedConcept];
     }
+    await notifyChange(updatedList);
     isModalOpen = false;
     editingIndex = null;
   }

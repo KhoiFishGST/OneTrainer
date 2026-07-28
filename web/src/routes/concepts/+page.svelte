@@ -23,24 +23,41 @@
     }
   });
 
+  let pendingResolvers: Array<{ resolve: () => void; reject: (err: any) => void }> = [];
+
   onDestroy(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
   });
 
-  function handleSave(updated: Concept[]) {
+  let saveError = $state<string | null>(null);
+
+  function handleSave(updated: Concept[]): Promise<void> {
     concepts = updated;
+    saveError = null;
     if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      $updateConceptsMutation.mutate(updated);
-    }, 1000);
+
+    return new Promise((resolve, reject) => {
+      pendingResolvers.push({ resolve, reject });
+
+      debounceTimer = setTimeout(async () => {
+        const resolversToNotify = [...pendingResolvers];
+        pendingResolvers = [];
+        try {
+          await $updateConceptsMutation.mutateAsync(updated);
+          saveError = null;
+          resolversToNotify.forEach((r) => r.resolve());
+        } catch (err: any) {
+          saveError = err?.message || 'Failed to save concepts';
+          resolversToNotify.forEach((r) => r.reject(err));
+        }
+      }, 1000);
+    });
   }
 
   const errorMessage = $derived(
     $conceptsQuery.error
       ? ($conceptsQuery.error as Error).message || 'Failed to load concepts'
-      : $updateConceptsMutation.error
-      ? ($updateConceptsMutation.error as Error).message || 'Failed to save concepts'
-      : null
+      : saveError || ($updateConceptsMutation.error ? ($updateConceptsMutation.error as Error).message || 'Failed to save concepts' : null)
   );
 </script>
 

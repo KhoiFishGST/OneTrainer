@@ -5,6 +5,7 @@
   import { Badge } from '$lib/components/ui/badge/index.js';
   import * as Card from '$lib/components/ui/card/index.js';
   import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
+  import { Alert } from '$lib/components/ui/alert';
 
   interface DatasetItem {
     name: string;
@@ -28,20 +29,31 @@
 
   let datasetToDelete = $state<string | null>(null);
   let isConfirmOpen = $state(false);
+  let isPendingDelete = $state(false);
+  let deleteError = $state<string | null>(null);
 
   function promptDelete(e: MouseEvent, name: string) {
     e.stopPropagation();
     e.preventDefault();
     datasetToDelete = name;
+    deleteError = null;
     isConfirmOpen = true;
   }
 
   async function confirmDelete() {
-    if (!datasetToDelete) return;
+    if (!datasetToDelete || isPendingDelete) return;
     const targetName = datasetToDelete;
-    isConfirmOpen = false;
-    datasetToDelete = null;
-    await onDelete(targetName);
+    deleteError = null;
+    isPendingDelete = true;
+    try {
+      await onDelete(targetName);
+      isConfirmOpen = false;
+      datasetToDelete = null;
+    } catch (err: any) {
+      deleteError = err?.message || 'Failed to delete dataset';
+    } finally {
+      isPendingDelete = false;
+    }
   }
 </script>
 
@@ -64,7 +76,7 @@
             class="btn-delete"
             aria-label="Delete dataset"
             title="Delete dataset"
-            disabled={isDeleting}
+            disabled={isDeleting || isPendingDelete}
             onclick={(e: MouseEvent) => promptDelete(e, ds.name)}
           >
             <Trash2 size={16} />
@@ -81,7 +93,7 @@
 </div>
 
 {#if isConfirmOpen && datasetToDelete}
-  <AlertDialog.Root open={isConfirmOpen} onOpenChange={(v) => { if (!v) { isConfirmOpen = false; datasetToDelete = null; } }}>
+  <AlertDialog.Root open={isConfirmOpen} onOpenChange={(v) => { if (!v && !isPendingDelete) { isConfirmOpen = false; datasetToDelete = null; deleteError = null; } }}>
     <AlertDialog.Content>
       <AlertDialog.Header>
         <AlertDialog.Title>Delete Dataset</AlertDialog.Title>
@@ -89,11 +101,16 @@
           Are you sure you want to delete dataset "{datasetToDelete}"?
         </AlertDialog.Description>
       </AlertDialog.Header>
+      {#if deleteError}
+        <Alert variant="destructive" class="my-2">
+          <span>{deleteError}</span>
+        </Alert>
+      {/if}
       <AlertDialog.Footer>
-        <AlertDialog.Cancel onclick={() => { isConfirmOpen = false; datasetToDelete = null; }}>
+        <AlertDialog.Cancel disabled={isPendingDelete} onclick={() => { isConfirmOpen = false; datasetToDelete = null; deleteError = null; }}>
           Cancel
         </AlertDialog.Cancel>
-        <AlertDialog.Action disabled={isDeleting} onclick={confirmDelete}>
+        <AlertDialog.Action disabled={isDeleting || isPendingDelete} onclick={confirmDelete}>
           Delete
         </AlertDialog.Action>
       </AlertDialog.Footer>

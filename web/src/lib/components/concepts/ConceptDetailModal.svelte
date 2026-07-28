@@ -14,6 +14,9 @@
   import ConceptStatsPanel from './ConceptStatsPanel.svelte';
   import AugmentationPreview from './AugmentationPreview.svelte';
 
+  import { AlertCircle } from 'lucide-svelte';
+  import { Alert } from '$lib/components/ui/alert';
+
   let {
     concept,
     isOpen = false,
@@ -23,7 +26,7 @@
   } = $props<{
     concept: Concept | null;
     isOpen: boolean;
-    onSave: (updated: Concept) => void;
+    onSave: (updated: Concept) => Promise<void> | void;
     onClose: () => void;
     openDirectory?: (mode: 'file' | 'dir', currentPath?: string) => Promise<string | null>;
   }>();
@@ -38,8 +41,13 @@
   let dirPickerTarget = $state<'concept' | 'prompt' | 'special_tags'>('concept');
   let showAugPreviewModal = $state(false);
 
+  let isSaving = $state(false);
+  let saveError = $state<string | null>(null);
+
   $effect(() => {
     if (concept && isOpen) {
+      isSaving = false;
+      saveError = null;
       const cloned: Concept = JSON.parse(JSON.stringify(concept));
 
       if (cloned.image_variations === undefined) cloned.image_variations = 1;
@@ -95,12 +103,16 @@
     }
   });
 
-  function handleSave() {
-    if (!draft) return;
+  async function handleSave() {
+    if (!draft || isSaving) return;
+    saveError = null;
+    isSaving = true;
     try {
-      onSave(normalizeConceptDraft(draft));
-    } catch {
-      // Retain draft and keep drawer/dialog open if onSave throws
+      await onSave(normalizeConceptDraft(draft));
+    } catch (err: any) {
+      saveError = err?.message || 'Failed to save concept settings';
+    } finally {
+      isSaving = false;
     }
   }
 
@@ -135,7 +147,7 @@
   <ResponsiveDialogDrawer
     open={isOpen}
     onOpenChange={(val) => {
-      if (!val) onClose();
+      if (!val && !isSaving) onClose();
     }}
     title="Concept Configuration - {draft.name || draft.path || 'New Concept'}"
     class="max-w-4xl max-h-[90vh]"
@@ -177,9 +189,16 @@
 
     {#snippet footer()}
       <div class="dialog-actions-footer">
+        {#if saveError}
+          <Alert variant="destructive" class="modal-save-error">
+            <AlertCircle size={16} />
+            <span>{saveError}</span>
+          </Alert>
+        {/if}
         <Button
           type="button"
           variant="secondary"
+          disabled={isSaving}
           onclick={onClose}
         >
           Cancel
@@ -187,9 +206,10 @@
         <Button
           type="button"
           variant="default"
+          disabled={isSaving}
           onclick={handleSave}
         >
-          Save Concept Settings
+          {isSaving ? 'Saving...' : 'Save Concept Settings'}
         </Button>
       </div>
     {/snippet}

@@ -53,8 +53,10 @@
   let newConfigName = $state('');
   let configModalError = $state('');
 
-  let sampleToDeleteIndex = $state<number | null>(null);
+  let sampleToDeleteTarget = $state<any>(null);
   let isDeleteConfirmOpen = $state(false);
+  let isDeletingSample = $state(false);
+  let deleteSampleError = $state<string | null>(null);
 
   let toast = $state<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -168,22 +170,37 @@
   }
 
   function promptDeleteSample(index: number) {
-    sampleToDeleteIndex = index;
+    const target = samples[index];
+    if (!target) return;
+    sampleToDeleteTarget = target;
+    deleteSampleError = null;
     isDeleteConfirmOpen = true;
   }
 
   async function confirmDeleteSample() {
-    if (sampleToDeleteIndex === null) return;
-    const index = sampleToDeleteIndex;
-    isDeleteConfirmOpen = false;
-    sampleToDeleteIndex = null;
+    if (!sampleToDeleteTarget || isDeletingSample) return;
+    deleteSampleError = null;
+    isDeletingSample = true;
 
-    const updated = samples.filter((_: any, i: number) => i !== index);
     try {
+      const targetWebuiId = sampleToDeleteTarget.webui_id;
+      const currentIndex = samples.findIndex((s: any) =>
+        targetWebuiId ? s.webui_id === targetWebuiId : s === sampleToDeleteTarget
+      );
+
+      if (currentIndex === -1) {
+        throw new Error('Sample prompt no longer exists');
+      }
+
+      const updated = samples.filter((_: any, i: number) => i !== currentIndex);
       await $updateSamplesMutation.mutateAsync({ samples: updated, file: currentConfigFile });
       triggerToast('Sample prompt deleted', 'success');
+      isDeleteConfirmOpen = false;
+      sampleToDeleteTarget = null;
     } catch (err: any) {
-      triggerToast(err?.message || 'Failed to delete sample prompt', 'error');
+      deleteSampleError = err?.message || 'Failed to delete sample prompt';
+    } finally {
+      isDeletingSample = false;
     }
   }
 
@@ -337,8 +354,8 @@
   {/snippet}
 </ResponsiveDialogDrawer>
 
-{#if isDeleteConfirmOpen && sampleToDeleteIndex !== null}
-  <AlertDialog.Root open={isDeleteConfirmOpen} onOpenChange={(v) => { if (!v) { isDeleteConfirmOpen = false; sampleToDeleteIndex = null; } }}>
+{#if isDeleteConfirmOpen && sampleToDeleteTarget}
+  <AlertDialog.Root open={isDeleteConfirmOpen} onOpenChange={(v) => { if (!v && !isDeletingSample) { isDeleteConfirmOpen = false; sampleToDeleteTarget = null; deleteSampleError = null; } }}>
     <AlertDialog.Content>
       <AlertDialog.Header>
         <AlertDialog.Title>Delete Sample Prompt</AlertDialog.Title>
@@ -346,11 +363,16 @@
           Are you sure you want to delete this sample prompt?
         </AlertDialog.Description>
       </AlertDialog.Header>
+      {#if deleteSampleError}
+        <Alert variant="destructive" class="my-2">
+          <span>{deleteSampleError}</span>
+        </Alert>
+      {/if}
       <AlertDialog.Footer>
-        <AlertDialog.Cancel onclick={() => { isDeleteConfirmOpen = false; sampleToDeleteIndex = null; }}>
+        <AlertDialog.Cancel disabled={isDeletingSample} onclick={() => { isDeleteConfirmOpen = false; sampleToDeleteTarget = null; deleteSampleError = null; }}>
           Cancel
         </AlertDialog.Cancel>
-        <AlertDialog.Action disabled={$updateSamplesMutation.isPending} onclick={confirmDeleteSample}>
+        <AlertDialog.Action disabled={$updateSamplesMutation.isPending || isDeletingSample} onclick={confirmDeleteSample}>
           Delete
         </AlertDialog.Action>
       </AlertDialog.Footer>

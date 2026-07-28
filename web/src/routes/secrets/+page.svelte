@@ -61,6 +61,8 @@
     }
   }
 
+  let isClearingPassword = $state(false);
+
   async function saveSecrets(updates: { huggingface_token?: string; webui_password?: string }) {
     saveStatus = null;
     try {
@@ -75,10 +77,16 @@
         webuiPasswordSet = data.webui_password_set;
         saveStatus = { type: 'success', message: 'Secrets saved successfully!' };
       } else {
-        saveStatus = { type: 'error', message: 'Failed to save secrets.' };
+        const msg = 'Failed to save secrets.';
+        saveStatus = { type: 'error', message: msg };
+        throw new Error(msg);
       }
-    } catch (e) {
-      saveStatus = { type: 'error', message: 'Network error saving secrets.' };
+    } catch (e: any) {
+      const msg = e?.message || 'Network error saving secrets.';
+      if (!saveStatus) {
+        saveStatus = { type: 'error', message: msg };
+      }
+      throw e;
     }
   }
 
@@ -95,9 +103,18 @@
     webuiPassword = '';
   }
 
-  function handleClearPassword() {
-    saveSecrets({ webui_password: '' });
-    webuiPassword = '';
+  async function handleClearPassword() {
+    if (isClearingPassword) return;
+    isClearingPassword = true;
+    try {
+      await saveSecrets({ webui_password: '' });
+      webuiPassword = '';
+      isConfirmClearOpen = false;
+    } catch {
+      // Retain dialog open on failure
+    } finally {
+      isClearingPassword = false;
+    }
   }
 </script>
 
@@ -241,7 +258,7 @@
       </div>
     </div>
 
-    <AlertDialog.Root open={isConfirmClearOpen} onOpenChange={(v) => (isConfirmClearOpen = v)}>
+    <AlertDialog.Root open={isConfirmClearOpen} onOpenChange={(v) => { if (!v && !isClearingPassword) isConfirmClearOpen = false; }}>
       <AlertDialog.Content>
         <AlertDialog.Header>
           <AlertDialog.Title>Clear Web Portal Password?</AlertDialog.Title>
@@ -250,12 +267,10 @@
           </AlertDialog.Description>
         </AlertDialog.Header>
         <AlertDialog.Footer>
-          <AlertDialog.Cancel onclick={() => (isConfirmClearOpen = false)}>Cancel</AlertDialog.Cancel>
+          <AlertDialog.Cancel disabled={isClearingPassword} onclick={() => (isConfirmClearOpen = false)}>Cancel</AlertDialog.Cancel>
           <AlertDialog.Action
-            onclick={() => {
-              isConfirmClearOpen = false;
-              handleClearPassword();
-            }}
+            disabled={isClearingPassword}
+            onclick={handleClearPassword}
           >
             Confirm Clear
           </AlertDialog.Action>

@@ -32,6 +32,7 @@ describe('Concepts page route component', () => {
     vi.mocked(queries.createUpdateConceptsMutation).mockReturnValue(
       readable({
         mutate: mutateMock,
+        mutateAsync: mutateMock,
         error: null,
       }) as any
     );
@@ -83,5 +84,65 @@ describe('Concepts page route component', () => {
       vi.advanceTimersByTime(500);
     });
     expect(mutateMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('retains concept detail modal open and displays error on save failure, closing on retry resolution', async () => {
+    const mutateAsyncMock = vi.fn().mockRejectedValueOnce(new Error('Backend save error')).mockResolvedValueOnce({});
+    vi.mocked(queries.createUpdateConceptsMutation).mockReturnValue(
+      readable({
+        mutateAsync: mutateAsyncMock,
+        error: null,
+      }) as any
+    );
+
+    render(ConceptsPage);
+
+    await waitFor(() => {
+      expect(screen.getByText('Concept 1')).toBeInTheDocument();
+    });
+
+    // Open detail modal for Concept 1
+    const conceptCard = screen.getByText('Concept 1');
+    await fireEvent.click(conceptCard);
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    // Edit concept name input
+    const nameInput = screen.getByLabelText(/^name/i);
+    await fireEvent.input(nameInput, { target: { value: 'Edited Concept Name' } });
+
+    // Click Save Concept Settings
+    const saveBtn = screen.getByRole('button', { name: /Save Concept Settings|Save/i });
+    await fireEvent.click(saveBtn);
+
+    // Fast-forward 1000ms debounce
+    await act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    await waitFor(() => {
+      expect(mutateAsyncMock).toHaveBeenCalledTimes(1);
+    });
+
+    // Dialog must remain open, edited value visible, error alert shown
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Edited Concept Name')).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Backend save error');
+
+    // Click Save again (retry)
+    await fireEvent.click(saveBtn);
+
+    await act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    await waitFor(() => {
+      expect(mutateAsyncMock).toHaveBeenCalledTimes(2);
+    });
+
+    // After successful retry, dialog closes
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
   });
 });

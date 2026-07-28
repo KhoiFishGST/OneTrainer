@@ -12,10 +12,13 @@
 		class: className,
 		variant = "default",
 		size = "default",
+		disabled = false,
+		children,
 		...restProps
 	}: AlertDialogPrimitive.ActionProps & {
 		variant?: ButtonVariant;
 		size?: ButtonSize;
+		disabled?: boolean;
 	} = $props();
 </script>
 
@@ -24,4 +27,10 @@
 	data-slot="alert-dialog-action"
 	class={cn(buttonVariants({ variant, size }), "cn-alert-dialog-action", className)}
 	{...restProps}
-/>
+>
+	{#snippet child({ props })}
+		<button {...props} {disabled}>
+			{@render children?.()}
+		</button>
+	{/snippet}
+</AlertDialogPrimitive.Action>
