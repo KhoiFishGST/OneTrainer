@@ -55,4 +55,50 @@ describe("OptimizerParamsModal", () => {
     expect(screen.getByText("Maximize")).toBeInTheDocument();
     expect(screen.getByText("Differentiable")).toBeInTheDocument();
   });
+
+  it("does not reset draft when values prop changes while modal stays open", async () => {
+    const { rerender } = render(OptimizerParamsModal, {
+      props: {
+        open: true,
+        values: { optimizer: { optimizer: "MUON" }, optimizer_params: { ns_steps: 5 } },
+        onSave: vi.fn(),
+      },
+    });
+
+    const input = screen.getByLabelText("Newton-Schulz Iterations");
+    await fireEvent.input(input, { target: { value: "10" } });
+    expect(input).toHaveValue(10);
+
+    await rerender({
+      open: true,
+      values: { optimizer: { optimizer: "MUON" }, optimizer_params: { ns_steps: 99 } },
+      onSave: vi.fn(),
+    });
+
+    expect(input).toHaveValue(10);
+  });
+
+  it("retains open state and draft when async apply fails", async () => {
+    let open = true;
+    const onSave = vi.fn().mockRejectedValue(new Error("Async save error"));
+
+    render(OptimizerParamsModal, {
+      props: {
+        open,
+        values: { optimizer: { optimizer: "ADAMW" }, optimizer_params: { beta1: 0.9 } },
+        onSave,
+      },
+    });
+
+    const betaInput = screen.getByLabelText("Beta 1");
+    await fireEvent.input(betaInput, { target: { value: "0.8" } });
+
+    const applyBtn = screen.getByRole("button", { name: "Apply Parameters" });
+    await fireEvent.click(applyBtn);
+
+    expect(onSave).toHaveBeenCalled();
+    expect(screen.getByText("Configure Optimizer Parameters")).toBeInTheDocument();
+    expect(betaInput).toHaveValue(0.8);
+  });
 });
+

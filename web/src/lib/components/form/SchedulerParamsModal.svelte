@@ -14,20 +14,32 @@
   }>();
 
   let customClassName = $state('');
+  let wasOpen = $state(false);
+  let isSubmitting = $state(false);
+  let submitError = $state<string | null>(null);
 
   $effect(() => {
-    if (open) {
+    if (open && !wasOpen) {
       untrack(() => {
         customClassName = values?.custom_learning_rate_scheduler || '';
       });
     }
+    wasOpen = open;
   });
 
-  function handleApply() {
-    onSave({
-      custom_learning_rate_scheduler: customClassName,
-    });
-    open = false;
+  async function handleApply() {
+    submitError = null;
+    isSubmitting = true;
+    try {
+      await onSave({
+        custom_learning_rate_scheduler: customClassName,
+      });
+      open = false;
+    } catch (err: any) {
+      submitError = err?.message || 'Failed to save scheduler parameters';
+    } finally {
+      isSubmitting = false;
+    }
   }
 </script>
 
@@ -39,6 +51,12 @@
   onClose={() => (open = false)}
 >
   <div class="scheduler-modal-body">
+    {#if submitError}
+      <div class="rounded-md bg-destructive/15 border border-destructive/30 p-3 text-sm text-destructive font-medium" role="alert">
+        {submitError}
+      </div>
+    {/if}
+
     <div class="field-item">
       <label for="custom-scheduler-class" class="field-label">
         Class Name

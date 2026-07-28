@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import * as Card from '$lib/components/ui/card/index.js';
+  import { cn } from '$lib/utils.js';
 
   let {
     title = '',
@@ -14,42 +16,17 @@
   } = $props();
 </script>
 
-<section class="form-panel" class:is-components-group={isComponentsGroup}>
+<Card.Root class={cn("form-panel w-full max-w-[740px] p-5 flex flex-col gap-4 border border-border bg-card text-card-foreground rounded-lg shadow-sm", isComponentsGroup && "is-components-group")}>
   {#if title && !hideTitle}
-    <h3 class="panel-title">{title}</h3>
+    <Card.Header class="p-0 space-y-0">
+      <Card.Title class="panel-title text-base font-semibold text-primary">{title}</Card.Title>
+    </Card.Header>
   {/if}
 
   {#if children}
-    <div class="panel-body">
+    <Card.Content class="panel-body p-0 flex flex-col gap-4">
       {@render children()}
-    </div>
+    </Card.Content>
   {/if}
-</section>
+</Card.Root>
 
-<style>
-  .form-panel {
-    border: 1px solid var(--color-border, var(--line, #2d3741));
-    border-radius: 8px;
-    padding: 1.25rem;
-    background: var(--color-bg-card, var(--panel, #181e25));
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    box-sizing: border-box;
-    width: 740px;
-    max-width: 100%;
-  }
-
-  .panel-title {
-    font-size: 1rem;
-    font-weight: 600;
-    margin: 0;
-    color: var(--color-text-title, var(--accent, #3b82f6));
-  }
-
-  .panel-body {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-</style>

@@ -106,6 +106,9 @@
 
   let localOptimizer = $state('ADAMW');
   let localParams = $state<Record<string, any>>({});
+  let wasOpen = $state(false);
+  let isSubmitting = $state(false);
+  let submitError = $state<string | null>(null);
 
   const currentFieldSpecs = $derived(
     optimizerSubSchemas[localOptimizer] || optimizerSubSchemas['ADAMW'] || {}
@@ -114,7 +117,7 @@
   const currentParamKeys = $derived(Object.keys(currentFieldSpecs));
 
   $effect(() => {
-    if (open) {
+    if (open && !wasOpen) {
       untrack(() => {
         const opt = values?.optimizer?.optimizer || values?.optimizer || 'ADAMW';
         localOptimizer = typeof opt === 'string' && optimizerSubSchemas[opt] ? opt : 'ADAMW';
@@ -129,6 +132,7 @@
         localParams = params;
       });
     }
+    wasOpen = open;
   });
 
   function handleOptimizerChange(newOpt: string) {
@@ -150,7 +154,9 @@
     localParams = defaults;
   }
 
-  function handleApply() {
+  async function handleApply() {
+    submitError = null;
+    isSubmitting = true;
     const finalParams: Record<string, any> = {};
     for (const key of currentParamKeys) {
       const val = localParams[key];
@@ -166,12 +172,19 @@
         finalParams[key] = val;
       }
     }
-    onSave({
-      optimizer: localOptimizer,
-      optimizer_params: finalParams,
-    });
-    open = false;
+    try {
+      await onSave({
+        optimizer: localOptimizer,
+        optimizer_params: finalParams,
+      });
+      open = false;
+    } catch (err: any) {
+      submitError = err?.message || 'Failed to apply parameters';
+    } finally {
+      isSubmitting = false;
+    }
   }
+
 </script>
 
 <ModalDialog
@@ -183,6 +196,12 @@
   onClose={() => (open = false)}
 >
   <div class="opt-modal-body">
+    {#if submitError}
+      <div class="rounded-md bg-destructive/15 border border-destructive/30 p-3 text-sm text-destructive font-medium" role="alert">
+        {submitError}
+      </div>
+    {/if}
+
     <!-- Header Bar: Optimizer Dropdown & Load Defaults -->
     <div class="header-bar">
       <div class="header-field">

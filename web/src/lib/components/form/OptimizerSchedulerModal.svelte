@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import ModalDialog from '../ui/ModalDialog.svelte';
   import Field from './Field.svelte';
   import { Switch as Toggle } from '../ui/switch/index.js';
@@ -26,13 +27,18 @@
 
   let localValues = $state<Record<string, any>>({});
   let wasOpen = $state(false);
+  let isSubmitting = $state(false);
+  let submitError = $state<string | null>(null);
 
   $effect(() => {
     if (open && !wasOpen) {
-      localValues = cloneDocument(values || {});
+      untrack(() => {
+        localValues = cloneDocument(values || {});
+      });
     }
     wasOpen = open;
   });
+
 
   function normalizeControl(control?: string): 'toggle' | 'text' | 'number' | 'select' {
     const norm = (control || 'text').toLowerCase();
@@ -42,7 +48,9 @@
     return 'text';
   }
 
-  function handleSave() {
+  async function handleSave() {
+    submitError = null;
+    isSubmitting = true;
     let finalValues = cloneDocument(localValues);
     for (const field of fields) {
       const primaryKey = field.keys?.[0] ?? field.id;
@@ -57,8 +65,14 @@
         }
       }
     }
-    onSave(finalValues);
-    open = false;
+    try {
+      await onSave(finalValues);
+      open = false;
+    } catch (err: any) {
+      submitError = err?.message || 'Failed to save parameters';
+    } finally {
+      isSubmitting = false;
+    }
   }
 
   function handleClose() {
@@ -78,6 +92,12 @@
   onApply={handleSave}
   applyText="Save"
 >
+  {#if submitError}
+    <div class="rounded-md bg-destructive/15 border border-destructive/30 p-3 text-sm text-destructive font-medium mb-3" role="alert">
+      {submitError}
+    </div>
+  {/if}
+
   <form class="optimizer-scheduler-form" onsubmit={(e) => { e.preventDefault(); handleSave(); }}>
     {#each fields as field (field.id)}
       {@const primaryKey = field.keys?.[0] ?? field.id}

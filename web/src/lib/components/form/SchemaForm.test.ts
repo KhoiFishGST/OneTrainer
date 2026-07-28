@@ -226,3 +226,138 @@ it("keeps incomplete numeric schema edits as raw strings", async () => {
   expect(setRaw).toHaveBeenCalledWith("n", "-");
 });
 
+it("sets aria-describedby matching description/error id on controls with errors", () => {
+  render(SchemaForm, {
+    tab: {
+      id: "test",
+      label: "Test",
+      groups: [
+        {
+          id: "g",
+          title: "G",
+          fields: [
+            {
+              id: "username",
+              keys: ["username"],
+              label: "Username",
+              control: "text",
+            },
+          ],
+        },
+      ],
+    },
+    values: { username: "bad" },
+    issues: [{ path: "username", message: "Invalid username" }],
+    setRaw: vi.fn(),
+  });
+
+  const input = screen.getByLabelText("Username");
+  const errorEl = screen.getByText("Invalid username");
+  expect(errorEl).toHaveAttribute("id", "field-username-error");
+  expect(input).toHaveAttribute("aria-describedby", "field-username-error");
+});
+
+it("supports plain string options in select controls", async () => {
+  const setRaw = vi.fn();
+  render(SchemaForm, {
+    tab: {
+      id: "select_test",
+      label: "Select Test",
+      groups: [
+        {
+          id: "g",
+          title: "G",
+          fields: [
+            {
+              id: "opt",
+              keys: ["opt"],
+              label: "Option",
+              control: "select",
+              options: ["adamw", "sgd"],
+            },
+          ],
+        },
+      ],
+    },
+    values: { opt: "sgd" },
+    issues: [],
+    setRaw,
+  });
+
+  const select = screen.getByLabelText("Option");
+  expect(select).toHaveValue("sgd");
+  await fireEvent.change(select, { target: { value: "adamw" } });
+  expect(setRaw).toHaveBeenCalledWith("opt", "adamw");
+});
+
+it("does not render group title when hideGroupTitle is true or title is empty", () => {
+  render(SchemaForm, {
+    tab: {
+      id: "no_title",
+      label: "No Title",
+      groups: [
+        {
+          id: "g",
+          title: "Group Title",
+          fields: [
+            {
+              id: "f",
+              keys: ["f"],
+              label: "F",
+              control: "text",
+            },
+          ],
+        },
+      ],
+    },
+    values: {},
+    issues: [],
+    setRaw: vi.fn(),
+    hideGroupTitle: true,
+  });
+
+  expect(screen.queryByText("Group Title")).not.toBeInTheDocument();
+});
+
+it("supports multi-key time values and units", async () => {
+  const setRaw = vi.fn();
+  render(SchemaForm, {
+    tab: {
+      id: "time_test",
+      label: "Time Test",
+      groups: [
+        {
+          id: "g",
+          title: "G",
+          fields: [
+            {
+              id: "save_freq",
+              keys: ["save_every_value", "save_every_unit"],
+              label: "Save Frequency",
+              control: "time",
+              options: [
+                { value: "EPOCH", label: "Epochs" },
+                { value: "STEP", label: "Steps" },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    values: { save_every_value: 10, save_every_unit: "STEP" },
+    issues: [],
+    setRaw,
+  });
+
+  const timeInput = screen.getByLabelText("Save Frequency");
+  expect(timeInput).toHaveValue(10);
+  await fireEvent.input(timeInput, { target: { value: "20" } });
+  expect(setRaw).toHaveBeenCalledWith("save_every_value", "20");
+
+  const unitSelect = screen.getByLabelText("Time unit");
+  expect(unitSelect).toHaveValue("STEP");
+  await fireEvent.change(unitSelect, { target: { value: "EPOCH" } });
+  expect(setRaw).toHaveBeenCalledWith("save_every_unit", "EPOCH");
+});
+
+

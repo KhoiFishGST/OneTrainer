@@ -13,7 +13,7 @@
   import Button from '$lib/components/ui/Button.svelte';
 
   import FormPanel from './FormPanel.svelte';
-  import SectionDivider from './SectionDivider.svelte';
+  import { Separator } from '$lib/components/ui/separator/index.js';
 
   export type ControlType = 'toggle' | 'text' | 'number' | 'select' | 'directory' | 'time';
 
@@ -261,7 +261,10 @@
         <FormPanel hideTitle={hideGroupTitle}>
           {#each matchingGroups as group, index (group.id)}
             {#if index > 0}
-              <SectionDivider title={group.title || group.label || ''} />
+              <div class="section-divider flex items-center gap-3 my-4 pt-3 w-full" role="separator">
+                <span class="section-divider-title text-xs font-semibold text-primary uppercase tracking-wider whitespace-nowrap">{group.title || group.label || ''}</span>
+                <Separator class="flex-1" />
+              </div>
             {/if}
             {@render renderFields(group.fields || [], group.id === 'model_components')}
           {/each}

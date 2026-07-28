@@ -73,24 +73,28 @@
 <div class="form-field" class:is-inline={inline} class:is-full-width={fullWidth} class:has-error={!!error}>
   <div class="field-row">
     {#if label}
-      <div
-        class="field-label-side"
-        class:has-tooltip={!!tooltip}
-        onmouseenter={handleMouseEnter}
-        onmouseleave={handleMouseLeave}
-        onmousemove={handleMouseMove}
-        onclick={handleLabelClick}
-        role={tooltip ? 'button' : undefined}
-        tabindex={tooltip ? 0 : undefined}
-      >
-        <label for={inputId} class="field-label">{label}</label>
+      {#if tooltip}
+        <button
+          type="button"
+          class="field-label-side has-tooltip text-left"
+          onmouseenter={handleMouseEnter}
+          onmouseleave={handleMouseLeave}
+          onmousemove={handleMouseMove}
+          onclick={handleLabelClick}
+        >
+          <label for={inputId} class="field-label cursor-help">{label}</label>
 
-        {#if tooltip && showTooltip}
-          <div id={tooltipId} class="field-tooltip" role="tooltip">
-            {tooltip}
-          </div>
-        {/if}
-      </div>
+          {#if showTooltip}
+            <div id={tooltipId} class="field-tooltip" role="tooltip">
+              {tooltip}
+            </div>
+          {/if}
+        </button>
+      {:else}
+        <div class="field-label-side">
+          <label for={inputId} class="field-label">{label}</label>
+        </div>
+      {/if}
     {/if}
 
     <div class="field-control-side">
@@ -160,6 +164,21 @@
     width: 420px;
     min-width: 420px;
   }
+
+  @media (max-width: 768px) {
+    .field-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .field-control-side {
+      flex: 1 1 100%;
+      width: 100%;
+      min-width: 0;
+    }
+  }
+
 
   .field-control-side :global(.text-input),
   .field-control-side :global(.number-input),

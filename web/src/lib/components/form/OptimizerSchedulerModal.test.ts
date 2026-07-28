@@ -107,4 +107,55 @@ describe('OptimizerSchedulerModal', () => {
     expect(onClose).toHaveBeenCalled();
     expect(onSave).not.toHaveBeenCalled();
   });
+
+  it("does not reset draft when values prop changes while open stays true", async () => {
+    const { rerender } = render(OptimizerSchedulerModal, {
+      props: {
+        open: true,
+        title: 'AdamW Parameters',
+        fields: sampleFields,
+        values: initialValues,
+        onSave: vi.fn(),
+      },
+    });
+
+    const lrInput = screen.getByLabelText('Learning Rate');
+    await fireEvent.input(lrInput, { target: { value: '0.005' } });
+    expect(lrInput).toHaveValue(0.005);
+
+    await rerender({
+      open: true,
+      title: 'AdamW Parameters',
+      fields: sampleFields,
+      values: { ...initialValues, learning_rate: 0.999 },
+      onSave: vi.fn(),
+    });
+
+    expect(lrInput).toHaveValue(0.005);
+  });
+
+  it("retains open state and draft when async apply fails", async () => {
+    const onSave = vi.fn().mockRejectedValue(new Error("Save failed"));
+
+    render(OptimizerSchedulerModal, {
+      props: {
+        open: true,
+        title: 'AdamW Parameters',
+        fields: sampleFields,
+        values: initialValues,
+        onSave,
+      },
+    });
+
+    const lrInput = screen.getByLabelText('Learning Rate');
+    await fireEvent.input(lrInput, { target: { value: '0.005' } });
+
+    const saveBtn = screen.getByRole('button', { name: /save/i });
+    await fireEvent.click(saveBtn);
+
+    expect(onSave).toHaveBeenCalled();
+    expect(screen.getByText('AdamW Parameters')).toBeInTheDocument();
+    expect(lrInput).toHaveValue(0.005);
+  });
 });
+
