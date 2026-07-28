@@ -64,14 +64,18 @@
     );
   });
 
+  const hasNoSelection = $derived(selectedIndex === -1);
+
   const isUnknown = $derived(
-    selectedIndex === -1 && value !== undefined && value !== null && value !== ''
+    hasNoSelection && value !== undefined && value !== null && value !== ''
   );
 
+  const isEmptyWithoutPlaceholder = $derived(hasNoSelection && !isUnknown && !placeholder);
+
   const selectedSelectValue = $derived(
-    selectedIndex !== -1
+    !hasNoSelection
       ? String(selectedIndex)
-      : isUnknown
+      : isUnknown || isEmptyWithoutPlaceholder
         ? '__unknown__'
         : ''
   );
@@ -102,9 +106,9 @@
   onchange={handleChange}
   {...restProps}
 >
-  {#if isUnknown}
+  {#if isUnknown || isEmptyWithoutPlaceholder}
     <NativeSelectOption value="__unknown__" disabled selected={true}>
-      Unknown: {String(value)}
+      {isUnknown ? `Unknown: ${String(value)}` : 'Select...'}
     </NativeSelectOption>
   {/if}
   {#if placeholder}

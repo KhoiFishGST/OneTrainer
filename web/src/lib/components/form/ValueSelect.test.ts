@@ -1,4 +1,4 @@
-import { fireEvent, render } from '@testing-library/svelte';
+import { fireEvent, render, screen } from '@testing-library/svelte';
 import { describe, expect, it, vi } from 'vitest';
 import ValueSelect from './ValueSelect.svelte';
 
@@ -176,4 +176,29 @@ describe('ValueSelect', () => {
     expect(unknownOpt.selected).toBe(true);
     expect(select.value).toBe('__unknown__');
   });
+
+  it('does not visually select the first option when value is empty and no placeholder exists', () => {
+    const options = [
+      { value: 'alpha', label: 'Alpha' },
+      { value: 'beta', label: 'Beta' }
+    ];
+
+    render(ValueSelect, { props: { value: '', options, ariaLabel: 'Choice' } });
+
+    const select = screen.getByLabelText('Choice') as HTMLSelectElement;
+    expect(select.selectedOptions[0]?.textContent?.trim()).not.toBe('Alpha');
+    expect(select.selectedOptions[0]?.disabled).toBe(true);
+  });
+
+  it('still shows the placeholder when one is supplied', () => {
+    const options = [{ value: 'alpha', label: 'Alpha' }];
+
+    render(ValueSelect, {
+      props: { value: '', options, placeholder: 'Pick one...', ariaLabel: 'Choice' }
+    });
+
+    const select = screen.getByLabelText('Choice') as HTMLSelectElement;
+    expect(select.selectedOptions[0]?.textContent?.trim()).toBe('Pick one...');
+  });
 });
+
