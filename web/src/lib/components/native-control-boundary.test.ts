@@ -1,17 +1,7 @@
 import { parse } from 'svelte/compiler';
 import { describe, expect, it } from 'vitest';
 
-const allowed = new Set([
-  '/src/lib/components/ui/Button.svelte',
-  '/src/lib/components/form/TextInput.svelte',
-  '/src/lib/components/form/NumberInput.svelte',
-  '/src/lib/components/form/Checkbox.svelte',
-  '/src/lib/components/form/Toggle.svelte',
-  '/src/lib/components/form/TextArea.svelte',
-  '/src/lib/components/form/FileInput.svelte',
-  '/src/lib/components/form/RangeInput.svelte',
-  '/src/lib/components/form/Select.svelte',
-]);
+const uiRoot = '/src/lib/components/ui/';
 const native = new Set(['button', 'input', 'select', 'option', 'textarea']);
 const sources = import.meta.glob('/src/**/*.svelte', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 
@@ -52,8 +42,10 @@ describe('native control ownership', () => {
     const source = '<div>\n<svelte:element this="button">Save</svelte:element>\n<svelte:element this={tag}>Dynamic</svelte:element>\n</div>';
     expect(findNative(source, 'fixture.svelte')).toEqual(['fixture.svelte:2 <button>']);
   });
-  it('allows native controls only in explicit leaves', () => {
-    const violations = Object.entries(sources).flatMap(([file, source]) => allowed.has(file) ? [] : findNative(source, file));
+  it('allows native controls only in canonical UI source', () => {
+    const violations = Object.entries(sources).flatMap(([file, source]) =>
+      file.startsWith(uiRoot) ? [] : findNative(source, file)
+    );
     expect(violations).toEqual([]);
   });
 });

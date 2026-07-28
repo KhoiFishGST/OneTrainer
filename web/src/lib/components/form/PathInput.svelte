@@ -2,7 +2,7 @@
   import { FolderOpen } from 'lucide-svelte';
   import DirectoryPicker from '$lib/components/directory/DirectoryPicker.svelte';
   import Button from '$lib/components/ui/Button.svelte';
-  import TextInput from './TextInput.svelte';
+  import { Input as TextInput } from '$lib/components/ui/input/index.js';
 
   let {
     id = `path-input-${Math.random().toString(36).slice(2, 9)}`,

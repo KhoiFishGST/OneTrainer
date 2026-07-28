@@ -1,10 +1,10 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
-  import Select from '$lib/components/form/Select.svelte';
-  import Toggle from '$lib/components/form/Toggle.svelte';
-  import NumberInput from '$lib/components/form/NumberInput.svelte';
-  import TextInput from '$lib/components/form/TextInput.svelte';
+  import Select from '$lib/components/form/ValueSelect.svelte';
+  import { Switch as Toggle } from '$lib/components/ui/switch/index.js';
+  import NumberInput from '$lib/components/form/NumericDraftInput.svelte';
+  import { Input as TextInput } from '$lib/components/ui/input/index.js';
   import Button from '$lib/components/ui/Button.svelte';
   import { getRouteContext } from '$lib/config/context';
 

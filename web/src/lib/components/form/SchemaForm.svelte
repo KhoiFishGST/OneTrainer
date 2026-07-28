@@ -4,10 +4,10 @@
   import type { FieldError } from '../../api/types';
   import { getPath } from '../../config/path';
   import Field from './Field.svelte';
-  import Toggle from './Toggle.svelte';
-  import TextInput from './TextInput.svelte';
-  import NumberInput from './NumberInput.svelte';
-  import Select from './Select.svelte';
+  import { Switch as Toggle } from '../ui/switch/index.js';
+  import { Input as TextInput } from '../ui/input/index.js';
+  import NumberInput from './NumericDraftInput.svelte';
+  import Select from './ValueSelect.svelte';
   import DirectoryInput from './DirectoryInput.svelte';
   import TimeInput from './TimeInput.svelte';
   import Button from '$lib/components/ui/Button.svelte';
@@ -165,6 +165,7 @@
             {:else if controlType === 'number'}
               <NumberInput
                 {id}
+                type="text"
                 value={fieldValue}
                 {ariaDescribedBy}
                 onInput={(val) => setRaw(primaryKey, val)}

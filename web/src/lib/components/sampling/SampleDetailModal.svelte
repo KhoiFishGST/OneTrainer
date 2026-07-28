@@ -1,10 +1,10 @@
 <script lang="ts">
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
   import Button from '$lib/components/ui/Button.svelte';
-  import Select from '$lib/components/form/Select.svelte';
-  import Checkbox from '$lib/components/form/Checkbox.svelte';
-  import NumberInput from '$lib/components/form/NumberInput.svelte';
-  import TextArea from '$lib/components/form/TextArea.svelte';
+  import Select from '$lib/components/form/ValueSelect.svelte';
+  import { Checkbox } from '$lib/components/ui/checkbox/index.js';
+  import NumberInput from '$lib/components/form/NumericDraftInput.svelte';
+  import { Textarea as TextArea } from '$lib/components/ui/textarea/index.js';
 
   let {
     open = false,
@@ -167,6 +167,7 @@
             <label for="sample-width">Width</label>
             <NumberInput
               id="sample-width"
+              type="text"
               step="64"
               min="64"
               value={draft.width}
@@ -177,6 +178,7 @@
             <label for="sample-height">Height</label>
             <NumberInput
               id="sample-height"
+              type="text"
               step="64"
               min="64"
               value={draft.height}
@@ -191,6 +193,7 @@
           <label for="sample-steps">Diffusion Steps</label>
           <NumberInput
             id="sample-steps"
+            type="text"
             min="1"
             max="150"
             value={draft.diffusion_steps}
@@ -201,6 +204,7 @@
           <label for="sample-cfg">CFG Scale</label>
           <NumberInput
             id="sample-cfg"
+            type="text"
             step="0.5"
             min="1"
             max="30"
@@ -215,6 +219,7 @@
           <label for="sample-seed">Seed (-1 for random)</label>
           <NumberInput
             id="sample-seed"
+            type="text"
             value={draft.seed}
             onInput={(val) => setDraftNumber('seed', val)}
           />

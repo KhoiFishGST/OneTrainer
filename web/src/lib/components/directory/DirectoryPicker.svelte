@@ -3,7 +3,7 @@
   import { Folder, File, ArrowUp, X } from 'lucide-svelte';
   import { api } from '$lib/api/client';
   import Button from '$lib/components/ui/Button.svelte';
-  import TextInput from '$lib/components/form/TextInput.svelte';
+  import { Input as TextInput } from '$lib/components/ui/input/index.js';
   import Alert from '$lib/components/ui/Alert.svelte';
 
   interface DirectoryItem {
@@ -56,7 +56,7 @@
   );
 
   let modalEl = $state<HTMLDivElement | null>(null);
-  let pathInputControl = $state<{ focus: () => void } | null>(null);
+  let pathInputControl = $state<any>(null);
   let previousActiveElement = $state<HTMLElement | null>(null);
 
   function formatSize(bytes?: number): string {
@@ -219,7 +219,7 @@
 </script>
 
 {#if open}
-  <div class="picker-backdrop" onclick={handleBackdropClick}>
+  <div class="picker-backdrop" role="presentation" onclick={handleBackdropClick}>
     <div
       class="picker-modal"
       role="dialog"
@@ -241,7 +241,7 @@
       <div class="picker-path-bar">
         <TextInput
           bind:this={pathInputControl}
-          value={typedPath}
+          bind:value={typedPath}
           class="path-input"
           placeholder="Enter path..."
           onInput={(value) => (typedPath = value)}

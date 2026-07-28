@@ -1,8 +1,8 @@
 <script lang="ts">
   import { Save, FolderOpen, RotateCcw, RefreshCw, AlertTriangle } from 'lucide-svelte';
-  import Select from '../form/Select.svelte';
+  import Select from '../form/ValueSelect.svelte';
   import ModalDialog from '../ui/ModalDialog.svelte';
-  import TextInput from '../form/TextInput.svelte';
+  import { Input as TextInput } from '../ui/input/index.js';
   import Alert from '../ui/Alert.svelte';
   import Button from '../ui/Button.svelte';
   import {

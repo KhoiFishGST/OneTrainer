@@ -1,7 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
-  import TextInput from '$lib/components/form/TextInput.svelte';
+  import { Input as TextInput } from '$lib/components/ui/input/index.js';
 
   let {
     open = $bindable(false),

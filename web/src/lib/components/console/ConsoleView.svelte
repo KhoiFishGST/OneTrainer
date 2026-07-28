@@ -3,7 +3,7 @@
   import { onMount, tick } from 'svelte';
   import { Download, ArrowDown, Pause, Play, Trash2 } from 'lucide-svelte';
   import Button from '$lib/components/ui/Button.svelte';
-  import TextInput from '$lib/components/form/TextInput.svelte';
+  import { Input as TextInput } from '$lib/components/ui/input/index.js';
 
   const ROW_HEIGHT = 20;
   const ALLOWED_CLASSES = new Set([

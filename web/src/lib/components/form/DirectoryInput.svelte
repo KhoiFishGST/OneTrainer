@@ -1,7 +1,7 @@
 <script lang="ts">
   import { FolderOpen } from 'lucide-svelte';
   import Button from '$lib/components/ui/Button.svelte';
-  import TextInput from './TextInput.svelte';
+  import { Input as TextInput } from '$lib/components/ui/input/index.js';
   import { getRouteContext } from '$lib/config/context';
 
   let {

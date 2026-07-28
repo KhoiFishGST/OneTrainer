@@ -4,8 +4,9 @@
     createGalleryCurrentQuery,
     createGalleryRunQuery,
   } from '$lib/api/queries';
+  import type { GalleryRunModel } from '$lib/api/types';
   import SampleGallery from '$lib/components/training/SampleGallery.svelte';
-  import Select from '$lib/components/form/Select.svelte';
+  import Select from '$lib/components/form/ValueSelect.svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
 
   const runsQuery = createGalleryRunsQuery();
@@ -50,23 +51,32 @@
 
   const runQuery = $derived(createGalleryRunQuery(selectedRunKey));
 
+  let runQueryState = $state<{ data?: GalleryRunModel | null; isLoading?: boolean; error?: Error | null }>({});
+
+  $effect(() => {
+    const unsubscribe = runQuery.subscribe((state) => {
+      runQueryState = state;
+    });
+    return unsubscribe;
+  });
+
   const displayGallery = $derived.by(() => {
     if (selectedRunKey && selectedRunKey !== activeKey) {
-      return $runQuery?.data ?? null;
+      return runQueryState.data ?? null;
     }
     return $currentQuery.data ?? null;
   });
 
   const displayLoading = $derived.by(() => {
     if (selectedRunKey && selectedRunKey !== activeKey) {
-      return $runQuery?.isLoading ?? false;
+      return runQueryState.isLoading ?? false;
     }
     return $currentQuery.isLoading;
   });
 
   const displayError = $derived.by(() => {
     if (selectedRunKey && selectedRunKey !== activeKey) {
-      return $runQuery?.error ?? null;
+      return runQueryState.error ?? null;
     }
     return $currentQuery.error;
   });
@@ -79,7 +89,7 @@
       <Select
         id="gallery-run-select"
         ariaLabel="Gallery run"
-        value={selectedRunKey ?? ''}
+        bind:value={userSelectedKey}
         options={availableRuns.map((r) => ({
           value: r.key,
           label: `${r.key}${r.active ? ' (Active)' : ''}`,

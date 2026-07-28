@@ -4,10 +4,10 @@
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
   import AddCard from '$lib/components/ui/AddCard.svelte';
   import PathInput from '$lib/components/form/PathInput.svelte';
-  import Toggle from '$lib/components/form/Toggle.svelte';
+  import { Switch as Toggle } from '$lib/components/ui/switch/index.js';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import Button from '$lib/components/ui/Button.svelte';
-  import TextInput from '$lib/components/form/TextInput.svelte';
+  import { Input as TextInput } from '$lib/components/ui/input/index.js';
   import Alert from '$lib/components/ui/Alert.svelte';
   import {
     queryKeys,

@@ -1,8 +1,8 @@
 <script lang="ts">
   import { ArrowLeft, Upload, Image as ImageIcon, FileText, Trash2, X } from 'lucide-svelte';
   import Button from '$lib/components/ui/Button.svelte';
-  import FileInput from '$lib/components/form/FileInput.svelte';
-  import TextArea from '$lib/components/form/TextArea.svelte';
+  import { FileInput } from '$lib/components/ui/file-input/index.js';
+  import { Textarea as TextArea } from '$lib/components/ui/textarea/index.js';
   import {
     createDatasetFilesQuery,
     createUploadDatasetFilesMutation,

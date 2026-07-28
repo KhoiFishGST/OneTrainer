@@ -145,7 +145,7 @@ it("renders toggle, text, number, select, and time controls correctly", async ()
 
   // Toggle
   const toggleInput = screen.getByLabelText("Enable Feature") as HTMLInputElement;
-  expect(toggleInput.checked).toBe(true);
+  expect(toggleInput).toBeChecked();
   await fireEvent.click(toggleInput);
   expect(setRaw).toHaveBeenCalledWith("enable_feature", false);
 
@@ -174,7 +174,7 @@ it("renders toggle, text, number, select, and time controls correctly", async ()
 
   // Time control value & unit
   const timeInput = screen.getByLabelText("Save Frequency");
-  expect(timeInput).toHaveValue("5");
+  expect(timeInput).toHaveValue(5);
   await fireEvent.input(timeInput, { target: { value: "10" } });
   expect(setRaw).toHaveBeenCalledWith("save_every_value", "10");
 

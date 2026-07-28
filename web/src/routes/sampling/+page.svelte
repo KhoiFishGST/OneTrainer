@@ -3,7 +3,7 @@
   import { Sparkles, Plus } from 'lucide-svelte';
   import { getRouteContext } from '$lib/config/context';
   import SchemaForm from '$lib/components/form/SchemaForm.svelte';
-  import Select from '$lib/components/form/Select.svelte';
+  import Select from '$lib/components/form/ValueSelect.svelte';
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
   import SampleDetailModal from '$lib/components/sampling/SampleDetailModal.svelte';
   import SamplePromptTable from '$lib/components/sampling/SamplePromptTable.svelte';
@@ -21,7 +21,7 @@
   import Alert from '$lib/components/ui/Alert.svelte';
   import FormPageSkeleton from '$lib/components/ui/FormPageSkeleton.svelte';
   import Button from '$lib/components/ui/Button.svelte';
-  import TextInput from '$lib/components/form/TextInput.svelte';
+  import { Input as TextInput } from '$lib/components/ui/input/index.js';
 
   const ctx = getRouteContext();
   const sampleMutation = createRequestSampleMutation();

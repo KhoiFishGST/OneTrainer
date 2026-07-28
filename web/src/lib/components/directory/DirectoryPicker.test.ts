@@ -68,7 +68,7 @@ it("supports manual path entry and pressing enter to navigate", async () => {
 
   const input = await screen.findByDisplayValue("/");
   await fireEvent.input(input, { target: { value: "/custom/path" } });
-  expect(screen.getByDisplayValue("/custom/path")).toHaveFocus();
+  expect(input).toHaveFocus();
   await fireEvent.keyDown(input, { key: "Enter", target: { value: "/custom/path" } });
 
   expect(await screen.findByRole("button", { name: "sub" })).toBeVisible();

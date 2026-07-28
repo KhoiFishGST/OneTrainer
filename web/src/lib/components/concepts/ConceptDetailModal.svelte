@@ -5,13 +5,13 @@
   import Button from '$lib/components/ui/Button.svelte';
   import TabBar from '$lib/components/ui/TabBar.svelte';
   import Field from '$lib/components/form/Field.svelte';
-  import TextInput from '$lib/components/form/TextInput.svelte';
-  import NumberInput from '$lib/components/form/NumberInput.svelte';
-  import Checkbox from '$lib/components/form/Checkbox.svelte';
-  import Toggle from '$lib/components/form/Toggle.svelte';
+  import { Input as TextInput } from '$lib/components/ui/input/index.js';
+  import NumberInput from '$lib/components/form/NumericDraftInput.svelte';
+  import { Checkbox } from '$lib/components/ui/checkbox/index.js';
+  import { Switch as Toggle } from '$lib/components/ui/switch/index.js';
   import DirectoryInput from '$lib/components/form/DirectoryInput.svelte';
   import DirectoryPicker from '$lib/components/directory/DirectoryPicker.svelte';
-  import Select from '$lib/components/form/Select.svelte';
+  import Select from '$lib/components/form/ValueSelect.svelte';
   import DatasetPickerModal from '$lib/components/datasets/DatasetPickerModal.svelte';
   import {
     FolderKanban,

@@ -1,10 +1,10 @@
 <script lang="ts">
   import { Trash2, Copy, Folder } from 'lucide-svelte';
-  import Toggle from '$lib/components/form/Toggle.svelte';
+  import { Switch as Toggle } from '$lib/components/ui/switch/index.js';
   import TimeInput from '$lib/components/form/TimeInput.svelte';
   import Button from '$lib/components/ui/Button.svelte';
-  import TextInput from '$lib/components/form/TextInput.svelte';
-  import NumberInput from '$lib/components/form/NumberInput.svelte';
+  import { Input as TextInput } from '$lib/components/ui/input/index.js';
+  import NumberInput from '$lib/components/form/NumericDraftInput.svelte';
 
   interface EmbeddingConfig {
     uuid?: string;

@@ -4,7 +4,7 @@
   import 'uplot/dist/uPlot.min.css';
   import type { TrainingMetric } from '../../api/types';
   import Button from '../ui/Button.svelte';
-  import RangeInput from '../form/RangeInput.svelte';
+  import { Slider } from '../ui/slider/index.js';
 
   let {
     metrics = [],
@@ -184,14 +184,15 @@
     <div class="chart-controls">
       <label class="control-label" for="ema-slider">
         <span>EMA: {emaFactor.toFixed(2)}</span>
-        <RangeInput
+        <Slider
+          type="single"
           id="ema-slider"
           min={0}
           max={0.99}
           step={0.01}
           aria-label="EMA Smoothing"
-          value={emaFactor}
-          onInput={(value) => (emaFactor = value)}
+          value={[emaFactor]}
+          onValueChange={(val: number | number[]) => (emaFactor = Array.isArray(val) ? val[0] : val)}
           class="ema-slider"
         />
       </label>

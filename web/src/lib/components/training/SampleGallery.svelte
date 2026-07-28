@@ -2,7 +2,7 @@
   import type { GalleryRunModel, GalleryVariant } from '../../api/types';
   import { galleryImageUrl } from '../../api/client';
   import { uiPreferences } from '../../stores/ui-preferences';
-  import Select from '../form/Select.svelte';
+  import Select from '../form/ValueSelect.svelte';
   import Button from '../ui/Button.svelte';
   import GalleryImageViewer, { type GallerySelection } from './GalleryImageViewer.svelte';
 

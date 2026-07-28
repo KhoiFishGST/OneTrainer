@@ -3,7 +3,7 @@
   import SchemaForm from '$lib/components/form/SchemaForm.svelte';
   import FormPanel from '$lib/components/form/FormPanel.svelte';
   import Field from '$lib/components/form/Field.svelte';
-  import Select from '$lib/components/form/Select.svelte';
+  import Select from '$lib/components/form/ValueSelect.svelte';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
   import Alert from '$lib/components/ui/Alert.svelte';
   import FormPageSkeleton from '$lib/components/ui/FormPageSkeleton.svelte';

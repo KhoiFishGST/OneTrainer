@@ -6,7 +6,7 @@
   import Toast from '$lib/components/ui/Toast.svelte';
   import Skeleton from '$lib/components/ui/Skeleton.svelte';
   import Button from '$lib/components/ui/Button.svelte';
-  import TextInput from '$lib/components/form/TextInput.svelte';
+  import { Input as TextInput } from '$lib/components/ui/input/index.js';
 
   let huggingfaceToken = $state('');
   let hfTokenSet = $state(false);

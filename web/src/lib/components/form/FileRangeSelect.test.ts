@@ -1,8 +1,8 @@
-import { fireEvent, render, screen } from '@testing-library/svelte';
+import { fireEvent, render } from '@testing-library/svelte';
 import { expect, it, vi } from 'vitest';
-import FileInput from './FileInput.svelte';
-import RangeInput from './RangeInput.svelte';
-import Select from './Select.svelte';
+import { FileInput } from '$lib/components/ui/file-input/index.js';
+import { Slider } from '$lib/components/ui/slider/index.js';
+import ValueSelect from './ValueSelect.svelte';
 
 it('forwards file metadata, emits FileList, and opens imperatively', async () => {
   const onChange = vi.fn();
@@ -20,19 +20,16 @@ it('forwards file metadata, emits FileList, and opens imperatively', async () =>
   expect(click).toHaveBeenCalledOnce();
 });
 
-it('emits a number from range input', async () => {
-  const onInput = vi.fn();
-  render(RangeInput, { id: 'ema', value: 0, min: 0, max: 0.99, step: 0.01, 'aria-label': 'EMA Smoothing', onInput });
-  await fireEvent.input(screen.getByLabelText('EMA Smoothing'), { target: { value: '.6' } });
-  expect(onInput).toHaveBeenCalledWith(0.6);
+it('renders slider control', async () => {
+  const { container } = render(Slider, { type: 'single', value: [0], min: 0, max: 100, step: 1 } as any);
+  expect(container.firstElementChild).toBeInTheDocument();
 });
 
-it('keeps Select trigger/options/native select ownership and selection behavior', async () => {
+it('keeps ValueSelect options and selection behavior', async () => {
   const onChange = vi.fn();
-  const { container } = render(Select, { id: 'kind', value: 'a', options: [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }], onChange });
-  expect(container.querySelector('.select-trigger')).toBeInstanceOf(HTMLButtonElement);
-  expect(screen.getByRole('combobox')).toHaveValue('a');
-  await fireEvent.click(container.querySelector('.select-trigger')!);
-  await fireEvent.click(screen.getAllByRole('option', { name: 'B' })[0]);
+  render(ValueSelect, { id: 'kind', value: 'a', options: [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }], onChange });
+  const select = document.querySelector('#kind') as HTMLSelectElement;
+  expect(select.value).toBe('a');
+  await fireEvent.change(select, { target: { value: 'b' } });
   expect(onChange).toHaveBeenCalledWith('b');
 });

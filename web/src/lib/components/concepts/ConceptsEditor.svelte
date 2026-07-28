@@ -1,9 +1,9 @@
 <script lang="ts">
-  import Select from '../form/Select.svelte';
+  import Select from '../form/ValueSelect.svelte';
   import AddCard from '../ui/AddCard.svelte';
   import Button from '../ui/Button.svelte';
-  import TextInput from '../form/TextInput.svelte';
-  import Checkbox from '../form/Checkbox.svelte';
+  import { Input as TextInput } from '../ui/input/index.js';
+  import { Checkbox } from '../ui/checkbox/index.js';
   import { Plus, Trash2, Edit2, Copy, Search, Layers, Folder, Eye, EyeOff } from 'lucide-svelte';
   import type { Concept } from '$lib/api/types';
   import ConceptDetailModal from './ConceptDetailModal.svelte';
@@ -169,7 +169,7 @@
             { value: 'VALIDATION', label: 'VALIDATION' },
             { value: 'PRIOR_PREDICTION', label: 'PRIOR_PREDICTION' },
           ]}
-          onChange={(v) => (typeFilter = v)}
+          onChange={(v: any) => (typeFilter = v)}
         />
       </div>
     </div>

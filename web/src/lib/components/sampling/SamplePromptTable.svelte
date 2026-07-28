@@ -1,9 +1,9 @@
 <script lang="ts">
   import { Dices, Pencil, Copy, Trash2, Plus } from 'lucide-svelte';
   import Button from '$lib/components/ui/Button.svelte';
-  import Checkbox from '$lib/components/form/Checkbox.svelte';
-  import NumberInput from '$lib/components/form/NumberInput.svelte';
-  import TextInput from '$lib/components/form/TextInput.svelte';
+  import { Checkbox } from '$lib/components/ui/checkbox/index.js';
+  import NumberInput from '$lib/components/form/NumericDraftInput.svelte';
+  import { Input as TextInput } from '$lib/components/ui/input/index.js';
 
   let {
     samples = [],
@@ -26,19 +26,19 @@
     onUpdate(index, { ...samples[index], seed: nextSeed });
   }
 
-  function handleWidthChange(index: number, value: string) {
-    const parsed = parseInt(value, 10);
-    onUpdate(index, { ...samples[index], width: isNaN(parsed) ? 512 : parsed });
+  function handleWidthChange(index: number, value: number | null | string) {
+    const num = typeof value === 'number' ? value : parseInt(String(value ?? ''), 10);
+    onUpdate(index, { ...samples[index], width: isNaN(num) ? 512 : num });
   }
 
-  function handleHeightChange(index: number, value: string) {
-    const parsed = parseInt(value, 10);
-    onUpdate(index, { ...samples[index], height: isNaN(parsed) ? 512 : parsed });
+  function handleHeightChange(index: number, value: number | null | string) {
+    const num = typeof value === 'number' ? value : parseInt(String(value ?? ''), 10);
+    onUpdate(index, { ...samples[index], height: isNaN(num) ? 512 : num });
   }
 
-  function handleSeedChange(index: number, value: string) {
-    const parsed = parseInt(value, 10);
-    onUpdate(index, { ...samples[index], seed: isNaN(parsed) ? -1 : parsed });
+  function handleSeedChange(index: number, value: number | null | string) {
+    const num = typeof value === 'number' ? value : parseInt(String(value ?? ''), 10);
+    onUpdate(index, { ...samples[index], seed: isNaN(num) ? -1 : num });
   }
 
   function handlePromptChange(index: number, value: string) {

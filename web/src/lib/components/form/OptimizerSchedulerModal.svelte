@@ -1,10 +1,10 @@
 <script lang="ts">
   import ModalDialog from '../ui/ModalDialog.svelte';
   import Field from './Field.svelte';
-  import Toggle from './Toggle.svelte';
-  import TextInput from './TextInput.svelte';
-  import NumberInput from './NumberInput.svelte';
-  import Select from './Select.svelte';
+  import { Switch as Toggle } from '../ui/switch/index.js';
+  import { Input as TextInput } from '../ui/input/index.js';
+  import NumberInput from './NumericDraftInput.svelte';
+  import Select from './ValueSelect.svelte';
   import { getPath, setPath, cloneDocument } from '../../config/path';
   import type { SchemaField } from '../../config/validation';
 

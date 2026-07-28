@@ -1,6 +1,6 @@
 <script lang="ts">
-  import NumberInput from './NumberInput.svelte';
-  import Select from './Select.svelte';
+  import NumberInput from './NumericDraftInput.svelte';
+  import Select from './ValueSelect.svelte';
 
   let {
     id,

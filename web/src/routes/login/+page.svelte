@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { Lock, ShieldAlert, ArrowRight } from 'lucide-svelte';
   import Button from '$lib/components/ui/Button.svelte';
-  import TextInput from '$lib/components/form/TextInput.svelte';
+  import { Input as TextInput } from '$lib/components/ui/input/index.js';
   import Alert from '$lib/components/ui/Alert.svelte';
 
   let password = $state('');
