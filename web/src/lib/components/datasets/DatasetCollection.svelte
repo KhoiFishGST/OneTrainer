@@ -125,7 +125,7 @@
     <AddCard label="Add Dataset" onClick={onAdd} />
 
     {#each datasets as ds (ds.name)}
-      <a href="/datasets/{encodeURIComponent(ds.name)}" class="no-underline text-inherit flex flex-col">
+      <a href="/datasets/{encodeURIComponent(ds.name)}" class="dataset-card-link no-underline text-inherit flex flex-col">
         <Card.Root class="card relative group overflow-hidden bg-card border border-border rounded-lg flex flex-col h-[220px] p-0 transition-all hover:border-primary hover:-translate-y-0.5">
           <div class="relative flex-1 bg-muted overflow-hidden">
             {#if ds.thumbnail_url}

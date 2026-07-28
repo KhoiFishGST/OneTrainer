@@ -119,8 +119,10 @@
             <label for={`card-prompt-${index}`} class="text-xs font-medium text-muted-foreground">Prompt Text</label>
             <TextInput
               id={`card-prompt-${index}`}
+              aria-label="Prompt Text"
+              ariaLabel="Prompt Text"
               class="h-[30px] w-full text-sm px-2"
-              value={sample.prompt ?? ''}
+              bind:value={sample.prompt}
               onChange={(val) => handlePromptChange(index, val)}
             />
           </div>

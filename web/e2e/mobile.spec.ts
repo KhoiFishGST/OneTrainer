@@ -67,13 +67,11 @@ test.describe("Phone Mobile Editing Flows", () => {
     const nameInput = modal.locator("#concept-name").or(modal.locator("input").first());
     await nameInput.fill("Mobile Test Concept");
 
-    const saveBtn = modal.getByRole("button", { name: /Save (Concept Settings|Concept)/i }).or(modal.getByRole("button", { name: "Save" }));
-    if (await saveBtn.isVisible()) {
-      await saveBtn.click();
-    } else {
-      await page.keyboard.press("Escape");
-    }
+    const saveBtn = modal.getByRole("button", { name: /^save/i }).first();
+    await expect(saveBtn).toBeVisible();
+    await saveBtn.click();
     await expect(modal).not.toBeVisible();
+    await expect(page.getByText("Mobile Test Concept").first()).toBeVisible();
   });
 
   test("dataset creation and deletion workflow with alertdialog on mobile", async ({ page }) => {
@@ -114,21 +112,22 @@ test.describe("Phone Mobile Editing Flows", () => {
     await page.goto("/sampling");
     await expect(page.getByRole("heading", { level: 1, name: /sampling/i })).toBeVisible();
 
-    const addBtn = page.getByRole("button", { name: "Add Sample Prompt" }).or(page.getByRole("button", { name: "Add Prompt" })).or(page.getByRole("button", { name: /Add/i })).first();
-    if (await addBtn.isVisible()) {
-      await addBtn.click();
-      const modal = page.getByRole("dialog");
-      if (await modal.isVisible()) {
-        const textInput = modal.locator("textarea, input[type='text']").first();
-        if (await textInput.isVisible()) {
-          await textInput.fill("a photo of a cat on phone");
-        }
-        const saveBtn = modal.getByRole("button", { name: /Save|Create|Add/i }).first();
-        if (await saveBtn.isVisible()) {
-          await saveBtn.click();
-        }
-      }
-    }
+    const addBtn = page.getByRole("button", { name: /add (sample )?prompt/i }).first();
+    await expect(addBtn).toBeVisible();
+    await addBtn.click();
+
+    const modal = page.getByRole("dialog");
+    await expect(modal).toBeVisible();
+
+    const promptInput = modal.locator("textarea, input[type='text']").first();
+    await expect(promptInput).toBeVisible();
+    await promptInput.fill("a photo of a cat on phone");
+
+    const saveBtn = modal.getByRole("button", { name: /^(save|create|add)( (sample|prompt))?$/i }).or(modal.getByRole("button", { name: /add|save|create/i })).first();
+    await saveBtn.click();
+    await expect(modal).not.toBeVisible();
+
+    await expect(page.locator("input, textarea").filter({ hasValue: "a photo of a cat on phone" }).first()).toBeVisible();
   });
 
   test("training controls and status pill assertion on mobile", async ({ page }) => {

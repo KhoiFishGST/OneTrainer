@@ -2,7 +2,9 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Responsive Workflows & Accessibility Controls", () => {
   test.describe("Desktop Navigation & Sidebar Persistence", () => {
-    test.use({ viewport: { width: 1280, height: 720 } });
+    test.beforeEach(async ({}, testInfo) => {
+      if (!testInfo.project.name.includes("desktop")) test.skip();
+    });
 
     test("desktop sidebar collapses, expands, and persists across reload", async ({ page }) => {
       await page.goto("/general");
@@ -39,7 +41,9 @@ test.describe("Responsive Workflows & Accessibility Controls", () => {
   });
 
   test.describe("Phone Navigation & Responsive Components", () => {
-    test.use({ viewport: { width: 390, height: 844 } });
+    test.beforeEach(async ({}, testInfo) => {
+      if (!testInfo.project.name.includes("phone")) test.skip();
+    });
 
     test("ephemeral phone sidebar menu opens, navigates, and closes", async ({ page }) => {
       await page.goto("/general");
@@ -94,15 +98,19 @@ test.describe("Responsive Workflows & Accessibility Controls", () => {
       await expect(page.getByTestId("saved-icon-badge")).toBeVisible();
     });
 
-    test("concepts, datasets, and sampling editing pages load and function", async ({ page }) => {
-      await page.goto("/concepts");
-      await expect(page.getByRole("heading", { level: 1, name: /concepts/i })).toBeVisible();
-
+    test("a dataset created on this page survives a reload", async ({ page }) => {
       await page.goto("/datasets");
-      await expect(page.getByRole("heading", { level: 1, name: /datasets/i })).toBeVisible();
+      await page.getByRole("button", { name: "Add Dataset" }).click();
 
-      await page.goto("/sampling");
-      await expect(page.getByRole("heading", { level: 1, name: /sampling/i })).toBeVisible();
+      const createModal = page.getByRole("dialog", { name: "Create New Dataset" });
+      await expect(createModal).toBeVisible();
+      await page.locator("#ds-name-input").fill("Workflow Persistence Check");
+      await createModal.getByRole("button", { name: "Create" }).click();
+      await expect(createModal).not.toBeVisible();
+
+      await expect(page.getByText("Workflow Persistence Check").first()).toBeVisible();
+      await page.reload();
+      await expect(page.getByText("Workflow Persistence Check").first()).toBeVisible();
     });
 
     test("training controls and live dashboard function", async ({ page }) => {

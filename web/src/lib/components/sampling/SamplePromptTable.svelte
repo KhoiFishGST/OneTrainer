@@ -132,7 +132,7 @@
             <TextInput
               aria-label="Prompt Text"
               class="h-[30px] min-w-0 w-full text-sm px-2"
-              value={sample.prompt ?? ''}
+              bind:value={sample.prompt}
               onChange={(val) => handlePromptChange(index, val)}
             />
           </Table.Cell>
