@@ -62,7 +62,7 @@
       </label>
       <TextInput
         id="custom-scheduler-class"
-        class="text-input"
+        class="w-full"
         placeholder="e.g. torch.optim.lr_scheduler.CosineAnnealingLR"
         value={customClassName}
         onInput={(val) => (customClassName = val)}
@@ -99,24 +99,6 @@
     font-size: 0.8125rem;
     font-weight: 600;
     color: var(--foreground, #f8fafc);
-  }
-
-  /* Bits UI boundary: style TextInput child component */
-  .scheduler-modal-body :global(.text-input) {
-    min-width: 0;
-    height: 38px;
-    padding: 0 0.75rem;
-    background-color: var(--muted, #0f1419);
-    border: 1px solid var(--border, #2d3741);
-    border-radius: 6px;
-    color: var(--foreground, #f8fafc);
-    font-size: 0.875rem;
-    outline: none;
-  }
-
-  /* Bits UI boundary: style TextInput child component focus state */
-  .scheduler-modal-body :global(.text-input:focus) {
-    border-color: var(--primary, #3b82f6);
   }
 
   .field-help {

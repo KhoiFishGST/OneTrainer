@@ -385,12 +385,8 @@ it("renders tooltip trigger as div role=button instead of button and handles key
     setRaw: vi.fn(),
   });
 
-  const label = screen.getByText("Field With Tooltip");
-  expect(label.parentElement?.tagName.toLowerCase()).not.toBe("button");
-  expect(label.parentElement).toHaveAttribute("role", "button");
-  expect(label.parentElement).toHaveAttribute("tabindex", "0");
-
-  const trigger = label.parentElement!;
+  const trigger = screen.getByRole("button", { name: /more information about field with tooltip/i });
+  expect(trigger.tagName).toBe("BUTTON");
   expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
 
   await fireEvent.keyDown(trigger, { key: "Enter" });

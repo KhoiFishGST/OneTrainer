@@ -4,6 +4,7 @@ import { Input } from '$lib/components/ui/input/index.js';
 import { Textarea } from '$lib/components/ui/textarea/index.js';
 import { Checkbox } from '$lib/components/ui/checkbox/index.js';
 import { Switch } from '$lib/components/ui/switch/index.js';
+import Field from './Field.svelte';
 import NumericDraftInput from './NumericDraftInput.svelte';
 import SchemaForm from './SchemaForm.svelte';
 
@@ -82,4 +83,16 @@ it('always includes help text in input aria-describedby and accessibility tree e
   expect(helpEl).toBeInTheDocument();
   expect(helpEl).toHaveTextContent("Enter your handle");
   expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+});
+
+it('exposes the field tooltip through a real button, not a role-button wrapper', () => {
+  render(Field, {
+    props: { id: 'demo', label: 'Demo', tooltip: 'Helpful explanation' },
+  });
+
+  const wrappers = document.querySelectorAll('div[role="button"]');
+  expect(wrappers).toHaveLength(0);
+
+  const trigger = screen.getByRole('button', { name: /more information about demo/i });
+  expect(trigger.tagName).toBe('BUTTON');
 });

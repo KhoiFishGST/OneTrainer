@@ -65,12 +65,11 @@
       {disabled}
       {placeholder}
       aria-label={ariaLabel || label || 'Path'}
-      class="path-input"
+      class="flex-1 min-w-0"
       onInput={handleTextInput}
     />
     <Button
-      variant="secondary"
-      class="browse-btn"
+      variant="outline"
       aria-label="Browse"
       {disabled}
       onclick={() => (pickerOpen = true)}
@@ -141,54 +140,6 @@
     align-items: center;
     gap: 0.5rem;
     width: 100%;
-  }
-
-  /* Bits UI boundary: style TextInput child component */
-  .path-input-wrapper :global(.path-input) {
-    flex: 1;
-    min-width: 0;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--border, #d1d5db);
-    border-radius: 6px;
-    font-size: 0.875rem;
-    background: var(--muted, #ffffff);
-    color: var(--foreground, #111827);
-    box-sizing: border-box;
-  }
-
-  /* Bits UI boundary: style TextInput child component focus state */
-  .path-input-wrapper :global(.path-input:focus) {
-    outline: none;
-    border-color: var(--primary, #2563eb);
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
-  }
-
-  /* Bits UI boundary: style Button child component */
-  .path-input-wrapper :global(.browse-btn) {
-    min-height: 0;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--border, #d1d5db);
-    border-radius: 6px;
-    background: var(--muted, #f9fafb);
-    color: var(--foreground, #374151);
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-
-  /* Bits UI boundary: style Button child component hover state */
-  .path-input-wrapper :global(.browse-btn:hover:not(:disabled)) {
-    background: var(--card, #f3f4f6);
-  }
-
-  /* Bits UI boundary: style Button child component disabled state */
-  .path-input-wrapper :global(.browse-btn:disabled) {
-    opacity: 0.5;
-    cursor: not-allowed;
   }
 
   .file-preview-info {

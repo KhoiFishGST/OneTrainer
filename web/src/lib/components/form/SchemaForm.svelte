@@ -160,6 +160,7 @@
                 {id}
                 value={fieldValue}
                 {ariaDescribedBy}
+                class="w-full"
                 onInput={(val) => setRaw(primaryKey, val)}
               />
             {:else if controlType === 'number'}
@@ -168,13 +169,14 @@
                 type="text"
                 value={fieldValue}
                 {ariaDescribedBy}
+                class="w-full"
                 onInput={(val) => setRaw(primaryKey, val)}
               />
             {:else if controlType === 'select'}
               {@const hasGear = primaryKey === 'optimizer' || primaryKey === 'optimizer.optimizer' || primaryKey === 'learning_rate_scheduler'}
               {#if hasGear}
-                <div class="control-with-action">
-                  <div class="control-target">
+                <div class="control-with-action flex items-center gap-1.5 w-full">
+                  <div class="control-target flex-1 min-w-0 w-full">
                     <Select
                       {id}
                       value={fieldValue}
@@ -187,7 +189,7 @@
                     <Button
                       variant="ghost"
                       size="icon"
-                      class="action-btn gear-btn"
+                      class="shrink-0"
                       title="Configure advanced optimizer parameters"
                       onclick={() => onOpenOptimizerParams?.()}
                     >
@@ -197,7 +199,7 @@
                     <Button
                       variant="ghost"
                       size="icon"
-                      class="action-btn gear-btn"
+                      class="shrink-0"
                       disabled={fieldValue !== 'CUSTOM'}
                       title={fieldValue === 'CUSTOM'
                         ? 'Configure custom scheduler parameters'
@@ -342,19 +344,5 @@
     gap: 0.875rem;
     align-items: stretch;
     width: 100%;
-  }
-
-  .group-fields.components-table :global(.form-field) {
-    width: 100%;
-    flex: 1 1 100%;
-  }
-
-  .group-fields.components-table :global(.text-input),
-  .group-fields.components-table :global(.number-input),
-  .group-fields.components-table :global(.directory-input-wrapper) {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 100% !important;
-    box-sizing: border-box;
   }
 </style>

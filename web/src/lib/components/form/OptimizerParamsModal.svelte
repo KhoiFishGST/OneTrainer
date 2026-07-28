@@ -184,7 +184,6 @@
       isSubmitting = false;
     }
   }
-
 </script>
 
 <ResponsiveDialogDrawer
@@ -214,7 +213,6 @@
 
       <Button
         variant="secondary"
-        class="defaults-btn"
         title="Reset parameters to standard defaults for this optimizer"
         onclick={handleLoadDefaults}
       >
@@ -245,7 +243,7 @@
             <NumberInput
               id={`param-${key}`}
               value={localParams[key] ?? ''}
-              class="param-input"
+              class="w-full"
               onInput={(val) => (localParams[key] = val)}
             />
           {:else}
@@ -255,7 +253,7 @@
             <TextInput
               id={`param-${key}`}
               value={localParams[key] ?? ''}
-              class="param-input"
+              class="w-full"
               onInput={(val) => (localParams[key] = val)}
             />
           {/if}
@@ -301,27 +299,6 @@
     color: var(--foreground, #f8fafc);
   }
 
-  /* Bits UI boundary: style defaults button component */
-  .header-bar :global(.defaults-btn) {
-    height: 38px;
-    padding: 0 1rem;
-    background: var(--muted, #252d37);
-    border: 1px solid var(--border, #334155);
-    border-radius: 6px;
-    color: var(--foreground, #e2e8f0);
-    font-size: 0.8125rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  /* Bits UI boundary: style defaults button hover state */
-  .header-bar :global(.defaults-btn:hover) {
-    background: var(--border, #334155);
-    color: var(--primary, #3b82f6);
-    border-color: var(--primary, #3b82f6);
-  }
-
   .params-divider {
     height: 1px;
     background-color: var(--border, #2d3741);
@@ -355,24 +332,5 @@
     font-size: 0.75rem;
     font-weight: 500;
     color: var(--muted-foreground, #94a3b8);
-  }
-
-  /* Bits UI boundary: style param input component */
-  .params-grid :global(.param-input) {
-    min-width: 0;
-    max-width: 100%;
-    height: 38px;
-    padding: 0 0.75rem;
-    background-color: var(--muted, #0f1419);
-    border: 1px solid var(--border, #2d3741);
-    border-radius: 6px;
-    color: var(--foreground, #f8fafc);
-    font-size: 0.875rem;
-    outline: none;
-  }
-
-  /* Bits UI boundary: style param input component focus state */
-  .params-grid :global(.param-input:focus) {
-    border-color: var(--primary, #3b82f6);
   }
 </style>
