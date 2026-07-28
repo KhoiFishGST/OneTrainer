@@ -80,4 +80,3 @@ describe('MetricsChart', () => {
     expect(thumb?.className).toMatch(/after:-inset-4|after:size-\[44px\]|after:-inset-\[16px\]/);
   });
 });
-
