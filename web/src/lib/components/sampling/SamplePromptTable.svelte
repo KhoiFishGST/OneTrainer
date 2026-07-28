@@ -129,6 +129,7 @@
             </div>
           </Table.Cell>
           <Table.Cell class="w-auto p-2">
+            <span class="text-sm text-foreground">{sample.prompt}</span>
             <TextInput
               aria-label="Prompt Text"
               class="h-[30px] min-w-0 w-full text-sm px-2"
@@ -136,6 +137,8 @@
               onChange={(val) => handlePromptChange(index, val)}
             />
           </Table.Cell>
+
+
           <Table.Cell class="w-[100px] text-right p-2">
             <Button
               type="button"

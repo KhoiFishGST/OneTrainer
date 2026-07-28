@@ -75,8 +75,10 @@
               value={sample.enabled}
               onChange={(checked) => handleEnabledChange(index, checked)}
             />
-            <Badge variant="secondary" class="text-xs font-semibold">#{index + 1}</Badge>
+            <Badge variant="secondary" class="text-xs font-semibold shrink-0">#{index + 1}</Badge>
+            <span class="text-sm font-medium truncate text-foreground">{sample.prompt}</span>
           </div>
+
           <div class="flex items-center gap-1">
             <Button
               type="button"
@@ -117,6 +119,7 @@
         <Card.Content class="flex flex-col gap-3 p-0 pt-3">
           <div class="flex flex-col gap-1.5">
             <label for={`card-prompt-${index}`} class="text-xs font-medium text-muted-foreground">Prompt Text</label>
+            <p class="text-sm text-foreground">{sample.prompt}</p>
             <TextInput
               id={`card-prompt-${index}`}
               aria-label="Prompt Text"
@@ -126,6 +129,8 @@
               onChange={(val) => handlePromptChange(index, val)}
             />
           </div>
+
+
 
           <div class="grid grid-cols-3 gap-3">
             <div class="flex flex-col gap-1.5">

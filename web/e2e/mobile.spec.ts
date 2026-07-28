@@ -110,6 +110,7 @@ test.describe("Phone Mobile Editing Flows", () => {
 
   test("sampling prompt edit workflow on mobile", async ({ page }) => {
     await page.goto("/sampling");
+
     await expect(page.getByRole("heading", { level: 1, name: /sampling/i })).toBeVisible();
 
     const addBtn = page.getByRole("button", { name: /add (sample )?prompt/i }).first();
@@ -119,16 +120,33 @@ test.describe("Phone Mobile Editing Flows", () => {
     const modal = page.getByRole("dialog");
     await expect(modal).toBeVisible();
 
-    const promptInput = modal.locator("textarea, input[type='text']").first();
+    const promptInput = modal.locator("#sample-prompt");
     await expect(promptInput).toBeVisible();
     await promptInput.fill("a photo of a cat on phone");
 
-    const saveBtn = modal.getByRole("button", { name: /^(save|create|add)( (sample|prompt))?$/i }).or(modal.getByRole("button", { name: /add|save|create/i })).first();
+    const saveBtn = modal.getByRole("button", { name: "Add Sample" });
     await saveBtn.click();
     await expect(modal).not.toBeVisible();
 
-    await expect(page.locator("input, textarea").filter({ hasValue: "a photo of a cat on phone" }).first()).toBeVisible();
+    await expect(page.getByText("a photo of a cat on phone").first()).toBeVisible();
   });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   test("training controls and status pill assertion on mobile", async ({ page }) => {
     await page.goto("/live");

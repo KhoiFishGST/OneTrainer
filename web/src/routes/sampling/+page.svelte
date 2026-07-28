@@ -27,6 +27,10 @@
   import { isMobile } from '$lib/hooks/is-mobile.svelte';
 
   const ctx = getRouteContext();
+  let currentConfigFile = $derived(
+    (ctx.workspace?.draft?.sample_definition_file_name || 'samples.json').split('/').pop() || 'samples.json'
+  );
+
   const sampleMutation = createRequestSampleMutation();
   const samplesQuery = createSamplesQuery(() => currentConfigFile);
   const updateSamplesMutation = createUpdateSamplesMutation();
@@ -36,14 +40,13 @@
   const samples = $derived(Array.isArray($samplesQuery.data) ? $samplesQuery.data : ($samplesQuery.data?.samples ?? []));
   const queued = $derived(!Array.isArray($samplesQuery.data) && Boolean($samplesQuery.data?.queued));
 
+
   const sampleFiles = $derived($sampleFilesQuery.data?.files ?? []);
   const sampleFileOptions = $derived(
     sampleFiles.map((f: string) => ({ value: f, label: f }))
   );
 
-  let currentConfigFile = $derived(
-    ctx.workspace?.draft?.sample_definition_file_name || 'samples.json'
-  );
+
 
   let isModalOpen = $state(false);
   let editingSample = $state<any>(null);
@@ -249,6 +252,8 @@
 
   async function handleSaveSampleModal(sampleData: any) {
     let updated: any[];
+
+
     if (modalMode === 'add') {
       updated = [...samples, sampleData];
     } else {

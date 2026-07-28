@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import ResponsiveDialogDrawer from '$lib/components/overlays/ResponsiveDialogDrawer.svelte';
+
   import { Button } from '$lib/components/ui/button';
   import Select from '$lib/components/form/ValueSelect.svelte';
   import { Checkbox } from '$lib/components/ui/checkbox/index.js';
@@ -48,23 +50,30 @@
     noise_scheduler: 'EULER_A',
   });
 
+  let wasOpen = $state(false);
+
+
   $effect(() => {
-    if (open) {
-      draft = sample
-        ? JSON.parse(JSON.stringify(sample))
-        : {
-            prompt: '',
-            negative_prompt: '',
-            enabled: true,
-            width: 512,
-            height: 512,
-            diffusion_steps: 30,
-            cfg_scale: 7.5,
-            seed: -1,
-            noise_scheduler: 'EULER_A',
-          };
+    if (open && !wasOpen) {
+      untrack(() => {
+        draft = sample
+          ? JSON.parse(JSON.stringify(sample))
+          : {
+              prompt: '',
+              negative_prompt: '',
+              enabled: true,
+              width: 512,
+              height: 512,
+              diffusion_steps: 30,
+              cfg_scale: 7.5,
+              seed: -1,
+              noise_scheduler: 'EULER_A',
+            };
+      });
     }
+    wasOpen = open;
   });
+
 
   function normalizeDraftNumber(value: unknown): number | null {
     if (typeof value === 'number') return Number.isFinite(value) ? value : null;
@@ -112,8 +121,7 @@
         <label for="sample-prompt" class="text-sm font-medium text-foreground">Prompt</label>
         <TextArea
           id="sample-prompt"
-          value={draft.prompt}
-          onInput={(val) => (draft.prompt = val)}
+          bind:value={draft.prompt}
           rows={3}
           placeholder="Enter generation prompt..."
         />
@@ -123,11 +131,11 @@
         <label for="sample-negative-prompt" class="text-sm font-medium text-foreground">Negative Prompt</label>
         <TextArea
           id="sample-negative-prompt"
-          value={draft.negative_prompt}
-          onInput={(val) => (draft.negative_prompt = val)}
+          bind:value={draft.negative_prompt}
           rows={2}
           placeholder="Enter negative prompt..."
         />
+
       </div>
 
       <div class="flex items-center justify-between">

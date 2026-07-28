@@ -333,17 +333,16 @@ export function createUpdateCaptionMutation() {
 
 export function createSamplesQuery(fileSupplier?: () => string | undefined): CreateQueryResult<SamplesResponse, Error> {
   const client = getSafeQueryClient();
+  const file = fileSupplier?.();
   return createQuery(
-    (() => {
-      const file = fileSupplier?.();
-      return {
-        queryKey: queryKeys.samples(file),
-        queryFn: () => api.getSamples(file),
-      };
-    }) as any,
+    {
+      queryKey: queryKeys.samples(file),
+      queryFn: () => api.getSamples(fileSupplier?.()),
+    },
     client
   );
 }
+
 
 export function createUpdateSamplesMutation() {
   const client = getSafeQueryClient();
@@ -354,9 +353,17 @@ export function createUpdateSamplesMutation() {
         const file = Array.isArray(payload) ? undefined : payload.file;
         return api.updateSamples(samples, file);
       },
-      onSuccess: () => {
+      onSuccess: (data, variables) => {
+        const file = Array.isArray(variables) ? undefined : variables.file;
+        if (file) {
+          client.setQueryData(queryKeys.samples(file), data);
+        }
+        client.setQueryData(['samples', 'samples.json'], data);
+        client.setQueryData(['samples', undefined], data);
         client.invalidateQueries({ queryKey: ['samples'] });
       },
+
+
     },
     client
   );
