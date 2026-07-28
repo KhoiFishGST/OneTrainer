@@ -297,6 +297,14 @@
     border-color: var(--accent, #3b82f6);
   }
 
+  /* Responsive 44px touch targets on mobile viewports */
+  @media (max-width: 768px) {
+    .chart-controls :global(.btn-control) {
+      min-height: 44px;
+      padding: 8px 14px;
+    }
+  }
+
   .chart-body {
     position: relative;
     width: 100%;

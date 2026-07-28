@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { consoleStore, type ConsoleStore, type ConsoleSpan } from '$lib/events/console-store.svelte';
+  import { consoleStore, type ConsoleStore } from '$lib/events/console-store.svelte';
   import { onMount, tick } from 'svelte';
   import { Download, ArrowDown, Pause, Play, Trash2 } from 'lucide-svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
+  import { Badge } from '$lib/components/ui/badge';
 
   const ROW_HEIGHT = 20;
   const ALLOWED_CLASSES = new Set([
@@ -143,14 +144,18 @@
       />
 
       <div class="status-indicators">
-        <span class="status-tag status-{store.connectionState}">
+        <Badge variant="outline" class={`status-tag status-${store.connectionState}`}>
           {store.connectionState}
-        </span>
+        </Badge>
         {#if store.gapState}
-          <span class="status-tag status-gap">resyncing</span>
+          <Badge variant="secondary" class="status-tag status-gap">
+            resyncing
+          </Badge>
         {/if}
         {#if isPaused}
-          <span class="status-tag status-paused">PAUSED</span>
+          <Badge variant="secondary" class="status-tag status-paused">
+            PAUSED
+          </Badge>
         {/if}
       </div>
     </div>
@@ -289,7 +294,7 @@
     gap: 4px;
   }
 
-  .status-tag {
+  .console-view :global(.status-tag) {
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 0.6875rem;
@@ -297,24 +302,28 @@
     text-transform: uppercase;
   }
 
-  .status-connected {
+  .console-view :global(.status-connected) {
     background-color: rgba(46, 160, 67, 0.2);
     color: #3fb950;
+    border-color: rgba(46, 160, 67, 0.3);
   }
 
-  .status-connecting {
+  .console-view :global(.status-connecting) {
     background-color: rgba(210, 153, 34, 0.2);
     color: #d29922;
+    border-color: rgba(210, 153, 34, 0.3);
   }
 
-  .status-disconnected {
+  .console-view :global(.status-disconnected) {
     background-color: rgba(248, 81, 73, 0.2);
     color: #f85149;
+    border-color: rgba(248, 81, 73, 0.3);
   }
 
-  .status-gap, .status-paused {
+  .console-view :global(.status-gap), .console-view :global(.status-paused) {
     background-color: rgba(210, 153, 34, 0.2);
     color: #d29922;
+    border-color: rgba(210, 153, 34, 0.3);
   }
 
   .console-view :global(.btn-action) {

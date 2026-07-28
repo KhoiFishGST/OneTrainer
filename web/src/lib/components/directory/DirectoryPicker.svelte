@@ -1,10 +1,14 @@
 <script lang="ts">
   import { untrack, tick } from 'svelte';
-  import { Folder, File, ArrowUp, X } from 'lucide-svelte';
+  import { Folder, File, ArrowUp } from 'lucide-svelte';
   import { api } from '$lib/api/client';
   import Button from '$lib/components/ui/Button.svelte';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
   import Alert from '$lib/components/ui/Alert.svelte';
+  import { ScrollArea } from '$lib/components/ui/scroll-area';
+  import { Skeleton } from '$lib/components/ui/skeleton';
+  import { Empty, EmptyTitle } from '$lib/components/ui/empty';
+  import ResponsiveDialogSheet from '$lib/components/overlays/ResponsiveDialogSheet.svelte';
 
   interface DirectoryItem {
     name: string;
@@ -24,7 +28,7 @@
   }
 
   let {
-    open = false,
+    open = $bindable(false),
     initialPath = '/',
     mode = 'dir',
     extensions = [],
@@ -55,9 +59,9 @@
     loading || (mode === 'file' && (!selectedEntry || selectedEntry.is_dir !== false))
   );
 
-  let modalEl = $state<HTMLDivElement | null>(null);
   let pathInputControl = $state<any>(null);
   let previousActiveElement = $state<HTMLElement | null>(null);
+  let initialized = false;
 
   function formatSize(bytes?: number): string {
     if (bytes === undefined || bytes === null) return '';
@@ -126,9 +130,11 @@
 
       currentPath = directoryData.path;
       selectedPath = directoryData.path;
-      typedPath = directoryData.path;
+      if (typedPath === targetPath || typedPath === '/') {
+        typedPath = directoryData.path;
+      }
     } catch (err: any) {
-      error = err?.detail || err?.message || 'Failed to list directory';
+      error = err?.detail || err?.message || 'Directory is not readable';
       typedPath = targetPath;
     } finally {
       loading = false;
@@ -137,59 +143,34 @@
 
   $effect(() => {
     if (open) {
-      previousActiveElement = document.activeElement as HTMLElement | null;
       const startPath = untrack(() => initialPath);
-      untrack(() => loadDirectory(startPath));
-      tick().then(() => {
-        pathInputControl?.focus();
-      });
+      if (!initialized) {
+        initialized = true;
+        if (!previousActiveElement && document.activeElement) {
+          previousActiveElement = document.activeElement as HTMLElement;
+        }
+        untrack(() => loadDirectory(startPath));
+        tick().then(() => {
+          pathInputControl?.focus();
+        });
+      }
     } else {
+      initialized = false;
       if (previousActiveElement) {
-        previousActiveElement.focus();
+        const elToFocus = previousActiveElement;
         previousActiveElement = null;
+        tick().then(() => {
+          elToFocus.focus();
+        });
       }
     }
   });
 
-  function handleKeyDown(e: KeyboardEvent) {
-    if (e.key === 'Escape') {
-      handleClose();
-      return;
-    }
-
-    if (e.key === 'Tab' && modalEl) {
-      const focusableSelector =
-        'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
-      const focusables = Array.from(
-        modalEl.querySelectorAll<HTMLElement>(focusableSelector)
-      );
-
-      if (focusables.length === 0) {
-        e.preventDefault();
-        return;
-      }
-
-      const firstEl = focusables[0];
-      const lastEl = focusables[focusables.length - 1];
-
-      if (e.shiftKey) {
-        if (document.activeElement === firstEl || !modalEl.contains(document.activeElement)) {
-          lastEl.focus();
-          e.preventDefault();
-        }
-      } else {
-        if (document.activeElement === lastEl || !modalEl.contains(document.activeElement)) {
-          firstEl.focus();
-          e.preventDefault();
-        }
-      }
-    }
-  }
-
   function handleInputKeyDown(e: KeyboardEvent) {
     if (e.key === 'Enter') {
       e.preventDefault();
-      const val = (e.target as HTMLInputElement).value || typedPath;
+      const targetEl = e.target as HTMLInputElement;
+      const val = targetEl?.value || typedPath;
       typedPath = val;
       loadDirectory(val);
     }
@@ -199,57 +180,51 @@
     mode === 'file' ? 'Select File' : mode === 'both' ? 'Select Target' : 'Select Folder'
   );
 
+  let modalTitle = $derived(
+    mode === 'file' ? 'Select File' : mode === 'both' ? 'Select File or Directory' : 'Select Directory'
+  );
+
   function handleClose() {
+    open = false;
     if (onClose) {
       onClose();
     }
   }
 
-  function handleBackdropClick(e: MouseEvent) {
-    if (e.target === e.currentTarget) {
+  function handleSelect() {
+    if (isSelectDisabled) return;
+    const target = selectedPath || currentPath;
+    onSelect(target);
+    handleClose();
+  }
+
+  function handleOpenChange(newOpen: boolean) {
+    if (!newOpen) {
       handleClose();
     }
   }
-
-  function handleSelect() {
-    if (isSelectDisabled) return;
-    onSelect(selectedPath || currentPath);
-    handleClose();
-  }
 </script>
 
-{#if open}
-  <div class="picker-backdrop" role="presentation" onclick={handleBackdropClick}>
-    <div
-      class="picker-modal"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Server Directory Picker"
-      tabindex="-1"
-      onkeydown={handleKeyDown}
-      bind:this={modalEl}
-    >
-      <div class="picker-header">
-        <h3 class="picker-title">
-          {mode === 'file' ? 'Select File' : mode === 'both' ? 'Select File or Directory' : 'Select Directory'}
-        </h3>
-        <Button variant="ghost" class="close-btn" aria-label="Close" onclick={handleClose}>
-          <X size={20} />
-        </Button>
-      </div>
-
-      <div class="picker-path-bar">
+<ResponsiveDialogSheet
+  bind:open
+  onOpenChange={handleOpenChange}
+  title={modalTitle}
+  class="sm:max-w-[650px]"
+>
+  {#snippet children()}
+    <div class="picker-container flex flex-col gap-3 p-1">
+      <div class="picker-path-bar flex gap-2">
         <TextInput
           bind:this={pathInputControl}
           bind:value={typedPath}
-          class="path-input"
+          class="path-input flex-1 min-w-0"
           placeholder="Enter path..."
           onInput={(value) => (typedPath = value)}
           onKeyDown={handleInputKeyDown}
         />
         <Button
           variant="secondary"
-          class="nav-btn"
+          class="nav-btn shrink-0"
           onclick={() => loadDirectory(typedPath)}
           disabled={loading}
         >
@@ -257,14 +232,14 @@
         </Button>
       </div>
 
-      <nav class="breadcrumb-bar" aria-label="Breadcrumb">
+      <nav class="breadcrumb-bar flex items-center gap-1 overflow-x-auto py-1 text-sm whitespace-nowrap" aria-label="Breadcrumb">
         {#each getBreadcrumbs(currentPath) as crumb, index (crumb.path)}
           {#if index > 0}
-            <span class="crumb-separator">/</span>
+            <span class="crumb-separator text-xs text-muted-foreground">/</span>
           {/if}
           <Button
             variant="ghost"
-            class={`crumb-btn${crumb.path === currentPath ? ' active' : ''}`}
+            class={`crumb-btn h-auto px-1.5 py-0.5 text-sm ${crumb.path === currentPath ? 'font-semibold text-foreground' : 'text-primary'}`}
             onclick={() => loadDirectory(crumb.path)}
           >
             {crumb.label}
@@ -273,12 +248,12 @@
       </nav>
 
       {#if directoryData?.roots && directoryData.roots.length > 0}
-        <div class="roots-bar">
-          <span class="roots-label">Roots:</span>
+        <div class="roots-bar flex items-center gap-2 overflow-x-auto py-1 text-sm">
+          <span class="roots-label font-medium text-muted-foreground">Roots:</span>
           {#each directoryData.roots as root}
             <Button
               variant="ghost"
-              class="root-btn"
+              class="root-btn h-auto px-2 py-0.5 text-xs"
               onclick={() => loadDirectory(root)}
             >
               {root}
@@ -299,11 +274,11 @@
         </Alert>
       {/if}
 
-      <div class="picker-body">
+      <ScrollArea class="picker-body h-[280px] w-full rounded-md border border-border p-2">
         {#if directoryData?.parent}
           <Button
             variant="ghost"
-            class="dir-item parent-item"
+            class="dir-item parent-item flex w-full items-center gap-2 justify-start font-medium text-primary hover:bg-accent"
             onclick={() => loadDirectory(directoryData!.parent!)}
           >
             <ArrowUp size={16} />
@@ -312,23 +287,27 @@
         {/if}
 
         {#if loading}
-          <div class="loading-state">Loading...</div>
+          <div class="loading-state space-y-2 p-2" data-testid="directory-skeleton">
+            <Skeleton class="h-8 w-full" />
+            <Skeleton class="h-8 w-full" />
+            <Skeleton class="h-8 w-full" />
+          </div>
         {:else if directoryData && directoryData.entries.length > 0}
-          <div class="dir-list">
+          <div class="dir-list flex flex-col gap-1">
             {#each directoryData.entries as item}
               {#if item.is_dir !== false}
                 <Button
                   variant="ghost"
-                  class="dir-item"
+                  class="dir-item flex w-full items-center gap-2 justify-start font-normal hover:bg-accent text-left"
                   onclick={() => loadDirectory(item.path)}
                 >
-                  <Folder size={16} />
-                  <span>{item.name}</span>
+                  <Folder size={16} class="shrink-0" />
+                  <span class="truncate">{item.name}</span>
                 </Button>
               {:else}
                 <Button
                   variant="ghost"
-                  class={`dir-item file-item${selectedPath === item.path ? ' selected' : ''}`}
+                  class={`dir-item file-item flex w-full items-center gap-2 justify-start text-left font-normal hover:bg-accent ${selectedPath === item.path ? 'bg-accent font-medium' : ''}`}
                   onclick={() => {
                     selectedPath = item.path;
                     currentPath = item.path;
@@ -338,348 +317,38 @@
                     handleClose();
                   }}
                 >
-                  <File size={16} />
-                  <span class="file-name">{item.name}</span>
+                  <File size={16} class="shrink-0" />
+                  <span class="file-name flex-1 truncate">{item.name}</span>
                   {#if item.size_bytes !== undefined}
-                    <span class="file-size">{formatSize(item.size_bytes)}</span>
+                    <span class="file-size text-xs text-muted-foreground shrink-0">{formatSize(item.size_bytes)}</span>
                   {/if}
                 </Button>
               {/if}
             {/each}
           </div>
         {:else if !error}
-          <div class="empty-state">No items found</div>
+          <Empty class="py-8 text-center">
+            <EmptyTitle>No items found</EmptyTitle>
+          </Empty>
         {/if}
-      </div>
-
-      <div class="picker-footer">
-        <Button variant="secondary" class="cancel-btn" onclick={handleClose}>
-          Cancel
-        </Button>
-        <Button
-          variant="primary"
-          class="select-btn"
-          disabled={isSelectDisabled}
-          title={selectedPath || currentPath}
-          onclick={handleSelect}
-        >
-          {selectBtnLabel}
-        </Button>
-      </div>
+      </ScrollArea>
     </div>
-  </div>
-{/if}
+  {/snippet}
 
-<style>
-  .picker-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-  }
-
-  .picker-modal {
-    background: var(--panel, #181e25);
-    color: var(--text, #e6ebef);
-    border: 1px solid var(--line, #2d3741);
-    border-radius: 8px;
-    width: 100%;
-    max-width: 650px;
-    max-height: 85vh;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-    overflow: hidden;
-  }
-
-  .picker-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--line, #2d3741);
-    background: var(--panel, #181e25);
-  }
-
-  .picker-title {
-    margin: 0;
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--text, #e6ebef);
-  }
-
-  .picker-header :global(.close-btn) {
-    min-height: 0;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    color: var(--muted, #8995a1);
-    padding: 4px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-  }
-
-  .picker-header :global(.close-btn:hover) {
-    background: var(--panel-raised, #1d242c);
-    color: var(--text, #e6ebef);
-  }
-
-  .picker-path-bar {
-    display: flex;
-    gap: 8px;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--line, #2d3741);
-    background: var(--panel, #181e25);
-  }
-
-  .picker-path-bar :global(.path-input) {
-    flex: 1;
-    min-width: 0;
-    padding: 6px 12px;
-    background: var(--control, #14191f);
-    color: var(--text, #e6ebef);
-    border: 1px solid var(--line, #2d3741);
-    border-radius: 6px;
-    font-size: 0.875rem;
-  }
-
-  .picker-path-bar :global(.path-input:focus) {
-    outline: none;
-    border-color: var(--accent, #3b82f6);
-  }
-
-  .picker-path-bar :global(.nav-btn) {
-    min-height: 0;
-    padding: 6px 16px;
-    background: var(--control, #14191f);
-    color: var(--text, #e6ebef);
-    border: 1px solid var(--line, #2d3741);
-    border-radius: 6px;
-    font-size: 0.875rem;
-    cursor: pointer;
-  }
-
-  .picker-path-bar :global(.nav-btn:hover:not(:disabled)) {
-    background: var(--panel-raised, #1d242c);
-  }
-
-  .breadcrumb-bar {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 8px 16px;
-    background: var(--panel-raised, #1d242c);
-    border-bottom: 1px solid var(--line, #2d3741);
-    font-size: 0.875rem;
-    overflow-x: auto;
-    white-space: nowrap;
-  }
-
-  .crumb-separator {
-    color: var(--muted, #8995a1);
-    font-size: 0.75rem;
-    user-select: none;
-  }
-
-  .breadcrumb-bar :global(.crumb-btn) {
-    min-height: 0;
-    background: transparent;
-    border: none;
-    padding: 2px 6px;
-    border-radius: 4px;
-    color: var(--accent, #3b82f6);
-    font-size: 0.875rem;
-    cursor: pointer;
-    font-weight: 400;
-  }
-
-  .breadcrumb-bar :global(.crumb-btn:hover) {
-    background: var(--control, #14191f);
-    text-decoration: underline;
-  }
-
-  .breadcrumb-bar :global(.crumb-btn.active) {
-    font-weight: 600;
-    color: var(--text, #e6ebef);
-    cursor: default;
-  }
-
-  .breadcrumb-bar :global(.crumb-btn.active:hover) {
-    text-decoration: none;
-    background: transparent;
-  }
-
-  .roots-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    background: var(--panel-raised, #1d242c);
-    border-bottom: 1px solid var(--line, #2d3741);
-    font-size: 0.875rem;
-    overflow-x: auto;
-  }
-
-  .roots-label {
-    font-weight: 500;
-    color: var(--muted, #8995a1);
-  }
-
-  .roots-bar :global(.root-btn) {
-    min-height: 0;
-    padding: 2px 8px;
-    background: var(--control, #14191f);
-    color: var(--text, #e6ebef);
-    border: 1px solid var(--line, #2d3741);
-    border-radius: 4px;
-    font-size: 0.75rem;
-    cursor: pointer;
-  }
-
-  .picker-modal :global(.error-message) {
-    display: block;
-    padding: 8px 16px;
-    background: rgba(217, 120, 120, 0.15);
-    color: var(--danger, #d97878);
-    border-bottom: 1px solid var(--line, #2d3741);
-    font-size: 0.875rem;
-  }
-
-  .picker-modal :global(.warning-message) {
-    display: block;
-    padding: 8px 16px;
-    background: rgba(242, 161, 111, 0.15);
-    color: var(--focus, #60a5fa);
-    border-bottom: 1px solid var(--line, #2d3741);
-    font-size: 0.875rem;
-  }
-
-  .picker-body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 12px 16px;
-    min-height: 200px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    background: var(--panel, #181e25);
-  }
-
-  .dir-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .picker-body :global(.dir-item) {
-    min-height: 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 6px;
-    text-align: left;
-    font-size: 0.875rem;
-    color: var(--text, #e6ebef);
-    cursor: pointer;
-    width: 100%;
-  }
-
-  .picker-body :global(.dir-item:hover) {
-    background: var(--panel-raised, #1d242c);
-  }
-
-  .picker-body :global(.dir-item.selected) {
-    background: var(--accent-soft, #2a2725);
-    border-color: var(--accent, #3b82f6);
-  }
-
-  .file-name {
-    flex: 1;
-  }
-
-  .file-size {
-    font-size: 0.75rem;
-    color: var(--muted, #8995a1);
-  }
-
-  .picker-body :global(.parent-item) {
-    font-weight: 500;
-    color: var(--accent, #3b82f6);
-  }
-
-  .loading-state,
-  .empty-state {
-    padding: 24px;
-    text-align: center;
-    color: var(--muted, #8995a1);
-    font-size: 0.875rem;
-  }
-
-  .picker-footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
-    padding: 12px 16px;
-    border-top: 1px solid var(--line, #2d3741);
-    background: var(--control, #14191f);
-  }
-
-  .picker-footer :global(.cancel-btn) {
-    min-height: 0;
-    padding: 8px 16px;
-    background: transparent;
-    border: 1px solid var(--line, #2d3741);
-    color: var(--text, #e6ebef);
-    border-radius: 6px;
-    font-size: 0.875rem;
-    cursor: pointer;
-  }
-
-  .picker-footer :global(.cancel-btn:hover) {
-    background: var(--panel-raised, #1d242c);
-  }
-
-  .picker-footer :global(.select-btn) {
-    min-height: 0;
-    padding: 8px 16px;
-    background: var(--accent, #3b82f6);
-    color: #ffffff;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-  }
-
-  .picker-footer :global(.select-btn:hover:not(:disabled)) {
-    background: var(--focus, #60a5fa);
-  }
-
-  .picker-footer :global(.select-btn:disabled) {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  /* Responsive styles for phone (<768px) */
-  @media (max-width: 768px) {
-    .picker-backdrop {
-      padding: 0;
-    }
-
-    .picker-modal {
-      max-width: 100%;
-      height: 100vh;
-      max-height: 100vh;
-      border-radius: 0;
-    }
-  }
-</style>
+  {#snippet footer()}
+    <div class="picker-footer flex items-center justify-end gap-2 w-full pt-2">
+      <Button variant="secondary" class="cancel-btn" onclick={handleClose}>
+        Cancel
+      </Button>
+      <Button
+        variant="primary"
+        class="select-btn"
+        disabled={isSelectDisabled}
+        title={selectedPath || currentPath}
+        onclick={handleSelect}
+      >
+        {selectBtnLabel}
+      </Button>
+    </div>
+  {/snippet}
+</ResponsiveDialogSheet>
