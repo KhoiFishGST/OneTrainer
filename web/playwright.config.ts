@@ -20,7 +20,7 @@ export default defineConfig({
   projects: [
     {
       name: "chromium-desktop",
-      testMatch: /phase-a|phase-b|phase-c|console|theme|responsive-workflows|accessibility|visual|paint-states/,
+      testMatch: /phase-a|phase-b|phase-c|console|theme|responsive-workflows|accessibility|visual|paint-states|dialog-width/,
       use: Object.assign({}, devices["Desktop Chrome"], {
         viewport: { width: 1280, height: 720 },
       }),
