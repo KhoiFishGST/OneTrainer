@@ -29,7 +29,7 @@ it('keeps ValueSelect options and selection behavior', async () => {
   const onChange = vi.fn();
   render(ValueSelect, { id: 'kind', value: 'a', options: [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }], onChange });
   const select = document.querySelector('#kind') as HTMLSelectElement;
-  expect(select.value).toBe('0');
-  await fireEvent.change(select, { target: { value: '1' } });
+  expect(select.value).toBe('a');
+  await fireEvent.change(select, { target: { value: 'b' } });
   expect(onChange).toHaveBeenCalledWith('b');
 });

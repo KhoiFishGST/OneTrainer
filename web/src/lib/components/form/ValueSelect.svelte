@@ -30,48 +30,73 @@
     [key: string]: unknown;
   } = $props();
 
+  function getOptValue(opt: unknown): T {
+    if (typeof opt === 'object' && opt !== null && 'value' in opt) {
+      return (opt as Option<T>).value;
+    }
+    return opt as T;
+  }
+
+  function getOptLabel(opt: unknown): string {
+    if (typeof opt === 'object' && opt !== null && 'label' in opt) {
+      return String((opt as Option<T>).label);
+    }
+    return String(opt);
+  }
+
+  function getOptionValueString(opt: unknown, index: number): string {
+    const optVal = getOptValue(opt);
+    const str = String(optVal ?? '');
+    if (str === '[object Object]' || str === '') {
+      return String(index);
+    }
+    return str;
+  }
+
   const parsedOptions = $derived(
-    options.map((opt) => {
-      if (typeof opt === 'object' && opt !== null && 'value' in opt && 'label' in opt) {
-        return { value: (opt as Option<T>).value, label: String((opt as Option<T>).label) };
-      }
-      return { value: opt as T, label: String(opt) };
-    })
+    options.map((opt, index) => ({
+      value: getOptValue(opt),
+      label: getOptLabel(opt),
+      optionValue: getOptionValueString(opt, index)
+    }))
   );
 
   const selectedIndex = $derived.by(() => {
     if (value === undefined || value === null) return -1;
-    return parsedOptions.findIndex(
-      (opt) => String(opt.value) === String(value)
+    const targetStr = String(value);
+    return options.findIndex(
+      (opt) => String(getOptValue(opt)) === targetStr
     );
   });
 
-  const selectedItem = $derived(
-    selectedIndex !== -1 ? options[selectedIndex] : null
-  );
-
   const selectedSelectValue = $derived(
-    selectedIndex !== -1 ? String(selectedIndex) : (placeholder !== undefined ? '' : (parsedOptions.length > 0 ? '0' : ''))
+    selectedIndex !== -1
+      ? getOptionValueString(options[selectedIndex], selectedIndex)
+      : placeholder !== undefined
+        ? ''
+        : options.length > 0
+          ? getOptionValueString(options[0], 0)
+          : ''
   );
 
   function handleChange(event: Event) {
-    const target = (event.target || event.currentTarget) as HTMLSelectElement | null;
+    const target = (event.currentTarget || event.target) as HTMLSelectElement | null;
     const selectedVal = target?.value;
 
     if (selectedVal !== undefined && selectedVal !== null && selectedVal !== '') {
-      const idx = Number(selectedVal);
-      if (!Number.isNaN(idx) && idx >= 0 && idx < options.length) {
-        const selectedOpt = options[idx];
-        let newValue: T;
-        if (
-          typeof selectedOpt === 'object' &&
-          selectedOpt !== null &&
-          'value' in selectedOpt
-        ) {
-          newValue = (selectedOpt as Option<T>).value;
-        } else {
-          newValue = selectedOpt as T;
+      let selectedOpt = options.find(
+        (o) => String(getOptValue(o)) === selectedVal
+      );
+
+      if (selectedOpt === undefined) {
+        const idx = Number(selectedVal);
+        if (!Number.isNaN(idx) && idx >= 0 && idx < options.length) {
+          selectedOpt = options[idx];
         }
+      }
+
+      if (selectedOpt !== undefined) {
+        const newValue = getOptValue(selectedOpt);
         value = newValue;
         onChange?.(newValue);
       }
@@ -90,13 +115,14 @@
   {...restProps}
 >
   {#if placeholder}
-    <NativeSelectOption value="" disabled selected={selectedItem === null}>
+    <NativeSelectOption value="" disabled selected={selectedIndex === -1}>
       {placeholder}
     </NativeSelectOption>
   {/if}
   {#each parsedOptions as opt, index (index)}
-    <NativeSelectOption value={String(index)}>
+    <NativeSelectOption value={opt.optionValue}>
       {opt.label}
     </NativeSelectOption>
   {/each}
 </NativeSelect>
+

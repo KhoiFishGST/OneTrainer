@@ -13,9 +13,9 @@ describe('ValueSelect', () => {
     });
     const select = document.querySelector('#fruit') as HTMLSelectElement;
     expect(select).toBeInTheDocument();
-    expect(select.value).toBe('1');
+    expect(select.value).toBe('banana');
 
-    await fireEvent.change(select, { target: { value: '2' } });
+    await fireEvent.change(select, { target: { value: 'cherry' } });
     expect(onChange).toHaveBeenCalledWith('cherry');
   });
 
@@ -29,9 +29,9 @@ describe('ValueSelect', () => {
     });
     const select = document.querySelector('#numeric-select') as HTMLSelectElement;
     expect(select).toBeInTheDocument();
-    expect(select.value).toBe('1');
+    expect(select.value).toBe('200');
 
-    await fireEvent.change(select, { target: { value: '0' } });
+    await fireEvent.change(select, { target: { value: '100' } });
     expect(onChange).toHaveBeenCalledWith(100);
   });
 
@@ -49,9 +49,9 @@ describe('ValueSelect', () => {
     });
     const select = document.querySelector('#num-select') as HTMLSelectElement;
     expect(select).toBeInTheDocument();
-    expect(select.value).toBe('1');
+    expect(select.value).toBe('20');
 
-    await fireEvent.change(select, { target: { value: '0' } });
+    await fireEvent.change(select, { target: { value: '10' } });
     expect(onChange).toHaveBeenCalledWith(10);
   });
 
@@ -66,7 +66,7 @@ describe('ValueSelect', () => {
       options
     });
     const select = document.querySelector('#loose-select') as HTMLSelectElement;
-    expect(select.value).toBe('1');
+    expect(select.value).toBe('200');
   });
 
   it('renders placeholder as disabled option and marks it selected when value is unselected/empty', () => {
@@ -101,7 +101,7 @@ describe('ValueSelect', () => {
     const options = select.querySelectorAll('option');
     const placeholderOpt = options[0];
     expect(placeholderOpt.selected).toBe(false);
-    expect(select.value).toBe('1');
+    expect(select.value).toBe('b');
   });
 
   it('forwards disabled, required, aria-describedby, blur and keydown events', async () => {
