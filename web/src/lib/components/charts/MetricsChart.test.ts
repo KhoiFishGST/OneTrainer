@@ -72,4 +72,12 @@ describe('MetricsChart', () => {
     await rerender({ metrics: [{ step: 1, loss: 0.5 }], metricKey: 'loss', title: 'Loss' });
     expect(observeFn).toHaveBeenCalled();
   });
+
+  it('ensures slider thumb has a 44x44px touch target area', () => {
+    render(MetricsChart, { props: { metrics: [], metricKey: 'loss', title: 'Loss' } });
+    const thumb = document.querySelector('[data-slot="slider-thumb"]');
+    expect(thumb).toBeInTheDocument();
+    expect(thumb?.className).toMatch(/after:-inset-4|after:size-\[44px\]|after:-inset-\[16px\]/);
+  });
 });
+

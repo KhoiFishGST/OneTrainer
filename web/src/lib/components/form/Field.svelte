@@ -26,10 +26,11 @@
 
   const inputId = $derived(`field-${id}`);
   const errorId = $derived(error ? `${inputId}-error` : undefined);
+  const helpId = $derived(tooltip ? `${inputId}-help` : undefined);
   const tooltipId = $derived(tooltip ? `${inputId}-tooltip` : undefined);
 
   const ariaDescribedBy = $derived(
-    [errorId, showTooltip ? tooltipId : undefined].filter(Boolean).join(' ') || undefined
+    [errorId, helpId].filter(Boolean).join(' ') || undefined
   );
 
   function handleMouseEnter(e: MouseEvent) {
@@ -113,6 +114,10 @@
       {/if}
     </div>
   </div>
+
+  {#if tooltip}
+    <span id={helpId} class="sr-only">{tooltip}</span>
+  {/if}
 
   {#if error}
     <div id={errorId} class="field-error" role="alert">
@@ -296,5 +301,17 @@
     font-size: 0.75rem;
     color: var(--color-error, var(--danger, #d97878));
     font-weight: 500;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
   }
 </style>

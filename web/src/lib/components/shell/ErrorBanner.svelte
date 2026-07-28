@@ -11,9 +11,14 @@
   } = $props();
 
   let dismissed = $state(false);
+  let previousMessage = $state('');
 
   $effect(() => {
-    dismissed = false;
+    const current = message;
+    if (current && current !== previousMessage) {
+      dismissed = false;
+      previousMessage = current;
+    }
   });
 
   function handleDismiss() {

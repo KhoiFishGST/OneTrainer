@@ -1,10 +1,12 @@
-import { fireEvent, render } from '@testing-library/svelte';
+import { fireEvent, render, screen } from '@testing-library/svelte';
 import { expect, it, vi } from 'vitest';
 import { Input } from '$lib/components/ui/input/index.js';
 import { Textarea } from '$lib/components/ui/textarea/index.js';
 import { Checkbox } from '$lib/components/ui/checkbox/index.js';
 import { Switch } from '$lib/components/ui/switch/index.js';
 import NumericDraftInput from './NumericDraftInput.svelte';
+import SchemaForm from './SchemaForm.svelte';
+
 
 it('supports password metadata, input/change/keydown in Input', async () => {
   const oninput = vi.fn(), onchange = vi.fn(), onkeydown = vi.fn();
@@ -46,3 +48,39 @@ it('emits textarea input/change values', async () => {
   expect(oninput).toHaveBeenCalled();
   expect(onchange).toHaveBeenCalled();
 });
+
+it('always includes help text in input aria-describedby and accessibility tree even when tooltip is closed', () => {
+  render(SchemaForm, {
+    tab: {
+      id: "help_test",
+      label: "Help Test",
+      groups: [
+        {
+          id: "g",
+          fields: [
+            {
+              id: "username",
+              keys: ["username"],
+              label: "Username",
+              tooltip: "Enter your handle",
+              control: "text",
+            },
+          ],
+        },
+      ],
+    },
+    values: { username: "" },
+    issues: [],
+    setRaw: vi.fn(),
+  });
+
+  const input = screen.getByLabelText("Username");
+  const describedBy = input.getAttribute("aria-describedby");
+  expect(describedBy).toBeTruthy();
+
+  const helpEl = document.getElementById(describedBy!);
+  expect(helpEl).toBeInTheDocument();
+  expect(helpEl).toHaveTextContent("Enter your handle");
+  expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+});
+

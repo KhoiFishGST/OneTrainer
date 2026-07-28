@@ -44,7 +44,7 @@
   --muted-foreground: #657384;
   --accent: #e6ebf2;
   --accent-foreground: #17202a;
-  --destructive: #ef4444;
+  --destructive: #dc2626;
   --destructive-foreground: #ffffff;
   --border: #d6dee8;
   --input: #d6dee8;
@@ -66,7 +66,7 @@
   --text: #17202a;
   --muted-text: #657384;
   --accent-color: #2563eb;
-  --danger: #d97878;
+  --danger: #dc2626;
   --success: #65b98d;
   --focus: #2563eb;
 

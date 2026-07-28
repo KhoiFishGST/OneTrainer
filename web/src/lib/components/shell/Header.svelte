@@ -655,7 +655,7 @@
 
   .status-idle {
     background-color: var(--panel-raised, rgba(255, 255, 255, 0.05));
-    color: var(--muted, #888);
+    color: var(--muted-foreground, #8d99a6);
     border: 1px solid var(--line, #444);
   }
 

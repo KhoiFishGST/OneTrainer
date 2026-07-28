@@ -295,8 +295,8 @@
   }
 
   :global(.nav-item.active) {
-    color: var(--accent);
-    background-color: var(--accent-soft);
+    color: var(--accent-foreground);
+    background-color: var(--accent);
     font-weight: 500;
   }
 

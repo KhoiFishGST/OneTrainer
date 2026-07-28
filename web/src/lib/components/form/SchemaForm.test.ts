@@ -391,11 +391,11 @@ it("renders tooltip trigger as div role=button instead of button and handles key
   expect(label.parentElement).toHaveAttribute("tabindex", "0");
 
   const trigger = label.parentElement!;
-  expect(screen.queryByText("This is a helpful tip")).not.toBeInTheDocument();
+  expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
 
   await fireEvent.keyDown(trigger, { key: "Enter" });
-  expect(screen.getByText("This is a helpful tip")).toBeInTheDocument();
+  expect(screen.getByRole("tooltip")).toHaveTextContent("This is a helpful tip");
 
   await fireEvent.keyDown(trigger, { key: " " });
-  expect(screen.queryByText("This is a helpful tip")).not.toBeInTheDocument();
+  expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
 });
