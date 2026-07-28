@@ -88,6 +88,7 @@
           <Table.Cell class="col-dim">
             <NumberInput
               id={`sample-width-${index}`}
+              ariaLabel="Width"
               class="num-input"
               value={getDraftOrValue(sample, index, 'width', 512)}
               onInput={(val) => onDraftChange(index, 'width', val)}
@@ -97,6 +98,7 @@
           <Table.Cell class="col-dim">
             <NumberInput
               id={`sample-height-${index}`}
+              ariaLabel="Height"
               class="num-input"
               value={getDraftOrValue(sample, index, 'height', 512)}
               onInput={(val) => onDraftChange(index, 'height', val)}
@@ -107,6 +109,7 @@
             <div class="seed-cell">
               <NumberInput
                 id={`sample-seed-${index}`}
+                ariaLabel="Seed"
                 class="num-input seed-input"
                 value={getDraftOrValue(sample, index, 'seed', -1)}
                 onInput={(val) => onDraftChange(index, 'seed', val)}
@@ -125,6 +128,7 @@
           </Table.Cell>
           <Table.Cell class="col-prompt">
             <TextInput
+              aria-label="Prompt Text"
               class="prompt-input"
               value={sample.prompt ?? ''}
               onChange={(val) => handlePromptChange(index, val)}

@@ -72,6 +72,13 @@
     return sample?.webui_id ?? `sample_${index}`;
   }
 
+  function resolveSampleIndex(target: any): number {
+    if (!target) return -1;
+    return samples.findIndex(
+      (s: any) => s === target || (s.webui_id && s.webui_id === target.webui_id)
+    );
+  }
+
   function handleDraftChange(index: number, field: keyof SampleDraft, val: string) {
     const sample = samples[index];
     const identity = getSampleIdentity(sample, index);
@@ -170,14 +177,22 @@
   }
 
   async function handleUpdateSample(index: number, updatedSample: any) {
-    const updated = samples.map((s: any, i: number) => (i === index ? updatedSample : s));
+    const target = samples[index];
+    const currentIndex = resolveSampleIndex(target);
+    if (currentIndex === -1) {
+      triggerToast('That sample prompt no longer exists', 'error');
+      return;
+    }
+    const updated = samples.map((s: any, i: number) =>
+      i === currentIndex ? updatedSample : s
+    );
     try {
       await $updateSamplesMutation.mutateAsync({ samples: updated, file: currentConfigFile });
-      const sample = samples[index];
-      const identity = getSampleIdentity(sample, index);
+      const identity = getSampleIdentity(target, currentIndex);
       if (drafts[identity]) {
         delete drafts[identity];
       }
+      triggerToast('Sample prompt updated', 'success');
     } catch (err: any) {
       triggerToast(err?.message || 'Failed to update sample prompt', 'error');
     }
@@ -208,11 +223,12 @@
     deleteSampleError = null;
     isDeletingSample = true;
 
-    const targetIndex = samples.findIndex(
-      (s: any) =>
-        s === sampleToDeleteTarget ||
-        (s.webui_id && s.webui_id === sampleToDeleteTarget.webui_id)
-    );
+    const targetIndex = resolveSampleIndex(sampleToDeleteTarget);
+    if (targetIndex === -1) {
+      deleteSampleError = 'That sample prompt no longer exists';
+      isDeletingSample = false;
+      return;
+    }
     const updated = samples.filter((_: any, i: number) => i !== targetIndex);
 
     try {
@@ -236,7 +252,14 @@
     if (modalMode === 'add') {
       updated = [...samples, sampleData];
     } else {
-      updated = samples.map((s: any, i: number) => (i === editingIndex ? sampleData : s));
+      const currentIndex = resolveSampleIndex(editingSample);
+      if (currentIndex === -1) {
+        triggerToast('That sample prompt no longer exists', 'error');
+        return;
+      }
+      updated = samples.map((s: any, i: number) =>
+        i === currentIndex ? sampleData : s
+      );
     }
     try {
       await $updateSamplesMutation.mutateAsync({ samples: updated, file: currentConfigFile });

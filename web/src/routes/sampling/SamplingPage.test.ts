@@ -395,6 +395,87 @@ describe('SamplingPage', () => {
     expect(payload.samples[0].webui_id).toBe('id_beta');
   });
 
+  it('writes the edited prompt by identity after the list reorders', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({});
+    (createUpdateSamplesMutation as any).mockReturnValue(
+      writable({ mutateAsync, isPending: false })
+    );
+    const samplesStore = writable({ data: { samples: mockSamples }, isLoading: false });
+    (createSamplesQuery as any).mockReturnValue(samplesStore);
+
+    render(SamplingPage);
+
+    const editButtons = await screen.findAllByRole('button', { name: /edit/i });
+    await fireEvent.click(editButtons[0]);
+
+    // The query refetches and returns the same samples in the opposite order
+    // while the editor for prompt_1 is still open.
+    await act(() => {
+      samplesStore.set({
+        data: { samples: [mockSamples[1], mockSamples[0]] },
+        isLoading: false,
+      });
+    });
+
+    const saveButton = await screen.findByRole('button', { name: /save/i });
+    await fireEvent.click(saveButton);
+
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalled());
+    const written = mutateAsync.mock.calls[0][0].samples;
+    const edited = written.find((s: any) => s.webui_id === 'prompt_1');
+    const untouched = written.find((s: any) => s.webui_id === 'prompt_2');
+    expect(edited).toBeDefined();
+    expect(untouched.prompt).toBe(mockSamples[1].prompt);
+  });
+
+  it('reports an error instead of a false success when the delete target is gone', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({});
+    (createUpdateSamplesMutation as any).mockReturnValue(
+      writable({ mutateAsync, isPending: false })
+    );
+    const samplesStore = writable({ data: { samples: mockSamples }, isLoading: false });
+    (createSamplesQuery as any).mockReturnValue(samplesStore);
+
+    render(SamplingPage);
+
+    const deleteButtons = await screen.findAllByRole('button', { name: /delete/i });
+    await fireEvent.click(deleteButtons[0]);
+
+    // The sample disappears server-side while the confirmation is open.
+    await act(() => {
+      samplesStore.set({ data: { samples: [mockSamples[1]] }, isLoading: false });
+    });
+
+    const confirm = await screen.findByRole('button', { name: /^delete$/i });
+    await fireEvent.click(confirm);
+
+    await waitFor(() => {
+      expect(sonnerToast.success).not.toHaveBeenCalledWith('Sample prompt deleted');
+    });
+    expect(mutateAsync).not.toHaveBeenCalled();
+    expect(await screen.findByText(/no longer exists/i)).toBeInTheDocument();
+  });
+
+  it('reports success after an inline row edit commits', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({});
+    (createUpdateSamplesMutation as any).mockReturnValue(
+      writable({ mutateAsync, isPending: false })
+    );
+    (createSamplesQuery as any).mockReturnValue(
+      writable({ data: { samples: mockSamples }, isLoading: false })
+    );
+
+    render(SamplingPage);
+
+    const widthInputs = await screen.findAllByLabelText(/width/i);
+    await fireEvent.input(widthInputs[0], { target: { value: '640' } });
+    await fireEvent.change(widthInputs[0], { target: { value: '640' } });
+
+    await waitFor(() =>
+      expect(sonnerToast.success).toHaveBeenCalledWith('Sample prompt updated')
+    );
+  });
+
   describe('Visible Feedback (Direct Sonner Toasts)', () => {
     it('triggers sonnerToast.success on sample now success and sonnerToast.error on failure', async () => {
       const sampleMutateAsync = vi.fn();
