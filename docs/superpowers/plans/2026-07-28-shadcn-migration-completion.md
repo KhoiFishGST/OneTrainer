@@ -1,6 +1,6 @@
 # shadcn-svelte Migration Completion Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Finish the shadcn-svelte migration by removing all 286 parent-to-child `:global()` overrides, making the phone 44px target and colour contrast intrinsic to the canonical components, and fixing the correctness and test-trustworthiness defects the overrides were hiding.
 
@@ -57,7 +57,7 @@ Therefore: size assertions live in Playwright, token contrast is asserted by par
 - Every mutation path resolves its target immediately before constructing the payload.
 - A target that can no longer be found produces a user-visible error, never a success toast.
 
-- [ ] **Step 1: Add the reorder regression test**
+- [x] **Step 1: Add the reorder regression test**
 
 Append inside the top-level `describe('SamplingPage', ...)` block in `web/src/routes/sampling/SamplingPage.test.ts`:
 
@@ -96,7 +96,7 @@ it('writes the edited prompt by identity after the list reorders', async () => {
 });
 ```
 
-- [ ] **Step 2: Add the vanished-target delete test**
+- [x] **Step 2: Add the vanished-target delete test**
 
 Append in the same describe block:
 
@@ -130,7 +130,7 @@ it('reports an error instead of a false success when the delete target is gone',
 });
 ```
 
-- [ ] **Step 3: Add the edit-success feedback test**
+- [x] **Step 3: Add the edit-success feedback test**
 
 Append in the same describe block:
 
@@ -156,7 +156,7 @@ it('reports success after an inline row edit commits', async () => {
 });
 ```
 
-- [ ] **Step 4: Run the tests and verify all three fail**
+- [x] **Step 4: Run the tests and verify all three fail**
 
 ```bash
 bun run test -- src/routes/sampling/SamplingPage.test.ts
@@ -164,7 +164,7 @@ bun run test -- src/routes/sampling/SamplingPage.test.ts
 
 Expected: the reorder test writes the wrong prompt, the vanished-target test sees a success toast and a `mutateAsync` call, and the edit test finds no success toast.
 
-- [ ] **Step 5: Add the identity resolver**
+- [x] **Step 5: Add the identity resolver**
 
 In `web/src/routes/sampling/+page.svelte`, add next to `getSampleIdentity`:
 
@@ -177,7 +177,7 @@ function resolveSampleIndex(target: any): number {
 }
 ```
 
-- [ ] **Step 6: Resolve edit and modal-save by identity**
+- [x] **Step 6: Resolve edit and modal-save by identity**
 
 Replace `handleUpdateSample` and `handleSaveSampleModal` with:
 
@@ -233,7 +233,7 @@ async function handleSaveSampleModal(sampleData: any) {
 
 `editingSample` is already assigned in `handleEditSample`; it is now the identity source rather than `editingIndex`.
 
-- [ ] **Step 7: Guard the delete path**
+- [x] **Step 7: Guard the delete path**
 
 In `confirmDeleteSample`, replace the `targetIndex`/`updated` computation and the block that follows with:
 
@@ -249,7 +249,7 @@ const updated = samples.filter((_: any, i: number) => i !== targetIndex);
 
 Leave the existing `try`/`catch`/`finally` intact below it.
 
-- [ ] **Step 8: Run the tests and verify they pass**
+- [x] **Step 8: Run the tests and verify they pass**
 
 ```bash
 bun run test -- src/routes/sampling/SamplingPage.test.ts src/lib/components/sampling
@@ -258,7 +258,7 @@ bun run check
 
 Expected: all sampling tests pass; `check` reports no new errors.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add web/src/routes/sampling/+page.svelte web/src/routes/sampling/SamplingPage.test.ts
@@ -276,7 +276,7 @@ git commit -m "fix(web): resolve sample mutations by identity"
 **Interfaces:**
 - `normalizeConceptDraft` normalizes only paths whose final key is present on the source object; absent keys stay absent.
 
-- [ ] **Step 1: Add the key-injection regression test**
+- [x] **Step 1: Add the key-injection regression test**
 
 Append to `web/src/lib/components/concepts/concept-draft.test.ts`:
 
@@ -305,7 +305,7 @@ it('normalizes a nested key only when its parent object exists', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test and verify it fails**
+- [x] **Step 2: Run the test and verify it fails**
 
 ```bash
 bun run test -- src/lib/components/concepts/concept-draft.test.ts
@@ -313,7 +313,7 @@ bun run test -- src/lib/components/concepts/concept-draft.test.ts
 
 Expected: FAIL — the result gains `image_variations: 1`, `balancing: 1`, `loss_weight: 1`, and `image.random_brightness_max_strength: 0`.
 
-- [ ] **Step 3: Skip absent keys**
+- [x] **Step 3: Skip absent keys**
 
 In `web/src/lib/components/concepts/concept-draft.ts`, replace the assignment block inside the `for (const { path, normalize } of NUMERIC_PATHS)` loop with:
 
@@ -333,7 +333,7 @@ In `web/src/lib/components/concepts/concept-draft.ts`, replace the assignment bl
     current[lastKey] = normalize(current[lastKey]);
 ```
 
-- [ ] **Step 4: Run the tests and verify they pass**
+- [x] **Step 4: Run the tests and verify they pass**
 
 ```bash
 bun run test -- src/lib/components/concepts
@@ -342,7 +342,7 @@ bun run check
 
 Expected: all concept tests pass, including the pre-existing normalization cases.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add web/src/lib/components/concepts/concept-draft.ts web/src/lib/components/concepts/concept-draft.test.ts
@@ -360,7 +360,7 @@ git commit -m "fix(web): preserve absent keys through concept normalization"
 **Interfaces:**
 - When no option matches the current value and no placeholder is supplied, a disabled sentinel is rendered and selected. The browser never visually selects a valid option the application did not choose.
 
-- [ ] **Step 1: Add the empty-value regression test**
+- [x] **Step 1: Add the empty-value regression test**
 
 Append to `web/src/lib/components/form/ValueSelect.test.ts`:
 
@@ -390,7 +390,7 @@ it('still shows the placeholder when one is supplied', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test and verify the first case fails**
+- [x] **Step 2: Run the test and verify the first case fails**
 
 ```bash
 bun run test -- src/lib/components/form/ValueSelect.test.ts
@@ -398,7 +398,7 @@ bun run test -- src/lib/components/form/ValueSelect.test.ts
 
 Expected: FAIL — with an empty value and no placeholder, `selectedOptions[0]` is the enabled `Alpha` option.
 
-- [ ] **Step 3: Extend the sentinel to the empty case**
+- [x] **Step 3: Extend the sentinel to the empty case**
 
 In `web/src/lib/components/form/ValueSelect.svelte`, replace the `isUnknown` and `selectedSelectValue` deriveds with:
 
@@ -432,7 +432,7 @@ Then change the sentinel option's guard and label:
 
 `handleChange` already ignores `__unknown__`, so no change is needed there.
 
-- [ ] **Step 4: Run the tests and verify they pass**
+- [x] **Step 4: Run the tests and verify they pass**
 
 ```bash
 bun run test -- src/lib/components/form/ValueSelect.test.ts src/lib/components/form/SchemaForm.test.ts src/lib/components/shell/Header.test.ts
@@ -441,7 +441,7 @@ bun run check
 
 Expected: all pass. `SchemaForm` and `Header` are included because they are the heaviest `ValueSelect` consumers.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add web/src/lib/components/form/ValueSelect.svelte web/src/lib/components/form/ValueSelect.test.ts
@@ -462,7 +462,7 @@ git commit -m "fix(web): render a sentinel for unselected select values"
 - `--success`, `--warning`, `--info` each define `-foreground` and `-surface` companions; `--destructive-surface` joins the existing destructive pair.
 - Every `<name>-foreground` on `<name>-surface` pair reaches 4.5:1 in both `:root` and `.dark`.
 
-- [ ] **Step 1: Write the failing contrast test**
+- [x] **Step 1: Write the failing contrast test**
 
 Create `web/src/lib/theme/token-contrast.test.ts`:
 
@@ -546,7 +546,7 @@ describe('semantic status tokens', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test and verify it fails**
+- [x] **Step 2: Run the test and verify it fails**
 
 ```bash
 bun run test -- src/lib/theme/token-contrast.test.ts
@@ -554,7 +554,7 @@ bun run test -- src/lib/theme/token-contrast.test.ts
 
 Expected: FAIL with "Token --success-foreground is not defined as a hex value".
 
-- [ ] **Step 3: Define the tokens**
+- [x] **Step 3: Define the tokens**
 
 In `web/src/app.css`, add to the `:root` block after `--ring: #1d4ed8;`:
 
@@ -613,7 +613,7 @@ Verified ratios for these values — the test recomputes them, so treat this as 
 | dark | `info` on `info-surface` | 6.60 |
 | dark | `destructive` on `destructive-surface` | 4.67 |
 
-- [ ] **Step 4: Register the tokens with Tailwind**
+- [x] **Step 4: Register the tokens with Tailwind**
 
 In the `@theme inline` block, after `--color-destructive-foreground: var(--destructive-foreground);`, add:
 
@@ -630,7 +630,7 @@ In the `@theme inline` block, after `--color-destructive-foreground: var(--destr
   --color-destructive-surface: var(--destructive-surface);
 ```
 
-- [ ] **Step 5: Run the test and verify it passes**
+- [x] **Step 5: Run the test and verify it passes**
 
 ```bash
 bun run test -- src/lib/theme/token-contrast.test.ts
@@ -638,7 +638,7 @@ bun run test -- src/lib/theme/token-contrast.test.ts
 
 Expected: PASS, 9 tests. If any pair falls short, darken the light foreground or lighten the dark foreground until it clears 4.5 — do not lower the threshold.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add web/src/app.css web/src/lib/theme/token-contrast.test.ts
@@ -664,7 +664,7 @@ git commit -m "feat(web): add contrast-verified semantic status tokens"
 - Small controls (checkbox, switch) expand their hit area with a pseudo-element rather than growing visually, matching the existing slider approach.
 - A source-level test forbids the `min-height: 0` pattern that previously defeated the global rule.
 
-- [ ] **Step 1: Write the failing source-lint test**
+- [x] **Step 1: Write the failing source-lint test**
 
 Create `web/src/lib/components/style-boundary.test.ts`:
 
@@ -727,7 +727,7 @@ describe('style boundary', () => {
 
 The `:global()` sweep assertion is deliberately omitted here — it is added in Task 11 once the cutover is complete, so the suite stays green between tasks.
 
-- [ ] **Step 2: Run the test and verify the sweep fails**
+- [x] **Step 2: Run the test and verify the sweep fails**
 
 ```bash
 bun run test -- src/lib/components/style-boundary.test.ts
@@ -735,7 +735,7 @@ bun run test -- src/lib/components/style-boundary.test.ts
 
 Expected: the two fixture tests PASS; "has no min-height: 0 anywhere" FAILS listing 27 violations.
 
-- [ ] **Step 3: Bake the target into the Button base**
+- [x] **Step 3: Bake the target into the Button base**
 
 In `web/src/lib/components/ui/button/button.svelte`, append to the `base` string of `buttonVariants` (before the closing quote):
 
@@ -743,7 +743,7 @@ In `web/src/lib/components/ui/button/button.svelte`, append to the `base` string
  max-md:min-h-11 max-md:min-w-11
 ```
 
-- [ ] **Step 4: Repoint the destructive variant at the defined surface**
+- [x] **Step 4: Repoint the destructive variant at the defined surface**
 
 The `destructive` variant currently composes a tint under token-coloured text — `bg-destructive/10 … text-destructive` — which is the same undefined-contrast composition that fails in `ErrorBanner`. Replace that variant's value in `buttonVariants` with:
 
@@ -753,7 +753,7 @@ destructive: "bg-destructive-surface hover:bg-destructive-surface/80 text-destru
 
 Its contrast is now the `destructive` / `destructive-surface` pair that Task 4's test verifies.
 
-- [ ] **Step 5: Bake the target into text controls**
+- [x] **Step 5: Bake the target into text controls**
 
 In `input.svelte` (both the `file` and default branches), `native-select.svelte`, and `textarea.svelte`, append to each `cn(` class string:
 
@@ -761,7 +761,7 @@ In `input.svelte` (both the `file` and default branches), `native-select.svelte`
  max-md:min-h-11
 ```
 
-- [ ] **Step 6: Expand the small-control hit areas**
+- [x] **Step 6: Expand the small-control hit areas**
 
 In `checkbox.svelte` and `switch.svelte`, append to the root element's `cn(` class string:
 
@@ -771,7 +771,7 @@ In `checkbox.svelte` and `switch.svelte`, append to the root element's `cn(` cla
 
 This mirrors `ui/slider/slider.svelte`, whose `size-3` thumb already reaches 44px through `after:-inset-4`. The visible control does not change size; only the hit area does.
 
-- [ ] **Step 7: Document the sidebar fork**
+- [x] **Step 7: Document the sidebar fork**
 
 In `web/src/lib/components/ui/sidebar/sidebar.svelte`, add above the `let { ... } = $props()` declaration:
 
@@ -784,7 +784,7 @@ In `web/src/lib/components/ui/sidebar/sidebar.svelte`, add above the `let { ... 
 -->
 ```
 
-- [ ] **Step 8: Run the full suite**
+- [x] **Step 8: Run the full suite**
 
 ```bash
 bun run test
@@ -794,7 +794,7 @@ bun run build
 
 Expected: the `min-height: 0` sweep still fails (27 violations remain until Phase 3); everything else passes, including Task 4's contrast test now that the destructive variant consumes the new token. This is the one intentionally-red gate — it turns green in Task 11.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add web/src/lib/components/ui web/src/lib/components/style-boundary.test.ts
@@ -871,7 +871,7 @@ Expected: named tests pass, no new check warnings, and `rg` returns nothing (exc
 - Status pills and the saved badge use Task 4 tokens; no hex literal remains in shell source.
 - Tinted surfaces pair `bg-<name>-surface` with `text-<name>` — never with `text-<name>-foreground`, which is reserved for text on a solid `bg-<name>` fill.
 
-- [ ] **Step 1: Add the status-token regression test**
+- [x] **Step 1: Add the status-token regression test**
 
 Append to `web/src/lib/components/shell/Header.test.ts`:
 
@@ -888,7 +888,7 @@ it('renders status pills with semantic token classes rather than hex colours', a
 
 Match the import style already used at the top of `Header.test.ts` for `trainingStore`.
 
-- [ ] **Step 2: Run it and verify it fails**
+- [x] **Step 2: Run it and verify it fails**
 
 ```bash
 bun run test -- src/lib/components/shell/Header.test.ts
@@ -896,7 +896,7 @@ bun run test -- src/lib/components/shell/Header.test.ts
 
 Expected: FAIL — the pill carries `status-completed`, which is defined with `#10b981`.
 
-- [ ] **Step 3: Apply the cutover procedure to all six files**
+- [x] **Step 3: Apply the cutover procedure to all six files**
 
 Follow the procedure above. Specific replacements:
 
@@ -911,7 +911,7 @@ Follow the procedure above. Specific replacements:
 - `ErrorBanner.svelte:54-88` — delete the whole `<style>` block; the Alert gets `class="bg-destructive-surface text-destructive border-b border-destructive flex items-center justify-between gap-3 px-4 py-2.5 text-sm"` and the dismiss Button becomes `variant="outline" size="sm"`.
 - `StatusBar.svelte` / `RailContent.svelte` / `ConsoleDrawer.svelte` / `LayoutContent.svelte` — cosmetic rules deleted in favour of stock variants; layout rules moved to `class` props.
 
-- [ ] **Step 4: Run shell tests and verify**
+- [x] **Step 4: Run shell tests and verify**
 
 ```bash
 bun run test -- src/lib/components/shell src/lib/components/LayoutContent.test.ts
@@ -921,7 +921,7 @@ rg ":global\(" src/lib/components/shell src/lib/components/LayoutContent.svelte
 
 Expected: tests pass, no new warnings, `rg` returns nothing.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add web/src/lib/components/shell web/src/lib/components/LayoutContent.svelte web/src/lib/components/shell/Header.test.ts
@@ -940,7 +940,7 @@ git commit -m "refactor(web): cut over shell to component style APIs"
 - The `Field` tooltip trigger is a real `<button>` with an accessible name, not a `role="button"` wrapper around the label.
 - The tooltip element is referenced by the trigger's `aria-describedby`, or removed if the visually-hidden help text already covers it.
 
-- [ ] **Step 1: Add the tooltip-semantics test**
+- [x] **Step 1: Add the tooltip-semantics test**
 
 Append to `web/src/lib/components/form/FormInputs.test.ts`:
 
@@ -958,7 +958,7 @@ it('exposes the field tooltip through a real button, not a role-button wrapper',
 });
 ```
 
-- [ ] **Step 2: Run it and verify it fails**
+- [x] **Step 2: Run it and verify it fails**
 
 ```bash
 bun run test -- src/lib/components/form/FormInputs.test.ts
@@ -966,7 +966,7 @@ bun run test -- src/lib/components/form/FormInputs.test.ts
 
 Expected: FAIL — a `div[role="button"]` is present and no named button exists.
 
-- [ ] **Step 3: Rebuild the Field label row**
+- [x] **Step 3: Rebuild the Field label row**
 
 In `web/src/lib/components/form/Field.svelte`, replace the `<div role="button" tabindex="0" class="field-label-side has-tooltip …">` wrapper with a plain wrapper plus an explicit trigger:
 
@@ -996,11 +996,11 @@ In `web/src/lib/components/form/Field.svelte`, replace the `<div role="button" t
 
 Import `Info` from the project's icon package at the top of the file. Delete the now-unused `tooltipId` derived. Keep the visually-hidden `<span id={helpId} class="sr-only">{tooltip}</span>` and the existing `ariaDescribedBy` derived unchanged — that is what puts help text on the control itself.
 
-- [ ] **Step 4: Apply the cutover procedure to the remaining six form files**
+- [x] **Step 4: Apply the cutover procedure to the remaining six form files**
 
 Follow the Phase 3 procedure. `Field.svelte`'s `.field-control-side :global(...)` width-forcing rules become `w-full` utilities on the wrapped controls; `PathInput` / `DirectoryInput` / `TimeInput` action buttons become `<Button variant="outline" size="icon">`.
 
-- [ ] **Step 5: Run form tests and verify**
+- [x] **Step 5: Run form tests and verify**
 
 ```bash
 bun run test -- src/lib/components/form src/routes/general src/routes/training
@@ -1010,7 +1010,7 @@ rg ":global\(" src/lib/components/form
 
 Expected: tests pass, no new warnings, `rg` returns nothing.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add web/src/lib/components/form
@@ -1026,11 +1026,11 @@ git commit -m "refactor(web): cut over form components to style APIs"
 - Modify: `web/src/routes/sampling/+page.svelte` (7)
 - Test: `web/src/lib/components/sampling/*.test.ts`, `web/src/routes/sampling/SamplingPage.test.ts`
 
-- [ ] **Step 1: Apply the cutover procedure**
+- [x] **Step 1: Apply the cutover procedure**
 
 Follow the Phase 3 procedure across all four files. `SamplePromptCards` carries three of the 27 `min-height: 0` declarations (`:233` `.btn-icon`, `:291` `.dice-btn`, `:321` `.add-btn`) on the phone-only presentation — all three rules are deleted and the buttons become `<Button variant="ghost" size="icon">` / `<Button variant="outline" size="sm">`.
 
-- [ ] **Step 2: Run sampling tests and verify**
+- [x] **Step 2: Run sampling tests and verify**
 
 ```bash
 bun run test -- src/lib/components/sampling src/routes/sampling
@@ -1040,7 +1040,7 @@ rg ":global\(" src/lib/components/sampling src/routes/sampling
 
 Expected: tests pass, no new warnings, `rg` returns nothing.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add web/src/lib/components/sampling web/src/routes/sampling
@@ -1057,11 +1057,11 @@ git commit -m "refactor(web): cut over sampling to style APIs"
 - Modify: `web/src/routes/embeddings/+page.svelte` (9), `web/src/routes/concepts/+page.svelte` (1)
 - Test: `web/src/lib/components/concepts/*.test.ts`, `web/src/routes/concepts/page.test.ts`, `web/src/routes/embeddings/page.test.ts`
 
-- [ ] **Step 1: Apply the cutover procedure**
+- [x] **Step 1: Apply the cutover procedure**
 
 Follow the Phase 3 procedure. Also delete the `.close-btn` and `.close-btn:hover` rules at `AugmentationPreview.svelte:194,206`, which svelte-check already reports as unused, and remove the non-standard `-webkit-line-clamp` warning at `ConceptsEditor.svelte:592` by adding the standard `line-clamp` property alongside it.
 
-- [ ] **Step 2: Run tests and verify**
+- [x] **Step 2: Run tests and verify**
 
 ```bash
 bun run test -- src/lib/components/concepts src/lib/components/embeddings src/routes/concepts src/routes/embeddings
@@ -1071,7 +1071,7 @@ rg ":global\(" src/lib/components/concepts src/lib/components/embeddings src/rou
 
 Expected: tests pass; the three named svelte-check warnings are gone; `rg` returns nothing.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add web/src/lib/components/concepts web/src/lib/components/embeddings web/src/routes/concepts web/src/routes/embeddings
@@ -1094,7 +1094,7 @@ git commit -m "refactor(web): cut over concepts and embeddings to style APIs"
 - `ConsoleView` keeps only its ANSI `.fg-*` / `.bg-*` block, with a comment naming ANSI output as the third party.
 - The undefined `touch-target-44` marker class is gone from source and from assertions.
 
-- [ ] **Step 1: Tighten the dataset touch-target assertion**
+- [x] **Step 1: Tighten the dataset touch-target assertion**
 
 In `web/src/lib/components/datasets/DatasetCollection.test.ts`, replace the `has44pxHitTarget` block with:
 
@@ -1106,7 +1106,7 @@ In `web/src/lib/components/datasets/DatasetCollection.test.ts`, replace the `has
       expect(firstBtn.className).not.toContain('touch-target-44');
 ```
 
-- [ ] **Step 2: Run it and verify it fails**
+- [x] **Step 2: Run it and verify it fails**
 
 ```bash
 bun run test -- src/lib/components/datasets/DatasetCollection.test.ts
@@ -1114,7 +1114,7 @@ bun run test -- src/lib/components/datasets/DatasetCollection.test.ts
 
 Expected: FAIL — `touch-target-44` is still on the button.
 
-- [ ] **Step 3: Apply the cutover procedure**
+- [x] **Step 3: Apply the cutover procedure**
 
 Follow the Phase 3 procedure across all ten files. Two specifics:
 
@@ -1127,7 +1127,7 @@ Follow the Phase 3 procedure across all ten files. Two specifics:
 
 - `ConsoleView.svelte:198` — remove the `tabindex` from the noninteractive element svelte-check flags, or give it an interactive role if it is genuinely focusable.
 
-- [ ] **Step 4: Run tests and verify**
+- [x] **Step 4: Run tests and verify**
 
 ```bash
 bun run test -- src/lib/components/datasets src/lib/components/training src/lib/components/charts src/lib/components/console src/routes/datasets src/routes/gallery src/routes/console
@@ -1138,7 +1138,7 @@ rg -c ":global\(" src/lib/components/console/ConsoleView.svelte
 
 Expected: tests pass; the `ConsoleView:198` warning is gone; the first `rg` returns nothing; the second returns only the ANSI block's count.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add web/src/lib/components/datasets web/src/lib/components/training web/src/lib/components/charts web/src/lib/components/console web/src/routes/datasets web/src/routes/gallery
@@ -1154,11 +1154,11 @@ git commit -m "refactor(web): cut over datasets, training, and console to style 
 - Modify: `web/src/lib/components/collections/AddItemCard.svelte` (6)
 - Modify: `web/src/lib/components/style-boundary.test.ts`
 
-- [ ] **Step 1: Apply the cutover procedure**
+- [x] **Step 1: Apply the cutover procedure**
 
 Follow the Phase 3 procedure across all nine files. Delete the unused `.warning-icon` rule at `login/+page.svelte:172` that svelte-check reports.
 
-- [ ] **Step 2: Close the boundary test**
+- [x] **Step 2: Close the boundary test**
 
 Append to `web/src/lib/components/style-boundary.test.ts`, inside the existing `describe('style boundary', ...)` block:
 
@@ -1171,7 +1171,7 @@ Append to `web/src/lib/components/style-boundary.test.ts`, inside the existing `
   });
 ```
 
-- [ ] **Step 3: Run the full suite**
+- [x] **Step 3: Run the full suite**
 
 ```bash
 bun run test
@@ -1181,7 +1181,7 @@ bun run build
 
 Expected: every test passes, including both sweeps from `style-boundary.test.ts`. `check` reports **0 errors and 0 warnings** — this is the first point where the warning count should be clean.
 
-- [ ] **Step 4: Verify the grep gates**
+- [x] **Step 4: Verify the grep gates**
 
 ```bash
 rg ":global\(" src/lib/components src/routes --glob '*.svelte' | grep -v ConsoleView
@@ -1191,7 +1191,7 @@ rg "touch-target-44" src
 
 Expected: all three return nothing.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add web/src/routes web/src/lib/components/collections web/src/lib/components/style-boundary.test.ts
@@ -1217,7 +1217,7 @@ git commit -m "refactor(web): complete the style boundary cutover"
 - All breakpoint state derives from the shared `isMobile` in `$lib/hooks/is-mobile.svelte`.
 - No component reads `window.innerWidth` inside a `$derived`.
 
-- [ ] **Step 1: Add the no-flash test**
+- [x] **Step 1: Add the no-flash test**
 
 Append to `web/src/lib/components/datasets/DatasetCollection.test.ts`:
 
@@ -1232,7 +1232,7 @@ it('renders cards on the first paint at phone width, with no desktop-table flash
 
 Add `import { mockIsMobile } from '$lib/hooks/mock-is-mobile.svelte';` and the matching `vi.mock('$lib/hooks/is-mobile.svelte', ...)` block at the top of the file, copying the pattern from `web/src/routes/sampling/SamplingPage.test.ts:6-18`.
 
-- [ ] **Step 2: Run it and verify it fails**
+- [x] **Step 2: Run it and verify it fails**
 
 ```bash
 bun run test -- src/lib/components/datasets/DatasetCollection.test.ts
@@ -1240,7 +1240,7 @@ bun run test -- src/lib/components/datasets/DatasetCollection.test.ts
 
 Expected: FAIL — `isDesktop` initialises to `true`, so the table renders before `onMount`.
 
-- [ ] **Step 3: Replace DatasetCollection's local media query**
+- [x] **Step 3: Replace DatasetCollection's local media query**
 
 In `web/src/lib/components/datasets/DatasetCollection.svelte`, delete the `isDesktop` state and the entire `onMount` media-query block, and replace with:
 
@@ -1252,7 +1252,7 @@ In `web/src/lib/components/datasets/DatasetCollection.svelte`, delete the `isDes
 
 Remove the now-unused `onMount` import if nothing else uses it.
 
-- [ ] **Step 4: Replace LayoutContent's local media query**
+- [x] **Step 4: Replace LayoutContent's local media query**
 
 In `web/src/lib/components/LayoutContent.svelte`, delete the `let isMobile = $state(false)` declaration and the `window.matchMedia` block inside `onMount` (keeping the `eventClient` setup and its cleanup). Add at the top:
 
@@ -1262,7 +1262,7 @@ In `web/src/lib/components/LayoutContent.svelte`, delete the `let isMobile = $st
 
 and replace the `mobile={isMobile}` prop on `<Rail>` with `mobile={isMobile.current}`.
 
-- [ ] **Step 5: Remove the innerWidth hacks**
+- [x] **Step 5: Remove the innerWidth hacks**
 
 In `StatusBar.svelte:17`, `ResponsiveDialogDrawer.svelte:27`, and `ResponsiveDialogSheet.svelte:25`, replace each derived with:
 
@@ -1272,11 +1272,11 @@ In `StatusBar.svelte:17`, `ResponsiveDialogDrawer.svelte:27`, and `ResponsiveDia
 
 `window.innerWidth` is not reactive; reading it inside a `$derived` never re-evaluates on resize.
 
-- [ ] **Step 6: Normalise the three stray breakpoints**
+- [x] **Step 6: Normalise the three stray breakpoints**
 
 Change `@media (max-width: 768px)` to `@media (max-width: 767px)` in `form/Field.svelte:183`, `charts/MetricsChart.svelte:304`, and `training/SampleGallery.svelte:460`, so phone behaviour ends below 768px as specified everywhere else.
 
-- [ ] **Step 7: Run tests and verify**
+- [x] **Step 7: Run tests and verify**
 
 ```bash
 bun run test
@@ -1287,7 +1287,7 @@ rg "innerWidth" src/lib src/routes --glob '*.svelte'
 
 Expected: all tests pass; both `rg` calls return nothing.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add web/src/lib/components web/src/routes
@@ -1303,7 +1303,7 @@ git commit -m "refactor(web): unify mobile breakpoint state"
 - Modify: `web/src/lib/components/shell/Rail.svelte:19-24`
 - Modify: `web/package.json`
 
-- [ ] **Step 1: Silence the non-reactive warnings**
+- [x] **Step 1: Silence the non-reactive warnings**
 
 `svelte-check` warns that `sidebar` and `parentSidebar` are updated but not declared with `$state`. Both are assigned exactly once during init inside a `try`/`catch`, so the fix is to make that explicit rather than to add reactivity. In `Header.svelte`:
 
@@ -1320,7 +1320,7 @@ git commit -m "refactor(web): unify mobile breakpoint state"
 
 Apply the same shape to `parentSidebar` in `Rail.svelte`.
 
-- [ ] **Step 2: Verify check is clean**
+- [x] **Step 2: Verify check is clean**
 
 ```bash
 bun run check
@@ -1328,11 +1328,11 @@ bun run check
 
 Expected: `0 ERRORS 0 WARNINGS`.
 
-- [ ] **Step 3: Move runtime dependencies out of devDependencies**
+- [x] **Step 3: Move runtime dependencies out of devDependencies**
 
 In `web/package.json`, move these from `devDependencies` to `dependencies`: `bits-ui`, `@lucide/svelte`, `svelte-sonner`, `mode-watcher`, `vaul-svelte`, `tailwind-variants`, `clsx`, `tailwind-merge`. They are imported by shipped code, not by tooling.
 
-- [ ] **Step 4: Consolidate on one icon package**
+- [x] **Step 4: Consolidate on one icon package**
 
 Two icon packages currently ship: `lucide-svelte@0.468` (application code) and `@lucide/svelte@1.27` (`components/ui/`). `@lucide/svelte` is the current package name. Rewrite the application imports to it and drop `lucide-svelte`:
 
@@ -1349,7 +1349,7 @@ rg "lucide-svelte" src package.json
 
 Expected: only `@lucide/svelte` matches.
 
-- [ ] **Step 5: Verify install, tests, and build**
+- [x] **Step 5: Verify install, tests, and build**
 
 ```bash
 bun install
@@ -1360,7 +1360,7 @@ bun run build
 
 Expected: all pass. If any icon name differs between the two packages, fix the import at the call site rather than reinstating the old package.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add web/package.json web/bun.lock web/src
@@ -1379,7 +1379,7 @@ git commit -m "chore(web): correct dependency placement and icon package"
 **Interfaces:**
 - `findForbiddenImports` rejects any import that is not explicitly allowed, including bare specifiers.
 
-- [ ] **Step 1: Add the rejected fixtures**
+- [x] **Step 1: Add the rejected fixtures**
 
 In `web/src/lib/components/ui-dependency-boundary.test.ts`, add to the existing fixture test:
 
@@ -1393,7 +1393,7 @@ In `web/src/lib/components/ui-dependency-boundary.test.ts`, add to the existing 
     expect(findForbiddenImports(fixture8, targetFile)).not.toEqual([]);
 ```
 
-- [ ] **Step 2: Run it and verify it fails**
+- [x] **Step 2: Run it and verify it fails**
 
 ```bash
 bun run test -- src/lib/components/ui-dependency-boundary.test.ts
@@ -1401,7 +1401,7 @@ bun run test -- src/lib/components/ui-dependency-boundary.test.ts
 
 Expected: FAIL — all three return `[]`, because bare and `$app/` specifiers are never inspected.
 
-- [ ] **Step 3: Rewrite the check as an allowlist**
+- [x] **Step 3: Rewrite the check as an allowlist**
 
 Replace the body of `findForbiddenImports` in `web/src/lib/components/ui-dependency-boundary.test.ts` with:
 
@@ -1475,7 +1475,7 @@ export function findForbiddenImports(source: string, filename: string): string[]
 }
 ```
 
-- [ ] **Step 4: Run it and verify it passes**
+- [x] **Step 4: Run it and verify it passes**
 
 ```bash
 bun run test -- src/lib/components/ui-dependency-boundary.test.ts
@@ -1483,7 +1483,7 @@ bun run test -- src/lib/components/ui-dependency-boundary.test.ts
 
 Expected: PASS. If the sweep over real sources reports a violation, the correct response is to remove that import from `components/ui/` or add the package to `ALLOWED_PACKAGES` with a comment justifying it — not to loosen the matching.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add web/src/lib/components/ui-dependency-boundary.test.ts
@@ -1502,7 +1502,7 @@ git commit -m "test(web): enforce the UI dependency boundary as an allowlist"
 - Every visible interactive control on a phone viewport measures at least 44×44 CSS pixels.
 - The test runs only in the phone projects.
 
-- [ ] **Step 1: Write the failing browser test**
+- [x] **Step 1: Write the failing browser test**
 
 Create `web/e2e/touch-targets.spec.ts`:
 
@@ -1568,7 +1568,7 @@ test.describe("Phone touch targets", () => {
 });
 ```
 
-- [ ] **Step 2: Register the spec in the phone projects**
+- [x] **Step 2: Register the spec in the phone projects**
 
 In `web/playwright.config.ts`, add `touch-targets` to the `testMatch` regex of both `webkit-phone` and `chromium-phone`:
 
@@ -1584,7 +1584,7 @@ for `webkit-phone`, and:
 
 for `chromium-phone`.
 
-- [ ] **Step 3: Prove the test can fail**
+- [x] **Step 3: Prove the test can fail**
 
 By this phase the defect is already fixed, so the test would pass on its first run — which tells you nothing about whether it works. Temporarily remove the guarantee and confirm the test catches it.
 
@@ -1606,7 +1606,7 @@ bun run build
 
 If the test passed with the class removed, the selector or the route list is wrong — fix the test before continuing.
 
-- [ ] **Step 4: Run it against the current build**
+- [x] **Step 4: Run it against the current build**
 
 ```bash
 bun run build
@@ -1615,7 +1615,7 @@ bunx playwright test e2e/touch-targets.spec.ts --project=chromium-phone
 
 Expected: PASS on every route.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add web/e2e/touch-targets.spec.ts web/playwright.config.ts
@@ -1634,7 +1634,7 @@ git commit -m "test(web): assert real phone touch targets in the browser"
 - Destructive confirmation requires `alertdialog` with no ordinary-dialog fallback.
 - At least one scan runs with the error banner mounted.
 
-- [ ] **Step 1: Make the theme switch mandatory**
+- [x] **Step 1: Make the theme switch mandatory**
 
 In `web/e2e/accessibility.spec.ts`, replace both `if (await toggle.isVisible())` blocks with an unconditional sequence:
 
@@ -1649,7 +1649,7 @@ In `web/e2e/accessibility.spec.ts`, replace both `if (await toggle.isVisible())`
 
 and call it directly in `checkAccessibilityInBothThemes` in place of the conditional blocks. A missing toggle now fails the test instead of silently skipping the entire light-theme scan.
 
-- [ ] **Step 2: Remove the ordinary-dialog fallback**
+- [x] **Step 2: Remove the ordinary-dialog fallback**
 
 Replace the `overwriteDialog` locator with:
 
@@ -1661,7 +1661,7 @@ Replace the `overwriteDialog` locator with:
 
 Also remove the `if (await saveDialog.isHidden().catch(() => false))` retry block above it; if the first Save does not surface the conflict, that is a defect the test should report.
 
-- [ ] **Step 3: Add an error-banner scan**
+- [x] **Step 3: Add an error-banner scan**
 
 Append a new test to the describe block:
 
@@ -1682,7 +1682,7 @@ Append a new test to the describe block:
   });
 ```
 
-- [ ] **Step 4: Run the accessibility suite**
+- [x] **Step 4: Run the accessibility suite**
 
 ```bash
 bun run build
@@ -1692,7 +1692,7 @@ bunx playwright test e2e/accessibility.spec.ts --project=chromium-phone
 
 Expected: PASS in both projects. Colour-contrast violations are reported at `serious` impact, so the Task 4 tokens are what make the error-banner scan pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add web/e2e/accessibility.spec.ts
@@ -1711,7 +1711,7 @@ git commit -m "test(web): scan unreached states and require the light theme pass
 - Viewport is never overridden inside a project; project selection is by `testInfo.project.name`.
 - No test body is wrapped in a visibility conditional that allows it to pass having done nothing.
 
-- [ ] **Step 1: Replace viewport overrides with project skipping**
+- [x] **Step 1: Replace viewport overrides with project skipping**
 
 In `web/e2e/responsive-workflows.spec.ts`, delete `test.use({ viewport: { width: 1280, height: 720 } })` from the desktop describe and `test.use({ viewport: { width: 390, height: 844 } })` from the phone describe. Add to each describe instead:
 
@@ -1731,7 +1731,7 @@ and, for the phone describe:
 
 This matches the pattern `web/e2e/visual.spec.ts:13-15` already uses.
 
-- [ ] **Step 2: Replace the heading-only smoke test**
+- [x] **Step 2: Replace the heading-only smoke test**
 
 Replace the `"concepts, datasets, and sampling editing pages load and function"` test with one that asserts an outcome:
 
@@ -1752,7 +1752,7 @@ Replace the `"concepts, datasets, and sampling editing pages load and function"`
     });
 ```
 
-- [ ] **Step 3: Give the mobile sampling test real assertions**
+- [x] **Step 3: Give the mobile sampling test real assertions**
 
 In `web/e2e/mobile.spec.ts`, replace the entire `"sampling prompt edit workflow on mobile"` test — currently wrapped in nested `if (await …isVisible())` guards with no assertions — with:
 
@@ -1779,7 +1779,7 @@ In `web/e2e/mobile.spec.ts`, replace the entire `"sampling prompt edit workflow 
   });
 ```
 
-- [ ] **Step 4: Make the mobile concept test assert persistence**
+- [x] **Step 4: Make the mobile concept test assert persistence**
 
 Replace the `if (await saveBtn.isVisible()) { … } else { Escape }` block in `"concept editing and saving flow on mobile"` with:
 
@@ -1791,7 +1791,7 @@ Replace the `if (await saveBtn.isVisible()) { … } else { Escape }` block in `"
     await expect(page.getByText("Mobile Test Concept")).toBeVisible();
 ```
 
-- [ ] **Step 5: Run both specs in both projects**
+- [x] **Step 5: Run both specs in both projects**
 
 ```bash
 bun run build
@@ -1801,7 +1801,7 @@ bunx playwright test e2e/responsive-workflows.spec.ts e2e/mobile.spec.ts --proje
 
 Expected: PASS. Desktop-only tests skip in the phone project and vice versa, rather than running with a forced viewport.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add web/e2e/responsive-workflows.spec.ts web/e2e/mobile.spec.ts
@@ -1818,20 +1818,20 @@ git commit -m "test(web): assert real outcomes and respect project boundaries"
 **Interfaces:**
 - Every regenerated image visibly contains the state its test name claims.
 
-- [ ] **Step 1: Regenerate the desktop baselines**
+- [x] **Step 1: Regenerate the desktop baselines**
 
 ```bash
 bun run build
 bunx playwright test e2e/visual.spec.ts --project=chromium-desktop --update-snapshots
 ```
 
-- [ ] **Step 2: Regenerate the phone baselines**
+- [x] **Step 2: Regenerate the phone baselines**
 
 ```bash
 bunx playwright test e2e/visual.spec.ts --project=chromium-phone --update-snapshots
 ```
 
-- [ ] **Step 3: Inspect every image**
+- [x] **Step 3: Inspect every image**
 
 Open each file under `web/e2e/visual.spec.ts-snapshots/` and confirm:
 
@@ -1848,7 +1848,7 @@ Open each file under `web/e2e/visual.spec.ts-snapshots/` and confirm:
 
 Confirm `dataset-collection-desktop-table` and `empty-state` are visibly different images. Do not accept any image that fails its row — that indicates the test seeds state incorrectly, which is a defect to fix rather than a baseline to record.
 
-- [ ] **Step 4: Verify the suite is stable**
+- [x] **Step 4: Verify the suite is stable**
 
 ```bash
 bunx playwright test e2e/visual.spec.ts --project=chromium-desktop
@@ -1857,7 +1857,7 @@ bunx playwright test e2e/visual.spec.ts --project=chromium-phone
 
 Expected: PASS with no diffs on a second run.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add web/e2e/visual.spec.ts-snapshots
@@ -1876,7 +1876,7 @@ git commit -m "test(web): regenerate visual baselines for stock shadcn styling"
 - Modify: `docs/superpowers/plans/2026-07-28-shadcn-migration-completion.md`
 - Create: `docs/superpowers/plans/2026-07-28-shadcn-migration-completion-notes.md`
 
-- [ ] **Step 1: Run clean verification from a fresh install**
+- [x] **Step 1: Run clean verification from a fresh install**
 
 ```bash
 bun install --frozen-lockfile
@@ -1889,7 +1889,7 @@ bunx playwright test --project=chromium-phone
 
 Expected: `check` reports 0 errors and 0 warnings; every unit test passes; both provisioned browser projects pass. `firefox-smoke` and `webkit-phone` cannot run on this workstation — record that they are deferred to CI rather than reporting them as passing.
 
-- [ ] **Step 2: Verify every grep gate**
+- [x] **Step 2: Verify every grep gate**
 
 ```bash
 rg ":global\(" src/lib/components src/routes --glob '*.svelte' | grep -v ConsoleView
@@ -1901,7 +1901,7 @@ rg "#[0-9a-fA-F]{6}" src --glob '*.svelte' | grep -v ConsoleView
 
 Expected: all five return nothing.
 
-- [ ] **Step 3: Write the coverage notes**
+- [x] **Step 3: Write the coverage notes**
 
 Create `docs/superpowers/plans/2026-07-28-shadcn-migration-completion-notes.md` mapping each reviewed finding to the test that now covers it:
 
@@ -1928,17 +1928,17 @@ Create `docs/superpowers/plans/2026-07-28-shadcn-migration-completion-notes.md` 
 | Untruthful snapshots | e2e/visual.spec.ts + Task 18 inspection |
 ```
 
-- [ ] **Step 4: Reconcile plan checkboxes**
+- [x] **Step 4: Reconcile plan checkboxes**
 
-Tick the completed `- [ ]` boxes in all three plan documents to reflect actual state. All boxes in the two prior plans are currently unticked despite the work having landed, which is what allowed the incomplete tasks to read as done.
+Tick the completed `- [x]` boxes in all three plan documents to reflect actual state. All boxes in the two prior plans are currently unticked despite the work having landed, which is what allowed the incomplete tasks to read as done.
 
-- [ ] **Step 5: Commit the documentation**
+- [x] **Step 5: Commit the documentation**
 
 ```bash
 git add docs/superpowers/plans
 git commit -m "docs(plan): record migration completion coverage"
 ```
 
-- [ ] **Step 6: Route any remaining defect back to its owning task**
+- [x] **Step 6: Route any remaining defect back to its owning task**
 
 If verification surfaces a defect, reopen the task that owns that contract, add a failing regression there, make the smallest fix, rerun that task's verification, and use that task's commit message. If verification is clean, create no further commit.
