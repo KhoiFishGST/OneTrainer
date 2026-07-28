@@ -15,6 +15,7 @@
   import type { ConfigWorkspace } from '../../config/workspace.svelte';
   import { trainingStore } from '../../events/training-store';
   import { api } from '../../api/client';
+  import ThemeToggle from './ThemeToggle.svelte';
 
   let {
     workspace: workspaceProp = null,
@@ -260,6 +261,7 @@
   </div>
 
   <div class="header-right">
+    <ThemeToggle />
     {#if workspace}
       {#if workspace.state === 'saved'}
         <span
@@ -340,11 +342,10 @@
   <label class="modal-field">
     <span>Configuration Name</span>
     <TextInput
-      ariaLabel="Preset Name"
-      value={presetName}
+      aria-label="Preset Name"
+      bind:value={presetName}
       placeholder="my_config"
-      onInput={(value) => (presetName = value)}
-      onKeyDown={(event) => {
+      onkeydown={(event) => {
         if (event.key === 'Enter') {
           event.preventDefault();
           handleSavePreset();
@@ -378,14 +379,16 @@
 
 <style>
   .header {
-    height: 56px;
+    min-height: 56px;
+    height: auto;
     background-color: var(--panel);
     border-bottom: 1px solid var(--line);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 16px;
-    gap: 16px;
+    padding: 8px 16px;
+    gap: 12px;
+    flex-wrap: wrap;
   }
 
   .header-left {

@@ -18,6 +18,8 @@
   import ConsoleDrawer from './shell/ConsoleDrawer.svelte';
   import ErrorBanner from './shell/ErrorBanner.svelte';
   import DirectoryPicker from './directory/DirectoryPicker.svelte';
+  import Toaster from '$lib/components/ui/sonner/sonner.svelte';
+  import { toast } from 'svelte-sonner';
   import { consoleStore } from '$lib/events/console-store.svelte';
   import { EventClient } from '$lib/events/client';
   import { api } from '$lib/api/client';
@@ -37,8 +39,6 @@
   let isMobile = $state(false);
   let drawerOpen = $state(false);
   let eventClient = $state<EventClient | null>(null);
-  let galleryWarningMessage = $state<string | null>(null);
-  let galleryWarningTimeout: any = null;
 
   const currentModelType = $derived(
     workspace?.draft?.model_type ?? $configQuery.data?.config?.model_type
@@ -121,11 +121,7 @@
         }
       },
       onGalleryWarning: (event) => {
-        galleryWarningMessage = event.message;
-        if (galleryWarningTimeout) clearTimeout(galleryWarningTimeout);
-        galleryWarningTimeout = setTimeout(() => {
-          galleryWarningMessage = null;
-        }, 4000);
+        toast.warning(event.message);
       },
     });
     eventClient.start();
@@ -186,11 +182,7 @@
     {#if isApiError}
       <ErrorBanner message={errorMessage} />
     {/if}
-    {#if galleryWarningMessage}
-      <div class="warning-banner" role="status">
-        {galleryWarningMessage}
-      </div>
-    {/if}
+    <Toaster />
 
     <div class="shell-body">
       <Rail
@@ -240,14 +232,6 @@
     color: var(--text);
   }
 
-  .warning-banner {
-    padding: 8px 16px;
-    background-color: rgba(234, 179, 8, 0.15);
-    border-bottom: 1px solid rgba(234, 179, 8, 0.3);
-    color: #facc15;
-    font-size: 0.875rem;
-    text-align: center;
-  }
 
   .shell-body {
     flex: 1;

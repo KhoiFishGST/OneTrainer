@@ -5,9 +5,19 @@ import { readable } from 'svelte/store';
 import { QueryClient } from '@tanstack/svelte-query';
 import LayoutContentTestWrapper from './LayoutContentTestWrapper.svelte';
 import { EventClient } from '$lib/events/client';
+import { toast } from 'svelte-sonner';
 
 vi.mock('$app/stores', () => ({
   page: readable({ url: new URL('http://localhost/live') }),
+}));
+
+vi.mock('svelte-sonner', () => ({
+  toast: {
+    warning: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+  },
+  Toaster: vi.fn(),
 }));
 
 vi.mock('$lib/api/client', async (importOriginal) => {
@@ -42,13 +52,14 @@ describe('LayoutContent', () => {
     return { eventClient: activeEventClient!, queryClient };
   }
 
-  it('invalidates persisted gallery queries and renders a gallery warning', async () => {
+  it('invalidates persisted gallery queries and triggers a Sonner warning toast', async () => {
     const { eventClient, queryClient } = renderLayoutContent();
     eventClient.emit({ type: 'training_sample', run_key: 'run_a', batch_id: 1 });
     expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['gallery', 'current'] });
     expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['gallery', 'runs'] });
     expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['gallery', 'runs', 'run_a'] });
+
     eventClient.emit({ type: 'gallery_warning', message: 'thumbnail failed', run_key: 'run_a' });
-    expect(await screen.findByRole('status')).toHaveTextContent('thumbnail failed');
+    expect(toast.warning).toHaveBeenCalledWith('thumbnail failed');
   });
 });

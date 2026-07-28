@@ -3,6 +3,8 @@
 	import { cn, type WithElementRef } from "$lib/utils.js";
 
 	type Props = WithElementRef<HTMLInputAttributes> & {
+		type?: HTMLInputTypeAttribute;
+		files?: FileList;
 		ariaLabel?: string;
 		ariaDescribedBy?: string;
 		onInput?: (value: string) => void;
@@ -39,7 +41,7 @@
 
 	function handleChange(event: Event & { currentTarget: HTMLInputElement }) {
 		if (type === "file") {
-			files = event.currentTarget.files;
+			files = event.currentTarget.files ?? undefined;
 		} else {
 			value = event.currentTarget.value;
 		}
@@ -66,6 +68,8 @@
 			className
 		)}
 		type="file"
+		bind:files
+		bind:value
 		oninput={handleInput}
 		onchange={handleChange}
 		onkeydown={handleKeyDown}

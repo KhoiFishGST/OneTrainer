@@ -1,28 +1,11 @@
-class IsMobile {
-  #current = $state(false);
-  #initialized = false;
+import { MediaQuery } from "svelte/reactivity";
 
-  #init() {
-    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function' && !this.#initialized) {
-      const mql = window.matchMedia('(max-width: 767px)');
-      this.#current = mql.matches;
-      const onChange = (e: MediaQueryListEvent) => {
-        this.#current = e.matches;
-      };
-      mql.addEventListener?.('change', onChange);
-      mql.addListener?.(onChange);
-      this.#initialized = true;
-    }
-  }
+const DEFAULT_MOBILE_BREAKPOINT = 768;
 
-  constructor() {
-    this.#init();
-  }
-
-  get current() {
-    this.#init();
-    return this.#current;
-  }
+export class IsMobile extends MediaQuery {
+	constructor(breakpoint: number = DEFAULT_MOBILE_BREAKPOINT) {
+		super(`max-width: ${breakpoint - 1}px`);
+	}
 }
 
 export const isMobile = new IsMobile();
