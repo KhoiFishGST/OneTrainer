@@ -9,6 +9,7 @@
   let {
     value = $bindable(),
     options = [],
+    placeholder,
     ariaLabel,
     ariaDescribedBy,
     class: className,
@@ -19,6 +20,7 @@
   }: {
     value?: T;
     options: Array<Option<T> | T>;
+    placeholder?: string;
     ariaLabel?: string;
     ariaDescribedBy?: string;
     class?: string;
@@ -28,45 +30,58 @@
     [key: string]: unknown;
   } = $props();
 
-  const normalizedOptions = $derived(
-    options.map((opt, index) => {
+  const parsedOptions = $derived(
+    options.map((opt) => {
       if (typeof opt === 'object' && opt !== null && 'value' in opt && 'label' in opt) {
-        return { value: opt.value, label: opt.label, id: String(opt.value), indexStr: String(index) };
+        return { value: (opt as Option<T>).value, label: String((opt as Option<T>).label) };
       }
-      return { value: opt as T, label: String(opt), id: String(opt), indexStr: String(index) };
+      return { value: opt as T, label: String(opt) };
     })
   );
 
-  const selectedOptionId = $derived.by(() => {
-    const found = normalizedOptions.find(
-      (opt) => opt.value === value || String(opt.value) === String(value)
+  const selectedIndex = $derived.by(() => {
+    if (value === undefined || value === null) return -1;
+    return parsedOptions.findIndex(
+      (opt) => String(opt.value) === String(value)
     );
-    return found ? found.id : (normalizedOptions[0]?.id ?? '');
   });
+
+  const selectedItem = $derived(
+    selectedIndex !== -1 ? options[selectedIndex] : null
+  );
+
+  const selectedSelectValue = $derived(
+    selectedIndex !== -1 ? String(selectedIndex) : (placeholder !== undefined ? '' : (parsedOptions.length > 0 ? '0' : ''))
+  );
 
   function handleChange(event: Event) {
     const target = (event.target || event.currentTarget) as HTMLSelectElement | null;
     const selectedVal = target?.value;
-    let selectedOption = normalizedOptions.find(
-      (opt) => opt.id === selectedVal || opt.indexStr === selectedVal
-    );
-    if (!selectedOption) {
+
+    if (selectedVal !== undefined && selectedVal !== null && selectedVal !== '') {
       const idx = Number(selectedVal);
-      if (!Number.isNaN(idx)) {
-        selectedOption = normalizedOptions[idx];
+      if (!Number.isNaN(idx) && idx >= 0 && idx < options.length) {
+        const selectedOpt = options[idx];
+        let newValue: T;
+        if (
+          typeof selectedOpt === 'object' &&
+          selectedOpt !== null &&
+          'value' in selectedOpt
+        ) {
+          newValue = (selectedOpt as Option<T>).value;
+        } else {
+          newValue = selectedOpt as T;
+        }
+        value = newValue;
+        onChange?.(newValue);
       }
     }
-
-    if (selectedOption !== undefined) {
-      value = selectedOption.value;
-      onChange?.(selectedOption.value);
-    }
-    onchange?.(event as any);
+    onchange?.(event as Event & { currentTarget: HTMLSelectElement });
   }
 </script>
 
 <NativeSelect
-  value={selectedOptionId}
+  value={selectedSelectValue}
   aria-describedby={ariaDescribedBy ?? (restProps as Record<string, unknown>)['aria-describedby'] as string | undefined}
   aria-label={ariaLabel ?? (restProps as Record<string, unknown>)['aria-label'] as string | undefined}
   class={className}
@@ -74,8 +89,13 @@
   onchange={handleChange}
   {...restProps}
 >
-  {#each normalizedOptions as opt (opt.id)}
-    <NativeSelectOption value={opt.id}>
+  {#if placeholder}
+    <NativeSelectOption value="" disabled selected={selectedItem === null}>
+      {placeholder}
+    </NativeSelectOption>
+  {/if}
+  {#each parsedOptions as opt, index (index)}
+    <NativeSelectOption value={String(index)}>
       {opt.label}
     </NativeSelectOption>
   {/each}
