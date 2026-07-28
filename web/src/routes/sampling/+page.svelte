@@ -24,6 +24,7 @@
   import { Button } from '$lib/components/ui/button';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
   import { toast as sonnerToast } from 'svelte-sonner';
+  import { isMobile } from '$lib/hooks/is-mobile.svelte';
 
   const ctx = getRouteContext();
   const sampleMutation = createRequestSampleMutation();
@@ -58,10 +59,30 @@
   let isDeletingSample = $state(false);
   let deleteSampleError = $state<string | null>(null);
 
-  let toast = $state<{ message: string; type: 'success' | 'error' } | null>(null);
+  type SampleDraft = {
+    width?: string;
+    height?: string;
+    seed?: string;
+  };
+
+  let drafts = $state<Record<string, SampleDraft>>({});
+  let mobile = $derived(isMobile.current);
+
+  function getSampleIdentity(sample: any, index: number): string {
+    return sample?.webui_id ?? `sample_${index}`;
+  }
+
+  function handleDraftChange(index: number, field: keyof SampleDraft, val: string) {
+    const sample = samples[index];
+    const identity = getSampleIdentity(sample, index);
+    drafts[identity] = {
+      ...drafts[identity],
+      [field]: val,
+    };
+  }
 
   function triggerToast(message: string, type: 'success' | 'error' = 'success') {
-    toast = { message, type };
+    type === 'success' ? sonnerToast.success(message) : sonnerToast.error(message);
   }
 
   onMount(async () => {
@@ -152,6 +173,11 @@
     const updated = samples.map((s: any, i: number) => (i === index ? updatedSample : s));
     try {
       await $updateSamplesMutation.mutateAsync({ samples: updated, file: currentConfigFile });
+      const sample = samples[index];
+      const identity = getSampleIdentity(sample, index);
+      if (drafts[identity]) {
+        delete drafts[identity];
+      }
     } catch (err: any) {
       triggerToast(err?.message || 'Failed to update sample prompt', 'error');
     }
@@ -284,27 +310,29 @@
       </Alert>
     {/if}
 
-    <div class="desktop-view">
+    {#if !mobile}
       <SamplePromptTable
         {samples}
+        {drafts}
         onUpdate={handleUpdateSample}
+        onDraftChange={handleDraftChange}
         onEditModal={handleEditSample}
         onClone={handleCloneSample}
         onDelete={promptDeleteSample}
         onAdd={handleAddSample}
       />
-    </div>
-
-    <div class="mobile-view">
+    {:else}
       <SamplePromptCards
         {samples}
+        {drafts}
         onUpdate={handleUpdateSample}
+        onDraftChange={handleDraftChange}
         onEditModal={handleEditSample}
         onClone={handleCloneSample}
         onDelete={promptDeleteSample}
         onAdd={handleAddSample}
       />
-    </div>
+    {/if}
   </div>
 {/if}
 
@@ -403,10 +431,6 @@
 
   .route-page :global(.sampling-header) {
     margin-bottom: 1.5rem;
-  }
-
-  .route-page :global(.sampling-toast) {
-    margin-bottom: 1rem;
   }
 
   .route-page :global(.sampling-queued-alert) {
@@ -539,21 +563,5 @@
     font-size: 0.8125rem;
     color: #f87171;
   }
-
-  .desktop-view {
-    display: block;
-  }
-
-  .mobile-view {
-    display: none;
-  }
-
-  @media (max-width: 767px) {
-    .desktop-view {
-      display: none;
-    }
-    .mobile-view {
-      display: block;
-    }
-  }
 </style>
+

@@ -1,14 +1,28 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { readable, writable } from 'svelte/store';
-import SamplingPage from './+page.svelte';
-import {
-  createSamplesQuery,
-  createUpdateSamplesMutation,
-  createRequestSampleMutation,
-  createSampleFilesQuery,
-  createCreateSampleFileMutation,
-} from '$lib/api/queries';
+import { toast as sonnerToast } from 'svelte-sonner';
+
+import { mockIsMobile } from '$lib/hooks/mock-is-mobile.svelte';
+
+vi.mock('$lib/hooks/is-mobile.svelte', () => ({
+  get isMobile() {
+    return mockIsMobile;
+  },
+}));
+
+function setMobileBreakpoint(mobile: boolean) {
+  act(() => {
+    mockIsMobile.current = mobile;
+  });
+}
+
+vi.mock('svelte-sonner', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
 
 vi.mock('$lib/config/context', () => ({
   getRouteContext: () => ({
@@ -31,6 +45,15 @@ vi.mock('$lib/api/queries', () => ({
   createSampleFilesQuery: vi.fn(),
   createCreateSampleFileMutation: vi.fn(),
 }));
+
+import SamplingPage from './+page.svelte';
+import {
+  createSamplesQuery,
+  createUpdateSamplesMutation,
+  createRequestSampleMutation,
+  createSampleFilesQuery,
+  createCreateSampleFileMutation,
+} from '$lib/api/queries';
 
 describe('SamplingPage', () => {
   const mockSamples = [
@@ -62,6 +85,7 @@ describe('SamplingPage', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
+    setMobileBreakpoint(false);
     vi.mocked(createRequestSampleMutation).mockReturnValue(
       readable({
         mutateAsync: vi.fn(),
@@ -100,7 +124,7 @@ describe('SamplingPage', () => {
 
     render(SamplingPage);
     expect(screen.getByRole('button', { name: /Add Config/i })).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /Add Sample Prompt/i })[0]).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Add Sample Prompt/i })).toBeInTheDocument();
   });
 
   it('renders title, Sample Now button, compact options panel, and Sample Prompts header', () => {
@@ -149,8 +173,8 @@ describe('SamplingPage', () => {
     render(SamplingPage);
 
     // Prompt input values in prompt table
-    expect(screen.getAllByDisplayValue('a cute shiba inu dog')[0]).toBeInTheDocument();
-    expect(screen.getAllByDisplayValue('a futuristic city at night')[0]).toBeInTheDocument();
+    expect(screen.getByDisplayValue('a cute shiba inu dog')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('a futuristic city at night')).toBeInTheDocument();
 
     // Clicking edit button on first prompt row opens modal
     const editBtn = screen.getAllByTitle('Edit sample prompt')[0];
@@ -370,4 +394,148 @@ describe('SamplingPage', () => {
     expect(payload.samples).toHaveLength(1);
     expect(payload.samples[0].webui_id).toBe('id_beta');
   });
+
+  describe('Visible Feedback (Direct Sonner Toasts)', () => {
+    it('triggers sonnerToast.success on sample now success and sonnerToast.error on failure', async () => {
+      const sampleMutateAsync = vi.fn();
+      vi.mocked(createRequestSampleMutation).mockReturnValue(
+        readable({ mutateAsync: sampleMutateAsync, isPending: false }) as any
+      );
+      vi.mocked(createSamplesQuery).mockReturnValue(
+        readable({ data: [], isLoading: false, isError: false }) as any
+      );
+      vi.mocked(createUpdateSamplesMutation).mockReturnValue(
+        readable({ mutateAsync: vi.fn(), isPending: false }) as any
+      );
+
+      // Success path
+      sampleMutateAsync.mockResolvedValueOnce({});
+      render(SamplingPage);
+
+      const sampleNowBtn = screen.getByRole('button', { name: /sample now/i });
+      await fireEvent.click(sampleNowBtn);
+      expect(sonnerToast.success).toHaveBeenCalledWith('Sample generation requested successfully');
+
+      // Failure path
+      sampleMutateAsync.mockRejectedValueOnce(new Error('Sampling failed'));
+      await fireEvent.click(sampleNowBtn);
+      expect(sonnerToast.error).toHaveBeenCalledWith('Sampling failed');
+    });
+
+    it('triggers sonnerToast.success on config file creation success', async () => {
+      const createConfigMutateAsync = vi.fn().mockResolvedValue({ filename: 'portrait_samples.json' });
+      vi.mocked(createCreateSampleFileMutation).mockReturnValue(
+        readable({ mutateAsync: createConfigMutateAsync, isPending: false }) as any
+      );
+      vi.mocked(createSamplesQuery).mockReturnValue(
+        readable({ data: [], isLoading: false, isError: false }) as any
+      );
+      vi.mocked(createUpdateSamplesMutation).mockReturnValue(
+        readable({ mutateAsync: vi.fn(), isPending: false }) as any
+      );
+
+      render(SamplingPage);
+      await fireEvent.click(screen.getByRole('button', { name: /Add Config/i }));
+
+      const input = screen.getByPlaceholderText(/portrait_samples.json/i);
+      await fireEvent.input(input, { target: { value: 'portrait_samples.json' } });
+      await fireEvent.click(screen.getByRole('button', { name: /^Create File$/i }));
+
+      expect(sonnerToast.success).toHaveBeenCalledWith('Sample config file created: portrait_samples.json');
+    });
+
+    it('triggers sonnerToast.success on prompt clone and sonnerToast.error on clone failure', async () => {
+      const mutateAsync = vi.fn();
+      vi.mocked(createSamplesQuery).mockReturnValue(
+        readable({ data: [mockSamples[0]], isLoading: false, isError: false }) as any
+      );
+      vi.mocked(createUpdateSamplesMutation).mockReturnValue(
+        readable({ mutateAsync, isPending: false }) as any
+      );
+
+      render(SamplingPage);
+
+      // Clone success
+      mutateAsync.mockResolvedValueOnce({});
+      const cloneBtn = screen.getByTitle('Clone sample prompt');
+      await fireEvent.click(cloneBtn);
+      expect(sonnerToast.success).toHaveBeenCalledWith('Sample prompt cloned');
+
+      // Clone error
+      mutateAsync.mockRejectedValueOnce(new Error('Clone error'));
+      await fireEvent.click(cloneBtn);
+      expect(sonnerToast.error).toHaveBeenCalledWith('Clone error');
+    });
+
+    it('triggers sonnerToast.success on sample prompt delete success', async () => {
+      const mutateAsync = vi.fn().mockResolvedValue({});
+      vi.mocked(createSamplesQuery).mockReturnValue(
+        readable({ data: [mockSamples[0]], isLoading: false, isError: false }) as any
+      );
+      vi.mocked(createUpdateSamplesMutation).mockReturnValue(
+        readable({ mutateAsync, isPending: false }) as any
+      );
+
+      render(SamplingPage);
+
+      const deleteBtn = screen.getByTitle('Delete sample prompt');
+      await fireEvent.click(deleteBtn);
+
+      const confirmDeleteBtn = screen.getByRole('button', { name: /^delete$/i });
+      await fireEvent.click(confirmDeleteBtn);
+
+      expect(sonnerToast.success).toHaveBeenCalledWith('Sample prompt deleted');
+    });
+  });
+
+  describe('Single Responsive Mount and Draft Retention', () => {
+    it('mounts only one presentation based on isMobile media query and avoids duplicate input IDs', () => {
+      vi.mocked(createSamplesQuery).mockReturnValue(
+        readable({ data: [mockSamples[0]], isLoading: false, isError: false }) as any
+      );
+      vi.mocked(createUpdateSamplesMutation).mockReturnValue(
+        readable({ mutateAsync: vi.fn(), isPending: false }) as any
+      );
+
+      const { container } = render(SamplingPage);
+
+      // Desktop: table width input exists, card width input does not exist
+      expect(container.querySelector('#sample-width-0')).toBeInTheDocument();
+      expect(container.querySelector('#card-width-0')).not.toBeInTheDocument();
+
+      // Only 1 width input in DOM
+      const widthInputs = container.querySelectorAll('input[id*="width-0"]');
+      expect(widthInputs).toHaveLength(1);
+    });
+
+    it('retains row draft state when switching breakpoint from desktop to mobile', async () => {
+      vi.mocked(createSamplesQuery).mockReturnValue(
+        readable({ data: [mockSamples[0]], isLoading: false, isError: false }) as any
+      );
+      vi.mocked(createUpdateSamplesMutation).mockReturnValue(
+        readable({ mutateAsync: vi.fn(), isPending: false }) as any
+      );
+
+      const { container, rerender } = render(SamplingPage);
+
+      const desktopWidthInput = container.querySelector('#sample-width-0') as HTMLInputElement;
+      expect(desktopWidthInput).toBeInTheDocument();
+
+      // Enter an incomplete draft in desktop width input
+      await fireEvent.input(desktopWidthInput, { target: { value: '640' } });
+
+      // Switch breakpoint to mobile
+      setMobileBreakpoint(true);
+      await rerender({});
+
+      // Mobile: card width input mounted, desktop width input unmounted
+      const mobileWidthInput = container.querySelector('#card-width-0') as HTMLInputElement;
+      expect(mobileWidthInput).toBeInTheDocument();
+      expect(container.querySelector('#sample-width-0')).not.toBeInTheDocument();
+
+      // Draft value '640' is retained in newly mounted mobile card view
+      expect(mobileWidthInput.value).toBe('640');
+    });
+  });
 });
+

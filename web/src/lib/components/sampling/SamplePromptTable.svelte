@@ -8,19 +8,30 @@
 
   let {
     samples = [],
+    drafts = {},
     onUpdate = () => {},
+    onDraftChange = () => {},
     onEditModal = () => {},
     onClone = () => {},
     onDelete = () => {},
     onAdd = () => {},
   }: {
     samples?: any[];
+    drafts?: Record<string, { width?: string; height?: string; seed?: string }>;
     onUpdate?: (index: number, updatedSample: any) => void;
+    onDraftChange?: (index: number, field: 'width' | 'height' | 'seed', value: string) => void;
     onEditModal?: (index: number) => void;
     onClone?: (index: number) => void;
     onDelete?: (index: number) => void;
     onAdd?: () => void;
   } = $props();
+
+  function getDraftOrValue(sample: any, index: number, field: 'width' | 'height' | 'seed', fallback: number): number | string {
+    const key = sample?.webui_id ?? `sample_${index}`;
+    const draftVal = drafts[key]?.[field];
+    if (draftVal !== undefined) return draftVal;
+    return sample?.[field] ?? fallback;
+  }
 
   function integerOr(value: string | number | null, fallback: number): number {
     const parsed = Number.parseInt(String(value ?? ''), 10);
@@ -78,7 +89,8 @@
             <NumberInput
               id={`sample-width-${index}`}
               class="num-input"
-              value={sample.width ?? 512}
+              value={getDraftOrValue(sample, index, 'width', 512)}
+              onInput={(val) => onDraftChange(index, 'width', val)}
               onChange={(val) => handleWidthChange(index, val)}
             />
           </Table.Cell>
@@ -86,7 +98,8 @@
             <NumberInput
               id={`sample-height-${index}`}
               class="num-input"
-              value={sample.height ?? 512}
+              value={getDraftOrValue(sample, index, 'height', 512)}
+              onInput={(val) => onDraftChange(index, 'height', val)}
               onChange={(val) => handleHeightChange(index, val)}
             />
           </Table.Cell>
@@ -95,7 +108,8 @@
               <NumberInput
                 id={`sample-seed-${index}`}
                 class="num-input seed-input"
-                value={sample.seed ?? -1}
+                value={getDraftOrValue(sample, index, 'seed', -1)}
+                onInput={(val) => onDraftChange(index, 'seed', val)}
                 onChange={(val) => handleSeedChange(index, val)}
               />
               <Button
