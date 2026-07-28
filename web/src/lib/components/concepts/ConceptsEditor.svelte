@@ -259,6 +259,7 @@
       {#each filteredConcepts as { concept, originalIndex } (originalIndex)}
         <Card.Root
           class="concept-card {concept.enabled === false ? 'disabled' : ''}"
+          onclick={() => handleEditConcept(originalIndex)}
         >
           <!-- Preview Thumbnail -->
           <div class="thumbnail-wrapper">
