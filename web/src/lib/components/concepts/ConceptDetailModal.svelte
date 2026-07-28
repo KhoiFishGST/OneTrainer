@@ -6,6 +6,7 @@
   import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
   import DirectoryPicker from '$lib/components/directory/DirectoryPicker.svelte';
   import DatasetPickerModal from '$lib/components/datasets/DatasetPickerModal.svelte';
+  import { normalizeConceptDraft } from './concept-draft';
 
   import ConceptGeneralFields from './ConceptGeneralFields.svelte';
   import ConceptImageFields from './ConceptImageFields.svelte';
@@ -97,7 +98,7 @@
   function handleSave() {
     if (!draft) return;
     try {
-      onSave(draft);
+      onSave(normalizeConceptDraft(draft));
     } catch {
       // Retain draft and keep drawer/dialog open if onSave throws
     }

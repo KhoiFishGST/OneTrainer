@@ -67,7 +67,7 @@ describe("OptimizerParamsModal", () => {
 
     const input = screen.getByLabelText("Newton-Schulz Iterations");
     await fireEvent.input(input, { target: { value: "10" } });
-    expect(input).toHaveValue(10);
+    expect(input).toHaveValue("10");
 
     await rerender({
       open: true,
@@ -75,7 +75,7 @@ describe("OptimizerParamsModal", () => {
       onSave: vi.fn(),
     });
 
-    expect(input).toHaveValue(10);
+    expect(input).toHaveValue("10");
   });
 
   it("retains open state and draft when async apply fails", async () => {
@@ -98,7 +98,7 @@ describe("OptimizerParamsModal", () => {
 
     expect(onSave).toHaveBeenCalled();
     expect(screen.getByText("Configure Optimizer Parameters")).toBeInTheDocument();
-    expect(betaInput).toHaveValue(0.8);
+    expect(betaInput).toHaveValue("0.8");
   });
 
   it("disables submit button and shows pending state during async save operation", async () => {

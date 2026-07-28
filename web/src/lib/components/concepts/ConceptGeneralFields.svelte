@@ -177,7 +177,7 @@
         value={draft.image_variations ?? 1}
         {ariaDescribedBy}
         onInput={(val) => {
-          draft.image_variations = parseInt(val, 10) || 1;
+          (draft.image_variations as any) = val;
         }}
       />
     {/snippet}
@@ -194,7 +194,7 @@
         value={draft.text_variations ?? 1}
         {ariaDescribedBy}
         onInput={(val) => {
-          draft.text_variations = parseInt(val, 10) || 1;
+          (draft.text_variations as any) = val;
         }}
       />
     {/snippet}
@@ -232,7 +232,7 @@
         value={draft.balancing ?? 1.0}
         {ariaDescribedBy}
         onInput={(val) => {
-          draft.balancing = parseFloat(val) || 0;
+          (draft.balancing as any) = val;
         }}
       />
     {/snippet}
@@ -249,7 +249,7 @@
         value={draft.loss_weight ?? 1.0}
         {ariaDescribedBy}
         onInput={(val) => {
-          draft.loss_weight = parseFloat(val) || 0;
+          (draft.loss_weight as any) = val;
         }}
       />
     {/snippet}

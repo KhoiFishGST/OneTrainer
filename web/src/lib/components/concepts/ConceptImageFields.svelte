@@ -79,7 +79,7 @@
         <NumberInput
           id="aug-matrix-rot-angle"
           value={image.random_rotate_max_angle}
-          onInput={(v) => (image.random_rotate_max_angle = parseFloat(v) || 0)}
+          onInput={(v) => ((image.random_rotate_max_angle as any) = v)}
           placeholder="Angle (°)"
         />
       </div>
@@ -106,7 +106,7 @@
         <NumberInput
           id="aug-matrix-bright-strength"
           value={image.random_brightness_max_strength}
-          onInput={(v) => (image.random_brightness_max_strength = parseFloat(v) || 0)}
+          onInput={(v) => ((image.random_brightness_max_strength as any) = v)}
           placeholder="Max Strength"
         />
       </div>
@@ -133,7 +133,7 @@
         <NumberInput
           id="aug-matrix-contrast-strength"
           value={image.random_contrast_max_strength}
-          onInput={(v) => (image.random_contrast_max_strength = parseFloat(v) || 0)}
+          onInput={(v) => ((image.random_contrast_max_strength as any) = v)}
           placeholder="Max Strength"
         />
       </div>
@@ -160,7 +160,7 @@
         <NumberInput
           id="aug-matrix-sat-strength"
           value={image.random_saturation_max_strength}
-          onInput={(v) => (image.random_saturation_max_strength = parseFloat(v) || 0)}
+          onInput={(v) => ((image.random_saturation_max_strength as any) = v)}
           placeholder="Max Strength"
         />
       </div>
@@ -187,7 +187,7 @@
         <NumberInput
           id="aug-matrix-hue-strength"
           value={image.random_hue_max_strength}
-          onInput={(v) => (image.random_hue_max_strength = parseFloat(v) || 0)}
+          onInput={(v) => ((image.random_hue_max_strength as any) = v)}
           placeholder="Max Strength"
         />
       </div>

@@ -71,4 +71,24 @@ describe('SamplePromptCards Component', () => {
     await fireEvent.click(addBtn);
     expect(onAdd).toHaveBeenCalledTimes(1);
   });
+
+  it('normalizes fractional and invalid sampling inputs on change commit', async () => {
+    const onUpdate = vi.fn();
+    render(SamplePromptCards, { samples: sampleData, onUpdate });
+
+    const widthInput = document.getElementById('card-width-0') as HTMLInputElement;
+    const seedInput = document.getElementById('card-seed-0') as HTMLInputElement;
+
+    await fireEvent.change(widthInput, { target: { value: '640.5' } });
+    expect(onUpdate).toHaveBeenCalledWith(0, expect.objectContaining({ width: 640 }));
+
+    await fireEvent.change(seedInput, { target: { value: '123.9' } });
+    expect(onUpdate).toHaveBeenCalledWith(0, expect.objectContaining({ seed: 123 }));
+
+    await fireEvent.change(widthInput, { target: { value: 'invalid' } });
+    expect(onUpdate).toHaveBeenCalledWith(0, expect.objectContaining({ width: 512 }));
+
+    await fireEvent.change(seedInput, { target: { value: 'invalid' } });
+    expect(onUpdate).toHaveBeenCalledWith(0, expect.objectContaining({ seed: -1 }));
+  });
 });

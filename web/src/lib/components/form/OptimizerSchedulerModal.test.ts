@@ -55,8 +55,8 @@ describe('OptimizerSchedulerModal', () => {
     });
 
     expect(screen.getByText('AdamW Parameters')).toBeInTheDocument();
-    expect(screen.getByLabelText('Learning Rate')).toHaveValue(0.0001);
-    expect(screen.getByLabelText('Beta 1')).toHaveValue(0.9);
+    expect(screen.getByLabelText('Learning Rate')).toHaveValue('0.0001');
+    expect(screen.getByLabelText('Beta 1')).toHaveValue('0.9');
     expect(screen.getByLabelText('Use Decoupled Weight Decay')).toBeChecked();
     expect(screen.getByLabelText('Optimizer Type')).toHaveValue('0');
   });
@@ -121,7 +121,7 @@ describe('OptimizerSchedulerModal', () => {
 
     const lrInput = screen.getByLabelText('Learning Rate');
     await fireEvent.input(lrInput, { target: { value: '0.005' } });
-    expect(lrInput).toHaveValue(0.005);
+    expect(lrInput).toHaveValue('0.005');
 
     await rerender({
       open: true,
@@ -131,7 +131,7 @@ describe('OptimizerSchedulerModal', () => {
       onSave: vi.fn(),
     });
 
-    expect(lrInput).toHaveValue(0.005);
+    expect(lrInput).toHaveValue('0.005');
   });
 
   it("retains open state and draft when async apply fails", async () => {
@@ -155,7 +155,7 @@ describe('OptimizerSchedulerModal', () => {
 
     expect(onSave).toHaveBeenCalled();
     expect(screen.getByText('AdamW Parameters')).toBeInTheDocument();
-    expect(lrInput).toHaveValue(0.005);
+    expect(lrInput).toHaveValue('0.005');
   });
 
   it("disables submit button and shows pending state during async save operation", async () => {

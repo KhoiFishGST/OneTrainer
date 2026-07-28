@@ -6,7 +6,8 @@
 
   let {
     value = $bindable<number | string | null | undefined>(),
-    type = 'number',
+    type = 'text',
+    inputmode = 'decimal',
     min,
     max,
     step,
@@ -21,7 +22,8 @@
   }: Omit<InputProps, 'value' | 'type' | 'onChange' | 'onInput'> & {
     value?: number | string | null | undefined;
     type?: InputProps['type'];
-    onChange?: (value: number | null) => void;
+    inputmode?: string;
+    onChange?: (value: string) => void;
     onInput?: (value: string) => void;
   } = $props();
 
@@ -34,25 +36,18 @@
     }
   });
 
-  function parseNumericValue(rawStr: string): number | null {
-    const raw = rawStr.trim();
-    if (raw === '') return null;
-    const parsed = Number(raw);
-    return Number.isNaN(parsed) ? null : parsed;
-  }
-
   function handleInput(event: Event & { currentTarget: HTMLInputElement }) {
     isEditing = true;
     draftValue = event.currentTarget.value;
+    value = draftValue;
     onInput?.(draftValue);
     (oninput as any)?.(event);
   }
 
   function handleChange(event: Event & { currentTarget: HTMLInputElement }) {
     draftValue = event.currentTarget.value;
-    const parsed = parseNumericValue(draftValue);
-    value = parsed !== null ? parsed : (draftValue.trim() === '' ? null : (draftValue as any));
-    onChange?.(parsed);
+    value = draftValue;
+    onChange?.(draftValue);
     isEditing = false;
     (onchange as any)?.(event);
   }
@@ -60,6 +55,7 @@
 
 <Input
   {type}
+  inputmode={inputmode}
   value={draftValue}
   {min}
   {max}

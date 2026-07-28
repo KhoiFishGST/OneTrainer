@@ -22,24 +22,26 @@
     onAdd?: () => void;
   } = $props();
 
+  function integerOr(value: string | number | null, fallback: number): number {
+    const parsed = Number.parseInt(String(value ?? ''), 10);
+    return Number.isNaN(parsed) ? fallback : parsed;
+  }
+
   function handleToggleRandomSeed(index: number, currentSeed: number) {
     const nextSeed = currentSeed === -1 ? 42 : -1;
     onUpdate(index, { ...samples[index], seed: nextSeed });
   }
 
   function handleWidthChange(index: number, value: number | null | string) {
-    const num = typeof value === 'number' ? value : parseInt(String(value ?? ''), 10);
-    onUpdate(index, { ...samples[index], width: isNaN(num) ? 512 : num });
+    onUpdate(index, { ...samples[index], width: integerOr(value, 512) });
   }
 
   function handleHeightChange(index: number, value: number | null | string) {
-    const num = typeof value === 'number' ? value : parseInt(String(value ?? ''), 10);
-    onUpdate(index, { ...samples[index], height: isNaN(num) ? 512 : num });
+    onUpdate(index, { ...samples[index], height: integerOr(value, 512) });
   }
 
   function handleSeedChange(index: number, value: number | null | string) {
-    const num = typeof value === 'number' ? value : parseInt(String(value ?? ''), 10);
-    onUpdate(index, { ...samples[index], seed: isNaN(num) ? -1 : num });
+    onUpdate(index, { ...samples[index], seed: integerOr(value, -1) });
   }
 
   function handlePromptChange(index: number, value: string) {

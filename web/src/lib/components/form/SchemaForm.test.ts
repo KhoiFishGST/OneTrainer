@@ -174,7 +174,7 @@ it("renders toggle, text, number, select, and time controls correctly", async ()
 
   // Time control value & unit
   const timeInput = screen.getByLabelText("Save Frequency");
-  expect(timeInput).toHaveValue(5);
+  expect(timeInput).toHaveValue("5");
   await fireEvent.input(timeInput, { target: { value: "10" } });
   expect(setRaw).toHaveBeenCalledWith("save_every_value", "10");
 
@@ -350,7 +350,7 @@ it("supports multi-key time values and units", async () => {
   });
 
   const timeInput = screen.getByLabelText("Save Frequency");
-  expect(timeInput).toHaveValue(10);
+  expect(timeInput).toHaveValue("10");
   await fireEvent.input(timeInput, { target: { value: "20" } });
   expect(setRaw).toHaveBeenCalledWith("save_every_value", "20");
 

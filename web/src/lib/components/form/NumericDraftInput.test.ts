@@ -15,7 +15,8 @@ describe('NumericDraftInput', () => {
     });
     const input = document.querySelector('#weight') as HTMLInputElement;
     expect(input).toBeInTheDocument();
-    expect(input).toHaveAttribute('type', 'number');
+    expect(input).toHaveAttribute('type', 'text');
+    expect(input).toHaveAttribute('inputmode', 'decimal');
     expect(input).toHaveAttribute('min', '0');
     expect(input).toHaveAttribute('max', '10');
     expect(input).toHaveAttribute('step', '0.1');
@@ -25,11 +26,12 @@ describe('NumericDraftInput', () => {
 
   it('emits incomplete numeric draft values directly without parsing', async () => {
     const onInput = vi.fn();
+    const onChange = vi.fn();
     render(NumericDraftInput, {
       id: 'draft',
-      type: 'text',
       value: '',
-      onInput
+      onInput,
+      onChange
     });
     const input = document.querySelector('#draft') as HTMLInputElement;
 
@@ -37,6 +39,8 @@ describe('NumericDraftInput', () => {
     for (const draft of testDrafts) {
       await fireEvent.input(input, { target: { value: draft } });
       expect(onInput).toHaveBeenLastCalledWith(draft);
+      await fireEvent.change(input, { target: { value: draft } });
+      expect(onChange).toHaveBeenLastCalledWith(draft);
     }
   });
 });

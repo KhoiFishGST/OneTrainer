@@ -74,7 +74,7 @@
         value={text.keep_tags_count ?? 1}
         {ariaDescribedBy}
         onInput={(val) => {
-          text.keep_tags_count = parseInt(val, 10) || 0;
+          (text.keep_tags_count as any) = val;
         }}
       />
     {/snippet}
@@ -113,7 +113,7 @@
         value={text.tag_dropout_probability ?? 0.0}
         {ariaDescribedBy}
         onInput={(val) => {
-          text.tag_dropout_probability = parseFloat(val) || 0;
+          (text.tag_dropout_probability as any) = val;
         }}
       />
     {/snippet}
@@ -241,7 +241,7 @@
         value={text.caps_randomize_probability ?? 0.0}
         {ariaDescribedBy}
         onInput={(val) => {
-          text.caps_randomize_probability = parseFloat(val) || 0;
+          (text.caps_randomize_probability as any) = val;
         }}
       />
     {/snippet}
