@@ -68,7 +68,7 @@
   <FormPageSkeleton />
 {:else}
   <div class="route-page">
-    <PageHeader title={tab.label || 'Training'} class="training-header" />
+    <PageHeader title={tab.label || 'Training'} class="mb-4" />
 
     <!-- Connected Text-Only Training Sub-Nav Tabs -->
     <div class="training-tab-container">
@@ -112,10 +112,6 @@
 <style>
   .route-page {
     padding: 1.5rem;
-  }
-
-  .route-page :global(.training-header) {
-    margin-bottom: 1rem;
   }
 
   .training-tab-container {

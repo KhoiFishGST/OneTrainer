@@ -70,11 +70,11 @@
   <FormPageSkeleton />
 {:else}
   <div class="route-page">
-    <PageHeader title={tab.label || 'Backup'} class="backup-header">
+    <PageHeader title={tab.label || 'Backup'} class="mb-6">
       {#snippet actions()}
         <Button
           variant="secondary"
-          class="btn btn-secondary"
+          class="gap-2"
           disabled={status.state !== 'RUNNING' && status.state !== 'TRAINING' || $backupMutation.isPending}
           onclick={handleBackup}
           title={status.state === 'RUNNING' || status.state === 'TRAINING' ? 'Trigger immediate model backup checkpoint' : 'Active training run required to backup now'}
@@ -85,7 +85,7 @@
 
         <Button
           variant="secondary"
-          class="btn btn-secondary"
+          class="gap-2"
           disabled={status.state !== 'RUNNING' && status.state !== 'TRAINING' || $saveMutation.isPending}
           onclick={handleSave}
           title={status.state === 'RUNNING' || status.state === 'TRAINING' ? 'Trigger immediate model save' : 'Active training run required to save model now'}
@@ -115,48 +115,5 @@
 <style>
   .route-page {
     padding: 1.5rem;
-  }
-
-  /* Bits UI boundary: style backup header component */
-  .route-page :global(.backup-header) {
-    margin-bottom: 1.5rem;
-  }
-
-  /* Bits UI boundary: style backup toast component */
-  .route-page :global(.backup-toast) {
-    margin-bottom: 1rem;
-  }
-
-  /* Bits UI boundary: style Button component */
-  .route-page :global(.btn) {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-height: 0;
-    padding: 0.4rem 0.85rem;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    border: 1px solid transparent;
-    transition: background-color 0.15s ease, opacity 0.15s ease;
-  }
-
-  /* Bits UI boundary: style disabled Button component */
-  .route-page :global(.btn:disabled) {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  /* Bits UI boundary: style secondary Button component */
-  .route-page :global(.btn-secondary) {
-    background-color: var(--card, #14191f);
-    color: var(--foreground, #e6ebef);
-    border-color: var(--border, #2d3741);
-  }
-
-  /* Bits UI boundary: style secondary Button component hover state */
-  .route-page :global(.btn-secondary:hover:not(:disabled)) {
-    background-color: var(--border, #2d3741);
   }
 </style>

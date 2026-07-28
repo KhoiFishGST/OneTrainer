@@ -13,6 +13,7 @@
   let { data } = $props<{ data: { id: string } }>();
   let datasetName = $derived(data.id);
 
+  // svelte-ignore state_referenced_locally
   const filesQuery = createDatasetFilesQuery(data.id);
   const uploadMutation = createUploadDatasetFilesMutation();
   const captionMutation = createUpdateCaptionMutation();

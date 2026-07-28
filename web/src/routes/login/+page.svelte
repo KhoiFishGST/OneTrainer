@@ -57,18 +57,18 @@
     </div>
 
     {#if isHttpInsecure}
-      <Alert class="security-warning">
-        <ShieldAlert size={20} class="warning-icon" />
+      <Alert class="mb-6 flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/15 p-3 text-sm text-destructive">
+        <ShieldAlert size={20} class="mt-0.5 shrink-0" />
         <div>
           <strong>Insecure HTTP Connection</strong>
-          <p>Your password will be transmitted in plain text. Consider enabling HTTPS.</p>
+          <p class="mt-1 text-xs text-destructive/80">Your password will be transmitted in plain text. Consider enabling HTTPS.</p>
         </div>
       </Alert>
     {/if}
 
     <form onsubmit={handleLogin} class="login-form">
       {#if errorMsg}
-        <Alert variant="destructive" class="error-banner">
+        <Alert variant="destructive" class="mb-5 block rounded-md p-2.5 text-sm">
           {errorMsg}
         </Alert>
       {/if}
@@ -87,7 +87,7 @@
         />
       </div>
 
-      <Button type="submit" variant="default" size="lg" class="submit-btn" disabled={loading || !password}>
+      <Button type="submit" variant="default" size="lg" class="w-full justify-center gap-2" disabled={loading || !password}>
         {#if loading}
           <span>Signing in...</span>
         {:else}
@@ -155,44 +155,6 @@
     margin: 0;
   }
 
-  /* Bits UI boundary: style security warning Alert component */
-  .login-container :global(.security-warning) {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    background-color: rgba(220, 38, 38, 0.15);
-    border: 1px solid #ef4444;
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    margin-bottom: 1.5rem;
-    color: #f87171;
-    font-size: 0.875rem;
-  }
-
-  .warning-icon {
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-
-  /* Bits UI boundary: style security warning text */
-  .login-container :global(.security-warning p) {
-    margin: 0.25rem 0 0;
-    color: #fca5a5;
-    font-size: 0.75rem;
-  }
-
-  /* Bits UI boundary: style error banner Alert component */
-  .login-form :global(.error-banner) {
-    display: block;
-    background-color: rgba(239, 68, 68, 0.15);
-    border: 1px solid #ef4444;
-    color: #f87171;
-    padding: 0.625rem 0.875rem;
-    border-radius: 6px;
-    margin-bottom: 1.25rem;
-    font-size: 0.875rem;
-  }
-
   .form-group {
     display: flex;
     flex-direction: column;
@@ -204,54 +166,5 @@
     font-size: 0.875rem;
     font-weight: 500;
     color: var(--foreground, #f3f4f6);
-  }
-
-  /* Bits UI boundary: style TextInput child component */
-  .form-group :global(.text-input) {
-    min-width: 0;
-    width: 100%;
-    padding: 0.75rem 1rem;
-    background-color: var(--muted, #111827);
-    border: 1px solid var(--border, #374151);
-    border-radius: 8px;
-    color: var(--foreground, #f3f4f6);
-    font-size: 0.95rem;
-  }
-
-  /* Bits UI boundary: style TextInput focus state */
-  .form-group :global(.text-input:focus) {
-    outline: none;
-    border-color: var(--primary, #6366f1);
-    box-shadow: none;
-  }
-
-  /* Bits UI boundary: style submit Button component */
-  .login-form :global(.submit-btn) {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    min-height: 0;
-    padding: 0.75rem 1rem;
-    background-color: var(--primary, #6366f1);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: filter 0.2s ease;
-  }
-
-  /* Bits UI boundary: style submit Button component hover state */
-  .login-form :global(.submit-btn:hover:not(:disabled)) {
-    filter: brightness(1.1);
-  }
-
-  /* Bits UI boundary: style submit Button component disabled state */
-  .login-form :global(.submit-btn:disabled) {
-    opacity: 0.6;
-    cursor: not-allowed;
   }
 </style>

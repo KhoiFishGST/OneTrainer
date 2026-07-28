@@ -57,10 +57,10 @@
   <FormPageSkeleton />
 {:else}
   <div class="route-page">
-    <PageHeader title={tab.label || 'LoRA'} class="lora-header" />
+    <PageHeader title={tab.label || 'LoRA'} class="mb-4" />
 
     {#if !isLoraActive}
-      <Alert class="lora-warning-alert">
+      <Alert class="mb-5 max-w-[740px]">
         <span class="warning-icon" aria-hidden="true">⚠️</span>
         <div class="warning-text">
           LoRA / PEFT options are disabled because the current training method is <strong>{trainingMethod}</strong>.
@@ -104,17 +104,6 @@
     padding: 1.5rem;
   }
 
-  /* Bits UI boundary: style lora header component */
-  .route-page :global(.lora-header) {
-    margin-bottom: 1rem;
-  }
-
-  /* Bits UI boundary: style warning Alert component */
-  .route-page :global(.lora-warning-alert) {
-    margin-bottom: 1.25rem;
-    max-width: 740px;
-  }
-
   .warning-icon {
     font-size: 1.125rem;
     line-height: 1;
@@ -139,11 +128,8 @@
     filter: grayscale(0.5);
   }
 
-  .lora-fieldset:disabled :global(button),
-  .lora-fieldset:disabled :global(input),
-  .lora-fieldset:disabled :global(select) {
+  .lora-fieldset:disabled * {
     pointer-events: none;
-    cursor: not-allowed;
   }
 
   .lora-container {

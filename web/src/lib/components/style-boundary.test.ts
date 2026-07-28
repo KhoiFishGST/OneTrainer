@@ -51,4 +51,11 @@ describe('style boundary', () => {
     );
     expect(violations).toEqual([]);
   });
+
+  it('has no :global() outside the ConsoleView ANSI boundary', () => {
+    const violations = Object.entries(svelteSources).flatMap(([file, source]) =>
+      findGlobalSelectors(source, file)
+    );
+    expect(violations).toEqual([]);
+  });
 });

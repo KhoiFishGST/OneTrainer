@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import { Info } from 'lucide-svelte';
+  import { Button } from '$lib/components/ui/button';
 
   let {
     id,
@@ -85,9 +86,10 @@
       <div class="field-label-side">
         <label for={inputId} class="field-label">{label}</label>
         {#if tooltip}
-          <button
+          <Button
             type="button"
-            class="text-muted-foreground hover:text-foreground inline-flex items-center"
+            variant="ghost"
+            class="text-muted-foreground hover:text-foreground inline-flex items-center h-auto w-auto p-0 border-0 bg-transparent min-h-0 min-w-0"
             aria-label={`More information about ${label}`}
             aria-describedby={helpId}
             onmouseenter={handleMouseEnter}
@@ -97,7 +99,7 @@
             onkeydown={handleKeyDown}
           >
             <Info size={14} aria-hidden="true" />
-          </button>
+          </Button>
           {#if showTooltip}
             <div class="field-tooltip" role="tooltip">{tooltip}</div>
           {/if}

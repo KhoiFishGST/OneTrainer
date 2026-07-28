@@ -31,7 +31,7 @@
   <FormPageSkeleton />
 {:else}
   <div class="route-page">
-    <PageHeader title={tab.label || 'General'} class="general-header" />
+    <PageHeader title={tab.label || 'General'} class="mb-4" />
 
     <!-- Connected Text-Only General Sub-Nav Tabs -->
     <div class="general-tab-container">
@@ -61,10 +61,6 @@
 <style>
   .route-page {
     padding: 1.5rem;
-  }
-
-  .route-page :global(.general-header) {
-    margin-bottom: 1rem;
   }
 
   .general-tab-container {

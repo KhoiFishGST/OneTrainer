@@ -94,7 +94,7 @@
 </script>
 
 <div class="live-dashboard" data-testid="live-dashboard">
-  <PageHeader title="Live Training Dashboard" class="live-header">
+  <PageHeader title="Live Training Dashboard" class="mb-2">
     {#snippet status()}
       <span class="status-badge status-{($trainingStore.status?.state || 'IDLE').toLowerCase()}">
         {$trainingStore.status?.state || 'IDLE'}
@@ -103,7 +103,7 @@
   </PageHeader>
 
   {#if status.error_message}
-    <Alert variant="destructive" class="live-error-alert">
+    <Alert variant="destructive" class="mb-2">
       <strong>Training Error:</strong> {status.error_message}
     </Alert>
   {/if}
@@ -191,21 +191,6 @@
     gap: 1.5rem;
     max-width: 1600px;
     width: 100%;
-  }
-
-  /* Bits UI boundary: style header component */
-  .live-dashboard :global(.live-header) {
-    margin-bottom: 0.5rem;
-  }
-
-  /* Bits UI boundary: style toast component */
-  .live-dashboard :global(.live-toast) {
-    margin-bottom: 0.5rem;
-  }
-
-  /* Bits UI boundary: style error Alert component */
-  .live-dashboard :global(.live-error-alert) {
-    margin-bottom: 0.5rem;
   }
 
   .status-badge {

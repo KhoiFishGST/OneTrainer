@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Plus } from 'lucide-svelte';
   import { Button } from '$lib/components/ui/button';
+  import { cn } from '$lib/utils';
 
   let {
     label = 'Add Item',
@@ -17,58 +18,15 @@
 
 <Button
   variant="ghost"
-  class={`add-card add-item-card ${className}`}
+  class={cn(
+    "min-h-[220px] h-full flex flex-col items-center justify-center gap-3 border-2 border-dashed border-border rounded-lg bg-transparent p-6 transition-all hover:border-primary hover:bg-primary/5 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed",
+    className
+  )}
   {disabled}
   onclick={onClick}
 >
-  <div class="add-icon-wrapper">
+  <div class="text-primary">
     <Plus size={32} />
   </div>
-  <span class="add-label">{label}</span>
+  <span class="text-sm font-semibold text-foreground">{label}</span>
 </Button>
-
-<style>
-  /* Bits UI boundary: style child Button component */
-  :global(.add-item-card),
-  :global(.add-card) {
-    min-height: 220px;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    border: 2px dashed var(--border, #2d3741);
-    border-radius: 8px;
-    background: transparent;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    box-sizing: border-box;
-    padding: 1.5rem;
-  }
-
-  /* Bits UI boundary: style child Button hover state */
-  :global(.add-item-card:hover:not(:disabled)),
-  :global(.add-card:hover:not(:disabled)) {
-    border-color: var(--primary, #3b82f6);
-    background: rgba(59, 130, 246, 0.05);
-    transform: translateY(-2px);
-  }
-
-  /* Bits UI boundary: style child Button disabled state */
-  :global(.add-item-card:disabled),
-  :global(.add-card:disabled) {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .add-icon-wrapper {
-    color: var(--primary, #3b82f6);
-  }
-
-  .add-label {
-    font-size: 0.9375rem;
-    font-weight: 600;
-    color: var(--foreground, #f8fafc);
-  }
-</style>

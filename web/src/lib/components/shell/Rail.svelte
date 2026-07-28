@@ -16,7 +16,7 @@
   }>();
 
   let expanded = $state(false);
-  let parentSidebar: any = null;
+  let parentSidebar = $state<any>(null);
   try {
     parentSidebar = useSidebar();
   } catch {

@@ -21,7 +21,7 @@
 
   import * as AlertDialog from '../ui/alert-dialog/index.js';
 
-  let sidebar: any = null;
+  let sidebar = $state<any>(null);
   try {
     sidebar = useSidebar();
   } catch {

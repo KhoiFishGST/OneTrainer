@@ -121,11 +121,11 @@
 </script>
 
 <div class="secrets-page">
-  <PageHeader title="Secrets & Security Settings" class="secrets-header" />
+  <PageHeader title="Secrets & Security Settings" class="mb-6" />
 
   {#if isHttpInsecure}
-    <Alert variant="destructive" class="secrets-insecure-alert">
-      <ShieldAlert size={24} class="banner-icon" />
+    <Alert variant="destructive" class="mb-6 flex items-start gap-4">
+      <ShieldAlert size={24} class="mt-0.5 shrink-0 text-destructive" />
       <div class="banner-text">
         <strong>Insecure Connection (HTTP) Detected</strong>
         <p>
@@ -137,7 +137,7 @@
 
   {#if saveStatus}
     {#if saveStatus.type === 'error'}
-      <Alert variant="destructive" class="secrets-alert">
+      <Alert variant="destructive" class="mb-4 block p-3 text-sm font-medium">
         <span>{saveStatus.message}</span>
       </Alert>
     {:else}
@@ -157,7 +157,7 @@
       <!-- Hugging Face Token Card -->
       <div class="settings-card">
         <div class="card-header">
-          <Key size={20} class="card-icon" />
+          <Key size={20} class="text-primary" />
           <h2 class="card-title">Hugging Face Access Token</h2>
         </div>
         <p class="card-description">
@@ -175,11 +175,12 @@
               placeholder="hf_..."
               autocomplete="off"
               ariaLabel="API Token"
+              class="pr-10"
             />
             <Button
               variant="ghost"
               size="icon"
-              class="icon-btn"
+              class="absolute right-2 text-muted-foreground hover:text-foreground"
               onclick={() => (showHfToken = !showHfToken)}
               aria-label={showHfToken ? 'Hide token' : 'Show token'}
             >
@@ -196,7 +197,7 @@
         </div>
 
         <div class="card-actions">
-          <Button variant="default" class="btn primary" onclick={handleSaveHfToken}>
+          <Button variant="default" class="flex items-center gap-2 font-medium" onclick={handleSaveHfToken}>
             <Save size={16} /> Save Token
           </Button>
         </div>
@@ -206,9 +207,9 @@
       <div class="settings-card">
         <div class="card-header">
           {#if webuiPasswordSet}
-            <Lock size={20} class="card-icon" />
+            <Lock size={20} class="text-primary" />
           {:else}
-            <Unlock size={20} class="card-icon" />
+            <Unlock size={20} class="text-primary" />
           {/if}
           <h2 class="card-title">Web Portal Password Protection</h2>
         </div>
@@ -227,11 +228,12 @@
               placeholder={webuiPasswordSet ? 'Enter new password to change...' : 'Enter new password...'}
               autocomplete="off"
               ariaLabel="New Web Portal Password"
+              class="pr-10"
             />
             <Button
               variant="ghost"
               size="icon"
-              class="icon-btn"
+              class="absolute right-2 text-muted-foreground hover:text-foreground"
               onclick={() => (showWebuiPassword = !showWebuiPassword)}
               aria-label={showWebuiPassword ? 'Hide password' : 'Show password'}
             >
@@ -248,11 +250,11 @@
         </div>
 
         <div class="card-actions">
-          <Button variant="default" class="btn primary" onclick={handleSavePassword}>
+          <Button variant="default" class="flex items-center gap-2 font-medium" onclick={handleSavePassword}>
             <Save size={16} /> Update Password
           </Button>
           {#if webuiPasswordSet}
-            <Button variant="destructive" class="btn danger" onclick={() => { isConfirmClearOpen = true; clearPasswordError = null; }}>
+            <Button variant="destructive" class="flex items-center gap-2 font-medium" onclick={() => { isConfirmClearOpen = true; clearPasswordError = null; }}>
               Clear Password
             </Button>
           {/if}
@@ -293,58 +295,6 @@
     max-width: 900px;
   }
 
-  /* Bits UI boundary: style secrets header component */
-  .secrets-page :global(.secrets-header) {
-    margin-bottom: 1.5rem;
-  }
-
-  /* Bits UI boundary: style insecure Alert component */
-  .secrets-page :global(.secrets-insecure-alert) {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    background-color: rgba(220, 38, 38, 0.15);
-    border: 1px solid #ef4444;
-    border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 1.5rem;
-    color: #f87171;
-  }
-
-  /* Bits UI boundary: style toast component */
-  .secrets-page :global(.secrets-toast) {
-    padding: 0.75rem 1rem;
-    border-radius: 6px;
-    margin-bottom: 1rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-  }
-
-  .secrets-page :global(.secrets-toast.toast--success) {
-    background-color: rgba(16, 185, 129, 0.15);
-    border: 1px solid #10b981;
-    color: #34d399;
-  }
-
-  /* Bits UI boundary: style alert component */
-  .secrets-page :global(.secrets-alert) {
-    display: block;
-    padding: 0.75rem 1rem;
-    border-radius: 6px;
-    margin-bottom: 1rem;
-    background-color: rgba(239, 68, 68, 0.15);
-    border: 1px solid #ef4444;
-    color: #f87171;
-    font-size: 0.875rem;
-    font-weight: 500;
-  }
-
-  .secrets-page :global(.secrets-insecure-alert) :global(.banner-icon) {
-    color: #ef4444;
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-
   .banner-text strong {
     display: block;
     font-size: 1rem;
@@ -376,11 +326,6 @@
     align-items: center;
     gap: 0.75rem;
     margin-bottom: 0.5rem;
-  }
-
-  /* Bits UI boundary: style card icon component */
-  .card-header :global(.card-icon) {
-    color: var(--primary, #3b82f6);
   }
 
   .card-title {
@@ -416,47 +361,6 @@
     align-items: center;
   }
 
-  /* Bits UI boundary: style TextInput child component */
-  .input-with-button :global(.text-input) {
-    min-width: 0;
-    width: 100%;
-    padding: 0.625rem 2.5rem 0.625rem 0.75rem;
-    background-color: var(--muted, #111827);
-    border: 1px solid var(--border, #374151);
-    border-radius: 6px;
-    color: var(--foreground, #f3f4f6);
-    font-size: 0.875rem;
-  }
-
-  /* Bits UI boundary: style TextInput focus state */
-  .input-with-button :global(.text-input:focus) {
-    outline: none;
-    border-color: var(--primary, #3b82f6);
-    box-shadow: none;
-  }
-
-  /* Bits UI boundary: style icon Button component */
-  .input-with-button :global(.icon-btn) {
-    position: absolute;
-    right: 0.5rem;
-    min-height: 0;
-    width: auto;
-    height: auto;
-    background: transparent;
-    border: none;
-    color: var(--muted-foreground, #9ca3af);
-    cursor: pointer;
-    padding: 0.25rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* Bits UI boundary: style icon Button component hover state */
-  .input-with-button :global(.icon-btn:hover) {
-    color: var(--foreground, #f3f4f6);
-  }
-
   .status-badge {
     font-size: 0.75rem;
     color: var(--muted-foreground, #9ca3af);
@@ -471,43 +375,6 @@
   .card-actions {
     display: flex;
     gap: 0.75rem;
-  }
-
-  /* Bits UI boundary: style action Button component */
-  .card-actions :global(.btn) {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-height: 0;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-  }
-
-  /* Bits UI boundary: style primary action Button component */
-  .card-actions :global(.btn.primary) {
-    background-color: var(--primary, #3b82f6);
-    color: white;
-  }
-
-  /* Bits UI boundary: style primary action Button hover state */
-  .card-actions :global(.btn.primary:hover) {
-    filter: brightness(1.1);
-  }
-
-  /* Bits UI boundary: style danger action Button component */
-  .card-actions :global(.btn.danger) {
-    background-color: rgba(239, 68, 68, 0.2);
-    border: 1px solid #ef4444;
-    color: #f87171;
-  }
-
-  /* Bits UI boundary: style danger action Button hover state */
-  .card-actions :global(.btn.danger:hover) {
-    background-color: rgba(239, 68, 68, 0.3);
   }
 
   .skeleton-container {

@@ -32,7 +32,7 @@
   <FormPageSkeleton />
 {:else}
   <div class="route-page">
-    <PageHeader title={tab.label || 'Model'} class="model-header" />
+    <PageHeader title={tab.label || 'Model'} class="mb-4" />
 
     <!-- Connected Text-Only Model Sub-Nav Tabs -->
     <div class="model-tab-container">
@@ -62,10 +62,6 @@
 <style>
   .route-page {
     padding: 1.5rem;
-  }
-
-  .route-page :global(.model-header) {
-    margin-bottom: 1rem;
   }
 
   .model-tab-container {
