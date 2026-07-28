@@ -17,8 +17,8 @@ const PRESENCE_ATTRIBUTES = ['disabled', 'inset', 'selected', 'placeholder'];
 
 export function findBareDataVariants(source: string, filename: string): string[] {
   const violations: string[] = [];
-  // Matches `data-foo:` but not `data-[foo=bar]:`
-  const bare = /(?<![[\w-])data-([a-z][a-z0-9-]*):/g;
+  // Matches `data-foo:`, `peer-data-foo/bar:`, etc. but not `data-[foo=bar]:`
+  const bare = /(?:[a-z0-9-]*-\b)?data-([a-z][a-z0-9-]*)(?:\/[a-z0-9-]+)?:/g;
   let m: RegExpExecArray | null;
   while ((m = bare.exec(source)) !== null) {
     const attr = m[1];
