@@ -127,7 +127,7 @@
     eventClient.start();
 
     if (typeof window !== 'undefined') {
-      const mq = window.matchMedia('(max-width: 768px)');
+      const mq = window.matchMedia('(max-width: 767px)');
       isMobile = mq.matches;
       const handler = (e: MediaQueryListEvent) => {
         isMobile = e.matches;

@@ -1,18 +1,13 @@
 <script lang="ts">
-  import { mode, setMode } from 'mode-watcher';
+  import { theme } from '$lib/stores/theme.svelte';
   import { Sun, Moon } from 'lucide-svelte';
   import Button from '../ui/Button.svelte';
 
-  const currentMode = $derived(mode?.current ?? 'dark');
-  const isDark = $derived(currentMode === 'dark');
+  const isDark = $derived(theme.value === 'dark');
   const ariaLabel = $derived(isDark ? 'Switch to light theme' : 'Switch to dark theme');
 
   function handleToggle() {
-    if (isDark) {
-      setMode('light');
-    } else {
-      setMode('dark');
-    }
+    theme.toggle();
   }
 </script>
 

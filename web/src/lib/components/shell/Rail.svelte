@@ -19,6 +19,18 @@
     Key,
   } from 'lucide-svelte';
   import Button from '../ui/Button.svelte';
+  import {
+    SidebarProvider,
+    SidebarHeader,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarMenu,
+    SidebarMenuItem,
+    SidebarMenuButton,
+  } from '$lib/components/ui/sidebar';
+  import { cn } from '$lib/utils';
 
   let {
     currentPath = '/live',
@@ -91,98 +103,148 @@
           <X size={20} />
         </Button>
       </div>
-      <nav class="drawer-nav" aria-label="Mobile Navigation">
-        {#each navItems as item}
-          {#if item.disabled}
-            <a
-              href={item.path}
-              class="nav-item disabled"
-              aria-disabled="true"
-              title="Unavailable in Phase A"
-              onclick={(e) => e.preventDefault()}
-            >
-              <item.icon size={20} class="nav-icon" />
-              <span class="nav-label">{item.name}</span>
-            </a>
-          {:else}
-            <a
-              href={item.path}
-              class="nav-item"
-              class:active={currentPath === item.path}
-              onclick={() => (drawerOpen = false)}
-            >
-              <item.icon size={20} class="nav-icon" />
-              <span class="nav-label">{item.name}</span>
-            </a>
-          {/if}
-        {/each}
-        {#if onToggleConsole}
-          <Button
-            variant="ghost"
-            class={`nav-item console-nav-btn${isConsoleOpen ? ' active' : ''}`}
-            onclick={() => {
-              onToggleConsole();
-              drawerOpen = false;
-            }}
-          >
-            <Terminal size={20} class="nav-icon" />
-            <span class="nav-label">Console</span>
-          </Button>
-        {/if}
-      </nav>
+      <SidebarProvider open={true} class="h-full w-full flex-col">
+        <SidebarContent class="drawer-nav">
+          <SidebarGroup class="p-0">
+            <SidebarGroupContent>
+              <SidebarMenu class="gap-2" aria-label="Mobile Navigation">
+                {#each navItems as item}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton isActive={currentPath === item.path}>
+                      {#snippet child({ props })}
+                        {#if item.disabled}
+                          <a
+                            {...props}
+                            href={item.path}
+                            class={cn('nav-item disabled', props.class as string)}
+                            aria-disabled="true"
+                            title="Unavailable in Phase A"
+                            onclick={(e) => e.preventDefault()}
+                          >
+                            <item.icon size={20} class="nav-icon" />
+                            <span class="nav-label">{item.name}</span>
+                          </a>
+                        {:else}
+                          <a
+                            {...props}
+                            href={item.path}
+                            class={cn('nav-item', currentPath === item.path && 'active', props.class as string)}
+                            onclick={() => (drawerOpen = false)}
+                          >
+                            <item.icon size={20} class="nav-icon" />
+                            <span class="nav-label">{item.name}</span>
+                          </a>
+                        {/if}
+                      {/snippet}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                {/each}
+                {#if onToggleConsole}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton isActive={isConsoleOpen}>
+                      {#snippet child({ props })}
+                        <Button
+                          {...props}
+                          variant="ghost"
+                          class={cn('nav-item console-nav-btn', isConsoleOpen && 'active', props.class as string)}
+                          onclick={() => {
+                            onToggleConsole();
+                            drawerOpen = false;
+                          }}
+                        >
+                          <Terminal size={20} class="nav-icon" />
+                          <span class="nav-label">Console</span>
+                        </Button>
+                      {/snippet}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                {/if}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+      </SidebarProvider>
     </div>
   {/if}
 {:else}
-  <aside class="rail" class:expanded style="--rail-width: {expanded ? 'var(--rail-expanded)' : 'var(--rail-compact)'}">
-    <div class="rail-header">
-      <Button
-        variant="ghost"
-        class="rail-toggle-btn"
-        aria-label="Expand navigation"
-        onclick={toggleExpand}
-      >
-        <PanelLeft size={20} />
-      </Button>
-    </div>
-    <nav class="rail-nav" aria-label="Sidebar">
-      {#each navItems as item}
-        {#if item.disabled}
-          <a
-            href={item.path}
-            class="nav-item disabled"
-            aria-disabled="true"
-            title="Unavailable in Phase A"
-            onclick={(e) => e.preventDefault()}
-          >
-            <item.icon size={20} class="nav-icon" />
-            <span class="nav-label">{item.name}</span>
-          </a>
-        {:else}
-          <a
-            href={item.path}
-            class="nav-item"
-            class:active={currentPath === item.path}
-          >
-            <item.icon size={20} class="nav-icon" />
-            <span class="nav-label">{item.name}</span>
-          </a>
-        {/if}
-      {/each}
-    </nav>
-    {#if onToggleConsole}
-      <div class="rail-footer">
+  <SidebarProvider open={expanded} class="h-full w-auto flex-none">
+    <aside
+      class="rail"
+      class:expanded
+      style="--rail-width: {expanded ? 'var(--rail-expanded)' : 'var(--rail-compact)'}"
+    >
+      <SidebarHeader class="rail-header">
         <Button
           variant="ghost"
-          class={`nav-item console-nav-btn${isConsoleOpen ? ' active' : ''}`}
-          onclick={onToggleConsole}
-          title="Toggle Console Drawer"
+          class="rail-toggle-btn"
+          aria-label="Expand navigation"
+          onclick={toggleExpand}
         >
-          <Terminal size={20} class="nav-icon" />
-          <span class="nav-label">Console</span>
+          <PanelLeft size={20} />
         </Button>
-      </div>
-    {/if}
-  </aside>
+      </SidebarHeader>
+      <SidebarContent class="rail-nav">
+        <SidebarGroup class="p-0">
+          <SidebarGroupContent>
+            <SidebarMenu class="gap-1" aria-label="Sidebar">
+              {#each navItems as item}
+                <SidebarMenuItem>
+                  <SidebarMenuButton isActive={currentPath === item.path}>
+                    {#snippet child({ props })}
+                      {#if item.disabled}
+                        <a
+                          {...props}
+                          href={item.path}
+                          class={cn('nav-item disabled', props.class as string)}
+                          aria-disabled="true"
+                          title="Unavailable in Phase A"
+                          onclick={(e) => e.preventDefault()}
+                        >
+                          <item.icon size={20} class="nav-icon" />
+                          <span class="nav-label">{item.name}</span>
+                        </a>
+                      {:else}
+                        <a
+                          {...props}
+                          href={item.path}
+                          class={cn('nav-item', currentPath === item.path && 'active', props.class as string)}
+                        >
+                          <item.icon size={20} class="nav-icon" />
+                          <span class="nav-label">{item.name}</span>
+                        </a>
+                      {/if}
+                    {/snippet}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              {/each}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      {#if onToggleConsole}
+        <SidebarFooter class="rail-footer">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton isActive={isConsoleOpen}>
+                {#snippet child({ props })}
+                  <Button
+                    {...props}
+                    variant="ghost"
+                    class={cn('nav-item console-nav-btn', isConsoleOpen && 'active', props.class as string)}
+                    onclick={onToggleConsole}
+                    title="Toggle Console Drawer"
+                  >
+                    <Terminal size={20} class="nav-icon" />
+                    <span class="nav-label">Console</span>
+                  </Button>
+                {/snippet}
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+      {/if}
+    </aside>
+  </SidebarProvider>
 {/if}
 
 <style>
