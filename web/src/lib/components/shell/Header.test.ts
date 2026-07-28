@@ -225,4 +225,14 @@ describe('Header component', () => {
       expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     });
   });
+
+  it('renders status pills with semantic token classes rather than hex colours', async () => {
+    trainingStore.setStatus({ state: 'COMPLETED' } as any);
+    render(HeaderTestWrapper, { workspace: null, metaData: {}, presetsData: [] });
+
+    const pill = await screen.findByTestId('training-status-pill');
+    expect(pill.className).toMatch(/success/);
+    expect(pill.getAttribute('style') ?? '').not.toMatch(/#[0-9a-fA-F]{6}/);
+  });
 });
+

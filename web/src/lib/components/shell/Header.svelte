@@ -6,6 +6,7 @@
   import { Alert } from '$lib/components/ui/alert';
   import { Button } from '$lib/components/ui/button';
   import { useSidebar } from '$lib/components/ui/sidebar';
+  import { cn } from '$lib/utils';
   import {
     createMetaQuery,
     createPresetsQuery,
@@ -220,6 +221,16 @@
   }
 
   const trainingState = $derived($trainingStore.status?.state ?? 'IDLE');
+
+  const statusClasses: Record<string, string> = {
+    IDLE: 'bg-muted text-muted-foreground border-border',
+    STARTING: 'bg-info-surface text-info border-info/30 animate-pulse',
+    TRAINING: 'bg-info-surface text-info border-info/30 animate-pulse',
+    PAUSED: 'bg-warning-surface text-warning border-warning/30',
+    STOPPING: 'bg-destructive-surface text-destructive border-destructive/40',
+    FAILED: 'bg-destructive-surface text-destructive border-destructive/40',
+    COMPLETED: 'bg-success-surface text-success border-success/30',
+  };
 </script>
 
 <header class="header">
@@ -227,7 +238,8 @@
     {#if sidebar}
       <Button
         variant="ghost"
-        class="mobile-toggle-btn md:hidden"
+        size="icon"
+        class="md:hidden"
         aria-label="Open navigation"
         onclick={() => sidebar.setOpenMobile(true)}
       >
@@ -281,7 +293,8 @@
 
       <Button
         variant="secondary"
-        class="header-btn"
+        size="sm"
+        class="self-end gap-1.5"
         onclick={handleLoadConfig}
       >
         <FolderOpen size={15} />
@@ -290,7 +303,8 @@
 
       <Button
         variant="secondary"
-        class="header-btn"
+        size="sm"
+        class="self-end gap-1.5"
         onclick={openSavePresetModal}
       >
         <Save size={15} />
@@ -304,27 +318,27 @@
     {#if workspace}
       {#if workspace.state === 'saved'}
         <span
-          class="saved-icon-badge"
+          class="saved-icon-badge text-success"
           title="All changes saved to training_presets/#.json"
           data-testid="saved-icon-badge"
         >
           <Save size={16} />
         </span>
       {:else if workspace.state === 'failed'}
-        <span class="state-badge state-failed">Save Failed</span>
+        <span class="state-badge bg-destructive-surface text-destructive">Save Failed</span>
         <Button
           variant="secondary"
-          class="btn btn-secondary"
+          size="sm"
           onclick={() => workspace.retry()}
         >
           <RotateCcw size={14} />
           <span>Retry</span>
         </Button>
       {:else if workspace.state === 'conflict'}
-        <span class="state-badge state-conflict">Conflict</span>
+        <span class="state-badge bg-destructive-surface text-destructive">Conflict</span>
         <Button
           variant="secondary"
-          class="btn btn-secondary"
+          size="sm"
           onclick={() => workspace.reloadServer(true)}
         >
           <RefreshCw size={14} />
@@ -332,7 +346,7 @@
         </Button>
         <Button
           variant="destructive"
-          class="btn btn-danger"
+          size="sm"
           onclick={() => workspace.overwriteServer()}
         >
           <AlertTriangle size={14} />
@@ -343,7 +357,7 @@
 
     <span
       data-testid="training-status-pill"
-      class="status-pill status-{trainingState.toLowerCase()}"
+      class={cn('status-pill', statusClasses[trainingState] ?? statusClasses.IDLE)}
       title={$trainingStore.status?.error_message ?? ''}
     >
       {trainingState}
@@ -353,7 +367,7 @@
 
 {#if saveError && !showSaveDialog && !showOverwriteDialog}
   <div class="header-alert-owner">
-    <Alert variant="destructive" class="save-error-toast">
+    <Alert variant="destructive">
       {saveError}
     </Alert>
   </div>
@@ -361,7 +375,7 @@
 
 {#if trainingState === 'FAILED' && $trainingStore.status?.error_message}
   <div class="header-alert-owner">
-    <Alert variant="destructive" class="save-error-toast">
+    <Alert variant="destructive">
       {$trainingStore.status.error_message}
     </Alert>
   </div>
@@ -373,7 +387,7 @@
   title="Save Configuration"
 >
   {#if saveError}
-    <p class="error-msg">{saveError}</p>
+    <p class="text-sm text-destructive">{saveError}</p>
   {/if}
   <label class="modal-field">
     <span>Configuration Name</span>
@@ -423,7 +437,6 @@
 
 <style>
   .header {
-    min-height: 56px;
     height: auto;
     background-color: var(--card);
     border-bottom: 1px solid var(--border);
@@ -439,25 +452,6 @@
     display: flex;
     align-items: center;
     gap: 16px;
-  }
-
-  /* Bits UI boundary: style mobile toggle Button component */
-  .header :global(.mobile-toggle-btn) {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 6px;
-    color: var(--muted-foreground);
-    background: transparent;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-
-  /* Bits UI boundary: style mobile toggle Button component hover state */
-  .header :global(.mobile-toggle-btn:hover) {
-    color: var(--foreground);
-    background-color: var(--muted);
   }
 
   .header-right {
@@ -522,111 +516,11 @@
     text-transform: uppercase;
   }
 
-  .state-saved {
-    background-color: rgba(101, 185, 141, 0.15);
-    color: #10b981;
-  }
-
-  .state-unsaved {
-    background-color: rgba(59, 130, 246, 0.15);
-    color: var(--primary);
-  }
-
-  .state-saving {
-    background-color: rgba(137, 149, 161, 0.15);
-    color: var(--muted-foreground);
-  }
-
-  .state-conflict,
-  .state-failed {
-    background-color: rgba(217, 120, 120, 0.15);
-    color: var(--destructive);
-  }
-
-  /* Bits UI boundary: style header Button component */
-  .header :global(.btn),
-  .modal-extra-actions :global(.btn) {
-    min-height: 0;
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-size: 0.875rem;
-    cursor: pointer;
-    border: 1px solid transparent;
-  }
-
-  .btn-primary {
-    background-color: var(--primary);
-    color: #fff;
-  }
-
-  /* Bits UI boundary: style secondary Button component */
-  .header :global(.btn-secondary) {
-    background-color: var(--muted);
-    color: var(--foreground);
-    border-color: var(--border);
-  }
-
-  /* Bits UI boundary: style danger Button component */
-  .header :global(.btn-danger),
-  .modal-extra-actions :global(.btn-danger) {
-    background-color: var(--destructive);
-    color: #fff;
-  }
-
-  /* Bits UI boundary: style selector header Button component */
-  .selectors :global(.header-btn) {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    height: 32px;
-    min-height: 0;
-    padding: 0 12px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    border-radius: 4px;
-    background-color: var(--muted, #14191f);
-    color: var(--foreground, #e6ebef);
-    border: 1px solid var(--border, #2d3741);
-    cursor: pointer;
-    white-space: nowrap;
-    align-self: flex-end;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
-  }
-
-  /* Bits UI boundary: style selector header Button component hover state */
-  .selectors :global(.header-btn:hover) {
-    background-color: var(--card, #1d242c);
-    border-color: var(--primary, #3b82f6);
-    color: var(--primary, #3b82f6);
-  }
-
-  .selectors :global(.header-btn:active) {
-    transform: translateY(1px);
-  }
-
   .modal-field {
     display: flex;
     flex-direction: column;
     gap: 4px;
     margin-bottom: 12px;
-  }
-
-  /* Bits UI boundary: style text input component */
-  .modal-field :global(.text-input) {
-    min-width: 0;
-    padding: 8px;
-    border-radius: 4px;
-    border: 1px solid var(--border);
-    background-color: var(--muted);
-    color: var(--foreground);
-  }
-
-  /* Bits UI boundary: style error toast component */
-  .error-msg,
-  .header-alert-owner :global(.save-error-toast) {
-    color: var(--destructive);
-    font-size: 0.875rem;
   }
 
   .header-alert-owner {
@@ -637,7 +531,6 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #10b981;
     padding: 4px;
     border-radius: 4px;
     opacity: 0.9;
@@ -660,54 +553,8 @@
     align-items: center;
     justify-content: center;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-
-  .status-idle {
-    background-color: var(--muted, rgba(255, 255, 255, 0.05));
-    color: var(--muted-foreground, #8d99a6);
-    border: 1px solid var(--border, #444);
-  }
-
-  .status-starting,
-  .status-training {
-    background-color: rgba(59, 130, 246, 0.15);
-    color: #3b82f6;
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    animation: statusPulse 2s ease-in-out infinite;
-  }
-
-  @keyframes statusPulse {
-    0%, 100% {
-      transform: scale(1);
-      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.2);
-    }
-    50% {
-      transform: scale(1.05);
-      box-shadow: 0 0 10px 2px rgba(59, 130, 246, 0.3);
-    }
-  }
-
-  .status-paused {
-    background-color: rgba(245, 158, 11, 0.15);
-    color: #f59e0b;
-    border: 1px solid rgba(245, 158, 11, 0.3);
-  }
-
-  .status-stopping {
-    background-color: rgba(239, 68, 68, 0.15);
-    color: #ef4444;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-  }
-
-  .status-completed {
-    background-color: rgba(16, 185, 129, 0.15);
-    color: #10b981;
-    border: 1px solid rgba(16, 185, 129, 0.3);
-  }
-
-  .status-failed {
-    background-color: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
-    border: 1px solid rgba(239, 68, 68, 0.4);
+    border-width: 1px;
+    border-style: solid;
   }
 </style>
+

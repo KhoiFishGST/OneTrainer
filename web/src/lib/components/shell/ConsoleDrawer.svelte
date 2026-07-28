@@ -134,7 +134,7 @@
     <div class="drawer-header">
       <div class="header-left">
         <span class="drawer-title">Console</span>
-        <a href="/console" class="btn-icon" title="Open Fullpage Console">
+        <a href="/console" class="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded inline-flex items-center justify-center" title="Open Fullpage Console">
           <Maximize2 size={14} />
         </a>
       </div>
@@ -142,7 +142,7 @@
         <Button
           variant="ghost"
           size="icon"
-          class="btn-icon"
+          class="h-6 w-6 text-muted-foreground hover:text-foreground"
           onclick={onClose}
           title="Close Console Drawer"
         >
@@ -215,33 +215,6 @@
     font-weight: 600;
     text-transform: uppercase;
     color: var(--muted-foreground, #8b949e);
-  }
-
-  /* Bits UI boundary: style drawer icon buttons */
-  .drawer-header :global(.btn-icon) {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: none;
-    color: var(--muted-foreground, #8b949e);
-    cursor: pointer;
-    padding: 2px;
-    border-radius: 4px;
-    text-decoration: none;
-  }
-
-  /* Bits UI boundary: style drawer icon button hover */
-  .drawer-header :global(.btn-icon:hover) {
-    color: var(--foreground, #c9d1d9);
-    background-color: var(--muted, #21262d);
-  }
-
-  /* Bits UI boundary: style drawer button component */
-  .drawer-header :global(button.btn-icon) {
-    min-height: 0;
-    width: auto;
-    height: auto;
   }
 
   .console-body {

@@ -65,13 +65,14 @@
   }
 </script>
 
-<footer class="status-bar safe-area-padding">
-  <div class="status-bar-right">
-    <div class="training-action-buttons">
+<footer class="min-h-[52px] h-auto bg-card border-t border-border flex items-center justify-end px-4 py-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom,0px))] text-sm z-50 safe-area-padding">
+  <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2 ml-1 flex-wrap">
       {#if trainingState === 'IDLE' || trainingState === 'COMPLETED' || trainingState === 'FAILED'}
         <Button
           variant="default"
-          class="btn btn-primary"
+          size="sm"
+          class="gap-1.5"
           onclick={handleStartTraining}
         >
           <Play size={16} />
@@ -80,7 +81,8 @@
       {:else if trainingState === 'TRAINING'}
         <Button
           variant="secondary"
-          class="btn btn-secondary"
+          size="sm"
+          class="gap-1.5"
           onclick={handlePauseTraining}
         >
           <Pause size={16} />
@@ -88,7 +90,8 @@
         </Button>
         <Button
           variant="destructive"
-          class="btn btn-danger"
+          size="sm"
+          class="gap-1.5"
           onclick={handleStopTraining}
         >
           <Square size={16} />
@@ -97,7 +100,8 @@
         {#if !mobile}
           <Button
             variant="secondary"
-            class="btn btn-secondary"
+            size="sm"
+            class="gap-1.5"
             onclick={handleSample}
           >
             <Sparkles size={16} />
@@ -105,7 +109,8 @@
           </Button>
           <Button
             variant="secondary"
-            class="btn btn-secondary"
+            size="sm"
+            class="gap-1.5"
             onclick={handleBackup}
           >
             <Archive size={16} />
@@ -118,7 +123,8 @@
                 <Button
                   {...props}
                   variant="secondary"
-                  class="btn btn-secondary phone-actions-trigger"
+                  size="sm"
+                  class="gap-1.5"
                   aria-label="Actions"
                 >
                   <MoreHorizontal size={16} />
@@ -141,7 +147,8 @@
       {:else if trainingState === 'PAUSED'}
         <Button
           variant="default"
-          class="btn btn-primary"
+          size="sm"
+          class="gap-1.5"
           onclick={handleResumeTraining}
         >
           <Play size={16} />
@@ -149,7 +156,8 @@
         </Button>
         <Button
           variant="destructive"
-          class="btn btn-danger"
+          size="sm"
+          class="gap-1.5"
           onclick={handleStopTraining}
         >
           <Square size={16} />
@@ -158,7 +166,8 @@
         {#if !mobile}
           <Button
             variant="secondary"
-            class="btn btn-secondary"
+            size="sm"
+            class="gap-1.5"
             onclick={handleSample}
           >
             <Sparkles size={16} />
@@ -166,7 +175,8 @@
           </Button>
           <Button
             variant="secondary"
-            class="btn btn-secondary"
+            size="sm"
+            class="gap-1.5"
             onclick={handleBackup}
           >
             <Archive size={16} />
@@ -179,7 +189,8 @@
                 <Button
                   {...props}
                   variant="secondary"
-                  class="btn btn-secondary phone-actions-trigger"
+                  size="sm"
+                  class="gap-1.5"
                   aria-label="Actions"
                 >
                   <MoreHorizontal size={16} />
@@ -202,7 +213,8 @@
       {:else if trainingState === 'STOPPING'}
         <Button
           variant="destructive"
-          class="btn btn-danger"
+          size="sm"
+          class="gap-1.5"
           disabled
         >
           <Square size={16} />
@@ -212,118 +224,3 @@
     </div>
   </div>
 </footer>
-
-<style>
-  .status-bar {
-    min-height: var(--status-height, 52px);
-    height: auto;
-    background-color: var(--card);
-    border-top: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding: 6px 16px;
-    padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
-    font-size: 0.875rem;
-    z-index: 50;
-  }
-
-  .status-bar-right {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .training-action-buttons {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-left: 4px;
-    flex-wrap: wrap;
-  }
-
-  /* Bits UI boundary: style action buttons */
-  .training-action-buttons :global(.btn) {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    min-height: 36px;
-    padding: 0.4rem 0.85rem;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    border: 1px solid transparent;
-    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
-    user-select: none;
-  }
-
-  @media (max-width: 767px) {
-    /* Bits UI boundary: style mobile buttons and dropdown items */
-    .training-action-buttons :global(.btn),
-    :global(.phone-action-item) {
-      min-height: 44px;
-    }
-  }
-
-  /* Bits UI boundary: style disabled action button */
-  .training-action-buttons :global(.btn:disabled) {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  /* Bits UI boundary: style primary action button */
-  .training-action-buttons :global(.btn-primary) {
-    background-color: var(--primary, #3b82f6);
-    color: #ffffff;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  }
-
-  /* Bits UI boundary: style primary action button hover */
-  .training-action-buttons :global(.btn-primary:hover:not(:disabled)) {
-    background-color: #2563eb;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
-  }
-
-  /* Bits UI boundary: style primary action button active */
-  .training-action-buttons :global(.btn-primary:active:not(:disabled)) {
-    transform: translateY(1px);
-  }
-
-  /* Bits UI boundary: style secondary action button */
-  .training-action-buttons :global(.btn-secondary) {
-    background-color: var(--muted, #14191f);
-    color: var(--foreground, #e6ebef);
-    border-color: var(--border, #2d3741);
-  }
-
-  /* Bits UI boundary: style secondary action button hover */
-  .training-action-buttons :global(.btn-secondary:hover:not(:disabled)) {
-    background-color: var(--border, #2d3741);
-    color: #ffffff;
-    border-color: var(--border, #475569);
-  }
-
-  /* Bits UI boundary: style secondary action button active */
-  .training-action-buttons :global(.btn-secondary:active:not(:disabled)) {
-    transform: translateY(1px);
-  }
-
-  /* Bits UI boundary: style danger action button */
-  .training-action-buttons :global(.btn-danger) {
-    background-color: var(--destructive, #ef4444);
-    color: #ffffff;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  }
-
-  /* Bits UI boundary: style danger action button hover */
-  .training-action-buttons :global(.btn-danger:hover:not(:disabled)) {
-    background-color: #dc2626;
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
-  }
-
-  /* Bits UI boundary: style danger action button active */
-  .training-action-buttons :global(.btn-danger:active:not(:disabled)) {
-    transform: translateY(1px);
-  }
-</style>

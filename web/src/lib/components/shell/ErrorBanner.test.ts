@@ -3,8 +3,6 @@ import { expect, it } from 'vitest';
 import ErrorBanner from './ErrorBanner.svelte';
 import HeaderTestWrapper from './HeaderTestWrapper.svelte';
 import Rail from './Rail.svelte';
-import headerRaw from './Header.svelte?raw';
-import railContentRaw from './RailContent.svelte?raw';
 
 it('displays error message and allows dismissal', async () => {
   render(ErrorBanner, { message: 'Network Failure' });
@@ -51,18 +49,11 @@ it('ensures IDLE status pill uses distinct text token and active navigation uses
   render(HeaderTestWrapper, {});
   const statusPill = screen.getByTestId('training-status-pill');
   expect(statusPill).toHaveTextContent('IDLE');
-  expect(statusPill.className).toContain('status-idle');
+  expect(statusPill.className).toContain('text-muted-foreground');
 
   // Verify Rail active navigation item uses semantic tokens
   render(Rail, { currentPath: '/live' });
   const liveLink = screen.getByRole('link', { name: /Live/i });
-  expect(liveLink.className).toContain('active');
-
-  // Inspect component style declarations to verify CSS tokens
-  // IDLE status text uses --muted-foreground
-  expect(headerRaw).toMatch(/\.status-idle[\s\S]*?color:\s*var\(--muted-foreground/);
-
-  // Active navigation uses --accent and --accent-foreground
-  expect(railContentRaw).toMatch(/\.nav-item\.active[\s\S]*?background-color:\s*var\(--accent\)/);
-  expect(railContentRaw).toMatch(/\.nav-item\.active[\s\S]*?color:\s*var\(--accent-foreground\)/);
+  expect(liveLink.className).toContain('bg-accent');
+  expect(liveLink.className).toContain('text-accent-foreground');
 });

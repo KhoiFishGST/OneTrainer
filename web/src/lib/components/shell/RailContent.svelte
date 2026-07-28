@@ -78,7 +78,8 @@
   <div class="mobile-toggle-owner">
     <Button
       variant="ghost"
-      class="mobile-toggle-btn"
+      size="icon"
+      class="text-muted-foreground hover:text-foreground hover:bg-muted"
       aria-label="Open navigation"
       onclick={() => sidebar.setOpenMobile(true)}
     >
@@ -89,14 +90,15 @@
 
 <Sidebar
   {mobile}
-  class={cn('rail', expanded && 'expanded', mobile && 'p-4')}
+  class={cn('w-[var(--rail-width)] bg-card border-r border-border flex flex-col h-full transition-[width] duration-200 ease-in-out overflow-hidden select-none', expanded && 'expanded', mobile && 'p-4')}
   style="--rail-width: {expanded ? 'var(--rail-expanded)' : 'var(--rail-compact)'}"
 >
   {#if !mobile}
-    <SidebarHeader class="rail-header">
+    <SidebarHeader class="h-12 flex items-center px-2 border-b border-border">
       <Button
         variant="ghost"
-        class="rail-toggle-btn"
+        size="icon"
+        class="text-muted-foreground hover:text-foreground hover:bg-muted"
         aria-label="Expand navigation"
         onclick={onToggleExpand}
       >
@@ -105,7 +107,7 @@
     </SidebarHeader>
   {/if}
 
-  <SidebarContent class={cn('rail-nav', mobile && 'drawer-nav')}>
+  <SidebarContent class={cn('flex flex-col p-2 gap-1 overflow-y-auto flex-1', mobile && 'p-4 gap-2')}>
     <SidebarGroup class="p-0">
       <SidebarGroupContent>
         <SidebarMenu class={mobile ? 'gap-2' : 'gap-1'} aria-label={mobile ? 'Mobile Navigation' : 'Sidebar'}>
@@ -117,25 +119,32 @@
                     <a
                       {...props}
                       href={item.path}
-                      class={cn('nav-item disabled', props.class as string)}
+                      class={cn(
+                        'flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors opacity-40 cursor-not-allowed',
+                        props.class as string
+                      )}
                       aria-disabled="true"
                       title="Unavailable in Phase A"
                       onclick={(e) => e.preventDefault()}
                     >
-                      <item.icon size={20} class="nav-icon" />
-                      <span class="nav-label">{item.name}</span>
+                      <item.icon size={20} class="shrink-0 w-5 h-5" />
+                      <span class={cn('nav-label', !expanded && !mobile && 'opacity-0 w-0 pointer-events-none')}>{item.name}</span>
                     </a>
                   {:else}
                     <a
                       {...props}
                       href={item.path}
-                      class={cn('nav-item', currentPath === item.path && 'active', props.class as string)}
+                      class={cn(
+                        'flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors hover:bg-muted hover:text-foreground',
+                        currentPath === item.path && 'bg-accent text-accent-foreground font-medium',
+                        props.class as string
+                      )}
                       onclick={() => {
                         if (mobile) sidebar.setOpenMobile(false);
                       }}
                     >
-                      <item.icon size={20} class="nav-icon" />
-                      <span class="nav-label">{item.name}</span>
+                      <item.icon size={20} class="shrink-0 w-5 h-5" />
+                      <span class={cn('nav-label', !expanded && !mobile && 'opacity-0 w-0 pointer-events-none')}>{item.name}</span>
                     </a>
                   {/if}
                 {/snippet}
@@ -149,13 +158,17 @@
                   <Button
                     {...props}
                     variant="ghost"
-                    class={cn('nav-item console-nav-btn', isConsoleOpen && 'active', props.class as string)}
+                    class={cn(
+                      'flex w-full items-center justify-start gap-3 px-2.5 py-2 text-muted-foreground rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors font-normal h-auto min-h-0 hover:bg-muted hover:text-foreground',
+                      isConsoleOpen && 'bg-accent text-accent-foreground font-medium',
+                      props.class as string
+                    )}
                     onclick={() => {
                       onToggleConsole();
                       sidebar.setOpenMobile(false);
                     }}
                   >
-                    <Terminal size={20} class="nav-icon" />
+                    <Terminal size={20} class="shrink-0 w-5 h-5" />
                     <span class="nav-label">Console</span>
                   </Button>
                 {/snippet}
@@ -168,7 +181,7 @@
   </SidebarContent>
 
   {#if !mobile && onToggleConsole}
-    <SidebarFooter class="rail-footer">
+    <SidebarFooter class="p-2 border-t border-border mt-auto">
       <SidebarMenu>
         <SidebarMenuItem>
           <SidebarMenuButton isActive={isConsoleOpen}>
@@ -176,12 +189,16 @@
               <Button
                 {...props}
                 variant="ghost"
-                class={cn('nav-item console-nav-btn', isConsoleOpen && 'active', props.class as string)}
+                class={cn(
+                  'flex w-full items-center justify-start gap-3 px-2.5 py-2 text-muted-foreground rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors font-normal h-auto min-h-0 hover:bg-muted hover:text-foreground',
+                  isConsoleOpen && 'bg-accent text-accent-foreground font-medium',
+                  props.class as string
+                )}
                 onclick={onToggleConsole}
                 title="Toggle Console Drawer"
               >
-                <Terminal size={20} class="nav-icon" />
-                <span class="nav-label">Console</span>
+                <Terminal size={20} class="shrink-0 w-5 h-5" />
+                <span class={cn('nav-label', !expanded && !mobile && 'opacity-0 w-0 pointer-events-none')}>Console</span>
               </Button>
             {/snippet}
           </SidebarMenuButton>
@@ -192,121 +209,13 @@
 </Sidebar>
 
 <style>
-  /* Bits UI / Sidebar boundary: style rail sidebar component */
-  :global(.rail) {
-    width: var(--rail-width);
-    background-color: var(--card);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
-    user-select: none;
-  }
-
-  /* Bits UI / Sidebar boundary: style rail header component */
-  :global(.rail-header) {
-    height: 48px;
-    display: flex;
-    align-items: center;
-    padding: 0 8px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  :global(.rail-header) :global(.rail-toggle-btn),
-  .mobile-toggle-owner :global(.mobile-toggle-btn) {
-    background: transparent;
-    border: none;
-    color: var(--muted-foreground);
-    cursor: pointer;
-    padding: 8px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  :global(.rail-header) :global(.rail-toggle-btn:hover),
-  .mobile-toggle-owner :global(.mobile-toggle-btn:hover) {
-    color: var(--foreground);
-    background-color: var(--muted);
-  }
-
-  /* Bits UI / Sidebar boundary: style rail nav component */
-  :global(.rail-nav) {
-    display: flex;
-    flex-direction: column;
-    padding: 8px 4px;
-    gap: 4px;
-    overflow-y: auto;
-    flex: 1;
-  }
-
-  /* Bits UI / Sidebar boundary: style rail footer component */
-  :global(.rail-footer) {
-    padding: 8px 4px;
-    border-top: 1px solid var(--border);
-    margin-top: auto;
-  }
-
-  :global(.rail-footer) :global(.console-nav-btn),
-  :global(.drawer-nav) :global(.console-nav-btn) {
-    min-height: 0;
-    width: 100%;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    text-align: left;
-    font-family: inherit;
-  }
-
-  /* Bits UI / Sidebar boundary: style navigation items */
-  :global(.nav-item) {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 10px;
-    color: var(--muted-foreground);
-    text-decoration: none;
-    border-radius: 4px;
-    font-size: 0.875rem;
-    white-space: nowrap;
-    overflow: hidden;
-  }
-
-  :global(.nav-item) :global(.nav-icon) {
-    flex-shrink: 0;
-    width: 20px;
-    height: 20px;
+  .mobile-toggle-owner {
+    display: contents;
   }
 
   .nav-label {
     white-space: nowrap;
     overflow: hidden;
-    opacity: 1;
     transition: opacity 0.15s ease 0.05s;
-  }
-
-  :global(.rail:not(.expanded)) .nav-label {
-    opacity: 0;
-    width: 0;
-    pointer-events: none;
-  }
-
-  :global(.nav-item:hover:not(.disabled)) {
-    color: var(--foreground);
-    background-color: var(--muted);
-  }
-
-  :global(.nav-item.active) {
-    color: var(--accent-foreground);
-    background-color: var(--accent);
-    font-weight: 500;
-  }
-
-  :global(.nav-item.disabled) {
-    opacity: 0.4;
-    cursor: not-allowed;
   }
 </style>

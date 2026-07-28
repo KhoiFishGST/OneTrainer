@@ -178,22 +178,22 @@
     {@render children()}
   {/if}
 {:else}
-  <SidebarProvider class="app-shell">
+  <SidebarProvider class="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
     <Header />
     {#if isApiError}
       <ErrorBanner message={errorMessage} />
     {/if}
     <Toaster />
 
-    <div class="shell-body">
+    <div class="flex-1 flex overflow-hidden relative">
       <Rail
         {currentPath}
         mobile={isMobile}
         onToggleConsole={toggleDrawer}
         isConsoleOpen={drawerOpen}
       />
-      <div class="main-column">
-        <main class="main-content">
+      <div class="flex-1 flex flex-col overflow-hidden relative">
+        <main class="flex-1 flex flex-col overflow-y-auto p-4">
           {#if children}
             {@render children()}
           {/if}
@@ -221,39 +221,3 @@
     />
   </SidebarProvider>
 {/if}
-
-<style>
-  /* Bits UI / SidebarProvider boundary: style app shell root container */
-  :global(.app-shell) {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    width: 100vw;
-    overflow: hidden;
-    background-color: var(--background);
-    color: var(--foreground);
-  }
-
-  .shell-body {
-    flex: 1;
-    display: flex;
-    overflow: hidden;
-    position: relative;
-  }
-
-  .main-column {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    position: relative;
-  }
-
-  .main-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    padding: 16px;
-  }
-</style>
