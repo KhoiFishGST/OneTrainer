@@ -18,8 +18,27 @@ export default defineConfig({
     timeout: 120000,
   },
   projects: [
-    { name: "chromium-desktop", testMatch: /phase-a|phase-b|phase-c|console/, use: Object.assign({}, devices["Desktop Chrome"]) },
-    { name: "webkit-phone", testMatch: /mobile/, use: Object.assign({}, devices["iPhone 13"]) },
-    { name: "firefox-smoke", testMatch: /firefox-smoke/, use: Object.assign({}, devices["Desktop Firefox"]) },
+    {
+      name: "chromium-desktop",
+      testMatch: /phase-a|phase-b|phase-c|console|theme|responsive-workflows|accessibility|visual/,
+      use: Object.assign({}, devices["Desktop Chrome"], {
+        viewport: { width: 1280, height: 720 },
+      }),
+    },
+    {
+      name: "webkit-phone",
+      testMatch: /mobile|responsive-workflows|accessibility/,
+      use: Object.assign({}, devices["iPhone 13"]),
+    },
+    {
+      name: "chromium-phone",
+      testMatch: /mobile|responsive-workflows|visual|accessibility/,
+      use: Object.assign({}, devices["iPhone 13"], { defaultBrowserType: "chromium" }),
+    },
+    {
+      name: "firefox-smoke",
+      testMatch: /firefox-smoke/,
+      use: Object.assign({}, devices["Desktop Firefox"]),
+    },
   ],
 });

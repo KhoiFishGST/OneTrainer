@@ -8,7 +8,7 @@ test.describe("Phone Mobile Editing Flows", () => {
     await expect(menuBtn).toBeVisible();
     await menuBtn.click();
 
-    const drawer = page.locator('div[role="dialog"][aria-label="Navigation"]');
+    const drawer = page.getByRole("dialog", { name: "Navigation" });
     await expect(drawer).toBeVisible();
 
     const dataLink = drawer.getByRole("link", { name: "Datasets" });
@@ -31,7 +31,7 @@ test.describe("Phone Mobile Editing Flows", () => {
     const browseBtn = page.getByRole("button", { name: "Browse directory" }).first();
     await browseBtn.click();
 
-    const modal = page.locator('div[role="dialog"][aria-label="Server Directory Picker"]');
+    const modal = page.getByRole("dialog", { name: "Select Directory" });
     await expect(modal).toBeVisible();
 
     // Focus trap check

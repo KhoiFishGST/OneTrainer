@@ -272,7 +272,7 @@
   .mobile-toggle-owner :global(.mobile-toggle-btn) {
     background: transparent;
     border: none;
-    color: var(--muted);
+    color: var(--muted-foreground, #8d99a6);
     cursor: pointer;
     padding: 8px;
     border-radius: 4px;
@@ -319,7 +319,7 @@
     align-items: center;
     gap: 12px;
     padding: 8px 10px;
-    color: var(--muted);
+    color: var(--muted-foreground, #8d99a6);
     text-decoration: none;
     border-radius: 4px;
     font-size: 0.875rem;
@@ -406,7 +406,7 @@
     min-height: 0;
     background: transparent;
     border: none;
-    color: var(--muted);
+    color: var(--muted-foreground, #8d99a6);
     cursor: pointer;
     padding: 4px;
   }

@@ -199,6 +199,9 @@
     class="terminal-viewport"
     bind:this={containerRef}
     onscroll={handleScroll}
+    tabindex="0"
+    role="region"
+    aria-label="Terminal Output Viewport"
   >
     <div class="spacer" style="height: {totalHeight}px;">
       <div class="visible-window" style="transform: translateY({topOffset}px);">
@@ -256,7 +259,7 @@
   .console-view :global(.channel-btn) {
     background: transparent;
     border: none;
-    color: var(--muted, #8b949e);
+    color: var(--muted-text, #8b949e);
     padding: 2px 8px;
     font-size: 0.75rem;
     font-weight: 500;

@@ -413,7 +413,7 @@
     gap: 8px;
     font-weight: 700;
     font-size: 1.125rem;
-    color: var(--accent);
+    color: var(--primary, #3b82f6);
   }
 
   .brand-logo {
@@ -442,7 +442,7 @@
 
   .label-text {
     font-size: 0.75rem;
-    color: var(--muted);
+    color: var(--muted-foreground, #8d99a6);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;

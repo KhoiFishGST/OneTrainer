@@ -7,6 +7,7 @@
   let {
     id = `path-input-${Math.random().toString(36).slice(2, 9)}`,
     label = '',
+    ariaLabel = '',
     value = $bindable(''),
     disabled = false,
     placeholder = '',
@@ -17,6 +18,7 @@
   }: {
     id?: string;
     label?: string;
+    ariaLabel?: string;
     value?: string;
     disabled?: boolean;
     placeholder?: string;
@@ -62,6 +64,7 @@
       {value}
       {disabled}
       {placeholder}
+      aria-label={ariaLabel || label || 'Path'}
       class="path-input"
       onInput={handleTextInput}
     />

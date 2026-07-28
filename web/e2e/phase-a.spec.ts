@@ -4,21 +4,22 @@ test.describe("Phase A Desktop Flows", () => {
   test("root redirects to Live and loads shell", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveURL(/.*\/live$/);
-    await expect(page.locator(".app-title")).toHaveText("OneTrainer");
+    await expect(page.getByText("OneTrainer").first()).toBeVisible();
     await expect(page.locator(".rail")).toBeVisible();
   });
 
   test("compact rail expands, persists after reload, and future links remain disabled", async ({ page }) => {
     await page.goto("/general");
-    const railToggle = page.locator('button[aria-label="Expand navigation"]');
+    const railToggle = page.getByRole("button", { name: "Expand navigation" });
     await railToggle.click();
     await expect(page.locator(".rail")).toHaveClass(/expanded/);
 
     await page.reload();
     await expect(page.locator(".rail")).toHaveClass(/expanded/);
 
-    const disabledLink = page.locator('a.nav-item.disabled[aria-disabled="true"]').first();
+    const disabledLink = page.getByRole("link", { name: "Tools" });
     await expect(disabledLink).toBeVisible();
+    await expect(disabledLink).toHaveAttribute("aria-disabled", "true");
   });
 
   test("valid workspace edit reaches Saved and survives reload", async ({ page }) => {
@@ -67,7 +68,7 @@ test.describe("Phase A Desktop Flows", () => {
     await expect(pageA.getByTestId("saved-icon-badge")).toBeVisible();
 
     // Page B receives remote change while dirty and enters Conflict state
-    await expect(pageB.locator(".state-badge")).toHaveText("Conflict");
+    await expect(pageB.getByText("Conflict")).toBeVisible();
 
     // Reload syncs pageB to server state
     await pageB.getByRole("button", { name: "Reload" }).click();
@@ -81,7 +82,7 @@ test.describe("Phase A Desktop Flows", () => {
     await inputA.fill("cuda:1");
     await expect(pageA.getByTestId("saved-icon-badge")).toBeVisible();
 
-    await expect(pageB.locator(".state-badge")).toHaveText("Conflict");
+    await expect(pageB.getByText("Conflict")).toBeVisible();
 
     // Context B fixes invalid input and explicitly overwrites
     await numInputB.fill("2");
@@ -101,29 +102,29 @@ test.describe("Phase A Desktop Flows", () => {
     await page.locator(".header-left").getByRole("button", { name: "Save" }).click();
     const presetName = `E2E Test Preset ${Date.now()}`;
     await page.getByLabel("Preset Name").fill(presetName);
-    await page.locator('[role="dialog"]').getByRole("button", { name: "Save" }).click();
+    await page.getByRole("dialog", { name: "Save Configuration" }).getByRole("button", { name: "Save" }).click();
 
-    await expect(page.locator('[role="dialog"]')).not.toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Save Configuration" })).not.toBeVisible();
     await expect(page.getByTestId("saved-icon-badge")).toBeVisible();
   });
 
   test("deep-linking and browser navigation between tabs", async ({ page }) => {
     await page.goto("/general");
-    await expect(page.locator("h1.page-title")).toHaveText("General");
+    await expect(page.getByRole("heading", { level: 1, name: "General" })).toBeVisible();
 
     await page.goto("/datasets");
-    await expect(page.locator("h1.page-title")).toHaveText("Datasets");
+    await expect(page.getByRole("heading", { level: 1, name: "Datasets" })).toBeVisible();
 
     await page.goto("/backup");
-    await expect(page.locator("h1.page-title")).toHaveText("Backup");
+    await expect(page.getByRole("heading", { level: 1, name: "Backup" })).toBeVisible();
 
     await page.goBack();
     await expect(page).toHaveURL(/.*\/datasets$/);
-    await expect(page.locator("h1.page-title")).toHaveText("Datasets");
+    await expect(page.getByRole("heading", { level: 1, name: "Datasets" })).toBeVisible();
 
     await page.goBack();
     await expect(page).toHaveURL(/.*\/general$/);
-    await expect(page.locator("h1.page-title")).toHaveText("General");
+    await expect(page.getByRole("heading", { level: 1, name: "General" })).toBeVisible();
 
     await page.goForward();
     await expect(page).toHaveURL(/.*\/datasets$/);

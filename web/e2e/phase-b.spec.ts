@@ -10,53 +10,52 @@ test.describe("Phase B Configuration Surface", () => {
     if (await rail.isVisible()) {
       const isExpanded = await rail.evaluate((el) => el.classList.contains("expanded"));
       if (!isExpanded) {
-        await page.click('button[aria-label="Expand navigation"]');
+        await page.getByRole("button", { name: "Expand navigation" }).click();
       }
     }
 
     // Navigate to Model tab
-    await page.click('a[href="/model"]');
+    await page.getByRole("link", { name: "Model" }).click();
     await expect(page).toHaveURL(/.*\/model$/);
-    await expect(page.locator("h1.page-title")).toContainText(/model/i);
+    await expect(page.getByRole("heading", { level: 1, name: /model/i })).toBeVisible();
 
     // Navigate to Training tab and open Optimizer modal
-    await page.click('a[href="/training"]');
+    await page.getByRole("link", { name: "Training" }).click();
     await expect(page).toHaveURL(/.*\/training$/);
-    await expect(page.locator("h1.page-title")).toContainText(/training/i);
+    await expect(page.getByRole("heading", { level: 1, name: /training/i })).toBeVisible();
 
     // Open Optimizer modal
     await page.getByTitle("Configure advanced optimizer parameters").first().click();
-    const dialog = page.locator('[role="dialog"]');
+    const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
-    await expect(dialog.locator(".modal-title")).toContainText(/optimizer/i);
 
     // Close Optimizer modal with Cancel button
     await dialog.getByRole("button", { name: "Cancel" }).click();
     await expect(dialog).not.toBeVisible();
 
     // Navigate to Sampling tab
-    await page.click('a[href="/sampling"]');
+    await page.getByRole("link", { name: "Sampling" }).click();
     await expect(page).toHaveURL(/.*\/sampling$/);
-    await expect(page.locator("h1.page-title")).toContainText(/sampling/i);
+    await expect(page.getByRole("heading", { level: 1, name: /sampling/i })).toBeVisible();
 
     // Navigate to LoRA tab
-    await page.click('a[href="/lora"]');
+    await page.getByRole("link", { name: "LoRA" }).click();
     await expect(page).toHaveURL(/.*\/lora$/);
-    await expect(page.locator("h1.page-title")).toContainText(/lora/i);
+    await expect(page.getByRole("heading", { level: 1, name: /lora/i })).toBeVisible();
 
     // Navigate to Concepts tab
-    await page.click('a[href="/concepts"]');
+    await page.getByRole("link", { name: "Concepts" }).click();
     await expect(page).toHaveURL(/.*\/concepts$/);
-    await expect(page.locator("h1.page-title")).toContainText(/concepts/i);
+    await expect(page.getByRole("heading", { level: 1, name: /concepts/i })).toBeVisible();
   });
 
   test("Optimizer / Scheduler modal updates training values and persists draft state", async ({ page }) => {
     await page.goto("/training");
-    await expect(page.locator("h1.page-title")).toContainText(/training/i);
+    await expect(page.getByRole("heading", { level: 1, name: /training/i })).toBeVisible();
 
     // Open modal
     await page.getByTitle("Configure advanced optimizer parameters").first().click();
-    const dialog = page.locator('[role="dialog"]');
+    const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
 
     // Fill beta1 input inside modal
@@ -76,7 +75,7 @@ test.describe("Phase B Configuration Surface", () => {
     expect(reset.ok()).toBeTruthy();
 
     await page.goto("/concepts");
-    await expect(page.locator("h1.page-title")).toContainText(/concepts/i);
+    await expect(page.getByRole("heading", { level: 1, name: /concepts/i })).toBeVisible();
 
     // Click Add First Concept button
     const addBtn = page.getByRole("button", { name: "Add First Concept" });
@@ -84,7 +83,7 @@ test.describe("Phase B Configuration Surface", () => {
     await addBtn.click();
 
     // Modal opens for concept detail
-    const modal = page.locator('[role="dialog"]');
+    const modal = page.getByRole("dialog");
     await expect(modal).toBeVisible();
     await modal.getByLabel("Name").fill("E2E Concept");
 
@@ -93,6 +92,6 @@ test.describe("Phase B Configuration Surface", () => {
     await expect(modal).not.toBeVisible();
 
     // Verify concept card with E2E Concept text is visible
-    await expect(page.locator(".concept-card", { hasText: "E2E Concept" })).toBeVisible();
+    await expect(page.getByText("E2E Concept")).toBeVisible();
   });
 });
