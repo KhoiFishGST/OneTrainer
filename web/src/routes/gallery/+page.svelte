@@ -82,10 +82,10 @@
   });
 </script>
 
-<div class="gallery-page" data-testid="gallery-page">
-  <PageHeader title="Sample Gallery" class="gallery-header">
+<div class="p-6 flex flex-col gap-6 max-w-[1600px] w-full" data-testid="gallery-page">
+  <PageHeader title="Sample Gallery" class="mb-2">
     {#snippet actions()}
-      <label for="gallery-run-select" class="select-label">Gallery run</label>
+      <label for="gallery-run-select" class="text-sm font-medium text-muted-foreground">Gallery run</label>
       <Select
         id="gallery-run-select"
         ariaLabel="Gallery run"
@@ -103,7 +103,7 @@
     {/snippet}
   </PageHeader>
 
-  <section class="gallery-content">
+  <section class="w-full">
     <SampleGallery
       gallery={displayGallery}
       loading={displayLoading}
@@ -112,28 +112,3 @@
     />
   </section>
 </div>
-
-<style>
-  .gallery-page {
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    max-width: 1600px;
-    width: 100%;
-  }
-
-  .gallery-page :global(.gallery-header) {
-    margin-bottom: 0.5rem;
-  }
-
-  .select-label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--muted, #94a3b8);
-  }
-
-  .gallery-content {
-    width: 100%;
-  }
-</style>

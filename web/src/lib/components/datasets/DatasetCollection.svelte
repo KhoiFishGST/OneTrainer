@@ -117,7 +117,7 @@
                 <Button
                   variant="ghost"
                   size="icon"
-                  class="btn-delete text-destructive hover:text-destructive hover:bg-destructive/10 min-h-[44px] min-w-[44px] h-11 w-11 touch-target-44"
+                  class="btn-delete text-destructive hover:text-destructive hover:bg-destructive/10"
                   aria-label="Delete dataset"
                   title="Delete dataset"
                   disabled={isDeleting || isPendingDelete}
@@ -133,23 +133,23 @@
     </div>
   </div>
 {:else}
-  <div class="datasets-grid">
+  <div class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-5">
     <AddCard label="Add Dataset" onClick={onAdd} />
 
     {#each datasets as ds (ds.name)}
-      <a href="/datasets/{encodeURIComponent(ds.name)}" class="dataset-card-link">
-        <Card.Root class="card dataset-card relative group overflow-hidden bg-card border-border">
-          <div class="thumbnail-wrapper relative flex-1 bg-muted overflow-hidden">
+      <a href="/datasets/{encodeURIComponent(ds.name)}" class="no-underline text-inherit flex flex-col">
+        <Card.Root class="card relative group overflow-hidden bg-card border border-border rounded-lg flex flex-col h-[220px] p-0 transition-all hover:border-primary hover:-translate-y-0.5">
+          <div class="relative flex-1 bg-muted overflow-hidden">
             {#if ds.thumbnail_url}
-              <img src={ds.thumbnail_url} alt={ds.name} class="thumbnail-img w-full h-full object-cover" />
+              <img src={ds.thumbnail_url} alt={ds.name} class="w-full h-full object-cover" />
             {/if}
-            <div class="thumbnail-overlay absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent flex items-end">
-              <span class="dataset-name font-semibold text-white text-sm drop-shadow">{ds.name}</span>
+            <div class="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent flex items-end">
+              <span class="font-semibold text-white text-sm drop-shadow">{ds.name}</span>
             </div>
             <Button
               variant="ghost"
               size="icon"
-              class="btn-delete absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-destructive border-none p-2 rounded cursor-pointer min-h-[44px] min-w-[44px] h-11 w-11 touch-target-44 opacity-100"
+              class="btn-delete absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-destructive border-none p-2 rounded cursor-pointer opacity-100"
               aria-label="Delete dataset"
               title="Delete dataset"
               disabled={isDeleting || isPendingDelete}
@@ -158,8 +158,8 @@
               <Trash2 size={18} />
             </Button>
           </div>
-          <Card.Footer class="card-footer p-2.5 bg-card border-t border-border">
-            <Badge variant="secondary" class="count-badge text-xs text-muted-foreground">
+          <Card.Footer class="p-2.5 bg-card border-t border-border">
+            <Badge variant="secondary" class="text-xs text-muted-foreground">
               {ds.image_count} {ds.image_count === 1 ? 'image' : 'images'} • {ds.caption_count} {ds.caption_count === 1 ? 'caption' : 'captions'}
             </Badge>
           </Card.Footer>
@@ -194,90 +194,3 @@
     </AlertDialog.Content>
   </AlertDialog.Root>
 {/if}
-
-<style>
-  .datasets-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 1.25rem;
-  }
-
-  .dataset-card-link {
-    text-decoration: none;
-    color: inherit;
-    display: flex;
-    flex-direction: column;
-  }
-
-  :global(.dataset-card) {
-    background: var(--card, #182026) !important;
-    border: 1px solid var(--border, #2d3741) !important;
-    border-radius: 8px !important;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    height: 220px;
-    padding: 0 !important;
-    transition: transform 0.15s ease, border-color 0.15s ease;
-  }
-
-  :global(.dataset-card:hover) {
-    border-color: var(--primary, #3b82f6) !important;
-    transform: translateY(-2px);
-  }
-
-  .thumbnail-wrapper {
-    position: relative;
-    flex: 1;
-    background: var(--muted, #101419);
-    overflow: hidden;
-  }
-
-  .thumbnail-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .thumbnail-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 0.75rem;
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
-    display: flex;
-    align-items: flex-end;
-  }
-
-  .dataset-name {
-    font-weight: 600;
-    color: #ffffff;
-    font-size: 0.9375rem;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-  }
-
-  .thumbnail-wrapper :global(.btn-delete) {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    background: rgba(0, 0, 0, 0.6);
-    border: none;
-    color: var(--destructive, #ef4444);
-    padding: 0.375rem;
-    border-radius: 4px;
-    cursor: pointer;
-    opacity: 1;
-  }
-
-  :global(.card-footer) {
-    padding: 0.625rem 0.75rem !important;
-    background: var(--card, #182026);
-    border-top: 1px solid var(--border, #2d3741);
-  }
-
-  :global(.count-badge) {
-    font-size: 0.75rem !important;
-    color: var(--muted-foreground, #8995a1) !important;
-  }
-</style>

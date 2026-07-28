@@ -78,15 +78,15 @@
   }
 </script>
 
-<div class="sample-gallery-container" data-testid="sample-gallery">
-  <div class="gallery-single-panel" data-testid="checkpoints-list">
+<div class="flex flex-col gap-6 w-full" data-testid="sample-gallery">
+  <div class="flex flex-col bg-card border border-border rounded-lg overflow-hidden" data-testid="checkpoints-list">
     {#if title || showSortControl}
-      <div class="panel-header">
-        <h3 class="panel-title">{title || 'Sample Gallery'}</h3>
+      <div class="flex items-center justify-between px-3 py-2.5 border-b border-border">
+        <h3 class="m-0 text-base font-semibold text-ring">{title || 'Sample Gallery'}</h3>
 
         {#if showSortControl && (!limit || limit > 1)}
-          <div class="sort-control">
-            <label for="gallery-sort-select" class="sort-label">Sort</label>
+          <div class="flex items-center gap-2">
+            <label for="gallery-sort-select" class="text-xs font-medium text-muted-foreground">Sort</label>
             <Select
               id="gallery-sort-select"
               ariaLabel="Gallery sort order"
@@ -103,38 +103,38 @@
     {/if}
 
     {#if loading}
-      <div class="gallery-state loading-state">
-        <p class="state-text">Loading sample gallery...</p>
+      <div class="flex items-center justify-center py-12 px-6 bg-card border border-border rounded-lg text-muted-foreground">
+        <p class="text-sm m-0">Loading sample gallery...</p>
       </div>
     {:else if errorMessage}
-      <div class="gallery-state error-state">
-        <p class="state-text">{errorMessage}</p>
+      <div class="flex items-center justify-center py-12 px-6 bg-destructive-surface border border-destructive/30 rounded-lg text-destructive">
+        <p class="text-sm m-0">{errorMessage}</p>
       </div>
     {:else if !gallery || !sortedBatches || sortedBatches.length === 0}
-      <div class="gallery-state empty-state">
-        <p class="state-text">No samples yet</p>
+      <div class="flex items-center justify-center py-12 px-6 bg-card border border-border rounded-lg text-muted-foreground">
+        <p class="text-sm m-0">No samples yet</p>
       </div>
     {:else}
       {#each sortedBatches as batch (batch.id ?? batch.batch_id ?? 1)}
         {@const revision = gallery.revisions ? gallery.revisions[batch.prompt_revision_id] : null}
         {@const promptIds = batch.expected_prompt_ids ?? (batch.samples ? Array.from(new Set(batch.samples.map((s) => s.webui_prompt_id).filter(Boolean))) : [])}
         {@const expectedVariants = batch.expected_variants ?? ['ema']}
-        <div class="checkpoint-row" data-testid="checkpoint-row">
-          <div class="epoch-badge-col">
-            <span class="epoch-badge-text">
+        <div class="[content-visibility:auto] [contain-intrinsic-size:1px_300px] flex flex-row items-stretch gap-2 p-3 border-b border-border last:border-b-0" data-testid="checkpoint-row">
+          <div class="flex items-center justify-center [writing-mode:vertical-lr] rotate-180 bg-muted border border-border rounded-md px-1 py-2 select-none shrink-0">
+            <span class="text-xs font-semibold text-foreground tracking-wider whitespace-nowrap">
               Epoch {batch.epoch ?? batch.progress?.epoch ?? 0} {'\u00b7'} Step {batch.global_step ?? batch.progress?.global_step ?? 0}
             </span>
           </div>
 
-          <div class="checkpoint-content-col">
+          <div class="flex-1 min-w-0 flex flex-col gap-2">
             {#each expectedVariants as variant (variant)}
-              <div class="variant-subrow">
+              <div class="flex flex-col gap-1.5">
                 {#if expectedVariants.length > 1}
-                  <h4 class="variant-label">{formatVariant(variant)}</h4>
+                  <h4 class="text-xs font-semibold uppercase tracking-wider text-primary m-0.5 mt-0.5">{formatVariant(variant)}</h4>
                 {/if}
 
                 <div
-                  class="variant-grid"
+                  class="variant-grid grid grid-cols-[repeat(auto-fill,minmax(min(100%,max(180px,calc(20%-0.4rem))),1fr))] gap-2 max-md:grid-cols-2 max-sm:grid-cols-1"
                   data-testid="variant-grid"
                   style={`--prompt-columns: ${Math.max(promptIds.length, 1)}`}
                 >
@@ -143,39 +143,39 @@
                     {@const sample = batch.samples?.find((s) => s.webui_prompt_id === promptId && s.variant === variant)}
                     {@const status = sample ? sample.status : 'unavailable'}
 
-                    <div class="sample-slot-container">
+                    <div class="flex flex-col w-full max-w-full">
                       {#if status === 'ready' && sample}
                         {@const thumbUrl = gallery.run?.key ? galleryImageUrl(gallery.run.key, sample.thumbnail_filename || sample.filename || '') : ''}
                         <Button
                           type="button"
                           variant="ghost"
-                          class="sample-card ready-card"
+                          class="sample-card ready-card group flex flex-col bg-muted border border-border rounded-md overflow-hidden text-left w-full p-0 h-auto cursor-pointer transition-all hover:-translate-y-0.5 hover:border-primary hover:shadow-lg"
                           aria-label={`Open sample ${promptDef?.prompt || promptId}`}
                           onclick={() => openViewer(batch.id, promptId, variant)}
                         >
-                          <div class="thumbnail-wrapper">
+                          <div class="relative aspect-square w-full bg-black overflow-hidden">
                             {#if thumbUrl}
                               <img
                                 src={thumbUrl}
                                 alt={promptDef?.prompt || 'sample prompt'}
                                 loading="lazy"
-                                class="thumbnail-img"
+                                class="w-full h-full object-cover"
                               />
                             {/if}
-                            <div class="card-overlay">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-2 opacity-90 transition-opacity group-hover:opacity-100">
                               {#if promptDef}
-                                <div class="overlay-meta">
+                                <div class="flex flex-wrap gap-1">
                                   {#if promptDef.width && promptDef.height}
-                                    <span class="meta-tag">{promptDef.width}{'\u00d7'}{promptDef.height}</span>
+                                    <span class="text-[0.7rem] font-medium bg-black/70 text-white px-1.5 py-0.5 rounded backdrop-blur border border-white/15">{promptDef.width}{'\u00d7'}{promptDef.height}</span>
                                   {/if}
                                   {#if promptDef.diffusion_steps !== undefined}
-                                    <span class="meta-tag">{promptDef.diffusion_steps} steps</span>
+                                    <span class="text-[0.7rem] font-medium bg-black/70 text-white px-1.5 py-0.5 rounded backdrop-blur border border-white/15">{promptDef.diffusion_steps} steps</span>
                                   {/if}
                                   {#if promptDef.cfg_scale !== undefined}
-                                    <span class="meta-tag">CFG {promptDef.cfg_scale}</span>
+                                    <span class="text-[0.7rem] font-medium bg-black/70 text-white px-1.5 py-0.5 rounded backdrop-blur border border-white/15">CFG {promptDef.cfg_scale}</span>
                                   {/if}
                                   {#if getSeedLabel(promptDef)}
-                                    <span class="meta-tag">Seed {getSeedLabel(promptDef)}</span>
+                                    <span class="text-[0.7rem] font-medium bg-black/70 text-white px-1.5 py-0.5 rounded backdrop-blur border border-white/15">Seed {getSeedLabel(promptDef)}</span>
                                   {/if}
                                 </div>
                               {/if}
@@ -183,14 +183,14 @@
                           </div>
                         </Button>
                       {:else}
-                        <div class="sample-card non-ready-card status-{status}">
-                          <div class="status-placeholder">
+                        <div class="flex flex-col bg-muted border border-border rounded-md overflow-hidden text-left w-full p-0 opacity-85">
+                          <div class="aspect-square w-full flex items-center justify-center bg-muted p-2 text-center">
                             {#if status === 'pending'}
-                              <span class="status-text">Generating...</span>
+                              <span class="text-xs font-medium text-primary">Generating...</span>
                             {:else if status === 'error'}
-                              <span class="status-text">{sample?.error || sample?.thumbnail_error || 'Gallery error'}</span>
+                              <span class="text-xs font-medium text-destructive">{sample?.error || sample?.thumbnail_error || 'Gallery error'}</span>
                             {:else}
-                              <span class="status-text">Unavailable</span>
+                              <span class="text-xs font-medium text-muted-foreground">Unavailable</span>
                             {/if}
                           </div>
                         </div>
@@ -215,257 +215,3 @@
     />
   {/if}
 </div>
-
-<style>
-  .sample-gallery-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    width: 100%;
-  }
-
-  .gallery-single-panel {
-    display: flex;
-    flex-direction: column;
-    background: var(--card, #1e293b);
-    border: 1px solid var(--border, #334155);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-
-  .panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.625rem 0.75rem;
-    border-bottom: 1px solid var(--border, #334155);
-  }
-
-  .panel-title {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--ring);
-  }
-
-  .sort-control {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .sort-label {
-    font-size: 0.8125rem;
-    color: var(--muted-foreground, #94a3b8);
-    font-weight: 500;
-  }
-
-  .gallery-state {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 3rem 1.5rem;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--muted-foreground);
-  }
-
-  .error-state {
-    color: #ef4444;
-    border-color: rgba(239, 68, 68, 0.3);
-    background: rgba(239, 68, 68, 0.05);
-  }
-
-  .state-text {
-    font-size: 0.95rem;
-    margin: 0;
-  }
-
-  .checkpoint-row {
-    content-visibility: auto;
-    contain-intrinsic-size: 1px 300px;
-    display: flex;
-    flex-direction: row;
-    align-items: stretch;
-    gap: 0.5rem;
-    padding: 0.75rem 0.75rem;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .checkpoint-row:last-child {
-    border-bottom: none;
-  }
-
-  .epoch-badge-col {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    writing-mode: vertical-lr;
-    transform: rotate(180deg);
-    background: var(--muted);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.5rem 0.25rem;
-    user-select: none;
-    flex-shrink: 0;
-  }
-
-  .epoch-badge-text {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: var(--foreground);
-    letter-spacing: 0.05em;
-    white-space: nowrap;
-  }
-
-  .checkpoint-content-col {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .variant-subrow {
-    display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
-  }
-
-  .variant-label {
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--primary);
-    margin: 0.15rem 0 0 0;
-  }
-
-  .variant-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, max(180px, calc(20% - 0.4rem))), 1fr));
-    gap: 0.5rem;
-  }
-
-  .sample-slot-container {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    max-width: 100%;
-  }
-
-  /* Bits UI boundary: style sample card Button component */
-  .sample-slot-container :global(.sample-card) {
-    display: flex;
-    flex-direction: column;
-    background: var(--muted);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    overflow: hidden;
-    text-align: left;
-    width: 100%;
-    padding: 0;
-  }
-
-  /* Bits UI boundary: style ready card Button hover state */
-  .sample-slot-container :global(.ready-card) {
-    cursor: pointer;
-    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-  }
-
-  /* Bits UI boundary: style ready card Button hover border */
-  .sample-slot-container :global(.ready-card:hover) {
-    transform: translateY(-2px);
-    border-color: var(--primary);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  }
-
-  .thumbnail-wrapper {
-    position: relative;
-    aspect-ratio: 1;
-    width: 100%;
-    background: #000000;
-    overflow: hidden;
-  }
-
-  .thumbnail-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .card-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 50%);
-    display: flex;
-    align-items: flex-end;
-    padding: 0.5rem;
-    opacity: 0.9;
-    transition: opacity 0.15s ease;
-  }
-
-  /* Bits UI boundary: style overlay on ready card hover */
-  .sample-slot-container :global(.ready-card:hover .card-overlay) {
-    opacity: 1;
-  }
-
-  .overlay-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem;
-  }
-
-  .meta-tag {
-    font-size: 0.7rem;
-    font-weight: 500;
-    background: rgba(0, 0, 0, 0.7);
-    color: #ffffff;
-    padding: 0.15rem 0.4rem;
-    border-radius: 4px;
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-  }
-
-  .non-ready-card {
-    opacity: 0.85;
-  }
-
-  .status-placeholder {
-    aspect-ratio: 1;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--muted);
-    padding: 0.5rem;
-    text-align: center;
-  }
-
-  .status-text {
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--muted-foreground);
-  }
-
-  .status-error .status-text {
-    color: #ef4444;
-  }
-
-  .status-pending .status-text {
-    color: var(--primary);
-  }
-
-  @media (max-width: 768px) {
-    .variant-grid {
-      grid-template-columns: repeat(min(var(--prompt-columns, 1), 2), minmax(0, 1fr));
-    }
-  }
-
-  @media (max-width: 520px) {
-    .variant-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>

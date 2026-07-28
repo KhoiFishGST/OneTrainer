@@ -178,11 +178,11 @@
   }
 </script>
 
-<div class="metrics-chart-card">
-  <div class="chart-header">
-    <h3 class="chart-title">{title}</h3>
-    <div class="chart-controls">
-      <label class="control-label" for="ema-slider">
+<div class="bg-card border border-border rounded-lg p-4 flex flex-col gap-3 text-foreground">
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <h3 class="m-0 text-base font-semibold text-ring">{title}</h3>
+    <div class="flex items-center gap-3 flex-wrap">
+      <label class="flex items-center gap-2 text-xs text-muted-foreground" for="ema-slider">
         <span>EMA: {emaFactor.toFixed(2)}</span>
         <Slider
           type="single"
@@ -193,7 +193,7 @@
           aria-label="EMA Smoothing"
           value={[emaFactor]}
           onValueChange={(val: number | number[]) => (emaFactor = Array.isArray(val) ? val[0] : val)}
-          class="ema-slider"
+          class="w-[90px] cursor-pointer"
         />
       </label>
 
@@ -201,7 +201,7 @@
         type="button"
         variant="secondary"
         size="sm"
-        class="btn-control"
+        class="bg-muted text-foreground border border-border rounded px-2.5 py-1 text-xs hover:bg-card hover:border-primary max-md:min-h-11 max-md:px-3.5 max-md:py-2"
         onclick={toggleLogScale}
       >
         {isLogScale ? 'Logarithmic' : 'Linear'}
@@ -211,7 +211,7 @@
         type="button"
         variant="secondary"
         size="sm"
-        class="btn-control"
+        class="bg-muted text-foreground border border-border rounded px-2.5 py-1 text-xs hover:bg-card hover:border-primary max-md:min-h-11 max-md:px-3.5 max-md:py-2"
         onclick={resetZoom}
       >
         Reset Zoom
@@ -219,114 +219,15 @@
     </div>
   </div>
 
-  <div class="chart-body">
+  <div class="relative w-full min-h-[200px]">
     {#if validMetrics.length === 0}
-      <div class="empty-state">No metric data available</div>
+      <div class="flex items-center justify-center h-[200px] text-muted-foreground text-sm border border-dashed border-border rounded-md">No metric data available</div>
     {:else}
       <div
-        class="canvas-container"
+        class="w-full"
         data-testid="metrics-chart-canvas-container"
         bind:this={containerEl}
       ></div>
     {/if}
   </div>
 </div>
-
-<style>
-  .metrics-chart-card {
-    background-color: var(--card, #1e293b);
-    border: 1px solid var(--border, #334155);
-    border-radius: 8px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    color: var(--foreground, #f8fafc);
-  }
-
-  .chart-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  .chart-title {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--ring);
-  }
-
-  .chart-controls {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .control-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.8125rem;
-    color: var(--muted-foreground, #94a3b8);
-  }
-
-  /* Bits UI boundary: style Slider child component */
-  .chart-controls :global(.ema-slider) {
-    width: 90px;
-    accent-color: var(--primary, #3b82f6);
-    cursor: pointer;
-  }
-
-  /* Bits UI boundary: style Button child component */
-  .chart-controls :global(.btn-control) {
-    min-height: 0;
-    background-color: var(--muted, #0f172a);
-    color: var(--foreground, #f8fafc);
-    border: 1px solid var(--border, #334155);
-    border-radius: 4px;
-    padding: 4px 10px;
-    font-size: 0.8125rem;
-    cursor: pointer;
-    transition: background-color 0.15s ease;
-  }
-
-  /* Bits UI boundary: style Button child component hover state */
-  .chart-controls :global(.btn-control:hover) {
-    background-color: var(--card, #1e293b);
-    border-color: var(--primary, #3b82f6);
-  }
-
-  /* Responsive 44px touch targets on mobile viewports */
-  @media (max-width: 768px) {
-    /* Bits UI boundary: style Button child component mobile touch target */
-    .chart-controls :global(.btn-control) {
-      min-height: 44px;
-      padding: 8px 14px;
-    }
-  }
-
-  .chart-body {
-    position: relative;
-    width: 100%;
-    min-height: 200px;
-  }
-
-  .canvas-container {
-    width: 100%;
-  }
-
-  .empty-state {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 200px;
-    color: var(--muted-foreground, #94a3b8);
-    font-size: 0.875rem;
-    border: 1px dashed var(--border, #334155);
-    border-radius: 6px;
-  }
-</style>

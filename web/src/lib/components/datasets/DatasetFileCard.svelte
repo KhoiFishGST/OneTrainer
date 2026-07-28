@@ -36,10 +36,10 @@
   }
 </script>
 
-<Card.Root class="item-card">
+<Card.Root class="overflow-hidden flex flex-col p-0 bg-card border border-border rounded-lg">
   <Button
     variant="ghost"
-    class="card-image-area"
+    class="w-full aspect-square bg-slate-950 p-0 rounded-none h-auto text-left disabled:cursor-default"
     disabled={!item.image_name}
     onclick={handleImageClick}
   >
@@ -47,96 +47,22 @@
       <img
         src="/api/datasets/image?dataset={encodeURIComponent(datasetName)}&filename={encodeURIComponent(item.image_name)}&thumb=true"
         alt={item.id}
-        class="item-img"
+        class="w-full h-full object-cover"
       />
     {:else}
-      <div class="no-image-placeholder">
+      <div class="flex flex-col items-center justify-center h-full text-muted-foreground gap-2">
         <FileText size={32} />
         <span>Text Only</span>
       </div>
     {/if}
   </Button>
-  <Card.Content class="card-caption-area">
-    <span class="item-id-label">{item.id}</span>
+  <Card.Content class="p-3 flex flex-col gap-2">
+    <span class="text-xs font-semibold text-muted-foreground">{item.id}</span>
     <TextArea
-      class="caption-textarea"
+      class="w-full min-h-[60px] bg-muted border border-border rounded text-xs p-2 text-foreground resize-y"
       placeholder="Add caption..."
       value={item.caption_content}
       onBlur={handleBlur}
     />
   </Card.Content>
 </Card.Root>
-
-<style>
-  /* Bits UI boundary: style Card root component */
-  :global(.item-card) {
-    background: var(--card, #182026) !important;
-    border: 1px solid var(--border, #2d3741) !important;
-    border-radius: 8px !important;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    padding: 0 !important;
-  }
-
-  /* Bits UI boundary: style Card image Button component */
-  :global(.card-image-area) {
-    width: 100%;
-    aspect-ratio: 1;
-    background: #0f1419;
-    cursor: pointer;
-    border: none;
-    padding: 0;
-    display: block;
-    text-align: left;
-    border-radius: 0 !important;
-  }
-
-  /* Bits UI boundary: style Card image Button component disabled state */
-  :global(.card-image-area:disabled) {
-    cursor: default;
-  }
-
-  .item-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .no-image-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: var(--muted-foreground);
-    gap: 0.5rem;
-  }
-
-  /* Bits UI boundary: style Card content component */
-  :global(.card-caption-area) {
-    padding: 0.75rem !important;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .item-id-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--muted-foreground);
-  }
-
-  /* Bits UI boundary: style TextArea child component */
-  :global(.caption-textarea) {
-    width: 100%;
-    min-height: 60px;
-    background: var(--muted, #14191f) !important;
-    border: 1px solid var(--border, #2d3741) !important;
-    border-radius: 4px !important;
-    color: var(--foreground) !important;
-    padding: 0.5rem !important;
-    font-size: 0.8125rem !important;
-    resize: vertical;
-  }
-</style>

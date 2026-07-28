@@ -185,21 +185,21 @@
   data-variant={selection?.variant}
 >
   {#if activeEntry}
-    <div class="viewer-container">
-      <div class="viewer-header-info">
-        <span class="checkpoint-title">
+    <div class="flex flex-col gap-4 text-foreground">
+      <div class="flex items-center gap-4 flex-wrap">
+        <span class="text-xl font-semibold text-foreground">
           Epoch {activeEntry.batch.epoch ?? activeEntry.batch.progress?.epoch ?? 0} {'\u00b7'} Step {activeEntry.batch.global_step ?? activeEntry.batch.progress?.global_step ?? 0}
         </span>
         {#if isRevisionBoundary}
-          <span class="revision-boundary-badge">
+          <span class="bg-amber-500/15 text-amber-500 border border-amber-500/30 text-xs font-medium px-2.5 py-1 rounded-full">
             Prompt changed at this checkpoint
           </span>
         {/if}
       </div>
 
-      <div class="viewer-main-content">
+      <div class="grid grid-cols-1 md:grid-cols-[1fr_300px] gap-5 min-h-[400px]">
         <div
-          class="viewer-image-stage"
+          class="viewer-image-stage relative bg-black rounded-lg flex items-center justify-center overflow-hidden min-h-[400px] select-none"
           role="region"
           aria-label="Image viewer stage"
           ontouchstart={handleTouchStart}
@@ -209,17 +209,17 @@
             <img
               src={currentImageUrl}
               alt="Sample Epoch {activeEntry.batch.epoch ?? activeEntry.batch.progress?.epoch ?? 0} Step {activeEntry.batch.global_step ?? activeEntry.batch.progress?.global_step ?? 0}"
-              class="viewer-image"
+              class="max-w-full max-h-[65vh] object-contain"
             />
           {:else}
-            <div class="viewer-no-image">No Image Available</div>
+            <div class="text-muted-foreground text-sm">No Image Available</div>
           {/if}
 
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            class="nav-btn nav-btn-prev"
+            class="absolute top-1/2 -translate-y-1/2 left-3 bg-black/60 text-white border border-white/20 rounded-full w-10 h-10 flex items-center justify-center cursor-pointer transition-colors hover:bg-black/85 disabled:opacity-25 disabled:cursor-not-allowed"
             aria-label="Previous checkpoint"
             disabled={activeReadyIndex <= 0}
             onclick={() => navigate(-1)}
@@ -231,7 +231,7 @@
             type="button"
             variant="ghost"
             size="icon"
-            class="nav-btn nav-btn-next"
+            class="absolute top-1/2 -translate-y-1/2 right-3 bg-black/60 text-white border border-white/20 rounded-full w-10 h-10 flex items-center justify-center cursor-pointer transition-colors hover:bg-black/85 disabled:opacity-25 disabled:cursor-not-allowed"
             aria-label="Next checkpoint"
             disabled={activeReadyIndex < 0 || activeReadyIndex >= readyEntries.length - 1}
             onclick={() => navigate(1)}
@@ -240,53 +240,53 @@
           </Button>
         </div>
 
-        <div class="viewer-sidebar">
+        <div class="flex flex-col gap-5 bg-card rounded-lg p-4 border border-border overflow-y-auto max-h-[65vh]">
           {#if activeEntry.prompt}
-            <div class="metadata-section">
-              <h4 class="section-title">Prompt</h4>
-              <p class="prompt-text">{activeEntry.prompt.prompt}</p>
+            <div class="flex flex-col gap-2">
+              <h4 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground m-0">Prompt</h4>
+              <p class="text-sm text-foreground leading-snug m-0 break-words bg-muted p-2.5 rounded-md border border-border">{activeEntry.prompt.prompt}</p>
 
               {#if activeEntry.prompt.negative_prompt}
-                <h4 class="section-title">Negative Prompt</h4>
-                <p class="prompt-text negative">{activeEntry.prompt.negative_prompt}</p>
+                <h4 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground m-0">Negative Prompt</h4>
+                <p class="text-sm text-muted-foreground leading-snug m-0 break-words bg-muted p-2.5 rounded-md border border-border">{activeEntry.prompt.negative_prompt}</p>
               {/if}
             </div>
 
-            <div class="metadata-grid">
-              <div class="meta-item">
-                <span class="meta-label">Dimensions</span>
-                <span class="meta-value">{activeEntry.prompt.width}x{activeEntry.prompt.height}</span>
+            <div class="grid grid-cols-2 gap-3 pt-2 border-t border-border">
+              <div class="flex flex-col gap-1">
+                <span class="text-xs text-muted-foreground">Dimensions</span>
+                <span class="text-sm font-medium text-foreground">{activeEntry.prompt.width}x{activeEntry.prompt.height}</span>
               </div>
-              <div class="meta-item">
-                <span class="meta-label">Steps</span>
-                <span class="meta-value">{activeEntry.prompt.diffusion_steps}</span>
+              <div class="flex flex-col gap-1">
+                <span class="text-xs text-muted-foreground">Steps</span>
+                <span class="text-sm font-medium text-foreground">{activeEntry.prompt.diffusion_steps}</span>
               </div>
-              <div class="meta-item">
-                <span class="meta-label">CFG Scale</span>
-                <span class="meta-value">{activeEntry.prompt.cfg_scale}</span>
+              <div class="flex flex-col gap-1">
+                <span class="text-xs text-muted-foreground">CFG Scale</span>
+                <span class="text-sm font-medium text-foreground">{activeEntry.prompt.cfg_scale}</span>
               </div>
-              <div class="meta-item">
-                <span class="meta-label">Scheduler</span>
-                <span class="meta-value">{activeEntry.prompt.noise_scheduler || 'N/A'}</span>
+              <div class="flex flex-col gap-1">
+                <span class="text-xs text-muted-foreground">Scheduler</span>
+                <span class="text-sm font-medium text-foreground">{activeEntry.prompt.noise_scheduler || 'N/A'}</span>
               </div>
-              <div class="meta-item">
-                <span class="meta-label">Seed</span>
-                <span class="meta-value">{seedLabel}</span>
+              <div class="flex flex-col gap-1">
+                <span class="text-xs text-muted-foreground">Seed</span>
+                <span class="text-sm font-medium text-foreground">{seedLabel}</span>
               </div>
-              <div class="meta-item">
-                <span class="meta-label">Variant</span>
-                <span class="meta-value uppercase">{variant}</span>
+              <div class="flex flex-col gap-1">
+                <span class="text-xs text-muted-foreground">Variant</span>
+                <span class="text-sm font-medium text-foreground uppercase">{variant}</span>
               </div>
             </div>
           {/if}
 
           {#if currentImageUrl}
-            <div class="original-link-container">
+            <div class="pt-2 border-t border-border mt-auto">
               <a
                 href={currentImageUrl}
                 target="_blank"
                 rel="noreferrer"
-                class="open-original-link"
+                class="inline-flex items-center gap-2 text-primary text-sm font-medium hover:underline"
               >
                 <ExternalLink size={16} />
                 Open original
@@ -298,201 +298,3 @@
     </div>
   {/if}
 </ResponsiveDialogDrawer>
-
-<style>
-  .viewer-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    color: var(--foreground);
-  }
-
-  .viewer-header-info {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-
-  .checkpoint-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--foreground);
-  }
-
-  .revision-boundary-badge {
-    background: rgba(234, 179, 8, 0.15);
-    color: #eab308;
-    border: 1px solid rgba(234, 179, 8, 0.3);
-    font-size: 0.75rem;
-    font-weight: 500;
-    padding: 0.25rem 0.6rem;
-    border-radius: 9999px;
-  }
-
-  .viewer-main-content {
-    display: grid;
-    grid-template-columns: 1fr 300px;
-    gap: 1.25rem;
-    min-height: 400px;
-  }
-
-  .viewer-image-stage {
-    position: relative;
-    background: #000000;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    min-height: 400px;
-    user-select: none;
-  }
-
-  .viewer-image {
-    max-width: 100%;
-    max-height: 65vh;
-    object-fit: contain;
-  }
-
-  .viewer-no-image {
-    color: var(--muted-foreground);
-    font-size: 0.9rem;
-  }
-
-  /* Bits UI boundary: style navigation Button component */
-  .viewer-main-content :global(.nav-btn) {
-    min-height: 0;
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(0, 0, 0, 0.6);
-    color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background 0.15s ease, opacity 0.15s ease;
-  }
-
-  /* Bits UI boundary: style navigation Button hover state */
-  .viewer-main-content :global(.nav-btn:hover:not(:disabled)) {
-    background: rgba(0, 0, 0, 0.85);
-  }
-
-  /* Bits UI boundary: style navigation Button disabled state */
-  .viewer-main-content :global(.nav-btn:disabled) {
-    opacity: 0.25;
-    cursor: not-allowed;
-  }
-
-  .viewer-main-content :global(.nav-btn-prev) {
-    left: 12px;
-  }
-
-  .viewer-main-content :global(.nav-btn-next) {
-    right: 12px;
-  }
-
-  .viewer-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-    background: var(--card);
-    border-radius: 8px;
-    padding: 1rem;
-    border: 1px solid var(--border);
-    overflow-y: auto;
-    max-height: 65vh;
-  }
-
-  .metadata-section {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .section-title {
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--muted-foreground);
-    margin: 0;
-  }
-
-  .prompt-text {
-    font-size: 0.875rem;
-    color: var(--foreground);
-    line-height: 1.4;
-    margin: 0;
-    word-break: break-word;
-    background: var(--muted);
-    padding: 0.6rem 0.75rem;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-  }
-
-  .prompt-text.negative {
-    color: var(--muted-foreground);
-  }
-
-  .metadata-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid var(--border);
-  }
-
-  .meta-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-  }
-
-  .meta-label {
-    font-size: 0.75rem;
-    color: var(--muted-foreground);
-  }
-
-  .meta-value {
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--foreground);
-  }
-
-  .uppercase {
-    text-transform: uppercase;
-  }
-
-  .original-link-container {
-    padding-top: 0.5rem;
-    border-top: 1px solid var(--border);
-    margin-top: auto;
-  }
-
-  .open-original-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--primary);
-    text-decoration: none;
-    font-size: 0.875rem;
-    font-weight: 500;
-  }
-
-  .open-original-link:hover {
-    text-decoration: underline;
-  }
-
-  @media (max-width: 800px) {
-    .viewer-main-content {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>

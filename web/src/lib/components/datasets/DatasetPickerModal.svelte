@@ -66,10 +66,10 @@
     title="Select Dataset"
     class="max-w-3xl"
   >
-    <ScrollArea class="picker-body">
+    <ScrollArea class="min-h-[280px] max-h-[480px] p-2">
       {#if loading}
-        <div class="picker-loading">
-          <div class="skeleton-grid">
+        <div class="flex flex-col items-center justify-center min-h-[240px] gap-4 text-muted-foreground">
+          <div class="grid grid-cols-3 gap-4 w-full">
             <Skeleton class="h-[140px] w-full rounded-lg" />
             <Skeleton class="h-[140px] w-full rounded-lg" />
             <Skeleton class="h-[140px] w-full rounded-lg" />
@@ -77,39 +77,39 @@
           <span>Loading datasets...</span>
         </div>
       {:else if datasets.length === 0}
-        <Empty.Root class="picker-empty">
+        <Empty.Root class="flex flex-col items-center justify-center min-h-[240px] gap-3 text-center text-muted-foreground">
           <Empty.Media>
             <AlertCircle size={40} />
           </Empty.Media>
           <Empty.Header>
-            <Empty.Title class="empty-title">No datasets available</Empty.Title>
-            <Empty.Description class="empty-sub">
+            <Empty.Title class="text-base font-semibold text-foreground">No datasets available</Empty.Title>
+            <Empty.Description class="text-sm">
               Create a dataset in the <strong>Datasets</strong> tab first to select it here.
             </Empty.Description>
           </Empty.Header>
         </Empty.Root>
       {:else}
-        <div class="dataset-grid">
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
           {#each datasets as ds (ds.name)}
             <Button
               type="button"
               variant="ghost"
-              class={`dataset-card${selectedDataset?.name === ds.name ? ' selected' : ''}`}
+              class={`relative h-auto p-0 flex flex-col items-stretch text-left rounded-lg overflow-hidden bg-card border-2 border-border transition-all hover:-translate-y-0.5 hover:border-primary ${selectedDataset?.name === ds.name ? 'border-primary ring-2 ring-primary/30' : ''}`}
               onclick={() => handleCardClick(ds)}
               ondblclick={() => handleCardDblClick(ds)}
             >
-              <div class="card-bg">
-                <img src={ds.thumbnail_url} alt={ds.name} class="card-bg-img" />
-                <div class="card-overlay"></div>
+              <div class="relative h-[120px] bg-slate-900 overflow-hidden">
+                <img src={ds.thumbnail_url} alt={ds.name} class="w-full h-full object-cover" />
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
                 {#if selectedDataset?.name === ds.name}
-                  <div class="selected-badge">
+                  <div class="absolute top-2 right-2 bg-primary text-primary-foreground size-6 rounded-full flex items-center justify-center shadow-md">
                     <Check size={16} />
                   </div>
                 {/if}
               </div>
-              <div class="card-content">
-                <h3 class="card-title">{ds.name}</h3>
-                <p class="card-meta">
+              <div class="p-3 text-left w-full">
+                <h3 class="text-sm font-semibold text-foreground m-0 mb-1 truncate">{ds.name}</h3>
+                <p class="text-xs text-muted-foreground m-0">
                   <Badge variant="secondary">
                     {ds.image_count} images • {ds.caption_count} captions
                   </Badge>
@@ -128,140 +128,3 @@
     {/snippet}
   </ResponsiveDialogDrawer>
 {/if}
-
-<style>
-  /* Bits UI boundary: style ScrollArea root component */
-  :global(.picker-body) {
-    min-height: 280px;
-    max-height: 480px;
-    padding: 0.5rem;
-  }
-
-  .picker-loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 240px;
-    gap: 1rem;
-    color: var(--muted-foreground, #94a3b8);
-  }
-
-  .skeleton-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    width: 100%;
-  }
-
-  /* Bits UI boundary: style Empty root component */
-  :global(.picker-empty) {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 240px;
-    gap: 0.75rem;
-    color: var(--muted-foreground, #94a3b8);
-    text-align: center;
-  }
-
-  /* Bits UI boundary: style Empty title component */
-  :global(.empty-title) {
-    font-size: 1rem !important;
-    font-weight: 600 !important;
-    color: var(--foreground, #f8fafc) !important;
-  }
-
-  /* Bits UI boundary: style Empty sub component */
-  :global(.empty-sub) {
-    font-size: 0.875rem !important;
-  }
-
-  .dataset-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 1rem;
-  }
-
-  /* Bits UI boundary: style dataset card button component */
-  .dataset-grid :global(.dataset-card) {
-    position: relative;
-    border-radius: 10px;
-    overflow: hidden;
-    background: var(--card, #1e293b);
-    border: 2px solid var(--border, #334155);
-    padding: 0;
-    cursor: pointer;
-    text-align: left;
-    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* Bits UI boundary: style dataset card button hover state */
-  .dataset-grid :global(.dataset-card:hover) {
-    transform: translateY(-2px);
-    border-color: var(--primary, #60a5fa);
-  }
-
-  /* Bits UI boundary: style dataset card button selected state */
-  .dataset-grid :global(.dataset-card.selected) {
-    border-color: var(--primary, #3b82f6);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
-  }
-
-  .card-bg {
-    position: relative;
-    height: 120px;
-    background: #0f172a;
-    overflow: hidden;
-  }
-
-  .card-bg-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .card-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to top, rgba(15, 23, 42, 0.8), transparent);
-  }
-
-  .selected-badge {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    background: var(--primary, #3b82f6);
-    color: #ffffff;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  }
-
-  .card-content {
-    padding: 0.75rem 1rem;
-  }
-
-  .card-title {
-    font-size: 0.9375rem;
-    font-weight: 600;
-    color: var(--foreground, #f8fafc);
-    margin: 0 0 0.25rem 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .card-meta {
-    font-size: 0.75rem;
-    color: var(--muted-foreground, #94a3b8);
-    margin: 0;
-  }
-</style>
