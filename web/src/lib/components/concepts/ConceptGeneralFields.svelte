@@ -101,7 +101,8 @@
           </label>
           <Button
             type="button"
-            class="btn-path-action"
+            variant="outline"
+            size="sm"
             onclick={() => onBrowsePath('dir', 'concept', draft.path || '')}
           >
             <FolderOpen size={16} />
@@ -109,7 +110,9 @@
           </Button>
           <Button
             type="button"
-            class="btn-path-action btn-accent-action"
+            variant="outline"
+            size="sm"
+            class="text-primary hover:text-primary"
             onclick={onOpenDatasetPicker}
           >
             <FolderKanban size={16} />
@@ -288,38 +291,5 @@
     font-weight: 500;
     color: var(--foreground, #e6ebef);
     cursor: pointer;
-  }
-
-  /* Bits UI boundary: style path action Button child component */
-  .path-action-row :global(.btn-path-action) {
-    min-height: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.375rem;
-    height: 38px;
-    padding: 0 0.875rem;
-    background: var(--muted, #14191f);
-    border: 1px solid var(--border, #2d3741);
-    border-radius: 6px;
-    color: var(--foreground, #e6ebef);
-    font-size: 0.8125rem;
-    font-weight: 500;
-    cursor: pointer;
-    box-sizing: border-box;
-    white-space: nowrap;
-    transition: all 0.15s ease;
-  }
-
-  /* Bits UI boundary: style path action Button child component hover state */
-  .path-action-row :global(.btn-path-action:hover) {
-    background: var(--card, #1d242c);
-    border-color: var(--primary, #3b82f6);
-    color: var(--primary, #3b82f6);
-  }
-
-  /* Bits UI boundary: style accent path action Button child component */
-  .path-action-row :global(.btn-path-action.btn-accent-action) {
-    color: var(--primary, #3b82f6);
   }
 </style>

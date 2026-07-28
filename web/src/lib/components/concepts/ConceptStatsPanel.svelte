@@ -103,20 +103,22 @@
   <div class="stats-toolbar">
     <Button
       type="button"
-      class="btn-stats-action"
+      variant="outline"
+      size="sm"
       disabled={statsLoading}
       onclick={() => fetchStats(false)}
     >
-      <RefreshCw size={14} class={statsLoading ? 'spin' : ''} />
+      <RefreshCw size={14} class={statsLoading ? 'animate-spin' : ''} />
       <span>Refresh Basic</span>
     </Button>
     <Button
       type="button"
-      class="btn-stats-action btn-accent"
+      variant="default"
+      size="sm"
       disabled={statsLoading}
       onclick={() => fetchStats(true)}
     >
-      <RefreshCw size={14} class={statsLoading ? 'spin' : ''} />
+      <RefreshCw size={14} class={statsLoading ? 'animate-spin' : ''} />
       <span>Refresh Advanced</span>
     </Button>
     {#if statsData?.processing_time}
@@ -316,7 +318,7 @@
     {/if}
   {:else}
     <div class="stats-placeholder-box">
-      <RefreshCw size={24} class={statsLoading ? 'spin muted-icon' : 'muted-icon'} />
+      <RefreshCw size={24} class={statsLoading ? 'animate-spin muted-icon' : 'muted-icon'} />
       {#if !draft?.path}
         <span>Specify a valid concept dataset path in General tab to scan statistics.</span>
       {:else if statsLoading}
@@ -541,19 +543,5 @@
     border-radius: 6px;
     color: var(--muted-foreground, #94a3b8);
     font-size: 0.875rem;
-  }
-
-  /* Bits UI boundary: style spin animation icon */
-  :global(.spin) {
-    animation: spin 1s linear infinite;
-  }
-
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
   }
 </style>

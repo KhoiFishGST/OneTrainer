@@ -60,7 +60,7 @@
     <div class="aug-preview-dialog">
       <div class="aug-preview-header">
         <h3 class="aug-preview-title">Image Augmentations Live Test - Sample #{previewIndex + 1}</h3>
-        <Button type="button" variant="ghost" size="icon" class="close-btn" onclick={onClose} aria-label="Close">
+        <Button type="button" variant="ghost" size="icon" onclick={onClose} aria-label="Close">
           <X size={18} />
         </Button>
       </div>
@@ -105,7 +105,9 @@
             <div class="nav-controls-bar">
               <Button
                 type="button"
-                class="nav-arrow-btn"
+                variant="ghost"
+                size="icon"
+                class="h-[26px] w-[26px] rounded-full bg-white/10 p-0 text-white hover:bg-white/20 disabled:opacity-40"
                 disabled={previewIndex <= 0 || previewLoading}
                 onclick={handlePrevPreview}
               >
@@ -114,7 +116,9 @@
               <span class="nav-idx-lbl">Sample #{previewIndex + 1}</span>
               <Button
                 type="button"
-                class="nav-arrow-btn"
+                variant="ghost"
+                size="icon"
+                class="h-[26px] w-[26px] rounded-full bg-white/10 p-0 text-white hover:bg-white/20 disabled:opacity-40"
                 disabled={previewLoading}
                 onclick={handleNextPreview}
               >
@@ -189,23 +193,6 @@
     font-size: 1rem;
     font-weight: 600;
     color: var(--foreground, #f8fafc);
-  }
-
-  .close-btn {
-    background: transparent;
-    border: none;
-    color: var(--muted-foreground, #94a3b8);
-    cursor: pointer;
-    padding: 0.25rem;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .close-btn:hover {
-    color: var(--foreground, #f8fafc);
-    background: var(--muted, #252d37);
   }
 
   .aug-preview-modal-body {
@@ -283,28 +270,6 @@
     font-size: 0.75rem;
     color: var(--foreground, #f8fafc);
     font-weight: 600;
-  }
-
-  /* Bits UI boundary: style navigation arrow Button components */
-  .nav-controls-bar :global(.nav-arrow-btn) {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    padding: 0;
-    min-height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    color: white;
-    cursor: pointer;
-  }
-
-  /* Bits UI boundary: style navigation arrow Button components disabled state */
-  .nav-controls-bar :global(.nav-arrow-btn:disabled) {
-    opacity: 0.4;
-    cursor: not-allowed;
   }
 
   .preview-meta-container {

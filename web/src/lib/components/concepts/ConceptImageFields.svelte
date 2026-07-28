@@ -262,7 +262,8 @@
   <div class="aug-bottom-action-bar">
     <Button
       type="button"
-      class="btn-aug-preview-compact"
+      variant="default"
+      size="sm"
       onclick={onOpenPreview}
     >
       <Eye size={14} />
@@ -345,28 +346,5 @@
     align-items: center;
     justify-content: flex-end;
     padding-top: 0.25rem;
-  }
-
-  /* Bits UI boundary: style preview Button child component */
-  .aug-bottom-action-bar :global(.btn-aug-preview-compact) {
-    min-height: 0;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    height: 32px;
-    padding: 0 0.75rem;
-    background: var(--primary, #3b82f6);
-    border: 1px solid var(--primary, #3b82f6);
-    border-radius: 5px;
-    color: #ffffff;
-    font-size: 0.75rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  /* Bits UI boundary: style preview Button child component hover state */
-  .aug-bottom-action-bar :global(.btn-aug-preview-compact:hover) {
-    opacity: 0.9;
   }
 </style>

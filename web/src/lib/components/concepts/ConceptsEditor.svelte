@@ -176,6 +176,7 @@
           placeholder="Search concepts by name or directory path..."
           value={searchQuery}
           onInput={(v) => (searchQuery = v)}
+          class="border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 min-w-0 w-full"
         />
       </div>
 
@@ -258,7 +259,7 @@
 
       {#each filteredConcepts as { concept, originalIndex } (originalIndex)}
         <Card.Root
-          class="concept-card {concept.enabled === false ? 'disabled' : ''}"
+          class="concept-card flex flex-row bg-card border border-border rounded-lg overflow-hidden transition-colors hover:border-primary cursor-pointer {concept.enabled === false ? 'disabled opacity-60' : ''}"
           onclick={() => handleEditConcept(originalIndex)}
         >
           <!-- Preview Thumbnail -->
@@ -268,13 +269,13 @@
               alt="Concept Thumbnail"
               class="concept-thumbnail"
             />
-            <Badge variant="outline" class="type-badge">
+            <Badge variant="outline" class="type-badge absolute top-1.5 left-1.5 text-[0.6875rem] font-bold px-1.5 py-0.5 rounded uppercase bg-black/70 text-primary border-primary/40">
               {concept.type || 'STANDARD'}
             </Badge>
           </div>
 
           <!-- Card Content -->
-          <Card.Content class="card-content">
+          <Card.Content class="card-content flex-1 p-3.5 flex flex-col justify-between gap-2">
             <div class="card-title-bar">
               <h4 class="concept-name" title={concept.name || concept.path}>
                 {concept.name || (concept.path ? concept.path.split('/').pop() : 'Untitled Concept')}
@@ -303,15 +304,16 @@
             </p>
 
             <div class="concept-meta">
-              <Badge variant="secondary" class="meta-tag">Balancing: {concept.balancing ?? 1}x ({concept.balancing_strategy || 'REPEATS'})</Badge>
-              <Badge variant="secondary" class="meta-tag">Loss Wt: {concept.loss_weight ?? 1}</Badge>
+              <Badge variant="secondary" class="meta-tag text-[0.6875rem] px-1.5 py-0.5 rounded bg-muted text-foreground border border-border">Balancing: {concept.balancing ?? 1}x ({concept.balancing_strategy || 'REPEATS'})</Badge>
+              <Badge variant="secondary" class="meta-tag text-[0.6875rem] px-1.5 py-0.5 rounded bg-muted text-foreground border border-border">Loss Wt: {concept.loss_weight ?? 1}</Badge>
             </div>
 
             <!-- Card Actions -->
             <div class="card-actions">
               <Button
                 type="button"
-                variant="secondary"
+                variant="outline"
+                size="sm"
                 class="btn-action edit"
                 title="Edit Concept Settings"
                 onclick={(e) => {
@@ -325,7 +327,8 @@
 
               <Button
                 type="button"
-                variant="secondary"
+                variant="outline"
+                size="sm"
                 class="btn-action clone"
                 title="Duplicate Concept"
                 onclick={(e) => {
@@ -339,8 +342,9 @@
 
               <Button
                 type="button"
-                variant="secondary"
-                class="btn-action delete"
+                variant="outline"
+                size="sm"
+                class="btn-action delete hover:bg-destructive/20 hover:text-destructive hover:border-destructive"
                 title="Delete Concept"
                 onclick={(e) => {
                   e.stopPropagation();
@@ -353,7 +357,7 @@
               <DropdownMenu.Root>
                 <DropdownMenu.Trigger
                   onclick={(e) => e.stopPropagation()}
-                  class="dropdown-trigger-btn"
+                  class="dropdown-trigger-btn inline-flex items-center justify-center p-1.5 rounded border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted"
                   title="More actions"
                 >
                   <MoreVertical size={16} />
@@ -474,19 +478,6 @@
     min-width: 220px;
   }
 
-  /* Bits UI boundary: style TextInput child component */
-  .search-box :global(.text-input) {
-    min-width: 0;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: var(--foreground, #f8fafc);
-    font-size: 0.875rem;
-    width: 100%;
-    padding: 0;
-    box-shadow: none;
-  }
-
   .filter-select-wrapper {
     min-width: 150px;
   }
@@ -506,28 +497,6 @@
     gap: 1.25rem;
   }
 
-  /* Bits UI boundary: style Card root component */
-  :global(.concept-card) {
-    display: flex;
-    flex-direction: row !important;
-    background: var(--card, #181e25);
-    border: 1px solid var(--border, #2d3741);
-    border-radius: 8px;
-    overflow: hidden;
-    transition: border-color 0.15s ease, transform 0.15s ease;
-    cursor: pointer;
-  }
-
-  /* Bits UI boundary: style Card hover state */
-  :global(.concept-card:hover) {
-    border-color: var(--primary, #3b82f6);
-  }
-
-  /* Bits UI boundary: style Card disabled state */
-  :global(.concept-card.disabled) {
-    opacity: 0.6;
-  }
-
   .thumbnail-wrapper {
     width: 130px;
     position: relative;
@@ -539,31 +508,6 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-  }
-
-  /* Bits UI boundary: style Type Badge component */
-  :global(.type-badge) {
-    position: absolute;
-    top: 6px;
-    left: 6px;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    padding: 0.15rem 0.4rem;
-    border-radius: 4px;
-    text-transform: uppercase;
-    background: rgba(0, 0, 0, 0.7) !important;
-    color: var(--primary, #3b82f6) !important;
-    border: 1px solid rgba(59, 130, 246, 0.4) !important;
-  }
-
-  /* Bits UI boundary: style Card Content component */
-  :global(.card-content) {
-    flex: 1;
-    padding: 0.875rem 1rem !important;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 0.5rem;
   }
 
   .card-title-bar {
@@ -589,6 +533,7 @@
     color: var(--muted-foreground, #94a3b8);
     word-break: break-all;
     display: -webkit-box;
+    line-clamp: 2;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
@@ -600,68 +545,11 @@
     gap: 0.35rem;
   }
 
-  /* Bits UI boundary: style Meta Tag Badge component */
-  :global(.meta-tag) {
-    font-size: 0.6875rem !important;
-    padding: 0.15rem 0.4rem !important;
-    border-radius: 4px !important;
-    background: var(--muted, #1d242c) !important;
-    color: var(--foreground, #f8fafc) !important;
-    border: 1px solid var(--border, #2d3741) !important;
-  }
-
   .card-actions {
     display: flex;
     align-items: center;
     gap: 0.35rem;
     padding-top: 0.35rem;
     border-top: 1px solid var(--border, #2d3741);
-  }
-
-  /* Bits UI boundary: style action Button component */
-  .card-actions :global(.btn-action) {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    min-height: 0;
-    padding: 0.3rem 0.5rem;
-    border-radius: 4px;
-    border: 1px solid var(--border, #2d3741);
-    background: var(--card, #1d242c);
-    color: var(--foreground, #f8fafc);
-    font-size: 0.75rem;
-    cursor: pointer;
-    transition: background 0.15s ease;
-  }
-
-  /* Bits UI boundary: style action Button component hover state */
-  .card-actions :global(.btn-action:hover) {
-    background: var(--border, #2d3741);
-  }
-
-  /* Bits UI boundary: style delete Button component hover state */
-  .card-actions :global(.btn-action.delete:hover) {
-    background: rgba(239, 68, 68, 0.2);
-    color: #f87171;
-    border-color: #ef4444;
-  }
-
-  /* Bits UI boundary: style Dropdown trigger Button component */
-  :global(.dropdown-trigger-btn) {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.3rem;
-    border-radius: 4px;
-    border: 1px solid var(--border, #2d3741);
-    background: var(--card, #1d242c);
-    color: var(--muted-foreground, #94a3b8);
-    cursor: pointer;
-  }
-
-  /* Bits UI boundary: style Dropdown trigger Button component hover state */
-  :global(.dropdown-trigger-btn:hover) {
-    color: var(--foreground, #f8fafc);
-    background: var(--border, #2d3741);
   }
 </style>

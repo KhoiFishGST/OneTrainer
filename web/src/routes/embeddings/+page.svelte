@@ -116,7 +116,7 @@
     <PageHeader title={tab.label || 'Embeddings'} class="embeddings-header" />
 
     {#if !isEmbeddingSupported}
-      <Alert class="embeddings-warning-alert">
+      <Alert class="embeddings-warning-alert bg-warning-surface text-warning border-warning-border flex items-start gap-3 rounded-lg p-4">
         <span class="warning-icon" aria-hidden="true">⚠️</span>
         <div class="warning-text">
           Embeddings options are disabled because the selected Base Model Type (<strong>{modelType}</strong>)
@@ -154,7 +154,7 @@
               {#if embeddingsList.length > 0}
                 <Button
                   variant="secondary"
-                  class="secondary-btn"
+                  size="sm"
                   title={allToggledOn ? 'Disable training for all embeddings' : 'Enable training for all embeddings'}
                   disabled={!isEmbeddingSupported}
                   onclick={handleToggleAll}
@@ -171,7 +171,8 @@
 
               <Button
                 type="button"
-                class="primary-btn"
+                variant="default"
+                size="sm"
                 disabled={!isEmbeddingSupported}
                 onclick={handleAddEmbedding}
               >
@@ -193,7 +194,8 @@
               <Empty.Content>
                 <Button
                   type="button"
-                  class="primary-btn"
+                  variant="default"
+                  size="sm"
                   disabled={!isEmbeddingSupported}
                   onclick={handleAddEmbedding}
                 >
@@ -232,17 +234,6 @@
     margin: 0 auto;
     width: 100%;
     box-sizing: border-box;
-  }
-
-  :global(.embeddings-warning-alert) {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    background-color: rgba(234, 179, 8, 0.1);
-    border: 1px solid rgba(234, 179, 8, 0.3);
-    color: #eab308;
-    border-radius: 8px;
-    padding: 1rem;
   }
 
   .warning-icon {
@@ -313,54 +304,6 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-  }
-
-  /* Bits UI boundary: style primary / secondary Button components */
-  .list-section :global(.primary-btn),
-  .list-section :global(.secondary-btn) {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    height: 34px;
-    min-height: 0;
-    padding: 0 0.875rem;
-    border-radius: 6px;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    border: 1px solid transparent;
-  }
-
-  /* Bits UI boundary: style primary Button component */
-  .list-section :global(.primary-btn) {
-    background: var(--primary, #3b82f6);
-    color: #ffffff;
-  }
-
-  /* Bits UI boundary: style primary Button component hover state */
-  .list-section :global(.primary-btn:hover:not(:disabled)) {
-    background: var(--primary, #2563eb);
-    opacity: 0.9;
-  }
-
-  /* Bits UI boundary: style secondary Button component */
-  .list-section :global(.secondary-btn) {
-    background: var(--card, #252d37);
-    color: var(--foreground, #e2e8f0);
-    border-color: var(--border, #334155);
-  }
-
-  /* Bits UI boundary: style secondary Button component hover state */
-  .list-section :global(.secondary-btn:hover:not(:disabled)) {
-    background: var(--border, #334155);
-  }
-
-  /* Bits UI boundary: style Button component disabled state */
-  .list-section :global(.primary-btn:disabled),
-  .list-section :global(.secondary-btn:disabled) {
-    opacity: 0.5;
-    cursor: not-allowed;
   }
 
   .embeddings-grid {

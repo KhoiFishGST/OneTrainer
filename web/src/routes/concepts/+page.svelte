@@ -65,7 +65,7 @@
   <PageHeader title="Concepts" />
 
   {#if errorMessage}
-    <Alert variant="destructive" class="concepts-error-alert">
+    <Alert variant="destructive" class="concepts-error-alert flex items-center gap-2.5">
       <AlertCircle size={18} />
       <span>{errorMessage}</span>
     </Alert>
@@ -94,12 +94,6 @@
     max-width: 1200px;
     width: 100%;
     box-sizing: border-box;
-  }
-
-  .concepts-page :global(.concepts-error-alert) {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
   }
 
   .skeleton-container {

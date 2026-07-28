@@ -162,7 +162,7 @@
         </Tabs.List>
       </Tabs.Root>
 
-      <ScrollArea class="tab-content-scroll">
+      <ScrollArea class="h-[520px] max-h-[60vh]">
         <div class="tab-content-inner">
           {#if activeTab === 'general'}
             <ConceptGeneralFields
@@ -258,11 +258,6 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-  }
-
-  .concept-modal-body :global(.tab-content-scroll) {
-    height: 520px;
-    max-height: 60vh;
   }
 
   .tab-content-inner {

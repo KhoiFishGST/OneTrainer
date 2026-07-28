@@ -48,18 +48,18 @@
   }
 </script>
 
-<Card.Root class="embedding-card {disabled ? 'disabled' : ''}">
-  <Card.Header class="card-header">
+<Card.Root class="embedding-card bg-card border border-border rounded-lg p-4 flex flex-col gap-3.5 transition-colors hover:border-slate-600 {disabled ? 'disabled opacity-50' : ''}">
+  <Card.Header class="card-header flex items-center justify-between pb-3 pt-0 px-0 border-b border-border/60">
     <div class="card-title-group">
-      <Badge variant="secondary" class="card-badge">#{index + 1}</Badge>
-      <Card.Title class="card-title">{embedding.placeholder || '<embedding>'}</Card.Title>
+      <Badge variant="secondary" class="card-badge text-xs font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded">#{index + 1}</Badge>
+      <Card.Title class="card-title text-sm font-semibold text-foreground font-mono m-0">{embedding.placeholder || '<embedding>'}</Card.Title>
     </div>
 
     <div class="card-actions">
       <Button
         type="button"
-        variant="secondary"
-        class="action-btn clone-btn"
+        variant="outline"
+        size="sm"
         title="Clone embedding"
         {disabled}
         onclick={() => onClone(index)}
@@ -70,8 +70,9 @@
 
       <Button
         type="button"
-        variant="secondary"
-        class="action-btn remove-btn"
+        variant="outline"
+        size="sm"
+        class="bg-destructive/10 text-destructive border-destructive/25 hover:bg-destructive/20 hover:text-destructive"
         title="Remove embedding"
         {disabled}
         onclick={() => (showDeleteConfirm = true)}
@@ -82,7 +83,7 @@
     </div>
   </Card.Header>
 
-  <Card.Content class="card-body">
+  <Card.Content class="card-body flex flex-col gap-3.5 p-0">
     <!-- Top Row: Base Embedding, Placeholder, Token Count -->
     <div class="fields-grid top-grid">
       <div class="field-item flex-2">
@@ -98,8 +99,8 @@
           />
           <Button
             type="button"
-            variant="secondary"
-            class="browse-btn"
+            variant="outline"
+            size="icon"
             title="Browse file"
             {disabled}
             onclick={handleFilePick}
@@ -208,120 +209,16 @@
 {/if}
 
 <style>
-  /* Bits UI boundary: style Card root component */
-  :global(.embedding-card) {
-    background-color: var(--card, #181e25) !important;
-    border: 1px solid var(--border, #2d3741) !important;
-    border-radius: 8px !important;
-    padding: 1rem !important;
-    display: flex;
-    flex-direction: column;
-    gap: 0.875rem;
-    transition: border-color 0.15s ease;
-  }
-
-  /* Bits UI boundary: style Card hover state */
-  :global(.embedding-card:hover:not(.disabled)) {
-    border-color: var(--border, #475569) !important;
-  }
-
-  /* Bits UI boundary: style Card header component */
-  :global(.card-header) {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-bottom: 0.75rem !important;
-    padding-top: 0 !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.06));
-  }
-
   .card-title-group {
     display: flex;
     align-items: center;
     gap: 0.5rem;
   }
 
-  /* Bits UI boundary: style Card badge component */
-  :global(.card-badge) {
-    font-size: 0.75rem !important;
-    font-weight: 700 !important;
-    color: var(--muted-foreground, #94a3b8) !important;
-    background: var(--muted, #252d37) !important;
-    padding: 0.125rem 0.5rem !important;
-    border-radius: 4px !important;
-  }
-
-  /* Bits UI boundary: style Card title component */
-  :global(.card-title) {
-    font-size: 0.9375rem !important;
-    font-weight: 600 !important;
-    color: var(--foreground, #f8fafc) !important;
-    font-family: monospace;
-    margin: 0 !important;
-  }
-
   .card-actions {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-  }
-
-  /* Bits UI boundary: style Card action button component */
-  .card-actions :global(.action-btn) {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    min-height: 0;
-    padding: 0.375rem 0.625rem;
-    border-radius: 5px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    border: 1px solid transparent;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  /* Bits UI boundary: style clone button component */
-  .card-actions :global(.clone-btn) {
-    background: var(--muted, #252d37);
-    color: var(--foreground, #e2e8f0);
-    border-color: var(--border, #334155);
-  }
-
-  /* Bits UI boundary: style clone button hover state */
-  .card-actions :global(.clone-btn:hover:not(:disabled)) {
-    background: rgba(59, 130, 246, 0.15);
-    color: var(--primary, #3b82f6);
-    border-color: var(--primary, #3b82f6);
-  }
-
-  /* Bits UI boundary: style remove button component */
-  .card-actions :global(.remove-btn) {
-    background: rgba(239, 68, 68, 0.1);
-    color: #f87171;
-    border-color: rgba(239, 68, 68, 0.25);
-  }
-
-  /* Bits UI boundary: style remove button hover state */
-  .card-actions :global(.remove-btn:hover:not(:disabled)) {
-    background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
-  }
-
-  /* Bits UI boundary: style action button disabled state */
-  .card-actions :global(.action-btn:disabled) {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  /* Bits UI boundary: style Card body component */
-  :global(.card-body) {
-    display: flex;
-    flex-direction: column;
-    gap: 0.875rem;
-    padding: 0 !important;
   }
 
   .fields-grid {
@@ -374,26 +271,5 @@
     display: flex;
     align-items: center;
     gap: 0.25rem;
-  }
-
-  /* Bits UI boundary: style browse Button component */
-  .input-with-button :global(.browse-btn) {
-    height: 38px;
-    width: 38px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--muted, #252d37);
-    border: 1px solid var(--border, #2d3741);
-    border-radius: 6px;
-    color: var(--muted-foreground, #94a3b8);
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  /* Bits UI boundary: style browse Button hover state */
-  .input-with-button :global(.browse-btn:hover:not(:disabled)) {
-    color: var(--foreground, #f8fafc);
-    border-color: var(--primary, #3b82f6);
   }
 </style>
