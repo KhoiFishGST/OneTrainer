@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Plus, ToggleLeft, ToggleRight } from 'lucide-svelte';
+  import { Plus, ToggleLeft, ToggleRight } from '@lucide/svelte';
   import { getRouteContext } from '$lib/config/context';
   import SchemaForm from '$lib/components/form/SchemaForm.svelte';
   import EmbeddingCard from '$lib/components/embeddings/EmbeddingCard.svelte';

@@ -3,7 +3,7 @@
   import { api } from '$lib/api/client';
   import { Button } from '$lib/components/ui/button';
   import { Checkbox } from '$lib/components/ui/checkbox/index.js';
-  import { ChevronLeft, ChevronRight, X } from 'lucide-svelte';
+  import { ChevronLeft, ChevronRight, X } from '@lucide/svelte';
 
   let {
     draft,

@@ -4,7 +4,7 @@
   import { Switch as Toggle } from '$lib/components/ui/switch/index.js';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
   import { Button } from '$lib/components/ui/button';
-  import { Eye } from 'lucide-svelte';
+  import { Eye } from '@lucide/svelte';
 
   let {
     image = $bindable(),

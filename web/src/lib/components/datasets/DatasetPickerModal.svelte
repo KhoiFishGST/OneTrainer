@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Check, AlertCircle } from 'lucide-svelte';
+  import { Check, AlertCircle } from '@lucide/svelte';
   import ResponsiveDialogDrawer from '$lib/components/overlays/ResponsiveDialogDrawer.svelte';
   import { Button } from '$lib/components/ui/button';
   import { Badge } from '$lib/components/ui/badge/index.js';

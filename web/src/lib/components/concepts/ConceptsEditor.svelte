@@ -19,7 +19,7 @@
     Eye,
     EyeOff,
     MoreVertical,
-  } from 'lucide-svelte';
+  } from '@lucide/svelte';
   import type { Concept } from '$lib/api/types';
   import ConceptDetailModal from './ConceptDetailModal.svelte';
 

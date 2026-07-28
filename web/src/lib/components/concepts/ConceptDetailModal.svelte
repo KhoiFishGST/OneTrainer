@@ -14,7 +14,7 @@
   import ConceptStatsPanel from './ConceptStatsPanel.svelte';
   import AugmentationPreview from './AugmentationPreview.svelte';
 
-  import { AlertCircle } from 'lucide-svelte';
+  import { AlertCircle } from '@lucide/svelte';
   import { Alert } from '$lib/components/ui/alert';
 
   let {

@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import { onMount } from 'svelte';
-  import { Maximize2, X } from 'lucide-svelte';
+  import { Maximize2, X } from '@lucide/svelte';
   import ConsoleView from '$lib/components/console/ConsoleView.svelte';
   import { consoleStore, type ConsoleStore } from '$lib/events/console-store.svelte';
   import { Button } from '$lib/components/ui/button';

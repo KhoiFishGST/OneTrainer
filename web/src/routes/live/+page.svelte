@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Sparkles, Archive, Save } from 'lucide-svelte';
+  import { Sparkles, Archive, Save } from '@lucide/svelte';
   import { trainingStore } from '$lib/events/training-store';
   import { api } from '$lib/api/client';
   import {

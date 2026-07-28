@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { ShieldAlert, Key, Eye, EyeOff, Save, Lock, Unlock } from 'lucide-svelte';
+  import { ShieldAlert, Key, Eye, EyeOff, Save, Lock, Unlock } from '@lucide/svelte';
   import PageHeader from '$lib/components/layout/PageHeader.svelte';
   import { Alert } from '$lib/components/ui/alert';
   import { Skeleton } from '$lib/components/ui/skeleton';

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Trash2, Plus, FolderOpen } from 'lucide-svelte';
+  import { Trash2, Plus, FolderOpen } from '@lucide/svelte';
   import { Button } from '$lib/components/ui/button';
   import AddCard from '$lib/components/collections/AddItemCard.svelte';
   import { Badge } from '$lib/components/ui/badge/index.js';

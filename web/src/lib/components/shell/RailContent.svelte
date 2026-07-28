@@ -15,7 +15,7 @@
     PanelLeft,
     Menu,
     Key,
-  } from 'lucide-svelte';
+  } from '@lucide/svelte';
   import { Button } from '$lib/components/ui/button';
   import {
     Sidebar,

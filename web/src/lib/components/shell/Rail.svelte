@@ -16,12 +16,14 @@
   }>();
 
   let expanded = $state(false);
-  let parentSidebar = $state<any>(null);
-  try {
-    parentSidebar = useSidebar();
-  } catch {
-    // context not provided in isolated unit test
-  }
+  const parentSidebar = (() => {
+    try {
+      return useSidebar();
+    } catch {
+      // Sidebar context is absent in isolated unit tests.
+      return null;
+    }
+  })();
 
   onMount(() => {
     if (typeof localStorage !== 'undefined') {

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Archive, Save } from 'lucide-svelte';
+  import { Archive, Save } from '@lucide/svelte';
   import { getRouteContext } from '$lib/config/context';
   import SchemaForm from '$lib/components/form/SchemaForm.svelte';
   import { trainingStore } from '$lib/events/training-store';

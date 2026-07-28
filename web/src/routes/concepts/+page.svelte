@@ -3,7 +3,7 @@
   import { createConceptsQuery, createUpdateConceptsMutation } from '$lib/api/queries';
   import type { Concept } from '$lib/api/types';
   import ConceptsEditor from '$lib/components/concepts/ConceptsEditor.svelte';
-  import { AlertCircle } from 'lucide-svelte';
+  import { AlertCircle } from '@lucide/svelte';
   import PageHeader from '$lib/components/layout/PageHeader.svelte';
   import { Alert } from '$lib/components/ui/alert';
   import { Skeleton } from '$lib/components/ui/skeleton';

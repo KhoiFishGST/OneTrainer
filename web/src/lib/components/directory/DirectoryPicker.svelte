@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack, tick } from 'svelte';
-  import { Folder, File, ArrowUp } from 'lucide-svelte';
+  import { Folder, File, ArrowUp } from '@lucide/svelte';
   import { api } from '$lib/api/client';
   import { Button } from '$lib/components/ui/button';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';

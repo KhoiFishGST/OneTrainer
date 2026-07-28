@@ -1,7 +1,7 @@
 <script lang="ts">
   import { consoleStore, type ConsoleStore } from '$lib/events/console-store.svelte';
   import { onMount, tick } from 'svelte';
-  import { Download, ArrowDown, Pause, Play, Trash2 } from 'lucide-svelte';
+  import { Download, ArrowDown, Pause, Play, Trash2 } from '@lucide/svelte';
   import { Button } from '$lib/components/ui/button';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
   import { Badge } from '$lib/components/ui/badge';

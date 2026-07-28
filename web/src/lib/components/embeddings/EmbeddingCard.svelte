@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Trash2, Copy, Folder } from 'lucide-svelte';
+  import { Trash2, Copy, Folder } from '@lucide/svelte';
   import { Switch as Toggle } from '$lib/components/ui/switch/index.js';
   import TimeInput from '$lib/components/form/TimeInput.svelte';
   import { Button } from '$lib/components/ui/button';

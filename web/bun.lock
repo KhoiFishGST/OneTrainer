@@ -5,14 +5,20 @@
     "": {
       "name": "onetrainer-web",
       "dependencies": {
+        "@lucide/svelte": "^1.27.0",
         "@tanstack/svelte-query": "^5.0.0",
-        "lucide-svelte": "^0.468.0",
+        "bits-ui": "^2.16.3",
+        "clsx": "^2.1.1",
+        "mode-watcher": "^1.1.0",
+        "svelte-sonner": "^1.1.0",
+        "tailwind-merge": "^3.6.0",
+        "tailwind-variants": "^3.2.2",
         "uplot": "^1.6.32",
+        "vaul-svelte": "^1.0.0-next.7",
       },
       "devDependencies": {
         "@axe-core/playwright": "^4.12.1",
         "@internationalized/date": "^3.12.0",
-        "@lucide/svelte": "^1.27.0",
         "@playwright/test": "^1.49.0",
         "@sveltejs/adapter-static": "^3.0.0",
         "@sveltejs/kit": "^2.0.0",
@@ -21,18 +27,11 @@
         "@testing-library/jest-dom": "^6.0.0",
         "@testing-library/svelte": "^5.0.0",
         "@types/node": "^22.0.0",
-        "bits-ui": "^2.16.3",
-        "clsx": "^2.1.1",
         "jsdom": "^25.0.0",
-        "mode-watcher": "^1.1.0",
         "svelte": "^5.0.0",
         "svelte-check": "^4.0.0",
-        "svelte-sonner": "^1.1.0",
-        "tailwind-merge": "^3.6.0",
-        "tailwind-variants": "^3.2.2",
         "tailwindcss": "^4.3.0",
         "typescript": "^5.0.0",
-        "vaul-svelte": "^1.0.0-next.7",
         "vite": "^6.0.0",
         "vitest": "^3.0.0",
       },
@@ -434,8 +433,6 @@
     "loupe": ["loupe@3.2.1", "", {}, "sha512-CdzqowRJCeLU72bHvWqwRBBlLcMEtIvGrlvef74kMnV2AolS9Y8xUv1I0U/MNAWMhBlKIoyuEgoJ0t/bbwHbLQ=="],
 
     "lru-cache": ["lru-cache@10.4.3", "", {}, "sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ=="],
-
-    "lucide-svelte": ["lucide-svelte@0.468.0", "", { "peerDependencies": { "svelte": "^3 || ^4 || ^5.0.0-next.42" } }, "sha512-n0ecAFtCY5LEeL+PJ1Xj4n3c2gzj8tMpak0KMGnvoSJEjCsCnRB0mekBtJZAo7beyynW9Qj5Um1KfMBAeTNplw=="],
 
     "lz-string": ["lz-string@1.5.0", "", { "bin": { "lz-string": "bin/bin.js" } }, "sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ=="],
 

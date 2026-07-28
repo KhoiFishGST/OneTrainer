@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-svelte';
+  import { ChevronLeft, ChevronRight, ExternalLink } from '@lucide/svelte';
   import ResponsiveDialogDrawer from '$lib/components/overlays/ResponsiveDialogDrawer.svelte';
   import { Button } from '$lib/components/ui/button';
   import type { GalleryRunModel, GalleryVariant } from '../../api/types';

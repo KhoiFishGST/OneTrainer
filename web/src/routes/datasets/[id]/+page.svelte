@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ArrowLeft, Upload, Image as ImageIcon, X } from 'lucide-svelte';
+  import { ArrowLeft, Upload, Image as ImageIcon, X } from '@lucide/svelte';
   import { Button } from '$lib/components/ui/button';
   import { FileInput } from '$lib/components/ui/file-input/index.js';
   import * as Empty from '$lib/components/ui/empty/index.js';

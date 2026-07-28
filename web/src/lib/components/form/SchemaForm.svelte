@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Settings } from 'lucide-svelte';
+  import { Settings } from '@lucide/svelte';
   import type { SchemaField, SchemaTab } from '../../config/validation';
   import type { FieldError } from '../../api/types';
   import { getPath } from '../../config/path';

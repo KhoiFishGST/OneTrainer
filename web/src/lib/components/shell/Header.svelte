@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Save, FolderOpen, RotateCcw, RefreshCw, AlertTriangle, Menu } from 'lucide-svelte';
+  import { Save, FolderOpen, RotateCcw, RefreshCw, AlertTriangle, Menu } from '@lucide/svelte';
   import Select from '../form/ValueSelect.svelte';
   import ResponsiveDialogDrawer from '$lib/components/overlays/ResponsiveDialogDrawer.svelte';
   import { Input as TextInput } from '../ui/input/index.js';
@@ -21,12 +21,14 @@
 
   import * as AlertDialog from '../ui/alert-dialog/index.js';
 
-  let sidebar = $state<any>(null);
-  try {
-    sidebar = useSidebar();
-  } catch {
-    // context not provided in isolated unit test
-  }
+  const sidebar = (() => {
+    try {
+      return useSidebar();
+    } catch {
+      // Sidebar context is absent in isolated unit tests.
+      return null;
+    }
+  })();
 
   let {
     workspace: workspaceProp = null,

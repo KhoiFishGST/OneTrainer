@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Sparkles, Plus } from 'lucide-svelte';
+  import { Sparkles, Plus } from '@lucide/svelte';
   import { getRouteContext } from '$lib/config/context';
   import SchemaForm from '$lib/components/form/SchemaForm.svelte';
   import Select from '$lib/components/form/ValueSelect.svelte';

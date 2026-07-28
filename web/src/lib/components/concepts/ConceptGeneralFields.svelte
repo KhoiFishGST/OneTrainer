@@ -7,7 +7,7 @@
   import Select from '$lib/components/form/ValueSelect.svelte';
   import DirectoryInput from '$lib/components/form/DirectoryInput.svelte';
   import { Button } from '$lib/components/ui/button';
-  import { FolderOpen, FolderKanban } from 'lucide-svelte';
+  import { FolderOpen, FolderKanban } from '@lucide/svelte';
 
   let {
     draft = $bindable(),
