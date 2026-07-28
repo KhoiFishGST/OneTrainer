@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { Trash2, Plus, FolderOpen } from 'lucide-svelte';
   import { Button } from '$lib/components/ui/button';
   import AddCard from '$lib/components/collections/AddItemCard.svelte';
@@ -8,6 +7,7 @@
   import * as Table from '$lib/components/ui/table/index.js';
   import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
   import { Alert } from '$lib/components/ui/alert';
+  import { isMobile } from '$lib/hooks/is-mobile.svelte';
 
   interface DatasetItem {
     name: string;
@@ -29,19 +29,7 @@
     isDeleting?: boolean;
   } = $props();
 
-  let isDesktop = $state(true);
-
-  onMount(() => {
-    const mediaQuery = window.matchMedia('(min-width: 768px)');
-    isDesktop = mediaQuery.matches;
-    const handler = (e: MediaQueryListEvent) => {
-      isDesktop = e.matches;
-    };
-    mediaQuery.addEventListener?.('change', handler) ?? mediaQuery.addListener?.(handler);
-    return () => {
-      mediaQuery.removeEventListener?.('change', handler) ?? mediaQuery.removeListener?.(handler);
-    };
-  });
+  const isDesktop = $derived(!isMobile.current);
 
   let datasetToDelete = $state<string | null>(null);
   let isConfirmOpen = $state(false);

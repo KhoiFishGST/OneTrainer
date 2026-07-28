@@ -24,6 +24,7 @@
   import { consoleStore } from '$lib/events/console-store.svelte';
   import { EventClient } from '$lib/events/client';
   import { api } from '$lib/api/client';
+  import { isMobile } from '$lib/hooks/is-mobile.svelte';
 
   let { children }: { children?: Snippet } = $props();
 
@@ -37,7 +38,6 @@
   let pickerOpen = $state(false);
   let pickerInitialPath = $state('/');
   let pickerOnSelect = $state<((selectedPath: string) => void) | null>(null);
-  let isMobile = $state(false);
   let drawerOpen = $state(false);
   let eventClient = $state<EventClient | null>(null);
 
@@ -127,19 +127,6 @@
     });
     eventClient.start();
 
-    if (typeof window !== 'undefined') {
-      const mq = window.matchMedia('(max-width: 767px)');
-      isMobile = mq.matches;
-      const handler = (e: MediaQueryListEvent) => {
-        isMobile = e.matches;
-      };
-      mq.addEventListener('change', handler);
-      return () => {
-        mq.removeEventListener('change', handler);
-        eventClient?.stop();
-      };
-    }
-
     return () => {
       eventClient?.stop();
     };
@@ -188,7 +175,7 @@
     <div class="flex-1 flex overflow-hidden relative">
       <Rail
         {currentPath}
-        mobile={isMobile}
+        mobile={isMobile.current}
         onToggleConsole={toggleDrawer}
         isConsoleOpen={drawerOpen}
       />

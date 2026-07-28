@@ -165,7 +165,7 @@
     min-width: 420px;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
     .field-row {
       flex-direction: column;
       align-items: flex-start;

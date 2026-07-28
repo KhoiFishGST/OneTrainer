@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { fireEvent, render, screen } from "@testing-library/svelte";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import TrainingPage from "./+page.svelte";
 
 const mockSchema = {
@@ -145,6 +145,10 @@ vi.mock("$lib/config/context", () => ({
 describe("Training page subnav tabs and draft retention", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+  });
+
+  afterEach(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 50));
   });
 
   it("renders 8 text-only tabs without icons and switches between panels", async () => {

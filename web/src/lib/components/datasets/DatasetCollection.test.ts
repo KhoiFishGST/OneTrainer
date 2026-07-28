@@ -1,11 +1,19 @@
 import '@testing-library/jest-dom/vitest';
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { mockIsMobile } from '$lib/hooks/mock-is-mobile.svelte';
 import DatasetCollection from './DatasetCollection.svelte';
+
+vi.mock('$lib/hooks/is-mobile.svelte', () => ({
+  get isMobile() {
+    return mockIsMobile;
+  },
+}));
 
 const mediaListeners = new Set<(e: MediaQueryListEvent) => void>();
 
 function mockMatchMedia(matches: boolean) {
+  mockIsMobile.current = !matches;
   Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: matches ? 1024 : 500 });
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
@@ -134,6 +142,13 @@ describe('DatasetCollection', () => {
       const dialog = await screen.findByRole('alertdialog');
       expect(dialog).toBeInTheDocument();
       expect(screen.getByText(/Are you sure you want to delete dataset "Dataset Alpha"\?/i)).toBeInTheDocument();
+    });
+
+    it('renders cards on the first paint at phone width, with no desktop-table flash', () => {
+      mockIsMobile.current = true;
+      render(DatasetCollection, { props: { datasets: mockDatasets } });
+
+      expect(screen.queryByRole('table')).not.toBeInTheDocument();
     });
   });
 });

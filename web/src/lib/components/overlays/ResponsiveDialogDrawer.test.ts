@@ -1,11 +1,19 @@
 import '@testing-library/jest-dom/vitest';
-import { render, screen, fireEvent } from '@testing-library/svelte';
+import { render, screen, fireEvent, cleanup } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { mockIsMobile } from '$lib/hooks/mock-is-mobile.svelte';
 import ResponsiveDialogDrawerTestWrapper from './ResponsiveDialogDrawerTestWrapper.svelte';
+
+vi.mock('$lib/hooks/is-mobile.svelte', () => ({
+  get isMobile() {
+    return mockIsMobile;
+  },
+}));
 
 const mediaListeners = new Set<(e: MediaQueryListEvent) => void>();
 
 function mockMatchMedia(matches: boolean) {
+  mockIsMobile.current = matches;
   Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: matches ? 500 : 1024 });
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
@@ -29,6 +37,8 @@ function mockMatchMedia(matches: boolean) {
 
 describe('ResponsiveDialogDrawer', () => {
   beforeEach(() => {
+    cleanup();
+    document.body.innerHTML = '';
     mockMatchMedia(false);
   });
 

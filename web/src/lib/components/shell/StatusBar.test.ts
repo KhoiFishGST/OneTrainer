@@ -1,11 +1,19 @@
 import { fireEvent, render, screen } from '@testing-library/svelte';
 import { expect, it, describe, beforeEach, afterEach, vi } from 'vitest';
+import { mockIsMobile } from '$lib/hooks/mock-is-mobile.svelte';
 import StatusBarTestWrapper from './StatusBarTestWrapper.svelte';
 import { trainingStore } from '../../events/training-store';
 import { api } from '../../api/client';
 
+vi.mock('$lib/hooks/is-mobile.svelte', () => ({
+  get isMobile() {
+    return mockIsMobile;
+  },
+}));
+
 describe('StatusBar component', () => {
   beforeEach(() => {
+    mockIsMobile.current = false;
     trainingStore.reset();
     vi.restoreAllMocks();
   });
@@ -125,6 +133,7 @@ describe('StatusBar component', () => {
     const sampleSpy = vi.spyOn(api, 'requestSample').mockResolvedValue(undefined as any);
     const backupSpy = vi.spyOn(api, 'requestBackup').mockResolvedValue(undefined as any);
 
+    mockIsMobile.current = true;
     Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 390 });
     Object.defineProperty(window, 'matchMedia', {
       writable: true,

@@ -14,7 +14,7 @@
   import { api } from '../../api/client';
 
   const trainingState = $derived($trainingStore.status?.state ?? 'IDLE');
-  const mobile = $derived(isMobile.current || (typeof window !== 'undefined' && window.innerWidth < 768));
+  const mobile = $derived(isMobile.current);
 
   async function handleStartTraining() {
     try {
