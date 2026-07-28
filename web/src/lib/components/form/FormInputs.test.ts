@@ -83,4 +83,3 @@ it('always includes help text in input aria-describedby and accessibility tree e
   expect(helpEl).toHaveTextContent("Enter your handle");
   expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
 });
-

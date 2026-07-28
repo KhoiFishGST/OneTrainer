@@ -66,4 +66,3 @@ it('ensures IDLE status pill uses distinct text token and active navigation uses
   expect(railContentRaw).toMatch(/\.nav-item\.active[\s\S]*?background-color:\s*var\(--accent\)/);
   expect(railContentRaw).toMatch(/\.nav-item\.active[\s\S]*?color:\s*var\(--accent-foreground\)/);
 });
-
