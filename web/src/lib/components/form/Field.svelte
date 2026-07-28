@@ -68,19 +68,29 @@
       showTooltip = false;
     }
   }
+
+  function handleKeyDown(e: KeyboardEvent) {
+    if (!tooltip) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      showTooltip = !showTooltip;
+    }
+  }
 </script>
 
 <div class="form-field" class:is-inline={inline} class:is-full-width={fullWidth} class:has-error={!!error}>
   <div class="field-row">
     {#if label}
       {#if tooltip}
-        <button
-          type="button"
+        <div
+          role="button"
+          tabindex="0"
           class="field-label-side has-tooltip text-left"
           onmouseenter={handleMouseEnter}
           onmouseleave={handleMouseLeave}
           onmousemove={handleMouseMove}
           onclick={handleLabelClick}
+          onkeydown={handleKeyDown}
         >
           <label for={inputId} class="field-label cursor-help">{label}</label>
 
@@ -89,7 +99,7 @@
               {tooltip}
             </div>
           {/if}
-        </button>
+        </div>
       {:else}
         <div class="field-label-side">
           <label for={inputId} class="field-label">{label}</label>

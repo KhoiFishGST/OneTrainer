@@ -88,6 +88,7 @@
 <ModalDialog
   bind:open
   {title}
+  {isSubmitting}
   onClose={handleClose}
   onApply={handleSave}
   applyText="Save"

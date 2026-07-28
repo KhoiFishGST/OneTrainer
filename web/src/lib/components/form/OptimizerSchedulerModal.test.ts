@@ -157,5 +157,32 @@ describe('OptimizerSchedulerModal', () => {
     expect(screen.getByText('AdamW Parameters')).toBeInTheDocument();
     expect(lrInput).toHaveValue(0.005);
   });
+
+  it("disables submit button and shows pending state during async save operation", async () => {
+    let resolveSave: (val?: any) => void = () => {};
+    const pendingSave = new Promise((resolve) => {
+      resolveSave = resolve;
+    });
+    const onSave = vi.fn().mockReturnValue(pendingSave);
+
+    render(OptimizerSchedulerModal, {
+      props: {
+        open: true,
+        title: 'AdamW Parameters',
+        fields: sampleFields,
+        values: initialValues,
+        onSave,
+      },
+    });
+
+    const saveBtn = screen.getByRole('button', { name: /save/i });
+    await fireEvent.click(saveBtn);
+
+    expect(saveBtn).toBeDisabled();
+    expect(screen.getByText("Save...")).toBeInTheDocument();
+
+    resolveSave();
+    await pendingSave;
+  });
 });
 

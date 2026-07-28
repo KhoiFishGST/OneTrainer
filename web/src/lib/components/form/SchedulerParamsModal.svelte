@@ -47,6 +47,7 @@
   bind:open
   title="Configure Custom Scheduler Parameters"
   applyText="Apply Parameters"
+  {isSubmitting}
   onApply={handleApply}
   onClose={() => (open = false)}
 >

@@ -100,5 +100,30 @@ describe("OptimizerParamsModal", () => {
     expect(screen.getByText("Configure Optimizer Parameters")).toBeInTheDocument();
     expect(betaInput).toHaveValue(0.8);
   });
+
+  it("disables submit button and shows pending state during async save operation", async () => {
+    let resolveSave: (val?: any) => void = () => {};
+    const pendingSave = new Promise((resolve) => {
+      resolveSave = resolve;
+    });
+    const onSave = vi.fn().mockReturnValue(pendingSave);
+
+    render(OptimizerParamsModal, {
+      props: {
+        open: true,
+        values: { optimizer: { optimizer: "ADAMW" }, optimizer_params: { beta1: 0.9 } },
+        onSave,
+      },
+    });
+
+    const applyBtn = screen.getByRole("button", { name: "Apply Parameters" });
+    await fireEvent.click(applyBtn);
+
+    expect(applyBtn).toBeDisabled();
+    expect(screen.getByText("Apply Parameters...")).toBeInTheDocument();
+
+    resolveSave();
+    await pendingSave;
+  });
 });
 

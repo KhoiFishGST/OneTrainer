@@ -360,4 +360,44 @@ it("supports multi-key time values and units", async () => {
   expect(setRaw).toHaveBeenCalledWith("save_every_unit", "EPOCH");
 });
 
+it("renders tooltip trigger as div role=button instead of button and handles keyboard events", async () => {
+  render(SchemaForm, {
+    tab: {
+      id: "tooltip_test",
+      label: "Tooltip Test",
+      groups: [
+        {
+          id: "g",
+          fields: [
+            {
+              id: "f-tooltip",
+              keys: ["f_tooltip"],
+              label: "Field With Tooltip",
+              tooltip: "This is a helpful tip",
+              control: "text",
+            },
+          ],
+        },
+      ],
+    },
+    values: { f_tooltip: "hello" },
+    issues: [],
+    setRaw: vi.fn(),
+  });
+
+  const label = screen.getByText("Field With Tooltip");
+  expect(label.parentElement?.tagName.toLowerCase()).not.toBe("button");
+  expect(label.parentElement).toHaveAttribute("role", "button");
+  expect(label.parentElement).toHaveAttribute("tabindex", "0");
+
+  const trigger = label.parentElement!;
+  expect(screen.queryByText("This is a helpful tip")).not.toBeInTheDocument();
+
+  await fireEvent.keyDown(trigger, { key: "Enter" });
+  expect(screen.getByText("This is a helpful tip")).toBeInTheDocument();
+
+  await fireEvent.keyDown(trigger, { key: " " });
+  expect(screen.queryByText("This is a helpful tip")).not.toBeInTheDocument();
+});
+
 

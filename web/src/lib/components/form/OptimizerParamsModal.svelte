@@ -192,6 +192,7 @@
   title="Configure Optimizer Parameters"
   width="wide"
   applyText="Apply Parameters"
+  {isSubmitting}
   onApply={handleApply}
   onClose={() => (open = false)}
 >

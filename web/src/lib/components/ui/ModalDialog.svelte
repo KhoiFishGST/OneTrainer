@@ -1,6 +1,6 @@
 <script lang="ts">
   import { tick, type Snippet } from 'svelte';
-  import { X } from 'lucide-svelte';
+  import { X, Loader2 } from 'lucide-svelte';
   import Button from './Button.svelte';
 
   let {
@@ -11,6 +11,8 @@
     align = 'center',
     width = 'default',
     showFooter = true,
+    isSubmitting = false,
+    disabled = false,
     onClose,
     onApply,
     onKeyDown,
@@ -26,6 +28,8 @@
     align?: 'top' | 'center';
     width?: 'default' | 'medium' | 'wide';
     showFooter?: boolean;
+    isSubmitting?: boolean;
+    disabled?: boolean;
     onClose?: () => void;
     onApply?: () => void;
     onKeyDown?: (event: KeyboardEvent) => void;
@@ -154,6 +158,7 @@
           <Button
             variant="secondary"
             class="btn cancel-btn"
+            disabled={disabled || isSubmitting}
             onclick={handleClose}
           >
             {cancelText}
@@ -162,9 +167,15 @@
             <Button
               variant="primary"
               class="btn apply-btn"
+              disabled={disabled || isSubmitting}
               onclick={handleApply}
             >
-              {applyText}
+              {#if isSubmitting}
+                <Loader2 size={16} class="animate-spin mr-1.5 inline-block" />
+                <span>{applyText}...</span>
+              {:else}
+                {applyText}
+              {/if}
             </Button>
           {/if}
         </div>
