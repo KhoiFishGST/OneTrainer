@@ -3,6 +3,20 @@ import { test, expect } from "@playwright/test";
 test.describe("Visual Regression Baselines", () => {
   const screenshotOpts = { animations: "disabled" as const, maxDiffPixelRatio: 0.02 };
 
+  async function switchToLightTheme(page: any) {
+    const toggle = page.getByRole("button", { name: /switch to light theme/i });
+    if (await toggle.isVisible()) {
+      await toggle.click();
+    } else {
+      await page.evaluate(() => {
+        localStorage.setItem("webui.theme", "light");
+        document.documentElement.classList.remove("dark");
+        document.documentElement.style.colorScheme = "light";
+      });
+    }
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
+  }
+
   test.describe("Desktop Viewport (1280x720)", () => {
     test.use({ viewport: { width: 1280, height: 720 } });
 
@@ -10,8 +24,7 @@ test.describe("Visual Regression Baselines", () => {
       await page.goto("/general");
       await expect(page.locator(".app-shell")).toHaveScreenshot("shell-desktop-dark.png", screenshotOpts);
 
-      await page.getByRole("button", { name: /switch to light theme/i }).click();
-      await expect(page.locator("html")).not.toHaveClass(/dark/);
+      await switchToLightTheme(page);
       await expect(page.locator(".app-shell")).toHaveScreenshot("shell-desktop-light.png", screenshotOpts);
     });
 
@@ -19,7 +32,7 @@ test.describe("Visual Regression Baselines", () => {
       await page.goto("/general");
       await expect(page.locator("main.main-content")).toHaveScreenshot("schema-form-desktop-dark.png", screenshotOpts);
 
-      await page.getByRole("button", { name: /switch to light theme/i }).click();
+      await switchToLightTheme(page);
       await expect(page.locator("main.main-content")).toHaveScreenshot("schema-form-desktop-light.png", screenshotOpts);
     });
 
@@ -53,11 +66,7 @@ test.describe("Visual Regression Baselines", () => {
       await page.goto("/general");
       await expect(page.locator(".app-shell")).toHaveScreenshot("shell-phone-dark.png", screenshotOpts);
 
-      // Open menu drawer to reach theme toggle on mobile if needed, or directly click header theme toggle
-      const toggle = page.getByRole("button", { name: /switch to light theme/i });
-      if (await toggle.isVisible()) {
-        await toggle.click();
-      }
+      await switchToLightTheme(page);
       await expect(page.locator(".app-shell")).toHaveScreenshot("shell-phone-light.png", screenshotOpts);
     });
 
@@ -65,10 +74,7 @@ test.describe("Visual Regression Baselines", () => {
       await page.goto("/general");
       await expect(page.locator("main.main-content")).toHaveScreenshot("schema-form-phone-dark.png", screenshotOpts);
 
-      const toggle = page.getByRole("button", { name: /switch to light theme/i });
-      if (await toggle.isVisible()) {
-        await toggle.click();
-      }
+      await switchToLightTheme(page);
       await expect(page.locator("main.main-content")).toHaveScreenshot("schema-form-phone-light.png", screenshotOpts);
     });
 

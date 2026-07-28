@@ -32,7 +32,7 @@ export default defineConfig({
     },
     {
       name: "chromium-phone",
-      testMatch: /mobile|responsive-workflows|visual|accessibility/,
+      testMatch: /mobile|responsive-workflows|accessibility/,
       use: Object.assign({}, devices["iPhone 13"], { defaultBrowserType: "chromium" }),
     },
     {

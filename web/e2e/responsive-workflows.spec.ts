@@ -130,8 +130,54 @@ test.describe("Responsive Workflows & Accessibility Controls", () => {
 
     test("destructive confirmation dialog on dataset delete", async ({ page }) => {
       await page.goto("/datasets");
+
+      // Create dataset for deletion test
       const addBtn = page.getByRole("button", { name: "Add Dataset" });
       await expect(addBtn).toBeVisible();
+      await addBtn.click();
+
+      const createModal = page.getByRole("dialog", { name: "Create New Dataset" });
+      await expect(createModal).toBeVisible();
+
+      const nameInput = page.locator("#ds-name-input");
+      await nameInput.fill("Dataset For Deletion");
+      await createModal.getByRole("button", { name: "Create" }).click();
+      await expect(createModal).not.toBeVisible();
+
+      const datasetCard = page.locator(".dataset-card-link", { hasText: "Dataset For Deletion" });
+      await expect(datasetCard).toBeVisible();
+
+      // Trigger deletion confirmation dialog
+      await datasetCard.hover();
+      const deleteBtn = datasetCard.getByRole("button", { name: "Delete dataset" });
+      await expect(deleteBtn).toBeVisible();
+      await deleteBtn.click();
+
+      // Assert AlertDialog ("Delete dataset" confirmation title/description) appears
+      const alertDialog = page
+        .getByRole("alertdialog")
+        .or(page.getByRole("dialog", { name: "Delete Dataset" }));
+      await expect(alertDialog).toBeVisible();
+      await expect(alertDialog.getByRole("heading", { name: "Delete Dataset" })).toBeVisible();
+      await expect(
+        alertDialog.getByText(/Are you sure you want to delete dataset "Dataset For Deletion"\?/)
+      ).toBeVisible();
+
+      // Click Cancel and verify dataset was NOT deleted
+      await alertDialog.getByRole("button", { name: "Cancel" }).click();
+      await expect(alertDialog).not.toBeVisible();
+      await expect(datasetCard).toBeVisible();
+
+      // Trigger deletion again and click Confirm/Delete
+      await datasetCard.hover();
+      await deleteBtn.click();
+      await expect(alertDialog).toBeVisible();
+
+      await alertDialog.getByRole("button", { name: "Delete" }).click();
+      await expect(alertDialog).not.toBeVisible();
+
+      // Verify dataset deletion behavior (card is removed)
+      await expect(datasetCard).not.toBeVisible();
     });
   });
 });

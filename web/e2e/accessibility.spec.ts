@@ -78,11 +78,16 @@ test.describe("Accessibility Audit (axe-core)", () => {
     await page.getByLabel("Preset Name").fill("existing_preset");
     await saveDialog.getByRole("button", { name: "Save" }).click();
 
-    const overwriteDialog = page.getByRole("dialog", { name: "File Already Exists" });
-    if (await overwriteDialog.isVisible()) {
-      await checkAccessibility(page, "open Overwrite Alert Dialog");
-    } else {
-      await checkAccessibility(page, "Save dialog fallback");
+    // If saveDialog closes because preset didn't exist yet, save again to force 409 overwrite dialog
+    if (await saveDialog.isHidden().catch(() => false)) {
+      await page.locator(".header-left").getByRole("button", { name: "Save" }).click();
+      await expect(saveDialog).toBeVisible();
+      await page.getByLabel("Preset Name").fill("existing_preset");
+      await saveDialog.getByRole("button", { name: "Save" }).click();
     }
+
+    const overwriteDialog = page.getByRole("dialog", { name: "File Already Exists" });
+    await expect(overwriteDialog).toBeVisible();
+    await checkAccessibility(page, "open Overwrite Alert Dialog");
   });
 });
