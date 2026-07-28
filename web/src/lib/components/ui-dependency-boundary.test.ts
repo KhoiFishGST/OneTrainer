@@ -32,7 +32,7 @@ export function findForbiddenImports(source: string, filename: string): string[]
     const importPath = match[1];
 
     if (importPath.startsWith('$lib/')) {
-      const isAllowedUtils = importPath === '$lib/utils' || importPath.startsWith('$lib/utils/') || importPath.startsWith('$lib/utils.') || importPath.startsWith('$lib/hooks/');
+      const isAllowedUtils = importPath === '$lib/utils' || importPath.startsWith('$lib/utils/') || importPath.startsWith('$lib/utils.');
       const isAllowedUI = importPath.startsWith('$lib/components/ui/');
       if (!isAllowedUtils && !isAllowedUI) {
         violations.push(`${filename}: import ${importPath} violates UI dependency boundary`);
@@ -58,6 +58,7 @@ describe('UI component dependency boundary', () => {
     const fixture2 = "import { trainingStore } from '$lib/events/training-store';";
     const fixture3 = "import { api } from '$lib/api/client';";
     const fixture4 = "import Header from '../../shell/Header.svelte';";
+    const fixture5 = "import { useHook } from '$lib/hooks/use-hook';";
 
     const targetFile = '/src/lib/components/ui/button/button.svelte';
 
@@ -65,6 +66,7 @@ describe('UI component dependency boundary', () => {
     expect(findForbiddenImports(fixture2, targetFile)).not.toEqual([]);
     expect(findForbiddenImports(fixture3, targetFile)).not.toEqual([]);
     expect(findForbiddenImports(fixture4, targetFile)).not.toEqual([]);
+    expect(findForbiddenImports(fixture5, targetFile)).not.toEqual([]);
   });
 
 

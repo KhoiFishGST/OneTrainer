@@ -15,8 +15,10 @@
 
   $effect(() => {
     const current = message;
-    if (current && current !== previousMessage) {
-      dismissed = false;
+    if (current !== previousMessage) {
+      if (current) {
+        dismissed = false;
+      }
       previousMessage = current;
     }
   });
