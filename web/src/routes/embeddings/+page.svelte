@@ -7,6 +7,7 @@
   import Alert from '$lib/components/ui/Alert.svelte';
   import FormPageSkeleton from '$lib/components/ui/FormPageSkeleton.svelte';
   import Button from '$lib/components/ui/Button.svelte';
+  import * as Empty from '$lib/components/ui/empty/index.js';
 
   const ctx = getRouteContext();
 
@@ -109,7 +110,7 @@
 </script>
 
 {#if !ctx.workspace}
-  <FormPageSkeleton />
+  <FormPageSkeleton label="Loading embeddings configuration" />
 {:else}
   <div class="route-page">
     <PageHeader title={tab.label || 'Embeddings'} class="embeddings-header" />
@@ -182,26 +183,28 @@
 
           <!-- Embeddings Grid / Cards -->
           {#if embeddingsList.length === 0}
-            <div class="empty-embeddings-card">
-              <p class="empty-title">No Additional Embeddings</p>
-              <p class="empty-desc">
+            <Empty.Root class="empty-embeddings-card border border-dashed p-8 rounded-lg bg-card text-center">
+              <Empty.Title class="empty-title text-base font-semibold">No Additional Embeddings</Empty.Title>
+              <Empty.Description class="empty-desc text-sm text-muted-foreground max-w-md mx-auto mb-4">
                 Click <strong>+ Add Embedding</strong> to add textual inversion embedding configurations to your training run.
-              </p>
-              <Button
-                variant="primary"
-                class="primary-btn mt-2"
-                disabled={!isEmbeddingSupported}
-                onclick={handleAddEmbedding}
-              >
-                <Plus size={16} />
-                <span>Add Embedding</span>
-              </Button>
-            </div>
+              </Empty.Description>
+              <Empty.Content>
+                <Button
+                  variant="primary"
+                  class="primary-btn"
+                  disabled={!isEmbeddingSupported}
+                  onclick={handleAddEmbedding}
+                >
+                  <Plus size={16} />
+                  <span>Add Embedding</span>
+                </Button>
+              </Empty.Content>
+            </Empty.Root>
           {:else}
             <div class="embeddings-grid">
-              {#each embeddingsList as embedding, i (embedding.uuid || i)}
+              {#each embeddingsList as item, i (item.uuid || i)}
                 <EmbeddingCard
-                  bind:embedding={embeddingsList[i]}
+                  embedding={item}
                   index={i}
                   disabled={!isEmbeddingSupported}
                   onRemove={handleRemoveEmbedding}
@@ -365,35 +368,7 @@
     cursor: not-allowed;
   }
 
-  .empty-embeddings-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2.5rem 1.5rem;
-    background: var(--panel, #181e25);
-    border: 1px dashed var(--line, #2d3741);
-    border-radius: 8px;
-    text-align: center;
-  }
 
-  .empty-title {
-    font-size: 1rem;
-    font-weight: 600;
-    margin: 0 0 0.375rem 0;
-    color: var(--text, #f8fafc);
-  }
-
-  .empty-desc {
-    font-size: 0.84rem;
-    color: var(--muted, #94a3b8);
-    margin: 0 0 1rem 0;
-    max-width: 420px;
-  }
-
-  .empty-embeddings-card :global(.mt-2) {
-    margin-top: 0.5rem;
-  }
 
   .embeddings-grid {
     display: flex;

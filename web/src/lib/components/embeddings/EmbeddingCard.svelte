@@ -5,6 +5,9 @@
   import Button from '$lib/components/ui/Button.svelte';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
   import NumberInput from '$lib/components/form/NumericDraftInput.svelte';
+  import * as Card from '$lib/components/ui/card/index.js';
+  import { Badge } from '$lib/components/ui/badge/index.js';
+  import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 
   interface EmbeddingConfig {
     uuid?: string;
@@ -34,6 +37,8 @@
     onOpenDirectory?: (initialPath: string, callback?: (path: string) => void) => void;
   }>();
 
+  let showDeleteConfirm = $state(false);
+
   function handleFilePick() {
     if (onOpenDirectory) {
       onOpenDirectory(embedding.model_name || '', (selectedPath: string) => {
@@ -43,16 +48,17 @@
   }
 </script>
 
-<div class="embedding-card" class:disabled>
-  <div class="card-header">
+<Card.Root class="embedding-card {disabled ? 'disabled' : ''}">
+  <Card.Header class="card-header">
     <div class="card-title-group">
-      <span class="card-badge">#{index + 1}</span>
-      <span class="card-title">{embedding.placeholder || '<embedding>'}</span>
+      <Badge variant="secondary" class="card-badge">#{index + 1}</Badge>
+      <Card.Title class="card-title">{embedding.placeholder || '<embedding>'}</Card.Title>
     </div>
 
     <div class="card-actions">
       <Button
         type="button"
+        variant="secondary"
         class="action-btn clone-btn"
         title="Clone embedding"
         {disabled}
@@ -61,8 +67,10 @@
         <Copy size={15} />
         <span>Clone</span>
       </Button>
+
       <Button
         type="button"
+        variant="secondary"
         class="action-btn remove-btn"
         title="Remove embedding"
         {disabled}
@@ -72,9 +80,9 @@
         <span>Remove</span>
       </Button>
     </div>
-  </div>
+  </Card.Header>
 
-  <div class="card-body">
+  <Card.Content class="card-body">
     <!-- Top Row: Base Embedding, Placeholder, Token Count -->
     <div class="fields-grid top-grid">
       <div class="field-item flex-2">
@@ -83,7 +91,6 @@
           <TextInput
             id={`base-emb-${index}`}
             type="text"
-            class="text-input"
             placeholder="Leave empty to create new"
             value={embedding.model_name || ''}
             {disabled}
@@ -91,6 +98,7 @@
           />
           <Button
             type="button"
+            variant="secondary"
             class="browse-btn"
             title="Browse file"
             {disabled}
@@ -106,7 +114,6 @@
         <TextInput
           id={`placeholder-${index}`}
           type="text"
-          class="text-input"
           placeholder="<embedding>"
           value={embedding.placeholder || ''}
           {disabled}
@@ -119,7 +126,6 @@
         <NumberInput
           id={`token-count-${index}`}
           min="1"
-          class="text-input"
           placeholder="Auto"
           value={embedding.token_count ?? ''}
           {disabled}
@@ -172,7 +178,6 @@
         <TextInput
           id={`initial-text-${index}`}
           type="text"
-          class="text-input"
           placeholder="*"
           value={embedding.initial_embedding_text || ''}
           {disabled}
@@ -180,30 +185,52 @@
         />
       </div>
     </div>
-  </div>
-</div>
+  </Card.Content>
+</Card.Root>
+
+{#if showDeleteConfirm}
+  <AlertDialog.Root open={showDeleteConfirm} onOpenChange={(v) => { if (!v) showDeleteConfirm = false; }}>
+    <AlertDialog.Content>
+      <AlertDialog.Header>
+        <AlertDialog.Title>Remove Embedding?</AlertDialog.Title>
+        <AlertDialog.Description>
+          Are you sure you want to remove embedding #{index + 1} ({embedding.placeholder || '<embedding>'})?
+        </AlertDialog.Description>
+      </AlertDialog.Header>
+      <AlertDialog.Footer>
+        <AlertDialog.Cancel onclick={() => showDeleteConfirm = false}>Cancel</AlertDialog.Cancel>
+        <AlertDialog.Action onclick={() => { showDeleteConfirm = false; onRemove(index); }}>
+          Remove
+        </AlertDialog.Action>
+      </AlertDialog.Footer>
+    </AlertDialog.Content>
+  </AlertDialog.Root>
+{/if}
 
 <style>
-  .embedding-card {
-    background-color: var(--color-bg-card, var(--panel, #181e25));
-    border: 1px solid var(--color-border, var(--line, #2d3741));
-    border-radius: 8px;
-    padding: 1rem;
+  :global(.embedding-card) {
+    background-color: var(--color-bg-card, var(--panel, #181e25)) !important;
+    border: 1px solid var(--color-border, var(--line, #2d3741)) !important;
+    border-radius: 8px !important;
+    padding: 1rem !important;
     display: flex;
     flex-direction: column;
     gap: 0.875rem;
     transition: border-color 0.15s ease;
   }
 
-  .embedding-card:hover:not(.disabled) {
-    border-color: var(--color-border-hover, #475569);
+  :global(.embedding-card:hover:not(.disabled)) {
+    border-color: var(--color-border-hover, #475569) !important;
   }
 
-  .card-header {
+  :global(.card-header) {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-bottom: 0.75rem;
+    padding-bottom: 0.75rem !important;
+    padding-top: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
     border-bottom: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.06));
   }
 
@@ -213,20 +240,21 @@
     gap: 0.5rem;
   }
 
-  .card-badge {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--color-text-muted, #94a3b8);
-    background: var(--panel-raised, #252d37);
-    padding: 0.125rem 0.5rem;
-    border-radius: 4px;
+  :global(.card-badge) {
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    color: var(--color-text-muted, #94a3b8) !important;
+    background: var(--panel-raised, #252d37) !important;
+    padding: 0.125rem 0.5rem !important;
+    border-radius: 4px !important;
   }
 
-  .card-title {
-    font-size: 0.9375rem;
-    font-weight: 600;
-    color: var(--color-text-title, var(--text, #f8fafc));
+  :global(.card-title) {
+    font-size: 0.9375rem !important;
+    font-weight: 600 !important;
+    color: var(--color-text-title, var(--text, #f8fafc)) !important;
     font-family: monospace;
+    margin: 0 !important;
   }
 
   .card-actions {
@@ -277,10 +305,11 @@
     cursor: not-allowed;
   }
 
-  .card-body {
+  :global(.card-body) {
     display: flex;
     flex-direction: column;
     gap: 0.875rem;
+    padding: 0 !important;
   }
 
   .fields-grid {
@@ -329,36 +358,10 @@
     color: var(--color-text-muted, #94a3b8);
   }
 
-  .embedding-card :global(.text-input) {
-    min-width: 0;
-    height: 38px;
-    padding: 0 0.75rem;
-    background-color: var(--input-bg, #0f1419);
-    border: 1px solid var(--line, #2d3741);
-    border-radius: 6px;
-    color: var(--text, #f8fafc);
-    font-size: 0.875rem;
-    outline: none;
-    transition: border-color 0.15s ease;
-  }
-
-  .embedding-card :global(.text-input:focus:not(:disabled)) {
-    border-color: var(--accent, #3b82f6);
-  }
-
-  .embedding-card :global(.text-input:disabled) {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
   .input-with-button {
     display: flex;
     align-items: center;
     gap: 0.25rem;
-  }
-
-  .input-with-button :global(.text-input) {
-    flex: 1;
   }
 
   .input-with-button :global(.browse-btn) {

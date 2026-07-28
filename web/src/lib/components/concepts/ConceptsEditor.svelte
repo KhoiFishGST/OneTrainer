@@ -4,7 +4,22 @@
   import Button from '../ui/Button.svelte';
   import { Input as TextInput } from '../ui/input/index.js';
   import { Checkbox } from '../ui/checkbox/index.js';
-  import { Plus, Trash2, Edit2, Copy, Search, Layers, Folder, Eye, EyeOff } from 'lucide-svelte';
+  import { Badge } from '../ui/badge/index.js';
+  import * as Card from '../ui/card/index.js';
+  import * as DropdownMenu from '../ui/dropdown-menu/index.js';
+  import * as AlertDialog from '../ui/alert-dialog/index.js';
+  import * as Empty from '../ui/empty/index.js';
+  import {
+    Plus,
+    Trash2,
+    Edit2,
+    Copy,
+    Search,
+    Folder,
+    Eye,
+    EyeOff,
+    MoreVertical,
+  } from 'lucide-svelte';
   import type { Concept } from '$lib/api/types';
   import ConceptDetailModal from './ConceptDetailModal.svelte';
 
@@ -26,6 +41,8 @@
 
   let editingIndex = $state<number | null>(null);
   let isModalOpen = $state(false);
+
+  let deleteTargetIndex = $state<number | null>(null);
 
   function notifyChange(newConcepts: Concept[]) {
     concepts = newConcepts;
@@ -96,6 +113,7 @@
 
   function handleCloneConcept(index: number) {
     const original = concepts[index];
+    if (!original) return;
     const clone: Concept = JSON.parse(JSON.stringify(original));
     clone.name = `${original.name || 'Concept'} (Copy)`;
     const updated = [...concepts, clone];
@@ -105,6 +123,7 @@
   function handleRemoveConcept(index: number) {
     const updated = concepts.filter((_, i) => i !== index);
     notifyChange(updated);
+    deleteTargetIndex = null;
   }
 
   function handleSaveConcept(updatedConcept: Concept) {
@@ -187,7 +206,7 @@
 
       <Button
         type="button"
-        class="btn btn-secondary"
+        variant="secondary"
         {disabled}
         onclick={toggleAllEnabled}
         title="Toggle enable/disable for all concepts"
@@ -203,40 +222,42 @@
     </div>
   </div>
 
-  <!-- Cards Grid View -->
+  <!-- Empty State composition -->
   {#if filteredConcepts.length === 0}
-    <div class="empty-state">
-      <Folder size={48} class="empty-icon" />
-      <p class="empty-title">
+    <Empty.Root class="border border-dashed p-8 rounded-lg bg-card text-center">
+      <Empty.Media>
+        <Folder size={48} class="text-muted-foreground mx-auto mb-2" />
+      </Empty.Media>
+      <Empty.Title class="text-lg font-semibold">
         {concepts.length === 0 ? 'No concepts configured' : 'No concepts match the search criteria'}
-      </p>
-      <p class="empty-sub">
+      </Empty.Title>
+      <Empty.Description class="text-sm text-muted-foreground max-w-md mx-auto mb-4">
         {concepts.length === 0
           ? 'Add a concept to define training datasets, prompts, image augmentations, and repeats.'
           : 'Try adjusting your search filter or enabling "Show Disabled".'}
-      </p>
+      </Empty.Description>
       {#if concepts.length === 0}
-        <Button
-          type="button"
-          class="btn btn-primary"
-          {disabled}
-          onclick={handleAddConcept}
-        >
-          <Plus size={16} />
-          <span>Add First Concept</span>
-        </Button>
+        <Empty.Content>
+          <Button
+            type="button"
+            variant="primary"
+            {disabled}
+            onclick={handleAddConcept}
+          >
+            <Plus size={16} />
+            <span>Add First Concept</span>
+          </Button>
+        </Empty.Content>
       {/if}
-    </div>
+    </Empty.Root>
   {:else}
+    <!-- Cards Grid View -->
     <div class="concepts-grid">
       <AddCard label="Add Concept" {disabled} onClick={handleAddConcept} />
 
       {#each filteredConcepts as { concept, originalIndex } (originalIndex)}
-        <div
-          class="concept-card"
-          class:disabled={concept.enabled === false}
-          role="button"
-          tabindex="0"
+        <Card.Root
+          class="concept-card {concept.enabled === false ? 'disabled' : ''}"
           onclick={() => handleEditConcept(originalIndex)}
           onkeydown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -244,6 +265,8 @@
               handleEditConcept(originalIndex);
             }
           }}
+          role="button"
+          tabindex={0}
         >
           <!-- Preview Thumbnail -->
           <div class="thumbnail-wrapper">
@@ -252,13 +275,13 @@
               alt="Concept Thumbnail"
               class="concept-thumbnail"
             />
-            <span class="type-badge {concept.type || 'STANDARD'}">
+            <Badge variant="outline" class="type-badge">
               {concept.type || 'STANDARD'}
-            </span>
+            </Badge>
           </div>
 
           <!-- Card Content -->
-          <div class="card-content">
+          <Card.Content class="card-content">
             <div class="card-title-bar">
               <h4 class="concept-name" title={concept.name || concept.path}>
                 {concept.name || (concept.path ? concept.path.split('/').pop() : 'Untitled Concept')}
@@ -269,18 +292,15 @@
                 onclick={(e) => e.stopPropagation()}
                 onkeydown={(e) => e.stopPropagation()}
               >
-                <label class="toggle-switch">
-                  <Checkbox
-                    value={concept.enabled !== false}
-                    onChange={(checked) => {
-                      const updated = concepts.map((c, i) =>
-                        i === originalIndex ? { ...c, enabled: checked } : c
-                      );
-                      notifyChange(updated);
-                    }}
-                  />
-                  <span class="switch-slider"></span>
-                </label>
+                <Checkbox
+                  value={concept.enabled !== false}
+                  onChange={(checked) => {
+                    const updated = concepts.map((c, i) =>
+                      i === originalIndex ? { ...c, enabled: checked } : c
+                    );
+                    notifyChange(updated);
+                  }}
+                />
               </div>
             </div>
 
@@ -289,14 +309,15 @@
             </p>
 
             <div class="concept-meta">
-              <span class="meta-tag">Balancing: {concept.balancing ?? 1}x ({concept.balancing_strategy || 'REPEATS'})</span>
-              <span class="meta-tag">Loss Wt: {concept.loss_weight ?? 1}</span>
+              <Badge variant="secondary" class="meta-tag">Balancing: {concept.balancing ?? 1}x ({concept.balancing_strategy || 'REPEATS'})</Badge>
+              <Badge variant="secondary" class="meta-tag">Loss Wt: {concept.loss_weight ?? 1}</Badge>
             </div>
 
             <!-- Card Actions -->
             <div class="card-actions">
               <Button
                 type="button"
+                variant="secondary"
                 class="btn-action edit"
                 title="Edit Concept Settings"
                 onclick={(e) => {
@@ -310,6 +331,7 @@
 
               <Button
                 type="button"
+                variant="secondary"
                 class="btn-action clone"
                 title="Duplicate Concept"
                 onclick={(e) => {
@@ -323,6 +345,7 @@
 
               <Button
                 type="button"
+                variant="secondary"
                 class="btn-action delete"
                 title="Delete Concept"
                 onclick={(e) => {
@@ -332,9 +355,37 @@
               >
                 <Trash2 size={15} />
               </Button>
+
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger
+                  onclick={(e) => e.stopPropagation()}
+                  class="dropdown-trigger-btn"
+                  title="More actions"
+                >
+                  <MoreVertical size={16} />
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content align="end">
+                  <DropdownMenu.Item onclick={() => handleEditConcept(originalIndex)}>
+                    <Edit2 size={14} class="mr-2" />
+                    <span>Edit Concept</span>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item onclick={() => handleCloneConcept(originalIndex)}>
+                    <Copy size={14} class="mr-2" />
+                    <span>Duplicate</span>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Separator />
+                  <DropdownMenu.Item
+                    class="text-destructive focus:text-destructive"
+                    onclick={() => handleRemoveConcept(originalIndex)}
+                  >
+                    <Trash2 size={14} class="mr-2" />
+                    <span>Delete</span>
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Root>
             </div>
-          </div>
-        </div>
+          </Card.Content>
+        </Card.Root>
       {/each}
     </div>
   {/if}
@@ -351,6 +402,26 @@
       }}
       {openDirectory}
     />
+  {/if}
+
+  <!-- Delete Confirmation Dialog -->
+  {#if deleteTargetIndex !== null}
+    <AlertDialog.Root open={deleteTargetIndex !== null} onOpenChange={(val) => { if (!val) deleteTargetIndex = null; }}>
+      <AlertDialog.Content>
+        <AlertDialog.Header>
+          <AlertDialog.Title>Delete Concept?</AlertDialog.Title>
+          <AlertDialog.Description>
+            Are you sure you want to delete concept "{concepts[deleteTargetIndex]?.name || 'Untitled'}"? This action cannot be undone.
+          </AlertDialog.Description>
+        </AlertDialog.Header>
+        <AlertDialog.Footer>
+          <AlertDialog.Cancel onclick={() => deleteTargetIndex = null}>Cancel</AlertDialog.Cancel>
+          <AlertDialog.Action onclick={() => { if (deleteTargetIndex !== null) handleRemoveConcept(deleteTargetIndex); }}>
+            Delete
+          </AlertDialog.Action>
+        </AlertDialog.Footer>
+      </AlertDialog.Content>
+    </AlertDialog.Root>
   {/if}
 </div>
 
@@ -409,10 +480,6 @@
     min-width: 220px;
   }
 
-  .search-icon {
-    color: var(--muted, #94a3b8);
-  }
-
   .search-box :global(.text-input) {
     min-width: 0;
     background: transparent;
@@ -438,70 +505,15 @@
     cursor: pointer;
   }
 
-  .concepts-editor :global(.btn) {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-height: 0;
-    padding: 0.5rem 0.875rem;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    border: 1px solid transparent;
-    transition: all 0.15s ease;
-  }
-
-  .concepts-editor :global(.btn-primary) {
-    background-color: var(--color-primary, var(--accent, #3b82f6));
-    color: white;
-  }
-
-  .concepts-editor :global(.btn-secondary) {
-    background-color: var(--panel-raised, #1d242c);
-    border: 1px solid var(--line, #2d3741);
-    color: var(--text, #f8fafc);
-  }
-
-  .empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 4rem 1.5rem;
-    border: 2px dashed var(--line, #2d3741);
-    border-radius: 8px;
-    background: var(--panel, #181e25);
-    text-align: center;
-  }
-
-  .empty-icon {
-    color: var(--muted, #94a3b8);
-    margin-bottom: 1rem;
-  }
-
-  .empty-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--text, #f8fafc);
-    margin: 0 0 0.25rem 0;
-  }
-
-  .empty-sub {
-    font-size: 0.875rem;
-    color: var(--muted, #94a3b8);
-    margin: 0 0 1.5rem 0;
-    max-width: 420px;
-  }
-
   .concepts-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 1.25rem;
   }
 
-  .concept-card {
+  :global(.concept-card) {
     display: flex;
+    flex-direction: row !important;
     background: var(--panel, #181e25);
     border: 1px solid var(--line, #2d3741);
     border-radius: 8px;
@@ -510,11 +522,11 @@
     cursor: pointer;
   }
 
-  .concept-card:hover {
+  :global(.concept-card:hover) {
     border-color: var(--color-text-title, var(--accent, #3b82f6));
   }
 
-  .concept-card.disabled {
+  :global(.concept-card.disabled) {
     opacity: 0.6;
   }
 
@@ -531,7 +543,7 @@
     object-fit: cover;
   }
 
-  .type-badge {
+  :global(.type-badge) {
     position: absolute;
     top: 6px;
     left: 6px;
@@ -540,14 +552,14 @@
     padding: 0.15rem 0.4rem;
     border-radius: 4px;
     text-transform: uppercase;
-    background: rgba(0, 0, 0, 0.7);
-    color: var(--accent, #3b82f6);
-    border: 1px solid rgba(59, 130, 246, 0.4);
+    background: rgba(0, 0, 0, 0.7) !important;
+    color: var(--accent, #3b82f6) !important;
+    border: 1px solid rgba(59, 130, 246, 0.4) !important;
   }
 
-  .card-content {
+  :global(.card-content) {
     flex: 1;
-    padding: 0.875rem 1rem;
+    padding: 0.875rem 1rem !important;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -588,13 +600,13 @@
     gap: 0.35rem;
   }
 
-  .meta-tag {
-    font-size: 0.6875rem;
-    padding: 0.15rem 0.4rem;
-    border-radius: 4px;
-    background: var(--panel-raised, #1d242c);
-    color: var(--text, #f8fafc);
-    border: 1px solid var(--line, #2d3741);
+  :global(.meta-tag) {
+    font-size: 0.6875rem !important;
+    padding: 0.15rem 0.4rem !important;
+    border-radius: 4px !important;
+    background: var(--panel-raised, #1d242c) !important;
+    color: var(--text, #f8fafc) !important;
+    border: 1px solid var(--line, #2d3741) !important;
   }
 
   .card-actions {
@@ -628,5 +640,22 @@
     background: rgba(239, 68, 68, 0.2);
     color: #f87171;
     border-color: #ef4444;
+  }
+
+  :global(.dropdown-trigger-btn) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.3rem;
+    border-radius: 4px;
+    border: 1px solid var(--line, #2d3741);
+    background: var(--panel-raised, #1d242c);
+    color: var(--muted, #94a3b8);
+    cursor: pointer;
+  }
+
+  :global(.dropdown-trigger-btn:hover) {
+    color: var(--text, #f8fafc);
+    background: var(--line, #2d3741);
   }
 </style>

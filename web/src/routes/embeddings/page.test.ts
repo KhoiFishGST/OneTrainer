@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { fireEvent, render, screen } from "@testing-library/svelte";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import EmbeddingsPage from "./+page.svelte";
 
 const mockSchema = {
@@ -27,40 +27,58 @@ const mockSchema = {
 };
 
 const mockSetRaw = vi.fn();
-let mockDraft: Record<string, any> = {
-  model_type: "HUNYUAN_VIDEO",
-  training_method: "FINE_TUNE",
-  embedding_learning_rate: 0.001,
-  additional_embeddings: [
-    {
-      uuid: "emb-1",
-      model_name: "base_emb.pt",
-      placeholder: "<my_style>",
-      token_count: 2,
-      train: true,
-      is_output_embedding: false,
-      stop_training_after: 0,
-      stop_training_after_unit: "NEVER",
-      initial_embedding_text: "style",
-    },
-  ],
-};
+let mockWorkspace: any = null;
 
 vi.mock("$lib/config/context", () => ({
   getRouteContext: () => ({
     schema: mockSchema,
-    workspace: {
-      draft: mockDraft,
-      errors: [],
-      setRaw: mockSetRaw,
-    },
+    workspace: mockWorkspace,
     openDirectory: vi.fn(),
   }),
 }));
 
 describe("Embeddings page model capability and embedding card list", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    mockWorkspace = {
+      draft: {
+        model_type: "HUNYUAN_VIDEO",
+        training_method: "FINE_TUNE",
+        embedding_learning_rate: 0.001,
+        additional_embeddings: [
+          {
+            uuid: "emb-1",
+            model_name: "base_emb.pt",
+            placeholder: "<my_style>",
+            token_count: 2,
+            train: true,
+            is_output_embedding: false,
+            stop_training_after: 0,
+            stop_training_after_unit: "NEVER",
+            initial_embedding_text: "style",
+          },
+          {
+            uuid: "emb-2",
+            model_name: "base_emb2.pt",
+            placeholder: "<my_style2>",
+            token_count: 1,
+            train: true,
+          },
+        ],
+      },
+      errors: [],
+      setRaw: mockSetRaw,
+    };
+  });
+
+  it("renders loading skeleton when workspace context is null", () => {
+    mockWorkspace = null;
+    render(EmbeddingsPage);
+    expect(screen.getByRole("status", { name: /loading/i })).toBeInTheDocument();
+  });
+
   it("renders enabled Embeddings page for Hunyuan Video with embedding card list", () => {
-    mockDraft.model_type = "HUNYUAN_VIDEO";
+    mockWorkspace.draft.model_type = "HUNYUAN_VIDEO";
     render(EmbeddingsPage);
 
     expect(screen.getByLabelText("Embedding Learning Rate")).toBeInTheDocument();
@@ -69,7 +87,7 @@ describe("Embeddings page model capability and embedding card list", () => {
   });
 
   it("adds a new embedding entry when clicking + Add Embedding button", async () => {
-    mockDraft.model_type = "HUNYUAN_VIDEO";
+    mockWorkspace.draft.model_type = "HUNYUAN_VIDEO";
     render(EmbeddingsPage);
 
     const addBtn = screen.getByRole("button", { name: /Add Embedding/i });
@@ -84,13 +102,43 @@ describe("Embeddings page model capability and embedding card list", () => {
     );
   });
 
+  it("clones and removes specific embedding indices", async () => {
+    render(EmbeddingsPage);
+
+    const cloneBtns = screen.getAllByRole("button", { name: /Clone/i });
+    await fireEvent.click(cloneBtns[0]); // Clone first embedding (index 0)
+
+    expect(mockSetRaw).toHaveBeenCalledWith(
+      "additional_embeddings",
+      expect.arrayContaining([
+        expect.objectContaining({ placeholder: "<my_style>" }),
+        expect.objectContaining({ placeholder: "<my_style2>" }),
+        expect.objectContaining({ placeholder: "<my_style>" }),
+      ])
+    );
+
+    const removeBtns = screen.getAllByRole("button", { name: /Remove|Delete/i });
+    await fireEvent.click(removeBtns[0]); // Remove first embedding (index 0)
+
+    expect(mockSetRaw).toHaveBeenCalledWith("additional_embeddings", [
+      expect.objectContaining({ placeholder: "<my_style2>" }),
+    ]);
+  });
+
   it("renders warning banner and disables controls for unsupported Qwen model type", () => {
-    mockDraft.model_type = "QWEN";
+    mockWorkspace.draft.model_type = "QWEN";
     render(EmbeddingsPage);
 
     expect(screen.getByRole("alert")).toBeInTheDocument();
     expect(
       screen.getByText(/Embeddings options are disabled because the selected Base Model Type/i)
     ).toBeInTheDocument();
+  });
+
+  it("renders Empty state composition when no additional embeddings exist", () => {
+    mockWorkspace.draft.additional_embeddings = [];
+    render(EmbeddingsPage);
+
+    expect(screen.getByText("No Additional Embeddings")).toBeInTheDocument();
   });
 });

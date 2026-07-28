@@ -27,7 +27,7 @@ describe('ConceptsEditor', () => {
         name: 'MyDogConcept',
         path: '/tmp/dogs',
         enabled: true,
-        type: 'STANDARD',
+        type: 'STANDARD' as const,
       },
     ];
 
@@ -55,19 +55,30 @@ describe('ConceptsEditor', () => {
     expect(onChange.mock.calls[0][0][0].name).toBe('Dog');
   });
 
-  it('filters concepts using search input', async () => {
+  it('filters concepts using search input and retains original index mapping on clone/remove', async () => {
+    const onChange = vi.fn();
     const initialConcepts = [
-      { name: 'Character_Alpha', path: '/datasets/alpha', enabled: true },
-      { name: 'Style_Beta', path: '/datasets/beta', enabled: true },
+      { name: 'Character_Alpha', path: '/datasets/alpha', enabled: true, type: 'STANDARD' as const },
+      { name: 'Style_Beta', path: '/datasets/beta', enabled: true, type: 'VALIDATION' as const },
+      { name: 'Character_Gamma', path: '/datasets/gamma', enabled: true, type: 'STANDARD' as const },
     ];
 
-    render(ConceptsEditor, { props: { concepts: initialConcepts } });
+    render(ConceptsEditor, { props: { concepts: initialConcepts, onChange } });
 
     const searchInput = screen.getByPlaceholderText(/search concepts/i);
-    await fireEvent.input(searchInput, { target: { value: 'Alpha' } });
+    await fireEvent.input(searchInput, { target: { value: 'Beta' } });
 
-    expect(screen.getByText('Character_Alpha')).toBeInTheDocument();
-    expect(screen.queryByText('Style_Beta')).not.toBeInTheDocument();
+    expect(screen.queryByText('Character_Alpha')).not.toBeInTheDocument();
+    expect(screen.getByText('Style_Beta')).toBeInTheDocument();
+
+    // Clone filtered item (original index 1)
+    const cloneBtn = screen.getByTitle('Duplicate Concept');
+    await fireEvent.click(cloneBtn);
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const updated = onChange.mock.calls[0][0];
+    expect(updated.length).toBe(4);
+    expect(updated[3].name).toBe('Style_Beta (Copy)');
   });
 
   it('renders Add Concept card in grid and opens edit modal on card click', async () => {
@@ -93,6 +104,4 @@ describe('ConceptsEditor', () => {
     await fireEvent.click(screen.getAllByTitle('Delete Concept')[0]);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
-
 });
-

@@ -77,6 +77,51 @@ export interface FieldError {
   message: string;
 }
 
+export interface ConceptImageConfig {
+  enable_crop_jitter?: boolean;
+  enable_random_flip?: boolean;
+  enable_fixed_flip?: boolean;
+  enable_random_rotate?: boolean;
+  enable_fixed_rotate?: boolean;
+  random_rotate_max_angle?: number;
+  enable_random_brightness?: boolean;
+  enable_fixed_brightness?: boolean;
+  random_brightness_max_strength?: number;
+  enable_random_contrast?: boolean;
+  enable_fixed_contrast?: boolean;
+  random_contrast_max_strength?: number;
+  enable_random_saturation?: boolean;
+  enable_fixed_saturation?: boolean;
+  random_saturation_max_strength?: number;
+  enable_random_hue?: boolean;
+  enable_fixed_hue?: boolean;
+  random_hue_max_strength?: number;
+  enable_resolution_override?: boolean;
+  resolution_override?: string;
+  enable_random_circular_mask_shrink?: boolean;
+  enable_random_mask_rotate_crop?: boolean;
+  [key: string]: any;
+}
+
+export interface ConceptTextConfig {
+  prompt_source?: string;
+  prompt_path?: string;
+  enable_tag_shuffling?: boolean;
+  tag_delimiter?: string;
+  keep_tags_count?: number;
+  tag_dropout_enable?: boolean;
+  tag_dropout_mode?: string;
+  tag_dropout_probability?: number;
+  tag_dropout_special_tags_mode?: string;
+  tag_dropout_special_tags?: string;
+  tag_dropout_special_tags_regex?: boolean;
+  caps_randomize_enable?: boolean;
+  caps_randomize_mode?: string;
+  caps_randomize_probability?: number;
+  caps_randomize_lowercase?: boolean;
+  [key: string]: any;
+}
+
 export interface Concept {
   name?: string;
   path?: string;
@@ -88,6 +133,13 @@ export interface Concept {
   repeats?: number;
   include_subdirectories?: boolean;
   loss_weight?: number;
+  type?: 'STANDARD' | 'VALIDATION' | 'PRIOR_PREDICTION';
+  balancing?: number;
+  balancing_strategy?: 'REPEATS' | 'SAMPLES';
+  image_variations?: number;
+  text_variations?: number;
+  image?: ConceptImageConfig;
+  text?: ConceptTextConfig;
   [key: string]: any;
 }
 
@@ -240,6 +292,3 @@ export interface SamplesResponse {
   samples: SampleDefinition[];
   queued: boolean;
 }
-
-
-

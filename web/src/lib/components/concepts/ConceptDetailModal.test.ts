@@ -69,5 +69,87 @@ describe('ConceptDetailModal Component', () => {
     await fireEvent.click(await screen.findByLabelText('Preview Augmentations'));
     await waitFor(() => expect(preview).toHaveBeenLastCalledWith(expect.any(Object), 0, true));
   });
-});
 
+  it('isolates deep draft from original concept object until saved', async () => {
+    const originalConcept = { name: 'Original Name', path: '/orig', enabled: true };
+    const onSave = vi.fn();
+    const onClose = vi.fn();
+
+    render(ConceptDetailModal, {
+      props: {
+        concept: originalConcept,
+        isOpen: true,
+        onSave,
+        onClose,
+      },
+    });
+
+    const nameInput = screen.getByLabelText(/^name/i);
+    await fireEvent.input(nameInput, { target: { value: 'Modified Draft Name' } });
+
+    // Original concept prop should NOT be mutated
+    expect(originalConcept.name).toBe('Original Name');
+
+    // Save concept
+    const saveBtn = screen.getByRole('button', { name: /Save Concept Settings|Save/i });
+    await fireEvent.click(saveBtn);
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ name: 'Modified Draft Name' }));
+  });
+
+  it('retains draft and dialog open state when save fails', async () => {
+    const originalConcept = { name: 'Concept A', path: '/path/a', enabled: true };
+    const onSave = vi.fn().mockImplementation(() => {
+      throw new Error('Save error');
+    });
+
+    render(ConceptDetailModal, {
+      props: {
+        concept: originalConcept,
+        isOpen: true,
+        onSave,
+        onClose: vi.fn(),
+      },
+    });
+
+    const nameInput = screen.getByLabelText(/^name/i);
+    await fireEvent.input(nameInput, { target: { value: 'Failed Save Name' } });
+
+    const saveBtn = screen.getByRole('button', { name: /Save Concept Settings|Save/i });
+    await fireEvent.click(saveBtn);
+
+    expect(onSave).toHaveBeenCalled();
+    // Modal dialog should still be visible and draft retained
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Failed Save Name')).toBeInTheDocument();
+  });
+
+  it('handles failed preview and stats requests gracefully', async () => {
+    vi.spyOn(api, 'getConceptStats').mockRejectedValue(new Error('Stats network failure'));
+    vi.spyOn(api, 'previewConceptAugmentation').mockRejectedValue(new Error('Preview failure'));
+
+    render(ConceptDetailModal, {
+      props: {
+        concept: { name: 'Concept B', path: '/path/b', enabled: true },
+        isOpen: true,
+        onSave: vi.fn(),
+        onClose: vi.fn(),
+      },
+    });
+
+    // Switch to Stats tab - should not throw unhandled exception
+    await fireEvent.click(screen.getByRole('tab', { name: 'Statistics' }));
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: 'Statistics' })).toBeInTheDocument();
+    });
+
+    // Switch to Image tab and click preview
+    await fireEvent.click(screen.getByRole('tab', { name: 'Image Augmentations' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+
+    // Should gracefully remain in preview modal
+    await waitFor(() => {
+      expect(screen.getByText('Sample #1')).toBeInTheDocument();
+    });
+  });
+});
