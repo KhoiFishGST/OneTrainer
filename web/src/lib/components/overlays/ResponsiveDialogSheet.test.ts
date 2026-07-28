@@ -6,6 +6,7 @@ import ResponsiveDialogSheetTestWrapper from './ResponsiveDialogSheetTestWrapper
 const mediaListeners = new Set<(e: MediaQueryListEvent) => void>();
 
 function mockMatchMedia(matches: boolean) {
+  Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: matches ? 500 : 1024 });
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
     value: vi.fn().mockImplementation((query: string) => ({
@@ -80,5 +81,22 @@ describe('ResponsiveDialogSheet', () => {
 
     await rerender({ open: true, parentCount: 2 });
     expect(screen.getByTestId('draft-input')).toHaveValue('edited sheet draft');
+  });
+
+  it('locks body scroll when open and applies safe-area-overlay class instead of undefined p-safe', () => {
+    mockMatchMedia(true);
+    render(ResponsiveDialogSheetTestWrapper, { props: { open: true } });
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toBeVisible();
+
+    expect(
+      document.body.style.overflow === 'hidden' ||
+      document.body.hasAttribute('data-scroll-locked') ||
+      document.body.classList.contains('scroll-locked')
+    ).toBe(true);
+
+    const overlayEl = dialog.classList.contains('safe-area-overlay') ? dialog : dialog.querySelector('.safe-area-overlay');
+    expect(overlayEl).not.toBeNull();
+    expect(dialog.classList.contains('p-safe')).toBe(false);
   });
 });

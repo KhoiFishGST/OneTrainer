@@ -24,12 +24,12 @@
     [key: string]: any;
   }>();
 
-  let mobile = $derived(isMobile.current);
+  let mobile = $derived(isMobile.current || (typeof window !== 'undefined' && window.innerWidth < 768));
 </script>
 
 {#if !mobile}
   <Dialog.Root bind:open {onOpenChange}>
-    <Dialog.Content class={className} preventScroll={false} {...restProps}>
+    <Dialog.Content class={className} {...restProps}>
       {#if title || description}
         <Dialog.Header>
           {#if title}
@@ -52,7 +52,7 @@
   </Dialog.Root>
 {:else}
   <Drawer.Root bind:open {onOpenChange}>
-    <Drawer.Content class={className} preventScroll={false} {...restProps}>
+    <Drawer.Content class={`safe-area-overlay ${className}`} {...restProps}>
       {#if title || description}
         <Drawer.Header>
           {#if title}

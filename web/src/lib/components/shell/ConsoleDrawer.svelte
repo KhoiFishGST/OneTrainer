@@ -23,15 +23,43 @@
   let startY = $state(0);
   let startHeight = $state(200);
 
+  function getMinMaxHeight(): [number, number] {
+    const minH = 100;
+    const maxH = typeof window !== 'undefined' ? Math.floor(window.innerHeight * 0.8) : 800;
+    return [minH, maxH];
+  }
+
+  function clampHeight(val: number): number {
+    const [minH, maxH] = getMinMaxHeight();
+    return Math.min(Math.max(minH, val), maxH);
+  }
+
   onMount(() => {
     if (typeof localStorage !== 'undefined') {
       const savedHeight = localStorage.getItem('console_drawer_height');
       if (savedHeight) {
         const parsed = parseInt(savedHeight, 10);
-        if (!isNaN(parsed) && parsed >= 100 && parsed <= 800) {
-          drawerHeight = parsed;
+        if (!isNaN(parsed)) {
+          drawerHeight = clampHeight(parsed);
+        } else {
+          drawerHeight = clampHeight(drawerHeight);
         }
+      } else {
+        drawerHeight = clampHeight(drawerHeight);
       }
+    } else {
+      drawerHeight = clampHeight(drawerHeight);
+    }
+
+    function handleResize() {
+      drawerHeight = clampHeight(drawerHeight);
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', handleResize);
+      return () => {
+        window.removeEventListener('resize', handleResize);
+      };
     }
   });
 
@@ -50,8 +78,7 @@
     if (!isDragging) return;
     const currentY = 'touches' in e ? e.touches[0].clientY : e.clientY;
     const deltaY = startY - currentY; // Pulling up increases height
-    const newHeight = Math.min(Math.max(100, startHeight + deltaY), window.innerHeight * 0.8);
-    drawerHeight = newHeight;
+    drawerHeight = clampHeight(startHeight + deltaY);
   }
 
   function stopResize() {
@@ -70,14 +97,13 @@
   function handleKeyDown(e: KeyboardEvent) {
     if (e.key === 'ArrowUp') {
       e.preventDefault();
-      const maxHeight = typeof window !== 'undefined' ? window.innerHeight * 0.8 : 800;
-      drawerHeight = Math.min(drawerHeight + 10, maxHeight);
+      drawerHeight = clampHeight(drawerHeight + 10);
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('console_drawer_height', drawerHeight.toString());
       }
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      drawerHeight = Math.max(drawerHeight - 10, 100);
+      drawerHeight = clampHeight(drawerHeight - 10);
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('console_drawer_height', drawerHeight.toString());
       }

@@ -6,6 +6,7 @@ import ResponsiveDialogDrawerTestWrapper from './ResponsiveDialogDrawerTestWrapp
 const mediaListeners = new Set<(e: MediaQueryListEvent) => void>();
 
 function mockMatchMedia(matches: boolean) {
+  Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: matches ? 500 : 1024 });
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
     value: vi.fn().mockImplementation((query: string) => ({
@@ -87,5 +88,21 @@ describe('ResponsiveDialogDrawer', () => {
     await rerender({ open: false });
     expect(document.activeElement).toBe(trigger);
     document.body.removeChild(trigger);
+  });
+
+  it('locks body scroll when open and applies safe-area-overlay class in mobile mode', () => {
+    mockMatchMedia(true);
+    render(ResponsiveDialogDrawerTestWrapper, { props: { open: true } });
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toBeVisible();
+
+    expect(
+      document.body.style.overflow === 'hidden' ||
+      document.body.hasAttribute('data-scroll-locked') ||
+      document.body.classList.contains('scroll-locked')
+    ).toBe(true);
+
+    expect(dialog.classList.contains('safe-area-overlay') || dialog.querySelector('.safe-area-overlay') !== null).toBe(true);
+    expect(dialog.classList.contains('p-safe')).toBe(false);
   });
 });

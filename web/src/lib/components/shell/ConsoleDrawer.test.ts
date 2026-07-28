@@ -53,4 +53,19 @@ describe('ConsoleDrawer component', () => {
     await fireEvent.click(closeBtn);
     expect(onClose).toHaveBeenCalled();
   });
+
+  it('clamps loaded console height to 80% viewport height and reclamps on window resize', async () => {
+    Object.defineProperty(window, 'innerHeight', { writable: true, configurable: true, value: 720 });
+    localStorage.setItem('console_drawer_height', '700');
+
+    render(ConsoleDrawer, { open: true });
+    const slider = screen.getByRole('slider', { name: 'Resize Console Drawer' });
+    expect(slider).toHaveAttribute('aria-valuenow', '576');
+
+    Object.defineProperty(window, 'innerHeight', { writable: true, configurable: true, value: 500 });
+    window.dispatchEvent(new Event('resize'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(slider).toHaveAttribute('aria-valuenow', '400');
+  });
 });

@@ -103,4 +103,56 @@ describe('StatusBar component', () => {
     const stopBtn = screen.getByRole('button', { name: 'Stop' });
     expect(stopBtn).toBeDisabled();
   });
+
+  it('renders 44px hit targets and accessible Actions menu for phone viewports during TRAINING state', async () => {
+    trainingStore.setStatus({
+      state: 'TRAINING',
+      step: 10,
+      max_steps: 100,
+      epoch: 1,
+      max_epochs: 10,
+      speed_its: 1.5,
+      elapsed_seconds: 10,
+      eta_seconds: 90,
+      has_snapshot: true,
+    });
+
+    const sampleSpy = vi.spyOn(api, 'requestSample').mockResolvedValue(undefined as any);
+    const backupSpy = vi.spyOn(api, 'requestBackup').mockResolvedValue(undefined as any);
+
+    Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 390 });
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: true,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    });
+
+    render(StatusBarTestWrapper, {});
+
+    const pauseBtn = screen.getByRole('button', { name: /Pause/i });
+    const stopBtn = screen.getByRole('button', { name: /Stop/i });
+    const actionsBtn = screen.getByRole('button', { name: /Actions/i });
+
+    expect(pauseBtn).toBeVisible();
+    expect(stopBtn).toBeVisible();
+    expect(actionsBtn).toBeVisible();
+
+    await fireEvent.click(actionsBtn);
+    const sampleMenuItem = await screen.findByRole('menuitem', { name: /Sample/i });
+    const backupMenuItem = await screen.findByRole('menuitem', { name: /Backup/i });
+
+    expect(sampleMenuItem).toBeVisible();
+    expect(backupMenuItem).toBeVisible();
+
+    await fireEvent.click(sampleMenuItem);
+    expect(sampleSpy).toHaveBeenCalled();
+  });
 });

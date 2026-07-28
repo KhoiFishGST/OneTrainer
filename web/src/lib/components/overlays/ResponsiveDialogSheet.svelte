@@ -22,12 +22,12 @@
     class?: string;
   }>();
 
-  let mobile = $derived(isMobile.current);
+  let mobile = $derived(isMobile.current || (typeof window !== 'undefined' && window.innerWidth < 768));
 </script>
 
 {#if !mobile}
   <Dialog.Root bind:open {onOpenChange}>
-    <Dialog.Content class={className} preventScroll={false}>
+    <Dialog.Content class={className}>
       {#if title || description}
         <Dialog.Header>
           {#if title}
@@ -50,7 +50,7 @@
   </Dialog.Root>
 {:else}
   <Sheet.Root bind:open {onOpenChange}>
-    <Sheet.Content class={`full-screen inset-0 w-full h-dvh p-safe ${className}`} preventScroll={false}>
+    <Sheet.Content class={`full-screen inset-0 w-full h-dvh safe-area-overlay ${className}`}>
       {#if title || description}
         <Sheet.Header>
           {#if title}

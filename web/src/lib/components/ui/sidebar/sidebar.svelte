@@ -10,6 +10,7 @@
 		side = "left",
 		variant = "sidebar",
 		collapsible = "offcanvas",
+		mobile,
 		class: className,
 		children,
 		...restProps
@@ -17,9 +18,11 @@
 		side?: "left" | "right";
 		variant?: "sidebar" | "floating" | "inset";
 		collapsible?: "offcanvas" | "icon" | "none";
+		mobile?: boolean;
 	} = $props();
 
 	const sidebar = useSidebar();
+	const isMobileState = $derived(mobile ?? sidebar.isMobile);
 </script>
 
 {#if collapsible === "none"}
@@ -33,7 +36,7 @@
 	>
 		{@render children?.()}
 	</div>
-{:else if sidebar.isMobile}
+{:else if isMobileState}
 	<Sheet.Root
 		bind:open={() => sidebar.openMobile, (v) => sidebar.setOpenMobile(v)}
 		{...restProps}
@@ -43,18 +46,19 @@
 			data-sidebar="sidebar"
 			data-slot="sidebar"
 			data-mobile="true"
+			aria-label="Navigation"
 			class={cn(
-				"bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden",
+				"bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden drawer-content",
 				className
 			)}
 			style="--sidebar-width: {SIDEBAR_WIDTH_MOBILE};"
 			{side}
 		>
 			<Sheet.Header class="sr-only">
-				<Sheet.Title>Sidebar</Sheet.Title>
+				<Sheet.Title>Navigation</Sheet.Title>
 				<Sheet.Description>Displays the mobile sidebar.</Sheet.Description>
 			</Sheet.Header>
-			<div class="flex h-full w-full flex-col">
+			<div class="flex h-full w-full flex-col p-4">
 				{@render children?.()}
 			</div>
 		</Sheet.Content>

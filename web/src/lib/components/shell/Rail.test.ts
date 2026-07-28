@@ -43,4 +43,34 @@ describe('Rail component', () => {
     const toolsLink = screen.getByRole('link', { name: 'Tools' });
     expect(toolsLink).toHaveAttribute('aria-disabled', 'true');
   });
+
+  it('enforces accessible modal mobile navigation behavior (aria-modal, focus trap, Escape, scroll lock, clean state reset)', async () => {
+    const { rerender } = render(Rail, { currentPath: '/general', mobile: true });
+    const openBtn = screen.getByRole('button', { name: 'Open navigation' });
+    openBtn.focus();
+    await fireEvent.click(openBtn);
+
+    const dialog = screen.getByRole('dialog', { name: 'Navigation' });
+    expect(dialog).toBeVisible();
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+
+    expect(
+      document.body.style.overflow === 'hidden' ||
+      document.body.hasAttribute('data-scroll-locked') ||
+      document.body.classList.contains('scroll-locked')
+    ).toBe(true);
+
+    await fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: 'Navigation' })).not.toBeInTheDocument();
+    expect(document.activeElement).toBe(openBtn);
+
+    await fireEvent.click(openBtn);
+    expect(screen.getByRole('dialog', { name: 'Navigation' })).toBeVisible();
+
+    await rerender({ currentPath: '/general', mobile: false });
+    expect(screen.queryByRole('dialog', { name: 'Navigation' })).not.toBeInTheDocument();
+
+    await rerender({ currentPath: '/general', mobile: true });
+    expect(screen.queryByRole('dialog', { name: 'Navigation' })).not.toBeInTheDocument();
+  });
 });

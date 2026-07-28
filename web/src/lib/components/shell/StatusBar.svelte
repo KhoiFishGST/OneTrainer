@@ -5,12 +5,16 @@
     Square,
     Sparkles,
     Archive,
+    MoreHorizontal,
   } from 'lucide-svelte';
   import { Button } from '$lib/components/ui/button';
+  import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+  import { isMobile } from '$lib/hooks/is-mobile.svelte';
   import { trainingStore } from '../../events/training-store';
   import { api } from '../../api/client';
 
   const trainingState = $derived($trainingStore.status?.state ?? 'IDLE');
+  const mobile = $derived(isMobile.current || (typeof window !== 'undefined' && window.innerWidth < 768));
 
   async function handleStartTraining() {
     try {
@@ -90,22 +94,50 @@
           <Square size={16} />
           <span>Stop</span>
         </Button>
-        <Button
-          variant="secondary"
-          class="btn btn-secondary"
-          onclick={handleSample}
-        >
-          <Sparkles size={16} />
-          <span>Sample</span>
-        </Button>
-        <Button
-          variant="secondary"
-          class="btn btn-secondary"
-          onclick={handleBackup}
-        >
-          <Archive size={16} />
-          <span>Backup</span>
-        </Button>
+        {#if !mobile}
+          <Button
+            variant="secondary"
+            class="btn btn-secondary"
+            onclick={handleSample}
+          >
+            <Sparkles size={16} />
+            <span>Sample</span>
+          </Button>
+          <Button
+            variant="secondary"
+            class="btn btn-secondary"
+            onclick={handleBackup}
+          >
+            <Archive size={16} />
+            <span>Backup</span>
+          </Button>
+        {:else}
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger>
+              {#snippet child({ props })}
+                <Button
+                  {...props}
+                  variant="secondary"
+                  class="btn btn-secondary phone-actions-trigger"
+                  aria-label="Actions"
+                >
+                  <MoreHorizontal size={16} />
+                  <span>Actions</span>
+                </Button>
+              {/snippet}
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Content align="end">
+              <DropdownMenu.Item onclick={handleSample} class="phone-action-item">
+                <Sparkles size={16} class="mr-2" />
+                <span>Sample</span>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item onclick={handleBackup} class="phone-action-item">
+                <Archive size={16} class="mr-2" />
+                <span>Backup</span>
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Root>
+        {/if}
       {:else if trainingState === 'PAUSED'}
         <Button
           variant="default"
@@ -123,22 +155,50 @@
           <Square size={16} />
           <span>Stop</span>
         </Button>
-        <Button
-          variant="secondary"
-          class="btn btn-secondary"
-          onclick={handleSample}
-        >
-          <Sparkles size={16} />
-          <span>Sample</span>
-        </Button>
-        <Button
-          variant="secondary"
-          class="btn btn-secondary"
-          onclick={handleBackup}
-        >
-          <Archive size={16} />
-          <span>Backup</span>
-        </Button>
+        {#if !mobile}
+          <Button
+            variant="secondary"
+            class="btn btn-secondary"
+            onclick={handleSample}
+          >
+            <Sparkles size={16} />
+            <span>Sample</span>
+          </Button>
+          <Button
+            variant="secondary"
+            class="btn btn-secondary"
+            onclick={handleBackup}
+          >
+            <Archive size={16} />
+            <span>Backup</span>
+          </Button>
+        {:else}
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger>
+              {#snippet child({ props })}
+                <Button
+                  {...props}
+                  variant="secondary"
+                  class="btn btn-secondary phone-actions-trigger"
+                  aria-label="Actions"
+                >
+                  <MoreHorizontal size={16} />
+                  <span>Actions</span>
+                </Button>
+              {/snippet}
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Content align="end">
+              <DropdownMenu.Item onclick={handleSample} class="phone-action-item">
+                <Sparkles size={16} class="mr-2" />
+                <span>Sample</span>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item onclick={handleBackup} class="phone-action-item">
+                <Archive size={16} class="mr-2" />
+                <span>Backup</span>
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Root>
+        {/if}
       {:else if trainingState === 'STOPPING'}
         <Button
           variant="destructive"
@@ -155,13 +215,14 @@
 
 <style>
   .status-bar {
-    height: var(--status-height, 52px);
+    min-height: var(--status-height, 52px);
+    height: auto;
     background-color: var(--panel);
     border-top: 1px solid var(--line);
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    padding: 0 16px;
+    padding: 6px 16px;
     font-size: 0.875rem;
     z-index: 50;
   }
@@ -177,13 +238,14 @@
     align-items: center;
     gap: 8px;
     margin-left: 4px;
+    flex-wrap: wrap;
   }
 
   .training-action-buttons :global(.btn) {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    min-height: 0;
+    min-height: 36px;
     padding: 0.4rem 0.85rem;
     border-radius: 6px;
     font-size: 0.875rem;
@@ -192,6 +254,13 @@
     border: 1px solid transparent;
     transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
     user-select: none;
+  }
+
+  @media (max-width: 767px) {
+    .training-action-buttons :global(.btn),
+    :global(.phone-action-item) {
+      min-height: 44px;
+    }
   }
 
   .training-action-buttons :global(.btn:disabled) {
