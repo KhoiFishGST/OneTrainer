@@ -27,18 +27,23 @@ test.describe("Responsive Workflows & Accessibility Controls", () => {
       expect(isExpanded).toBe("false");
     });
 
-    test("directory picker opens as Dialog on desktop", async ({ page }) => {
+    test("rail sits below the header and reserves only its own width", async ({ page }) => {
       await page.goto("/general");
-      const browseBtn = page.getByRole("button", { name: "Browse directory" }).first();
-      await browseBtn.click();
+      const header = await page.locator("header").boundingBox();
+      const rail = await page.locator('[data-slot="sidebar-container"], .rail').first().boundingBox();
+      const main = await page.locator("main.main-content").boundingBox();
 
-      const dialog = page.getByRole("dialog", { name: "Select Directory" });
-      await expect(dialog).toBeVisible();
+      // Rail must start at or below the header, never overlapping it.
+      expect(rail!.y, `rail.y (${rail!.y}) should be >= header bottom (${header!.y + header!.height})`).toBeGreaterThanOrEqual(header!.y + header!.height - 1);
 
-      await page.keyboard.press("Escape");
-      await expect(dialog).not.toBeVisible();
+      // Main content must not be pushed beyond the rail's own width.
+      expect(main!.x, `main.x (${main!.x}) should be <= rail width (${rail!.width})`).toBeLessThanOrEqual(rail!.width + 1);
+
+      // Logo must be visible and not covered
+      await expect(page.locator("header img[alt='OneTrainer Logo']")).toBeVisible();
     });
   });
+
 
   test.describe("Phone Navigation & Responsive Components", () => {
     test.beforeEach(async ({}, testInfo) => {
