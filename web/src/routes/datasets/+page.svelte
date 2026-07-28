@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getRouteContext } from '$lib/config/context';
-  import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
+  import ResponsiveDialogDrawer from '$lib/components/overlays/ResponsiveDialogDrawer.svelte';
+  import Button from '$lib/components/ui/Button.svelte';
   import PathInput from '$lib/components/form/PathInput.svelte';
   import { Switch as Toggle } from '$lib/components/ui/switch/index.js';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
@@ -149,13 +150,12 @@
   />
 </div>
 
-<ModalDialog
+<ResponsiveDialogDrawer
   bind:open={showCreateModal}
+  onOpenChange={(val) => {
+    if (!val) showCreateModal = false;
+  }}
   title="Create New Dataset"
-  applyText="Create"
-  cancelText="Cancel"
-  onClose={() => (showCreateModal = false)}
-  onApply={handleCreateDataset}
 >
   <div class="create-modal-content">
     <label for="ds-name-input" class="input-label">Dataset Name</label>
@@ -169,9 +169,36 @@
       <Alert tone="error" class="error-text">{createError}</Alert>
     {/if}
   </div>
-</ModalDialog>
+
+  {#snippet footer()}
+    <div class="dialog-actions-footer">
+      <Button
+        type="button"
+        variant="secondary"
+        onclick={() => (showCreateModal = false)}
+      >
+        Cancel
+      </Button>
+      <Button
+        type="button"
+        variant="primary"
+        onclick={handleCreateDataset}
+      >
+        Create
+      </Button>
+    </div>
+  {/snippet}
+</ResponsiveDialogDrawer>
 
 <style>
+  .dialog-actions-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
   .route-page {
     padding: 1.5rem;
     display: flex;

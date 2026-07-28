@@ -1,5 +1,5 @@
 <script lang="ts">
-  import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
+  import ResponsiveDialogDrawer from '$lib/components/overlays/ResponsiveDialogDrawer.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import Select from '$lib/components/form/ValueSelect.svelte';
   import { Checkbox } from '$lib/components/ui/checkbox/index.js';
@@ -99,12 +99,13 @@
 </script>
 
 {#if open}
-  <ModalDialog
+  <ResponsiveDialogDrawer
     {open}
+    onOpenChange={(val) => {
+      if (!val) onClose();
+    }}
     title={mode === 'add' ? 'Add Sample Prompt' : 'Edit Sample Prompt'}
-    applyText={mode === 'add' ? 'Add Sample' : 'Save Sample'}
-    {onClose}
-    onApply={handleSave}
+    class="max-w-xl"
   >
     <div class="sample-modal-body">
       <div class="form-row">
@@ -239,10 +240,37 @@
         </div>
       </div>
     </div>
-  </ModalDialog>
+
+    {#snippet footer()}
+      <div class="dialog-actions-footer">
+        <Button
+          type="button"
+          variant="secondary"
+          onclick={onClose}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          variant="primary"
+          onclick={handleSave}
+        >
+          {mode === 'add' ? 'Add Sample' : 'Save Sample'}
+        </Button>
+      </div>
+    {/snippet}
+  </ResponsiveDialogDrawer>
 {/if}
 
 <style>
+  .dialog-actions-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
   .sample-modal-body {
     display: flex;
     flex-direction: column;

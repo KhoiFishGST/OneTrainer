@@ -4,7 +4,7 @@
   import { getRouteContext } from '$lib/config/context';
   import SchemaForm from '$lib/components/form/SchemaForm.svelte';
   import Select from '$lib/components/form/ValueSelect.svelte';
-  import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
+  import ResponsiveDialogDrawer from '$lib/components/overlays/ResponsiveDialogDrawer.svelte';
   import SampleDetailModal from '$lib/components/sampling/SampleDetailModal.svelte';
   import SamplePromptTable from '$lib/components/sampling/SamplePromptTable.svelte';
   import SamplePromptCards from '$lib/components/sampling/SamplePromptCards.svelte';
@@ -300,13 +300,12 @@
   </div>
 {/if}
 
-<ModalDialog
-  open={isConfigModalOpen}
+<ResponsiveDialogDrawer
+  bind:open={isConfigModalOpen}
+  onOpenChange={(val) => {
+    if (!val) isConfigModalOpen = false;
+  }}
   title="Add Sample Configuration"
-  applyText="Create File"
-  cancelText="Cancel"
-  onClose={() => (isConfigModalOpen = false)}
-  onApply={handleCreateConfigFile}
 >
   <div class="config-modal-body">
     <label for="new-config-name" class="modal-label">Configuration Name</label>
@@ -326,7 +325,26 @@
       <Alert tone="error" class="modal-error">{configModalError}</Alert>
     {/if}
   </div>
-</ModalDialog>
+
+  {#snippet footer()}
+    <div class="dialog-actions-footer">
+      <Button
+        type="button"
+        variant="secondary"
+        onclick={() => (isConfigModalOpen = false)}
+      >
+        Cancel
+      </Button>
+      <Button
+        type="button"
+        variant="primary"
+        onclick={handleCreateConfigFile}
+      >
+        Create File
+      </Button>
+    </div>
+  {/snippet}
+</ResponsiveDialogDrawer>
 
 {#if isDeleteConfirmOpen && sampleToDeleteIndex !== null}
   <AlertDialog.Root open={isDeleteConfirmOpen} onOpenChange={(v) => { if (!v) { isDeleteConfirmOpen = false; sampleToDeleteIndex = null; } }}>
@@ -358,6 +376,14 @@
 />
 
 <style>
+  .dialog-actions-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
   .route-page {
     padding: 1.5rem;
   }
