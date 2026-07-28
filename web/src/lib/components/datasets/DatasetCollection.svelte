@@ -121,7 +121,7 @@
     </div>
   </div>
 {:else}
-  <div class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-5">
+  <div class="datasets-grid grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-5">
     <AddCard label="Add Dataset" onClick={onAdd} />
 
     {#each datasets as ds (ds.name)}

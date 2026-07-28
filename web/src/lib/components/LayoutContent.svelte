@@ -165,7 +165,7 @@
     {@render children()}
   {/if}
 {:else}
-  <SidebarProvider class="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
+  <SidebarProvider class="app-shell flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
     <Header />
     {#if isApiError}
       <ErrorBanner message={errorMessage} />
@@ -180,7 +180,7 @@
         isConsoleOpen={drawerOpen}
       />
       <div class="flex-1 flex flex-col overflow-hidden relative">
-        <main class="flex-1 flex flex-col overflow-y-auto p-4">
+        <main class="main-content flex-1 flex flex-col overflow-y-auto p-4">
           {#if children}
             {@render children()}
           {/if}

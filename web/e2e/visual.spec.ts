@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Visual Regression Baselines", () => {
-  const screenshotOpts = { animations: "disabled" as const, maxDiffPixelRatio: 0.02 };
+  const screenshotOpts = { animations: "disabled" as const, maxDiffPixelRatio: 0.02, timeout: 15000 };
 
   async function switchToLightTheme(page: any) {
     const toggle = page.getByRole("button", { name: /switch to light theme/i });

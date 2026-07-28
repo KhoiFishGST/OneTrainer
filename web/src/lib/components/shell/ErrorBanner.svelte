@@ -30,7 +30,7 @@
 </script>
 
 {#if message && !dismissed}
-  <div class="error-banner-owner">
+  <div class="error-banner">
     <Alert variant="destructive" class="bg-destructive-surface text-destructive border-b border-destructive flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
       <div class="flex items-center gap-2">
         <strong>Error:</strong>
