@@ -1,11 +1,19 @@
 import "@testing-library/jest-dom/vitest";
 import { fireEvent, render, screen } from "@testing-library/svelte";
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { mockIsMobile } from "$lib/hooks/mock-is-mobile.svelte";
 import DirectoryPicker from "./DirectoryPicker.svelte";
+
+vi.mock("$lib/hooks/is-mobile.svelte", () => ({
+  get isMobile() {
+    return mockIsMobile;
+  },
+}));
 
 const mediaListeners = new Set<(e: MediaQueryListEvent) => void>();
 
 function mockMatchMedia(matches: boolean) {
+  mockIsMobile.current = matches;
   Object.defineProperty(window, "matchMedia", {
     writable: true,
     value: vi.fn().mockImplementation((query: string) => ({
