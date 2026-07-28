@@ -5,6 +5,12 @@
 	import { SIDEBAR_WIDTH_MOBILE } from "./constants.js";
 	import { useSidebar } from "./context.svelte.js";
 
+	/*
+	  LOCAL MODIFICATION: the `mobile` prop below is not part of upstream
+	  shadcn-svelte. Rail.svelte / RailContent.svelte depend on it to drive the
+	  off-canvas sheet from the application's own breakpoint state. Re-running
+	  `shadcn-svelte add sidebar` will revert it and break mobile navigation.
+	*/
 	let {
 		ref = $bindable(null),
 		side = "left",
