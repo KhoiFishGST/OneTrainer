@@ -435,8 +435,8 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    background: var(--card, #181e25);
-    border: 1px solid var(--border, #2d3741);
+    background: var(--card);
+    border: 1px solid var(--border);
     padding: 1.25rem;
     border-radius: 8px;
     width: 740px;
@@ -462,7 +462,7 @@
 
   .toolbar-divider {
     height: 1px;
-    background: var(--border, #2d3741);
+    background: var(--border);
     width: 100%;
   }
 
@@ -470,8 +470,8 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    background: var(--muted, #14191f);
-    border: 1px solid var(--border, #2d3741);
+    background: var(--muted);
+    border: 1px solid var(--border);
     border-radius: 6px;
     padding: 0.4rem 0.75rem;
     flex: 1;
@@ -487,7 +487,7 @@
     align-items: center;
     gap: 0.5rem;
     font-size: 0.875rem;
-    color: var(--foreground, #e6ebef);
+    color: var(--foreground);
     cursor: pointer;
   }
 
@@ -500,7 +500,7 @@
   .thumbnail-wrapper {
     width: 130px;
     position: relative;
-    background: var(--muted, #14191f);
+    background: var(--muted);
     flex-shrink: 0;
   }
 
@@ -521,7 +521,7 @@
     margin: 0;
     font-size: 0.9375rem;
     font-weight: 600;
-    color: var(--primary, #3b82f6);
+    color: var(--primary);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -530,7 +530,7 @@
   .concept-path {
     margin: 0;
     font-size: 0.75rem;
-    color: var(--muted-foreground, #94a3b8);
+    color: var(--muted-foreground);
     word-break: break-all;
     display: -webkit-box;
     line-clamp: 2;
@@ -550,6 +550,6 @@
     align-items: center;
     gap: 0.35rem;
     padding-top: 0.35rem;
-    border-top: 1px solid var(--border, #2d3741);
+    border-top: 1px solid var(--border);
   }
 </style>

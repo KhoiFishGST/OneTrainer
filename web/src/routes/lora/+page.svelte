@@ -111,7 +111,7 @@
   }
 
   .warning-text strong {
-    color: var(--foreground, #ffffff);
+    color: var(--foreground);
   }
 
   .lora-fieldset {

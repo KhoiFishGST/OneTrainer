@@ -114,8 +114,8 @@
 
 <style>
   .gpu-monitor-panel {
-    background: var(--card, #1e1e24);
-    border: 1px solid var(--border, #2e2e38);
+    background: var(--card);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 1.25rem;
     display: flex;
@@ -146,20 +146,20 @@
 
   .status-indicator.live {
     background: rgba(34, 197, 94, 0.15);
-    color: #166534;
+    color: rgb(22, 101, 52);
     border: 1px solid rgba(34, 197, 94, 0.3);
   }
 
   .status-indicator.offline {
     background: rgba(148, 163, 184, 0.1);
-    color: #94a3b8;
+    color: rgb(148, 163, 184);
     border: 1px solid rgba(148, 163, 184, 0.2);
   }
 
   .empty-state {
     padding: 1.5rem;
     text-align: center;
-    color: var(--muted-foreground, #8a8a9a);
+    color: var(--muted-foreground);
     font-size: 0.875rem;
   }
 
@@ -170,8 +170,8 @@
   }
 
   .meter-card {
-    background: var(--muted, #262630);
-    border: 1px solid var(--border, #2e2e38);
+    background: var(--muted);
+    border: 1px solid var(--border);
     border-radius: 6px;
     padding: 0.875rem;
     display: flex;
@@ -187,19 +187,19 @@
   }
 
   .meter-label {
-    color: var(--muted-foreground, #8a8a9a);
+    color: var(--muted-foreground);
     font-weight: 500;
   }
 
   .meter-value {
-    color: var(--foreground, #f0f0f5);
+    color: var(--foreground);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
 
   .progress-bar-bg {
     height: 8px;
-    background: var(--muted, #15151a);
+    background: var(--muted);
     border-radius: 4px;
     overflow: hidden;
     position: relative;
@@ -212,29 +212,29 @@
   }
 
   .progress-bar-fill.vram {
-    background: linear-gradient(90deg, #3b82f6, #6366f1);
+    background: linear-gradient(90deg, rgb(59, 130, 246), rgb(99, 102, 241));
   }
 
   .progress-bar-fill.util {
-    background: linear-gradient(90deg, #10b981, #06b6d4);
+    background: linear-gradient(90deg, rgb(16, 185, 129), rgb(6, 182, 212));
   }
 
   .progress-bar-fill.temp {
-    background: linear-gradient(90deg, #3b82f6, #f59e0b);
+    background: linear-gradient(90deg, rgb(59, 130, 246), rgb(245, 158, 11));
   }
 
   .progress-bar-fill.temp.warm {
-    background: linear-gradient(90deg, #f59e0b, #f97316);
+    background: linear-gradient(90deg, rgb(245, 158, 11), rgb(249, 115, 22));
   }
 
   .progress-bar-fill.temp.hot {
-    background: linear-gradient(90deg, #f97316, #ef4444);
+    background: linear-gradient(90deg, rgb(249, 115, 22), rgb(239, 68, 68));
   }
 
   .meter-footer {
     display: flex;
     justify-content: flex-end;
     font-size: 0.75rem;
-    color: var(--muted-foreground, #8a8a9a);
+    color: var(--muted-foreground);
   }
 </style>

@@ -264,7 +264,7 @@
   .field-label {
     font-size: 0.75rem;
     font-weight: 500;
-    color: var(--muted-foreground, #94a3b8);
+    color: var(--muted-foreground);
   }
 
   .input-with-button {

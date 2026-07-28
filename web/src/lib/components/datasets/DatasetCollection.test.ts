@@ -128,7 +128,7 @@ describe('DatasetCollection', () => {
       expect(firstBtn).toBeVisible();
       // jsdom does no layout, so size is asserted in e2e/touch-targets.spec.ts.
       // Here we only assert the marker class is gone and no override remains.
-      expect(firstBtn.className).not.toContain('touch-target-44');
+      expect(firstBtn.className).not.toContain('touch-target');
     });
 
     it('triggers promptDelete with dataset identity when Delete is clicked on phone', async () => {

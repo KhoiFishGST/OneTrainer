@@ -348,10 +348,10 @@
     font-size: 0.75rem;
     font-weight: 600;
     padding: 0.25rem 0.5rem;
-    background: var(--card, #1d242c);
-    border: 1px solid var(--border, #2d3741);
+    background: var(--card);
+    border: 1px solid var(--border);
     border-radius: 4px;
-    color: var(--muted-foreground, #94a3b8);
+    color: var(--muted-foreground);
   }
 
   .stats-summary-grid {
@@ -365,8 +365,8 @@
     flex-direction: column;
     gap: 0.25rem;
     padding: 0.625rem 0.75rem;
-    background: var(--card, #181e25);
-    border: 1px solid var(--border, #2d3741);
+    background: var(--card);
+    border: 1px solid var(--border);
     border-radius: 6px;
   }
 
@@ -377,14 +377,14 @@
 
   .stat-label {
     font-size: 0.6875rem;
-    color: var(--muted-foreground, #94a3b8);
+    color: var(--muted-foreground);
     font-weight: 500;
   }
 
   .stat-value {
     font-size: 0.875rem;
     font-weight: 700;
-    color: var(--foreground, #f8fafc);
+    color: var(--foreground);
   }
 
   .pairing-alert-box {
@@ -395,7 +395,7 @@
     background: rgba(239, 68, 68, 0.1);
     border: 1px solid rgba(239, 68, 68, 0.3);
     border-radius: 6px;
-    color: #f87171;
+    color: var(--destructive);
     font-size: 0.8125rem;
   }
 
@@ -410,8 +410,8 @@
     flex-direction: column;
     gap: 0.5rem;
     padding: 0.875rem;
-    background: var(--card, #181e25);
-    border: 1px solid var(--border, #2d3741);
+    background: var(--card);
+    border: 1px solid var(--border);
     border-radius: 6px;
   }
 
@@ -420,7 +420,7 @@
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
-    color: var(--muted-foreground, #94a3b8);
+    color: var(--muted-foreground);
   }
 
   .stats-kv-stack {
@@ -436,11 +436,11 @@
   }
 
   .kv-key {
-    color: var(--muted-foreground, #94a3b8);
+    color: var(--muted-foreground);
   }
 
   .kv-val {
-    color: var(--foreground, #f8fafc);
+    color: var(--foreground);
     font-weight: 500;
     text-align: right;
     white-space: pre-line;
@@ -451,8 +451,8 @@
     flex-direction: column;
     gap: 0.75rem;
     padding: 0.875rem;
-    background: var(--card, #181e25);
-    border: 1px solid var(--border, #2d3741);
+    background: var(--card);
+    border: 1px solid var(--border);
     border-radius: 6px;
   }
 
@@ -467,12 +467,12 @@
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
-    color: var(--muted-foreground, #94a3b8);
+    color: var(--muted-foreground);
   }
 
   .small-buckets-preview {
     font-size: 0.75rem;
-    color: var(--muted-foreground, #94a3b8);
+    color: var(--muted-foreground);
   }
 
   .histogram-chart-container {
@@ -499,13 +499,13 @@
 
   .bar-count-val {
     font-size: 0.6875rem;
-    color: var(--muted-foreground, #94a3b8);
+    color: var(--muted-foreground);
   }
 
   .bar-track {
     width: 100%;
     height: 70px;
-    background: var(--muted, #1d242c);
+    background: var(--muted);
     border-radius: 3px;
     display: flex;
     align-items: flex-end;
@@ -513,14 +513,14 @@
 
   .bar-fill {
     width: 100%;
-    background: var(--primary, #3b82f6);
+    background: var(--primary);
     border-radius: 3px;
     transition: height 0.2s ease;
   }
 
   .bar-ratio-lbl {
     font-size: 0.6875rem;
-    color: var(--muted-foreground, #94a3b8);
+    color: var(--muted-foreground);
     margin-top: 0.25rem;
   }
 
@@ -528,7 +528,7 @@
     display: flex;
     justify-content: space-between;
     font-size: 0.6875rem;
-    color: var(--muted-foreground, #94a3b8);
+    color: var(--muted-foreground);
     padding: 0 0.5rem;
   }
 
@@ -539,9 +539,9 @@
     justify-content: center;
     gap: 0.75rem;
     padding: 3rem 1.5rem;
-    border: 1px dashed var(--border, #2d3741);
+    border: 1px dashed var(--border);
     border-radius: 6px;
-    color: var(--muted-foreground, #94a3b8);
+    color: var(--muted-foreground);
     font-size: 0.875rem;
   }
 </style>

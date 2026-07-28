@@ -182,7 +182,7 @@
   .field-label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--foreground, #e6ebef);
+    color: var(--foreground);
   }
 
   .field-tooltip {
@@ -194,9 +194,9 @@
     font-size: 0.75rem;
     line-height: 1.4;
     padding: 0.5rem 0.75rem;
-    background: var(--popover, #1a212a);
-    color: var(--popover-foreground, #f1f5f9);
-    border: 1px solid var(--border, #3b4754);
+    background: var(--popover);
+    color: var(--popover-foreground);
+    border: 1px solid var(--border);
     border-radius: 6px;
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
     max-width: 320px;
@@ -212,7 +212,7 @@
     left: 14px;
     border-width: 5px;
     border-style: solid;
-    border-color: var(--border, #3b4754) transparent transparent transparent;
+    border-color: var(--border) transparent transparent transparent;
   }
 
   @keyframes fadeIn {
@@ -228,7 +228,7 @@
 
   .field-error {
     font-size: 0.75rem;
-    color: var(--destructive, #d97878);
+    color: var(--destructive);
     font-weight: 500;
   }
 

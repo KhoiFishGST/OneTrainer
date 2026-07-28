@@ -282,10 +282,10 @@
   .aug-matrix-wrapper {
     display: flex;
     flex-direction: column;
-    border: 1px solid var(--border, #2d3741);
+    border: 1px solid var(--border);
     border-radius: 8px;
     overflow: hidden;
-    background: var(--card, #181e25);
+    background: var(--card);
   }
 
   .aug-matrix-header {
@@ -293,13 +293,13 @@
     grid-template-columns: 1.8fr 0.8fr 0.8fr 1.6fr;
     gap: 0.5rem;
     padding: 0.625rem 0.875rem;
-    background: var(--muted, #1d242c);
-    border-bottom: 1px solid var(--border, #2d3741);
+    background: var(--muted);
+    border-bottom: 1px solid var(--border);
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--muted-foreground, #94a3b8);
+    color: var(--muted-foreground);
   }
 
   .aug-matrix-header .col-sw {
@@ -312,7 +312,7 @@
     gap: 0.5rem;
     align-items: center;
     padding: 0.625rem 0.875rem;
-    border-bottom: 1px solid var(--border, #2d3741);
+    border-bottom: 1px solid var(--border);
   }
 
   .aug-matrix-row:last-child {
@@ -326,14 +326,14 @@
   .col-lbl {
     font-size: 0.8125rem;
     font-weight: 500;
-    color: var(--foreground, #e6ebef);
+    color: var(--foreground);
   }
 
   .col-sw {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--muted-foreground, #94a3b8);
+    color: var(--muted-foreground);
   }
 
   .col-val {

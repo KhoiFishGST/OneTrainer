@@ -268,7 +268,7 @@
     gap: 0.5rem;
     font-size: 0.8125rem;
     font-weight: 500;
-    color: var(--foreground, #e6ebef);
+    color: var(--foreground);
     cursor: pointer;
   }
 </style>

@@ -296,12 +296,12 @@
   .header-label {
     font-size: 0.8125rem;
     font-weight: 600;
-    color: var(--foreground, #f8fafc);
+    color: var(--foreground);
   }
 
   .params-divider {
     height: 1px;
-    background-color: var(--border, #2d3741);
+    background-color: var(--border);
     margin: 0.25rem 0;
   }
 
@@ -324,13 +324,13 @@
     height: 38px;
     padding: 0 0.75rem;
     background: var(--muted, rgba(255, 255, 255, 0.02));
-    border: 1px solid var(--border, #2d3741);
+    border: 1px solid var(--border);
     border-radius: 6px;
   }
 
   .param-label {
     font-size: 0.75rem;
     font-weight: 500;
-    color: var(--muted-foreground, #94a3b8);
+    color: var(--muted-foreground);
   }
 </style>

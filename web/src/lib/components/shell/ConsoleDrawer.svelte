@@ -163,8 +163,8 @@
 
 <style>
   .console-drawer {
-    background-color: var(--card, #161b22);
-    border-top: 1px solid var(--border, #30363d);
+    background-color: var(--card);
+    border-top: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -184,14 +184,14 @@
   }
 
   .resize-handle:hover .handle-bar {
-    background-color: var(--primary, #58a6ff);
+    background-color: var(--primary);
   }
 
   .handle-bar {
     width: 36px;
     height: 4px;
     border-radius: 2px;
-    background-color: var(--border, #30363d);
+    background-color: var(--border);
     transition: background-color 0.2s ease;
   }
 
@@ -200,8 +200,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 2px 12px;
-    background-color: var(--card, #0d1117);
-    border-bottom: 1px solid var(--border, #30363d);
+    background-color: var(--card);
+    border-bottom: 1px solid var(--border);
   }
 
   .header-left {
@@ -214,7 +214,7 @@
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
-    color: var(--muted-foreground, #8b949e);
+    color: var(--muted-foreground);
   }
 
   .console-body {

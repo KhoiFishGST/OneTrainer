@@ -204,39 +204,39 @@
 
   .status-idle {
     background-color: var(--card, rgba(255, 255, 255, 0.05));
-    color: var(--muted-foreground, #94a3b8);
-    border: 1px solid var(--border, #334155);
+    color: var(--muted-foreground);
+    border: 1px solid var(--border);
   }
 
   .status-starting,
   .status-training {
     background-color: rgba(59, 130, 246, 0.15);
-    color: #3b82f6;
+    color: rgb(59, 130, 246);
     border: 1px solid rgba(59, 130, 246, 0.3);
   }
 
   .status-paused {
     background-color: rgba(245, 158, 11, 0.15);
-    color: #f59e0b;
+    color: rgb(245, 158, 11);
     border: 1px solid rgba(245, 158, 11, 0.3);
   }
 
   .status-stopping,
   .status-failed {
     background-color: rgba(239, 68, 68, 0.15);
-    color: #ef4444;
+    color: rgb(239, 68, 68);
     border: 1px solid rgba(239, 68, 68, 0.3);
   }
 
   .status-completed {
     background-color: rgba(16, 185, 129, 0.15);
-    color: #10b981;
+    color: rgb(16, 185, 129);
     border: 1px solid rgba(16, 185, 129, 0.3);
   }
 
   .dashboard-card {
-    background-color: var(--card, #1e293b);
-    border: 1px solid var(--border, #334155);
+    background-color: var(--card);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 1.25rem;
   }
@@ -272,16 +272,16 @@
 
   .progress-bar-track {
     height: 12px;
-    background-color: var(--muted, #0f172a);
+    background-color: var(--muted);
     border-radius: 6px;
     overflow: hidden;
     position: relative;
-    border: 1px solid var(--border, #334155);
+    border: 1px solid var(--border);
   }
 
   .progress-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, #3b82f6, #6366f1);
+    background: linear-gradient(90deg, rgb(59, 130, 246), rgb(99, 102, 241));
     border-radius: 6px;
     transition: width 0.3s ease;
   }
@@ -301,7 +301,7 @@
 
   .stat-label {
     font-size: 0.75rem;
-    color: var(--muted-foreground, #94a3b8);
+    color: var(--muted-foreground);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-weight: 600;
@@ -310,7 +310,7 @@
   .stat-value {
     font-size: 1rem;
     font-weight: 600;
-    color: var(--foreground, #f8fafc);
+    color: var(--foreground);
     font-variant-numeric: tabular-nums;
   }
 

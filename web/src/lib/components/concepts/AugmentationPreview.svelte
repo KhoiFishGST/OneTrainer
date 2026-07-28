@@ -169,8 +169,8 @@
   }
 
   .aug-preview-dialog {
-    background: var(--card, #181e25);
-    border: 1px solid var(--border, #2d3741);
+    background: var(--card);
+    border: 1px solid var(--border);
     border-radius: 12px;
     width: 100%;
     max-width: 640px;
@@ -185,14 +185,14 @@
     align-items: center;
     justify-content: space-between;
     padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--border, #2d3741);
+    border-bottom: 1px solid var(--border);
   }
 
   .aug-preview-title {
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
-    color: var(--foreground, #f8fafc);
+    color: var(--foreground);
   }
 
   .aug-preview-modal-body {
@@ -212,7 +212,7 @@
     align-items: center;
     gap: 0.5rem;
     font-size: 0.875rem;
-    color: var(--foreground, #f8fafc);
+    color: var(--foreground);
     cursor: pointer;
   }
 
@@ -226,8 +226,8 @@
     position: relative;
     width: 100%;
     height: 320px;
-    background: var(--muted, #14191f);
-    border: 1px solid var(--border, #2d3741);
+    background: var(--muted);
+    border: 1px solid var(--border);
     border-radius: 6px;
     display: flex;
     align-items: center;
@@ -245,7 +245,7 @@
     position: absolute;
     inset: 0;
     background: rgba(0, 0, 0, 0.6);
-    color: var(--foreground, #f8fafc);
+    color: var(--foreground);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -268,7 +268,7 @@
 
   .nav-idx-lbl {
     font-size: 0.75rem;
-    color: var(--foreground, #f8fafc);
+    color: var(--foreground);
     font-weight: 600;
   }
 
@@ -276,9 +276,9 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    background: var(--card, #181e25);
+    background: var(--card);
     padding: 0.75rem;
-    border: 1px solid var(--border, #2d3741);
+    border: 1px solid var(--border);
     border-radius: 6px;
     font-size: 0.8125rem;
   }
@@ -295,20 +295,20 @@
   }
 
   .meta-lbl {
-    color: var(--muted-foreground, #94a3b8);
+    color: var(--muted-foreground);
     font-weight: 500;
   }
 
   .meta-val {
-    color: var(--foreground, #f8fafc);
+    color: var(--foreground);
   }
 
   .prompt-output-box {
-    background: var(--muted, #14191f);
-    border: 1px solid var(--border, #2d3741);
+    background: var(--muted);
+    border: 1px solid var(--border);
     padding: 0.5rem;
     border-radius: 4px;
-    color: var(--foreground, #f8fafc);
+    color: var(--foreground);
     font-family: monospace;
     font-size: 0.75rem;
     word-break: break-all;
@@ -321,7 +321,7 @@
     align-items: center;
     justify-content: flex-end;
     padding: 0.875rem 1.25rem;
-    border-top: 1px solid var(--border, #2d3741);
-    background: var(--muted, #1d242c);
+    border-top: 1px solid var(--border);
+    background: var(--muted);
   }
 </style>

@@ -70,7 +70,7 @@
       { label: 'Step' },
       {
         label: title,
-        stroke: emaFactor > 0 ? 'rgba(59, 130, 246, 0.4)' : '#3b82f6',
+        stroke: emaFactor > 0 ? 'rgba(59, 130, 246, 0.4)' : 'rgb(59, 130, 246)',
         width: emaFactor > 0 ? 1 : 2,
         fill: emaFactor > 0 ? undefined : 'rgba(59, 130, 246, 0.08)',
       },
@@ -79,7 +79,7 @@
     if (emaFactor > 0) {
       series.push({
         label: `${title} (EMA)`,
-        stroke: '#f59e0b',
+        stroke: 'rgb(245, 158, 11)',
         width: 2.5,
       });
     }
@@ -98,11 +98,11 @@
       },
       axes: [
         {
-          stroke: '#94a3b8',
+          stroke: 'rgb(148, 163, 184)',
           grid: { stroke: 'rgba(148, 163, 184, 0.15)' },
         },
         {
-          stroke: '#94a3b8',
+          stroke: 'rgb(148, 163, 184)',
           grid: { stroke: 'rgba(148, 163, 184, 0.15)' },
         },
       ],

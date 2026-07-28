@@ -305,7 +305,7 @@
     font-size: 0.875rem;
     line-height: 1.4;
     margin: 0;
-    color: #fca5a5;
+    color: var(--destructive);
   }
 
   .card-grid {
@@ -315,8 +315,8 @@
   }
 
   .settings-card {
-    background-color: var(--card, #1f2937);
-    border: 1px solid var(--border, #374151);
+    background-color: var(--card);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 1.5rem;
   }
@@ -331,13 +331,13 @@
   .card-title {
     font-size: 1.125rem;
     font-weight: 600;
-    color: var(--primary, #3b82f6);
+    color: var(--primary);
     margin: 0;
   }
 
   .card-description {
     font-size: 0.875rem;
-    color: var(--muted-foreground, #9ca3af);
+    color: var(--muted-foreground);
     margin-bottom: 1.25rem;
     line-height: 1.4;
   }
@@ -352,7 +352,7 @@
   .form-group label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--foreground, #f3f4f6);
+    color: var(--foreground);
   }
 
   .input-with-button {
@@ -363,12 +363,12 @@
 
   .status-badge {
     font-size: 0.75rem;
-    color: var(--muted-foreground, #9ca3af);
+    color: var(--muted-foreground);
     margin-top: 0.25rem;
   }
 
   .status-badge.configured {
-    color: #10b981;
+    color: rgb(16, 185, 129);
     font-weight: 500;
   }
 

@@ -116,7 +116,7 @@
   .path-label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--foreground, #111827);
+    color: var(--foreground);
   }
 
   .extension-tags {
@@ -129,9 +129,9 @@
     font-size: 0.75rem;
     padding: 0.125rem 0.375rem;
     border-radius: 4px;
-    background: var(--muted, #f3f4f6);
-    color: var(--primary, #2563eb);
-    border: 1px solid var(--border, #e5e7eb);
+    background: var(--muted);
+    color: var(--primary);
+    border: 1px solid var(--border);
     font-family: monospace;
   }
 
@@ -147,7 +147,7 @@
     align-items: center;
     gap: 0.375rem;
     font-size: 0.75rem;
-    color: var(--muted-foreground, #6b7280);
+    color: var(--muted-foreground);
   }
 
   .preview-label {
@@ -156,6 +156,6 @@
 
   .file-preview-name {
     font-family: monospace;
-    color: var(--foreground, #374151);
+    color: var(--foreground);
   }
 </style>

@@ -105,15 +105,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: var(--background, #0b0f19);
+    background-color: var(--background);
     padding: 1.5rem;
   }
 
   .login-container {
     width: 100%;
     max-width: 400px;
-    background-color: var(--card, #1f2937);
-    border: 1px solid var(--border, #374151);
+    background-color: var(--card);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 2rem;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -128,8 +128,8 @@
     width: 56px;
     height: 56px;
     margin: 0 auto 1rem;
-    background-color: var(--muted, #111827);
-    border: 1px solid var(--border, #374151);
+    background-color: var(--muted);
+    border: 1px solid var(--border);
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -145,13 +145,13 @@
   .brand-title {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--foreground, #f3f4f6);
+    color: var(--foreground);
     margin: 0 0 0.25rem;
   }
 
   .brand-subtitle {
     font-size: 0.875rem;
-    color: var(--muted-foreground, #9ca3af);
+    color: var(--muted-foreground);
     margin: 0;
   }
 
@@ -165,6 +165,6 @@
   .form-group label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--foreground, #f3f4f6);
+    color: var(--foreground);
   }
 </style>

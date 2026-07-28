@@ -466,7 +466,7 @@
   .header-divider {
     width: 1px;
     height: 24px;
-    background-color: var(--border, #2d3741);
+    background-color: var(--border);
   }
 
   .brand {
@@ -504,7 +504,7 @@
 
   .label-text {
     font-size: 0.75rem;
-    color: var(--muted-foreground, #8d99a6);
+    color: var(--muted-foreground);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;

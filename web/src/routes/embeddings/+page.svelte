@@ -288,13 +288,13 @@
     font-size: 1rem;
     font-weight: 600;
     margin: 0;
-    color: var(--foreground, #f8fafc);
+    color: var(--foreground);
   }
 
   .count-badge {
     font-size: 0.75rem;
     font-weight: 700;
-    color: var(--primary, #3b82f6);
+    color: var(--primary);
     background: rgba(59, 130, 246, 0.15);
     padding: 0.125rem 0.5rem;
     border-radius: 12px;

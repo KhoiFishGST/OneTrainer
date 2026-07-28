@@ -98,12 +98,12 @@
   .field-label {
     font-size: 0.8125rem;
     font-weight: 600;
-    color: var(--foreground, #f8fafc);
+    color: var(--foreground);
   }
 
   .field-help {
     font-size: 0.75rem;
-    color: var(--muted-foreground, #94a3b8);
+    color: var(--muted-foreground);
 
     & code {
       background: var(--muted, rgba(255, 255, 255, 0.05));
