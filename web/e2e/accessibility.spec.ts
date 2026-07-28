@@ -10,6 +10,13 @@ test.describe("Accessibility Audit (axe-core)", () => {
     expect(violations, `Accessibility violations found in ${contextName}: ${JSON.stringify(violations, null, 2)}`).toEqual([]);
   }
 
+  async function switchToLightTheme(page: any) {
+    const toggle = page.getByRole("button", { name: /switch to light theme/i });
+    await expect(toggle).toBeVisible();
+    await toggle.click();
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
+  }
+
   async function checkAccessibilityInBothThemes(
     page: any,
     contextName: string,
@@ -22,30 +29,26 @@ test.describe("Accessibility Audit (axe-core)", () => {
 
       // Switch to Light Theme before opening modal
       await page.reload();
-      const toggle = page.getByRole("button", { name: /switch to light theme/i });
-      if (await toggle.isVisible()) {
-        await toggle.click();
-        await expect(page.locator("html")).not.toHaveClass(/dark/);
-        await page.waitForTimeout(300);
-      }
+      await switchToLightTheme(page);
+      await page.waitForTimeout(300);
       await openModalFn();
       await checkAccessibility(page, `${contextName} (light)`);
     } else {
       await checkAccessibility(page, `${contextName} (dark)`);
 
-      const toggle = page.getByRole("button", { name: /switch to light theme/i });
-      if (await toggle.isVisible()) {
-        await toggle.click();
-        await expect(page.locator("html")).not.toHaveClass(/dark/);
-        await page.waitForTimeout(300);
-        await checkAccessibility(page, `${contextName} (light)`);
-      }
+      await switchToLightTheme(page);
+      await page.waitForTimeout(300);
+      await checkAccessibility(page, `${contextName} (light)`);
     }
   }
 
   test("login page has no critical/serious violations", async ({ page }) => {
     await page.goto("/login");
-    await checkAccessibilityInBothThemes(page, "login page");
+    await checkAccessibility(page, "login page (dark)");
+    await page.evaluate(() => localStorage.setItem("webui.theme", "light"));
+    await page.reload();
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
+    await checkAccessibility(page, "login page (light)");
   });
 
   test("general schema form page has no critical/serious violations", async ({ page }) => {
@@ -107,16 +110,25 @@ test.describe("Accessibility Audit (axe-core)", () => {
       await page.getByLabel("Preset Name").fill("existing_preset");
       await saveDialog.getByRole("button", { name: "Save" }).click();
 
-      if (await saveDialog.isHidden().catch(() => false)) {
-        await page.locator(".header-left").getByRole("button", { name: "Save" }).click();
-        await expect(saveDialog).toBeVisible();
-        await page.getByLabel("Preset Name").fill("existing_preset");
-        await saveDialog.getByRole("button", { name: "Save" }).click();
-      }
-
-      const overwriteDialog = page.getByRole("alertdialog").or(page.getByRole("dialog", { name: "File Already Exists" }));
+      const overwriteDialog = page.getByRole("alertdialog");
       await expect(overwriteDialog).toBeVisible();
+      await expect(overwriteDialog.getByText("File Already Exists")).toBeVisible();
     };
     await checkAccessibilityInBothThemes(page, "open Overwrite Alert Dialog", openAlertDialog);
+  });
+
+  test("error banner has no critical/serious violations", async ({ page }) => {
+    const showBanner = async () => {
+      await page.route("**/api/health**", (route) =>
+        route.fulfill({
+          status: 500,
+          contentType: "application/json",
+          body: JSON.stringify({ detail: "Server Error" }),
+        })
+      );
+      await page.goto("/general");
+      await expect(page.getByText(/Error:/)).toBeVisible({ timeout: 15000 });
+    };
+    await checkAccessibilityInBothThemes(page, "persistent error banner", showBanner);
   });
 });
