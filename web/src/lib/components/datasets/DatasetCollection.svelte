@@ -46,7 +46,7 @@
     deleteError = null;
     isPendingDelete = true;
     try {
-      await onDelete(targetName);
+      await onDelete?.(targetName);
       isConfirmOpen = false;
       datasetToDelete = null;
     } catch (err: any) {

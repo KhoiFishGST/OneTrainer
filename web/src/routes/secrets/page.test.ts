@@ -113,8 +113,10 @@ describe('Secrets Page', () => {
         json: async () => ({ message: 'Failed to clear password' }),
       });
     });
+    await tick();
 
     expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    expect(screen.getByRole('alertdialog')).toHaveTextContent(/Failed to save secrets/i);
 
     // Click confirm clear again to retry
     await fireEvent.click(confirmBtn);
