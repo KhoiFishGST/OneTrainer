@@ -522,6 +522,9 @@ git commit -m "fix(web): correct semantic accessibility styling"
 
 **Interfaces:**
 - DatasetCollection renders canonical Table at 768px and above and visible-action Cards below 768px from one dataset/action source.
+> **Superseded 2026-07-28:** desktop now renders the card gallery, not a Table.
+> Reversed by `docs/superpowers/plans/2026-07-28-post-cutover-ui-defects.md` Task 7
+> at the product owner's request. The Table was a regression from the pre-cutover UI.
 - No production component uses legacy token aliases.
 - Remaining `:global()` selectors are limited to documented third-party DOM boundaries.
 

@@ -59,20 +59,14 @@ describe('DatasetCollection', () => {
   });
 
   describe('Desktop view (>= 768px)', () => {
-    it('renders a table with dataset name, image/caption count columns, and actions', () => {
+    it('renders a card gallery and no table on desktop', () => {
       mockMatchMedia(true);
       render(DatasetCollection, { props: { datasets: mockDatasets } });
 
-      const table = screen.getByRole('table');
-      expect(table).toBeInTheDocument();
-
+      expect(screen.queryByRole('table')).not.toBeInTheDocument();
       expect(screen.getByText('Dataset Alpha')).toBeInTheDocument();
       expect(screen.getByText('Dataset Beta')).toBeInTheDocument();
-      expect(screen.getByText('12 images • 12 captions')).toBeInTheDocument();
-      expect(screen.getByText('5 images • 5 captions')).toBeInTheDocument();
-
-      const deleteButtons = screen.getAllByRole('button', { name: /delete dataset/i });
-      expect(deleteButtons.length).toBe(2);
+      expect(screen.getAllByRole('link', { name: /Dataset (Alpha|Beta)/ })).toHaveLength(2);
     });
 
     it('triggers promptDelete with dataset identity when Delete is clicked on desktop', async () => {

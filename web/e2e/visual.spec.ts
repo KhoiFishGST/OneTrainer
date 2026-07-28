@@ -31,7 +31,7 @@ test.describe("Visual Regression Baselines", () => {
       await expect(page.locator("main.main-content")).toHaveScreenshot("schema-form-desktop-light.png", screenshotOpts);
     });
 
-    test("dataset collection desktop table", async ({ page }) => {
+    test("dataset collection desktop cards", async ({ page }) => {
       await page.route("**/api/datasets", (route) =>
         route.fulfill({
           status: 200,
@@ -50,9 +50,9 @@ test.describe("Visual Regression Baselines", () => {
         })
       );
       await page.goto("/datasets");
-      await expect(page.getByRole("table")).toBeVisible();
+      await expect(page.locator(".datasets-grid")).toBeVisible();
       await expect(page.getByText("Seeded Dataset 1")).toBeVisible();
-      await expect(page.locator("main.main-content")).toHaveScreenshot("dataset-collection-desktop-table.png", screenshotOpts);
+      await expect(page.locator("main.main-content")).toHaveScreenshot("dataset-collection-desktop-cards.png", screenshotOpts);
     });
 
     test("ordinary editor Dialog desktop", async ({ page }) => {
