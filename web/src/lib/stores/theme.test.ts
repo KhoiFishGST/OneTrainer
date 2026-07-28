@@ -26,4 +26,17 @@ describe('theme preference', () => {
     const { theme } = await import('./theme.svelte');
     expect(theme.value).toBe('dark');
   });
+
+  it('toggles between dark and light themes', async () => {
+    const { theme } = await import('./theme.svelte');
+    expect(theme.value).toBe('dark');
+    theme.toggle();
+    expect(theme.value).toBe('light');
+    expect(localStorage.getItem('webui.theme')).toBe('light');
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
+    theme.toggle();
+    expect(theme.value).toBe('dark');
+    expect(localStorage.getItem('webui.theme')).toBe('dark');
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+  });
 });

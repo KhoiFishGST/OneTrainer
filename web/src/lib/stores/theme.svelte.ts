@@ -14,7 +14,7 @@ function applyTheme(val: Theme): void {
 }
 
 let value = $state<Theme>(readTheme());
-applyTheme(readTheme());
+applyTheme(value);
 
 export const theme = {
   get value(): Theme {
