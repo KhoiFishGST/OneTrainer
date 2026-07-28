@@ -182,7 +182,8 @@ body {
   input,
   select,
   textarea,
-  [role='button'] {
+  [role='button'],
+  [role='slider'] {
     min-height: 44px;
   }
 }
