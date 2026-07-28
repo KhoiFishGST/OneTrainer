@@ -27,7 +27,7 @@
 
 {#if !mobile}
   <Dialog.Root bind:open {onOpenChange}>
-    <Dialog.Content class={className}>
+    <Dialog.Content class={className} preventScroll={false}>
       {#if title || description}
         <Dialog.Header>
           {#if title}
@@ -50,7 +50,7 @@
   </Dialog.Root>
 {:else}
   <Sheet.Root bind:open {onOpenChange}>
-    <Sheet.Content class={`full-screen inset-0 w-full h-dvh p-safe ${className}`}>
+    <Sheet.Content class={`full-screen inset-0 w-full h-dvh p-safe ${className}`} preventScroll={false}>
       {#if title || description}
         <Sheet.Header>
           {#if title}

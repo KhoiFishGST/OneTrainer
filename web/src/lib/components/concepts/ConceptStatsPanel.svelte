@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Concept } from '$lib/api/types';
   import { api } from '$lib/api/client';
-  import Button from '$lib/components/ui/Button.svelte';
+  import { Button } from '$lib/components/ui/button';
   import { RefreshCw, AlertTriangle } from 'lucide-svelte';
 
   let {

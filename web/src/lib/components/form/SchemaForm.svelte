@@ -10,7 +10,7 @@
   import Select from './ValueSelect.svelte';
   import DirectoryInput from './DirectoryInput.svelte';
   import TimeInput from './TimeInput.svelte';
-  import Button from '$lib/components/ui/Button.svelte';
+  import { Button } from '$lib/components/ui/button';
 
   import FormPanel from './FormPanel.svelte';
   import { Separator } from '$lib/components/ui/separator/index.js';

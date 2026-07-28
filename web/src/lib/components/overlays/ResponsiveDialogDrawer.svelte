@@ -11,7 +11,8 @@
     description,
     children,
     footer,
-    class: className = ''
+    class: className = '',
+    ...restProps
   } = $props<{
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
@@ -20,6 +21,7 @@
     children?: Snippet;
     footer?: Snippet;
     class?: string;
+    [key: string]: any;
   }>();
 
   let mobile = $derived(isMobile.current);
@@ -27,7 +29,7 @@
 
 {#if !mobile}
   <Dialog.Root bind:open {onOpenChange}>
-    <Dialog.Content class={className}>
+    <Dialog.Content class={className} preventScroll={false} {...restProps}>
       {#if title || description}
         <Dialog.Header>
           {#if title}
@@ -50,7 +52,7 @@
   </Dialog.Root>
 {:else}
   <Drawer.Root bind:open {onOpenChange}>
-    <Drawer.Content class={className}>
+    <Drawer.Content class={className} preventScroll={false} {...restProps}>
       {#if title || description}
         <Drawer.Header>
           {#if title}

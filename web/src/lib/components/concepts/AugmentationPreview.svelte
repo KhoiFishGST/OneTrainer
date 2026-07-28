@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Concept } from '$lib/api/types';
   import { api } from '$lib/api/client';
-  import Button from '$lib/components/ui/Button.svelte';
+  import { Button } from '$lib/components/ui/button';
   import { Checkbox } from '$lib/components/ui/checkbox/index.js';
   import { ChevronLeft, ChevronRight, X } from 'lucide-svelte';
 

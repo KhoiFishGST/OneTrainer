@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ArrowLeft, Upload, Image as ImageIcon, X } from 'lucide-svelte';
-  import Button from '$lib/components/ui/Button.svelte';
+  import { Button } from '$lib/components/ui/button';
   import { FileInput } from '$lib/components/ui/file-input/index.js';
   import * as Empty from '$lib/components/ui/empty/index.js';
   import DatasetFileCard from '$lib/components/datasets/DatasetFileCard.svelte';
@@ -90,7 +90,7 @@
       </a>
     </div>
 
-    <Button variant="primary" class="btn-upload" onclick={() => fileInput?.open()}>
+    <Button variant="default" class="btn-upload" onclick={() => fileInput?.open()}>
       <Upload size={18} />
       <span>Add Files</span>
     </Button>

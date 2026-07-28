@@ -2,9 +2,9 @@
   import { untrack, tick } from 'svelte';
   import { Folder, File, ArrowUp } from 'lucide-svelte';
   import { api } from '$lib/api/client';
-  import Button from '$lib/components/ui/Button.svelte';
+  import { Button } from '$lib/components/ui/button';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
-  import Alert from '$lib/components/ui/Alert.svelte';
+  import { Alert } from '$lib/components/ui/alert';
   import { ScrollArea } from '$lib/components/ui/scroll-area';
   import { Skeleton } from '$lib/components/ui/skeleton';
   import { Empty, EmptyTitle } from '$lib/components/ui/empty';
@@ -263,13 +263,13 @@
       {/if}
 
       {#if error}
-        <Alert tone="error" class="error-message">
+        <Alert variant="destructive" class="error-message">
           {error}
         </Alert>
       {/if}
 
       {#if directoryData?.truncated}
-        <Alert tone="warning" class="warning-message">
+        <Alert class="warning-message">
           Results truncated. Refine your path or search.
         </Alert>
       {/if}
@@ -341,7 +341,7 @@
         Cancel
       </Button>
       <Button
-        variant="primary"
+        variant="default"
         class="select-btn"
         disabled={isSelectDisabled}
         title={selectedPath || currentPath}

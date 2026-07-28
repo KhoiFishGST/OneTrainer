@@ -1,11 +1,11 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
+  import ResponsiveDialogDrawer from '$lib/components/overlays/ResponsiveDialogDrawer.svelte';
   import Select from '$lib/components/form/ValueSelect.svelte';
   import { Switch as Toggle } from '$lib/components/ui/switch/index.js';
   import NumberInput from '$lib/components/form/NumericDraftInput.svelte';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
-  import Button from '$lib/components/ui/Button.svelte';
+  import { Button } from '$lib/components/ui/button';
   import { getRouteContext } from '$lib/config/context';
 
   import type { RouteContext } from '$lib/config/context';
@@ -187,14 +187,11 @@
 
 </script>
 
-<ModalDialog
+<ResponsiveDialogDrawer
   bind:open
+  onOpenChange={(v) => { if (!v) open = false; }}
   title="Configure Optimizer Parameters"
-  width="wide"
-  applyText="Apply Parameters"
-  {isSubmitting}
-  onApply={handleApply}
-  onClose={() => (open = false)}
+  class="max-w-4xl"
 >
   <div class="opt-modal-body">
     {#if submitError}
@@ -266,7 +263,15 @@
       {/each}
     </div>
   </div>
-</ModalDialog>
+  {#snippet footer()}
+    <div class="flex items-center justify-end gap-2 p-2">
+      <Button variant="secondary" disabled={isSubmitting} onclick={() => (open = false)}>Cancel</Button>
+      <Button variant="default" disabled={isSubmitting} onclick={handleApply}>
+        {isSubmitting ? 'Apply Parameters...' : 'Apply Parameters'}
+      </Button>
+    </div>
+  {/snippet}
+</ResponsiveDialogDrawer>
 
 <style>
   .opt-modal-body {

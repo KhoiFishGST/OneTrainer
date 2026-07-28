@@ -1,7 +1,7 @@
 <script lang="ts">
   import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-svelte';
-  import ModalDialog from '../ui/ModalDialog.svelte';
-  import Button from '../ui/Button.svelte';
+  import ResponsiveDialogDrawer from '$lib/components/overlays/ResponsiveDialogDrawer.svelte';
+  import { Button } from '$lib/components/ui/button';
   import type { GalleryRunModel, GalleryVariant } from '../../api/types';
   import { galleryImageUrl } from '../../api/client';
 
@@ -174,12 +174,12 @@
   });
 </script>
 
-<ModalDialog
-  {open}
-  width="wide"
-  showFooter={false}
-  {onClose}
-  onKeyDown={handleViewerKeyDown}
+<ResponsiveDialogDrawer
+  bind:open
+  onOpenChange={(v) => { if (!v) onClose(); }}
+  title="Sample Image Viewer"
+  class="max-w-4xl"
+  onkeydown={handleViewerKeyDown}
   data-batch-id={selection?.batchId}
   data-prompt-id={selection?.promptId}
   data-variant={selection?.variant}
@@ -297,7 +297,7 @@
       </div>
     </div>
   {/if}
-</ModalDialog>
+</ResponsiveDialogDrawer>
 
 <style>
   .viewer-container {

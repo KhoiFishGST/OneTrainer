@@ -9,19 +9,24 @@
     createRequestBackupMutation,
     createRequestSaveMutation,
   } from '$lib/api/queries';
-  import PageHeader from '$lib/components/ui/PageHeader.svelte';
-  import Toast from '$lib/components/ui/Toast.svelte';
-  import FormPageSkeleton from '$lib/components/ui/FormPageSkeleton.svelte';
-  import Button from '$lib/components/ui/Button.svelte';
+  import PageHeader from '$lib/components/layout/PageHeader.svelte';
+  import FormPageSkeleton from '$lib/components/loading/FormPageSkeleton.svelte';
+  import { Button } from '$lib/components/ui/button';
+  import { toast as sonnerToast } from 'svelte-sonner';
 
   const ctx = getRouteContext();
   const backupMutation = createRequestBackupMutation();
   const saveMutation = createRequestSaveMutation();
 
-  let toast = $state<{ message: string; type: 'success' | 'error' } | null>(null);
+  let toastMessage = $state<{ message: string; type: 'success' | 'error' } | null>(null);
 
   function triggerToast(message: string, type: 'success' | 'error' = 'success') {
-    toast = { message, type };
+    toastMessage = { message, type };
+    if (type === 'error') {
+      sonnerToast.error(message);
+    } else {
+      sonnerToast.success(message);
+    }
   }
 
   onMount(async () => {
@@ -91,13 +96,10 @@
       {/snippet}
     </PageHeader>
 
-    {#if toast}
-      <Toast
-        message={toast.message}
-        tone={toast.type}
-        onDismiss={() => (toast = null)}
-        class="backup-toast"
-      />
+    {#if toastMessage}
+      <div role="status" class="sr-only">
+        {toastMessage.message}
+      </div>
     {/if}
 
     <SchemaForm

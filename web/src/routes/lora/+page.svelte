@@ -4,9 +4,9 @@
   import FormPanel from '$lib/components/form/FormPanel.svelte';
   import Field from '$lib/components/form/Field.svelte';
   import Select from '$lib/components/form/ValueSelect.svelte';
-  import PageHeader from '$lib/components/ui/PageHeader.svelte';
-  import Alert from '$lib/components/ui/Alert.svelte';
-  import FormPageSkeleton from '$lib/components/ui/FormPageSkeleton.svelte';
+  import PageHeader from '$lib/components/layout/PageHeader.svelte';
+  import { Alert } from '$lib/components/ui/alert';
+  import FormPageSkeleton from '$lib/components/loading/FormPageSkeleton.svelte';
 
   const ctx = getRouteContext();
 
@@ -60,7 +60,7 @@
     <PageHeader title={tab.label || 'LoRA'} class="lora-header" />
 
     {#if !isLoraActive}
-      <Alert tone="warning" class="lora-warning-alert">
+      <Alert class="lora-warning-alert">
         <span class="warning-icon" aria-hidden="true">⚠️</span>
         <div class="warning-text">
           LoRA / PEFT options are disabled because the current training method is <strong>{trainingMethod}</strong>.

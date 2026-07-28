@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Skeleton from '$lib/components/ui/Skeleton.svelte';
+  import { Skeleton } from '$lib/components/ui/skeleton';
 
   let {
     rows = 3,
@@ -22,7 +22,7 @@
   aria-label={label}
 >
   {#each Array(rows) as _, index (index)}
-    <Skeleton height={rowHeight} />
+    <Skeleton style="height: {rowHeight}" class="w-full" />
   {/each}
 </div>
 

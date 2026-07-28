@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { Lock, ShieldAlert, ArrowRight } from 'lucide-svelte';
-  import Button from '$lib/components/ui/Button.svelte';
+  import { Button } from '$lib/components/ui/button';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
-  import Alert from '$lib/components/ui/Alert.svelte';
+  import { Alert } from '$lib/components/ui/alert';
 
   let password = $state('');
   let errorMsg = $state('');
@@ -57,7 +57,7 @@
     </div>
 
     {#if isHttpInsecure}
-      <Alert tone="warning" class="security-warning">
+      <Alert class="security-warning">
         <ShieldAlert size={20} class="warning-icon" />
         <div>
           <strong>Insecure HTTP Connection</strong>
@@ -68,7 +68,7 @@
 
     <form onsubmit={handleLogin} class="login-form">
       {#if errorMsg}
-        <Alert tone="error" class="error-banner">
+        <Alert variant="destructive" class="error-banner">
           {errorMsg}
         </Alert>
       {/if}
@@ -87,7 +87,7 @@
         />
       </div>
 
-      <Button type="submit" variant="primary" size="large" class="submit-btn" disabled={loading || !password}>
+      <Button type="submit" variant="default" size="lg" class="submit-btn" disabled={loading || !password}>
         {#if loading}
           <span>Signing in...</span>
         {:else}

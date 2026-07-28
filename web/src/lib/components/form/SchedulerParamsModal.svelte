@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
+  import ResponsiveDialogDrawer from '$lib/components/overlays/ResponsiveDialogDrawer.svelte';
+  import { Button } from '$lib/components/ui/button';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
 
   let {
@@ -43,13 +44,10 @@
   }
 </script>
 
-<ModalDialog
+<ResponsiveDialogDrawer
   bind:open
+  onOpenChange={(v) => { if (!v) open = false; }}
   title="Configure Custom Scheduler Parameters"
-  applyText="Apply Parameters"
-  {isSubmitting}
-  onApply={handleApply}
-  onClose={() => (open = false)}
 >
   <div class="scheduler-modal-body">
     {#if submitError}
@@ -74,7 +72,15 @@
       </span>
     </div>
   </div>
-</ModalDialog>
+  {#snippet footer()}
+    <div class="flex items-center justify-end gap-2 p-2">
+      <Button variant="secondary" disabled={isSubmitting} onclick={() => (open = false)}>Cancel</Button>
+      <Button variant="default" disabled={isSubmitting} onclick={handleApply}>
+        {isSubmitting ? 'Applying...' : 'Apply Parameters'}
+      </Button>
+    </div>
+  {/snippet}
+</ResponsiveDialogDrawer>
 
 <style>
   .scheduler-modal-body {

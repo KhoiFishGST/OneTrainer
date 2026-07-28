@@ -16,4 +16,5 @@ it('updates fields and preserves clone/remove/browse callbacks', async () => {
   await fireEvent.click(confirmBtn);
   expect(onClone).toHaveBeenCalledWith(0);
   expect(onRemove).toHaveBeenCalledWith(0);
+  await new Promise((resolve) => setTimeout(resolve, 50));
 });

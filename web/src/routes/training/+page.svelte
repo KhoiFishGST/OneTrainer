@@ -3,9 +3,9 @@
   import SchemaForm from '$lib/components/form/SchemaForm.svelte';
   import OptimizerParamsModal from '$lib/components/form/OptimizerParamsModal.svelte';
   import SchedulerParamsModal from '$lib/components/form/SchedulerParamsModal.svelte';
-  import PageHeader from '$lib/components/ui/PageHeader.svelte';
-  import TabBar from '$lib/components/ui/TabBar.svelte';
-  import FormPageSkeleton from '$lib/components/ui/FormPageSkeleton.svelte';
+  import PageHeader from '$lib/components/layout/PageHeader.svelte';
+  import FormPageSkeleton from '$lib/components/loading/FormPageSkeleton.svelte';
+  import * as Tabs from '$lib/components/ui/tabs';
 
   const ctx = getRouteContext();
 
@@ -58,7 +58,7 @@
   function handleSaveScheduler(updatedValues: Record<string, any>) {
     if (ctx.workspace) {
       for (const [key, val] of Object.entries(updatedValues)) {
-        ctx.workspace.setRaw(key, val);
+        ctx.workspace.setRaw(`optimizer.${key}`, val);
       }
     }
   }
@@ -72,11 +72,13 @@
 
     <!-- Connected Text-Only Training Sub-Nav Tabs -->
     <div class="training-tab-container">
-      <TabBar
-        tabs={subnavTabs}
-        active={activeSubTab}
-        onSelect={(id) => (activeSubTab = id)}
-      />
+      <Tabs.Root value={activeSubTab} onValueChange={(val) => { if (val) activeSubTab = val as TrainingSubTab; }}>
+        <Tabs.List variant="line">
+          {#each subnavTabs as subtab (subtab.id)}
+            <Tabs.Trigger value={subtab.id}>{subtab.label}</Tabs.Trigger>
+          {/each}
+        </Tabs.List>
+      </Tabs.Root>
 
       <div class="tab-panel-body">
         <SchemaForm

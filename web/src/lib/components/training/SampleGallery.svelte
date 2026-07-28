@@ -3,7 +3,7 @@
   import { galleryImageUrl } from '../../api/client';
   import { uiPreferences } from '../../stores/ui-preferences';
   import Select from '../form/ValueSelect.svelte';
-  import Button from '../ui/Button.svelte';
+  import { Button } from '$lib/components/ui/button';
   import GalleryImageViewer, { type GallerySelection } from './GalleryImageViewer.svelte';
 
   let {

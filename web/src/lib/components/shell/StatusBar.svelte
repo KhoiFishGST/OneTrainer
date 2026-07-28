@@ -6,7 +6,7 @@
     Sparkles,
     Archive,
   } from 'lucide-svelte';
-  import Button from '../ui/Button.svelte';
+  import { Button } from '$lib/components/ui/button';
   import { trainingStore } from '../../events/training-store';
   import { api } from '../../api/client';
 
@@ -66,7 +66,7 @@
     <div class="training-action-buttons">
       {#if trainingState === 'IDLE' || trainingState === 'COMPLETED' || trainingState === 'FAILED'}
         <Button
-          variant="primary"
+          variant="default"
           class="btn btn-primary"
           onclick={handleStartTraining}
         >
@@ -83,7 +83,7 @@
           <span>Pause</span>
         </Button>
         <Button
-          variant="danger"
+          variant="destructive"
           class="btn btn-danger"
           onclick={handleStopTraining}
         >
@@ -108,7 +108,7 @@
         </Button>
       {:else if trainingState === 'PAUSED'}
         <Button
-          variant="primary"
+          variant="default"
           class="btn btn-primary"
           onclick={handleResumeTraining}
         >
@@ -116,7 +116,7 @@
           <span>Resume</span>
         </Button>
         <Button
-          variant="danger"
+          variant="destructive"
           class="btn btn-danger"
           onclick={handleStopTraining}
         >
@@ -141,7 +141,7 @@
         </Button>
       {:else if trainingState === 'STOPPING'}
         <Button
-          variant="danger"
+          variant="destructive"
           class="btn btn-danger"
           disabled
         >

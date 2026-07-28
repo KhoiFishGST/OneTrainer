@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Dices, Pencil, Copy, Trash2, Plus } from 'lucide-svelte';
-  import Button from '$lib/components/ui/Button.svelte';
+  import { Button } from '$lib/components/ui/button';
   import { Checkbox } from '$lib/components/ui/checkbox/index.js';
   import NumberInput from '$lib/components/form/NumericDraftInput.svelte';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';

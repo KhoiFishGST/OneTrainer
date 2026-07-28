@@ -1,10 +1,10 @@
 <script lang="ts">
   import { Save, FolderOpen, RotateCcw, RefreshCw, AlertTriangle } from 'lucide-svelte';
   import Select from '../form/ValueSelect.svelte';
-  import ModalDialog from '../ui/ModalDialog.svelte';
+  import ResponsiveDialogDrawer from '$lib/components/overlays/ResponsiveDialogDrawer.svelte';
   import { Input as TextInput } from '../ui/input/index.js';
-  import Alert from '../ui/Alert.svelte';
-  import Button from '../ui/Button.svelte';
+  import { Alert } from '$lib/components/ui/alert';
+  import { Button } from '$lib/components/ui/button';
   import {
     createMetaQuery,
     createPresetsQuery,
@@ -292,7 +292,7 @@
           <span>Reload</span>
         </Button>
         <Button
-          variant="danger"
+          variant="destructive"
           class="btn btn-danger"
           onclick={() => workspace.overwriteServer()}
         >
@@ -314,7 +314,7 @@
 
 {#if saveError && !showSaveDialog && !showOverwriteDialog}
   <div class="header-alert-owner">
-    <Alert tone="error" class="save-error-toast">
+    <Alert variant="destructive" class="save-error-toast">
       {saveError}
     </Alert>
   </div>
@@ -322,19 +322,16 @@
 
 {#if trainingState === 'FAILED' && $trainingStore.status?.error_message}
   <div class="header-alert-owner">
-    <Alert tone="error" class="save-error-toast">
+    <Alert variant="destructive" class="save-error-toast">
       {$trainingStore.status.error_message}
     </Alert>
   </div>
 {/if}
 
-<ModalDialog
+<ResponsiveDialogDrawer
   open={showSaveDialog && !showOverwriteDialog}
+  onOpenChange={(v) => { if (!v) showSaveDialog = false; }}
   title="Save Configuration"
-  applyText="Save"
-  cancelText="Cancel"
-  onClose={() => (showSaveDialog = false)}
-  onApply={handleSavePreset}
 >
   {#if saveError}
     <p class="error-msg">{saveError}</p>
@@ -353,29 +350,29 @@
       }}
     />
   </label>
-</ModalDialog>
+  {#snippet footer()}
+    <div class="flex items-center justify-end gap-2 p-2">
+      <Button variant="secondary" onclick={() => (showSaveDialog = false)}>Cancel</Button>
+      <Button variant="default" onclick={handleSavePreset}>Save</Button>
+    </div>
+  {/snippet}
+</ResponsiveDialogDrawer>
 
-<ModalDialog
+<ResponsiveDialogDrawer
   open={showOverwriteDialog}
+  onOpenChange={(v) => { if (!v) showOverwriteDialog = false; }}
   title="File Already Exists"
-  applyText="OK"
-  cancelText="Cancel"
-  onClose={() => (showOverwriteDialog = false)}
-  onApply={handleConfirmOverwrite}
 >
   <p>The configuration file <strong>{presetName}.json</strong> already exists in <code>training_configs</code>.</p>
   <p>Do you want to overwrite it?</p>
 
-  <div class="modal-extra-actions" style="margin-top: 12px; display: flex; gap: 8px; justify-content: flex-end;">
-    <Button
-      variant="danger"
-      class="btn btn-danger"
-      onclick={handleConfirmOverwrite}
-    >
-      Overwrite
-    </Button>
-  </div>
-</ModalDialog>
+  {#snippet footer()}
+    <div class="flex items-center justify-end gap-2 p-2">
+      <Button variant="secondary" onclick={() => (showOverwriteDialog = false)}>Cancel</Button>
+      <Button variant="destructive" onclick={handleConfirmOverwrite}>Overwrite</Button>
+    </div>
+  {/snippet}
+</ResponsiveDialogDrawer>
 
 <style>
   .header {

@@ -7,7 +7,7 @@
   import type { GalleryRunModel } from '$lib/api/types';
   import SampleGallery from '$lib/components/training/SampleGallery.svelte';
   import Select from '$lib/components/form/ValueSelect.svelte';
-  import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import PageHeader from '$lib/components/layout/PageHeader.svelte';
 
   const runsQuery = createGalleryRunsQuery();
   const currentQuery = createGalleryCurrentQuery();

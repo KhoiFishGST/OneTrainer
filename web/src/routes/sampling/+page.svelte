@@ -18,12 +18,12 @@
     createSampleFilesQuery,
     createCreateSampleFileMutation,
   } from '$lib/api/queries';
-  import PageHeader from '$lib/components/ui/PageHeader.svelte';
-  import Toast from '$lib/components/ui/Toast.svelte';
-  import Alert from '$lib/components/ui/Alert.svelte';
-  import FormPageSkeleton from '$lib/components/ui/FormPageSkeleton.svelte';
-  import Button from '$lib/components/ui/Button.svelte';
+  import PageHeader from '$lib/components/layout/PageHeader.svelte';
+  import { Alert } from '$lib/components/ui/alert';
+  import FormPageSkeleton from '$lib/components/loading/FormPageSkeleton.svelte';
+  import { Button } from '$lib/components/ui/button';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
+  import { toast as sonnerToast } from 'svelte-sonner';
 
   const ctx = getRouteContext();
   const sampleMutation = createRequestSampleMutation();
@@ -225,15 +225,6 @@
       {/snippet}
     </PageHeader>
 
-    {#if toast}
-      <Toast
-        message={toast.message}
-        tone={toast.type}
-        onDismiss={() => (toast = null)}
-        class="sampling-toast"
-      />
-    {/if}
-
     <div class="config-bar">
       <div class="config-selector">
         <label for="sample-config-select" class="config-label">Sample Configuration:</label>
@@ -271,7 +262,7 @@
     </div>
 
     {#if queued}
-      <Alert tone="info" class="sampling-queued-alert">
+      <Alert role="status" class="sampling-queued-alert">
         Sample prompt changes are queued for the next sampling batch.
       </Alert>
     {/if}
@@ -322,7 +313,7 @@
       }}
     />
     {#if configModalError}
-      <Alert tone="error" class="modal-error">{configModalError}</Alert>
+      <Alert variant="destructive" class="modal-error">{configModalError}</Alert>
     {/if}
   </div>
 
@@ -337,7 +328,7 @@
       </Button>
       <Button
         type="button"
-        variant="primary"
+        variant="default"
         onclick={handleCreateConfigFile}
       >
         Create File

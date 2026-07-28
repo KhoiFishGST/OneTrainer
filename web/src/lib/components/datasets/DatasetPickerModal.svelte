@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Check, AlertCircle } from 'lucide-svelte';
-  import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
-  import Button from '$lib/components/ui/Button.svelte';
+  import ResponsiveDialogDrawer from '$lib/components/overlays/ResponsiveDialogDrawer.svelte';
+  import { Button } from '$lib/components/ui/button';
   import { Badge } from '$lib/components/ui/badge/index.js';
   import { Skeleton } from '$lib/components/ui/skeleton/index.js';
   import * as Empty from '$lib/components/ui/empty/index.js';
@@ -60,13 +60,11 @@
 </script>
 
 {#if open}
-  <ModalDialog
+  <ResponsiveDialogDrawer
     {open}
+    onOpenChange={(val) => { if (!val) onClose(); }}
     title="Select Dataset"
-    applyText="Select Dataset"
-    cancelText="Cancel"
-    onClose={onClose}
-    onApply={confirmSelection}
+    class="max-w-3xl"
   >
     <ScrollArea class="picker-body">
       {#if loading}
@@ -122,7 +120,13 @@
         </div>
       {/if}
     </ScrollArea>
-  </ModalDialog>
+    {#snippet footer()}
+      <div class="flex items-center justify-end gap-2 p-2">
+        <Button variant="secondary" onclick={onClose}>Cancel</Button>
+        <Button variant="default" disabled={!selectedDataset} onclick={confirmSelection}>Select Dataset</Button>
+      </div>
+    {/snippet}
+  </ResponsiveDialogDrawer>
 {/if}
 
 <style>

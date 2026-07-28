@@ -4,9 +4,9 @@
   import type { Concept } from '$lib/api/types';
   import ConceptsEditor from '$lib/components/concepts/ConceptsEditor.svelte';
   import { AlertCircle } from 'lucide-svelte';
-  import PageHeader from '$lib/components/ui/PageHeader.svelte';
-  import Alert from '$lib/components/ui/Alert.svelte';
-  import Skeleton from '$lib/components/ui/Skeleton.svelte';
+  import PageHeader from '$lib/components/layout/PageHeader.svelte';
+  import { Alert } from '$lib/components/ui/alert';
+  import { Skeleton } from '$lib/components/ui/skeleton';
 
   const conceptsQuery = createConceptsQuery();
   const updateConceptsMutation = createUpdateConceptsMutation();
@@ -23,30 +23,24 @@
     }
   });
 
-  function performSave(listToSave: Concept[]) {
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
-      debounceTimer = null;
-    }
-    $updateConceptsMutation.mutate(listToSave);
-  }
-
-  function handleConceptsChange(newConcepts: Concept[]) {
-    concepts = newConcepts;
-    if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      performSave(newConcepts);
-    }, 1000);
-  }
-
   onDestroy(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
   });
 
+  function handleSave(updated: Concept[]) {
+    concepts = updated;
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      $updateConceptsMutation.mutate(updated);
+    }, 1000);
+  }
+
   const errorMessage = $derived(
-    ($conceptsQuery.error as Error)?.message ||
-      ($updateConceptsMutation.error as Error)?.message ||
-      null
+    $conceptsQuery.error
+      ? ($conceptsQuery.error as Error).message || 'Failed to load concepts'
+      : $updateConceptsMutation.error
+      ? ($updateConceptsMutation.error as Error).message || 'Failed to save concepts'
+      : null
   );
 </script>
 
@@ -54,7 +48,7 @@
   <PageHeader title="Concepts" />
 
   {#if errorMessage}
-    <Alert tone="error" class="concepts-error-alert">
+    <Alert variant="destructive" class="concepts-error-alert">
       <AlertCircle size={18} />
       <span>{errorMessage}</span>
     </Alert>
@@ -62,14 +56,14 @@
 
   {#if $conceptsQuery.isLoading}
     <div role="status" aria-label="Loading concepts" class="skeleton-container">
-      <Skeleton height="140px" />
-      <Skeleton height="140px" />
+      <Skeleton class="h-[140px] w-full" />
+      <Skeleton class="h-[140px] w-full" />
     </div>
   {:else}
     <ConceptsEditor
       {concepts}
       disabled={false}
-      onChange={handleConceptsChange}
+      onChange={handleSave}
     />
   {/if}
 </div>

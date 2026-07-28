@@ -1,9 +1,9 @@
 <script lang="ts">
   import { getRouteContext } from '$lib/config/context';
   import SchemaForm from '$lib/components/form/SchemaForm.svelte';
-  import PageHeader from '$lib/components/ui/PageHeader.svelte';
-  import TabBar from '$lib/components/ui/TabBar.svelte';
-  import FormPageSkeleton from '$lib/components/ui/FormPageSkeleton.svelte';
+  import PageHeader from '$lib/components/layout/PageHeader.svelte';
+  import FormPageSkeleton from '$lib/components/loading/FormPageSkeleton.svelte';
+  import * as Tabs from '$lib/components/ui/tabs';
 
   const ctx = getRouteContext();
 
@@ -36,11 +36,13 @@
 
     <!-- Connected Text-Only Model Sub-Nav Tabs -->
     <div class="model-tab-container">
-      <TabBar
-        tabs={subnavTabs}
-        active={activeSubTab}
-        onSelect={(id) => (activeSubTab = id)}
-      />
+      <Tabs.Root value={activeSubTab} onValueChange={(val) => { if (val) activeSubTab = val as ModelSubTab; }}>
+        <Tabs.List variant="line">
+          {#each subnavTabs as subtab (subtab.id)}
+            <Tabs.Trigger value={subtab.id}>{subtab.label}</Tabs.Trigger>
+          {/each}
+        </Tabs.List>
+      </Tabs.Root>
 
       <div class="tab-panel-body">
         <SchemaForm

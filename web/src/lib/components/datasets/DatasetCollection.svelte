@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Trash2 } from 'lucide-svelte';
-  import Button from '$lib/components/ui/Button.svelte';
-  import AddCard from '$lib/components/ui/AddCard.svelte';
+  import { Button } from '$lib/components/ui/button';
+  import AddCard from '$lib/components/collections/AddItemCard.svelte';
   import { Badge } from '$lib/components/ui/badge/index.js';
   import * as Card from '$lib/components/ui/card/index.js';
   import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';

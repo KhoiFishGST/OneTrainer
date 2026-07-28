@@ -12,19 +12,21 @@
   import MetricsChart from '$lib/components/charts/MetricsChart.svelte';
   import GpuMonitor from '$lib/components/training/GpuMonitor.svelte';
   import SampleGallery from '$lib/components/training/SampleGallery.svelte';
-  import PageHeader from '$lib/components/ui/PageHeader.svelte';
-  import Toast from '$lib/components/ui/Toast.svelte';
-  import Alert from '$lib/components/ui/Alert.svelte';
+  import PageHeader from '$lib/components/layout/PageHeader.svelte';
+  import { Alert } from '$lib/components/ui/alert';
+  import { toast as sonnerToast } from 'svelte-sonner';
 
   const sampleMutation = createRequestSampleMutation();
   const backupMutation = createRequestBackupMutation();
   const saveMutation = createRequestSaveMutation();
   const galleryQuery = createGalleryCurrentQuery();
 
-  let toast = $state<{ message: string; type: 'success' | 'error' } | null>(null);
-
   function triggerToast(message: string, type: 'success' | 'error' = 'success') {
-    toast = { message, type };
+    if (type === 'error') {
+      sonnerToast.error(message);
+    } else {
+      sonnerToast.success(message);
+    }
   }
 
   const status = $derived($trainingStore.status);
@@ -100,17 +102,8 @@
     {/snippet}
   </PageHeader>
 
-  {#if toast}
-    <Toast
-      message={toast.message}
-      tone={toast.type}
-      onDismiss={() => (toast = null)}
-      class="live-toast"
-    />
-  {/if}
-
   {#if status.error_message}
-    <Alert tone="error" class="live-error-alert">
+    <Alert variant="destructive" class="live-error-alert">
       <strong>Training Error:</strong> {status.error_message}
     </Alert>
   {/if}

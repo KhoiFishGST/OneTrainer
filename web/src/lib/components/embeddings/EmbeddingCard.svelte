@@ -2,7 +2,7 @@
   import { Trash2, Copy, Folder } from 'lucide-svelte';
   import { Switch as Toggle } from '$lib/components/ui/switch/index.js';
   import TimeInput from '$lib/components/form/TimeInput.svelte';
-  import Button from '$lib/components/ui/Button.svelte';
+  import { Button } from '$lib/components/ui/button';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
   import NumberInput from '$lib/components/form/NumericDraftInput.svelte';
   import * as Card from '$lib/components/ui/card/index.js';

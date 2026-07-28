@@ -1,6 +1,6 @@
 <script lang="ts">
-  import Alert from '../ui/Alert.svelte';
-  import Button from '../ui/Button.svelte';
+  import { Alert } from '$lib/components/ui/alert';
+  import { Button } from '$lib/components/ui/button';
 
   let {
     message = '',
@@ -13,30 +13,25 @@
   let dismissed = $state(false);
 
   $effect(() => {
-    // Reset dismissal whenever error message changes
-    if (message) {
-      dismissed = false;
-    }
+    dismissed = false;
   });
 
   function handleDismiss() {
     dismissed = true;
-    if (onDismiss) {
-      onDismiss();
-    }
+    onDismiss?.();
   }
 </script>
 
 {#if message && !dismissed}
   <div class="error-banner-owner">
-    <Alert tone="error" class="error-banner">
+    <Alert variant="destructive" class="error-banner">
       <div class="error-text">
         <strong>Error:</strong>
         <span>{message}</span>
       </div>
       <Button
-        variant="danger"
-        size="small"
+        variant="destructive"
+        size="sm"
         class="dismiss-btn"
         aria-label="Dismiss"
         onclick={handleDismiss}

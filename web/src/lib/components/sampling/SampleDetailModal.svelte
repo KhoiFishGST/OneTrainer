@@ -1,6 +1,6 @@
 <script lang="ts">
   import ResponsiveDialogDrawer from '$lib/components/overlays/ResponsiveDialogDrawer.svelte';
-  import Button from '$lib/components/ui/Button.svelte';
+  import { Button } from '$lib/components/ui/button';
   import Select from '$lib/components/form/ValueSelect.svelte';
   import { Checkbox } from '$lib/components/ui/checkbox/index.js';
   import NumberInput from '$lib/components/form/NumericDraftInput.svelte';
@@ -252,7 +252,7 @@
         </Button>
         <Button
           type="button"
-          variant="primary"
+          variant="default"
           onclick={handleSave}
         >
           {mode === 'add' ? 'Add Sample' : 'Save Sample'}

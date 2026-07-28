@@ -1,12 +1,12 @@
 <script lang="ts">
   import { getRouteContext } from '$lib/config/context';
   import ResponsiveDialogDrawer from '$lib/components/overlays/ResponsiveDialogDrawer.svelte';
-  import Button from '$lib/components/ui/Button.svelte';
+  import { Button } from '$lib/components/ui/button';
   import PathInput from '$lib/components/form/PathInput.svelte';
   import { Switch as Toggle } from '$lib/components/ui/switch/index.js';
-  import PageHeader from '$lib/components/ui/PageHeader.svelte';
+  import PageHeader from '$lib/components/layout/PageHeader.svelte';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
-  import Alert from '$lib/components/ui/Alert.svelte';
+  import { Alert } from '$lib/components/ui/alert';
   import DatasetCollection from '$lib/components/datasets/DatasetCollection.svelte';
   import {
     queryKeys,
@@ -166,7 +166,7 @@
       onInput={(val) => (newDatasetName = val)}
     />
     {#if createError}
-      <Alert tone="error" class="error-text">{createError}</Alert>
+      <Alert variant="destructive" class="error-text">{createError}</Alert>
     {/if}
   </div>
 
@@ -181,7 +181,7 @@
       </Button>
       <Button
         type="button"
-        variant="primary"
+        variant="default"
         onclick={handleCreateDataset}
       >
         Create

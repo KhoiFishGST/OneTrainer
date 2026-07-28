@@ -1,7 +1,7 @@
 <script lang="ts">
   import { theme } from '$lib/stores/theme.svelte';
   import { Sun, Moon } from 'lucide-svelte';
-  import Button from '../ui/Button.svelte';
+  import { Button } from '$lib/components/ui/button';
 
   const isDark = $derived(theme.value === 'dark');
   const ariaLabel = $derived(isDark ? 'Switch to light theme' : 'Switch to dark theme');

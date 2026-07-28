@@ -3,10 +3,10 @@
   import { getRouteContext } from '$lib/config/context';
   import SchemaForm from '$lib/components/form/SchemaForm.svelte';
   import EmbeddingCard from '$lib/components/embeddings/EmbeddingCard.svelte';
-  import PageHeader from '$lib/components/ui/PageHeader.svelte';
-  import Alert from '$lib/components/ui/Alert.svelte';
-  import FormPageSkeleton from '$lib/components/ui/FormPageSkeleton.svelte';
-  import Button from '$lib/components/ui/Button.svelte';
+  import PageHeader from '$lib/components/layout/PageHeader.svelte';
+  import { Alert } from '$lib/components/ui/alert';
+  import FormPageSkeleton from '$lib/components/loading/FormPageSkeleton.svelte';
+  import { Button } from '$lib/components/ui/button';
   import * as Empty from '$lib/components/ui/empty/index.js';
 
   const ctx = getRouteContext();
@@ -116,7 +116,7 @@
     <PageHeader title={tab.label || 'Embeddings'} class="embeddings-header" />
 
     {#if !isEmbeddingSupported}
-      <Alert tone="warning" class="embeddings-warning-alert">
+      <Alert class="embeddings-warning-alert">
         <span class="warning-icon" aria-hidden="true">⚠️</span>
         <div class="warning-text">
           Embeddings options are disabled because the selected Base Model Type (<strong>{modelType}</strong>)
@@ -170,7 +170,7 @@
               {/if}
 
               <Button
-                variant="primary"
+                variant="default"
                 class="primary-btn"
                 disabled={!isEmbeddingSupported}
                 onclick={handleAddEmbedding}
@@ -190,7 +190,7 @@
               </Empty.Description>
               <Empty.Content>
                 <Button
-                  variant="primary"
+                  variant="default"
                   class="primary-btn"
                   disabled={!isEmbeddingSupported}
                   onclick={handleAddEmbedding}

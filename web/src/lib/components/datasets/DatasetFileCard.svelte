@@ -1,6 +1,6 @@
 <script lang="ts">
   import { FileText } from 'lucide-svelte';
-  import Button from '$lib/components/ui/Button.svelte';
+  import { Button } from '$lib/components/ui/button';
   import { Textarea as TextArea } from '$lib/components/ui/textarea/index.js';
   import * as Card from '$lib/components/ui/card/index.js';
 

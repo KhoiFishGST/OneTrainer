@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Plus } from 'lucide-svelte';
-  import Button from '$lib/components/ui/Button.svelte';
+  import { Button } from '$lib/components/ui/button';
 
   let {
     label = 'Add Item',

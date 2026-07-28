@@ -3,7 +3,7 @@
   import uPlot from 'uplot';
   import 'uplot/dist/uPlot.min.css';
   import type { TrainingMetric } from '../../api/types';
-  import Button from '../ui/Button.svelte';
+  import { Button } from '$lib/components/ui/button';
   import { Slider } from '../ui/slider/index.js';
 
   let {
@@ -200,7 +200,7 @@
       <Button
         type="button"
         variant="secondary"
-        size="small"
+        size="sm"
         class="btn-control"
         onclick={toggleLogScale}
       >
@@ -210,7 +210,7 @@
       <Button
         type="button"
         variant="secondary"
-        size="small"
+        size="sm"
         class="btn-control"
         onclick={resetZoom}
       >

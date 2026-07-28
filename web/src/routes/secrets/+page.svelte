@@ -1,13 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { ShieldAlert, Key, Eye, EyeOff, Save, Lock, Unlock } from 'lucide-svelte';
-  import PageHeader from '$lib/components/ui/PageHeader.svelte';
-  import Alert from '$lib/components/ui/Alert.svelte';
-  import Toast from '$lib/components/ui/Toast.svelte';
-  import Skeleton from '$lib/components/ui/Skeleton.svelte';
-  import Button from '$lib/components/ui/Button.svelte';
+  import PageHeader from '$lib/components/layout/PageHeader.svelte';
+  import { Alert } from '$lib/components/ui/alert';
+  import { Skeleton } from '$lib/components/ui/skeleton';
+  import { Button } from '$lib/components/ui/button';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
   import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
+  import { toast as sonnerToast } from 'svelte-sonner';
 
   let huggingfaceToken = $state('');
   let hfTokenSet = $state(false);
@@ -21,6 +21,18 @@
   let saveStatus = $state<{ type: 'success' | 'error'; message: string } | null>(null);
   let loading = $state(true);
   let isConfirmClearOpen = $state(false);
+
+  $effect(() => {
+    if (saveStatus) {
+      if (saveStatus.type === 'success') {
+        sonnerToast.success(saveStatus.message);
+      }
+      const timer = setTimeout(() => {
+        saveStatus = null;
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  });
 
   onMount(async () => {
     if (typeof window !== 'undefined') {
@@ -93,7 +105,7 @@
   <PageHeader title="Secrets & Security Settings" class="secrets-header" />
 
   {#if isHttpInsecure}
-    <Alert tone="error" class="secrets-insecure-alert">
+    <Alert variant="destructive" class="secrets-insecure-alert">
       <ShieldAlert size={24} class="banner-icon" />
       <div class="banner-text">
         <strong>Insecure Connection (HTTP) Detected</strong>
@@ -105,25 +117,21 @@
   {/if}
 
   {#if saveStatus}
-    {#if saveStatus.type === 'success'}
-      <Toast
-        message={saveStatus.message}
-        tone="success"
-        duration={3000}
-        onDismiss={() => (saveStatus = null)}
-        class="secrets-toast"
-      />
-    {:else}
-      <Alert tone="error" class="secrets-alert">
+    {#if saveStatus.type === 'error'}
+      <Alert variant="destructive" class="secrets-alert">
         <span>{saveStatus.message}</span>
       </Alert>
+    {:else}
+      <div role="status" class="sr-only">
+        {saveStatus.message}
+      </div>
     {/if}
   {/if}
 
   {#if loading}
     <div role="status" aria-label="Loading secrets" class="skeleton-container">
-      <Skeleton height="120px" />
-      <Skeleton height="120px" />
+      <Skeleton class="h-[120px] w-full" />
+      <Skeleton class="h-[120px] w-full" />
     </div>
   {:else}
     <div class="card-grid">
@@ -169,7 +177,7 @@
         </div>
 
         <div class="card-actions">
-          <Button variant="primary" class="btn primary" onclick={handleSaveHfToken}>
+          <Button variant="default" class="btn primary" onclick={handleSaveHfToken}>
             <Save size={16} /> Save Token
           </Button>
         </div>
@@ -221,11 +229,11 @@
         </div>
 
         <div class="card-actions">
-          <Button variant="primary" class="btn primary" onclick={handleSavePassword}>
+          <Button variant="default" class="btn primary" onclick={handleSavePassword}>
             <Save size={16} /> Update Password
           </Button>
           {#if webuiPasswordSet}
-            <Button variant="danger" class="btn danger" onclick={() => (isConfirmClearOpen = true)}>
+            <Button variant="destructive" class="btn danger" onclick={() => (isConfirmClearOpen = true)}>
               Clear Password
             </Button>
           {/if}

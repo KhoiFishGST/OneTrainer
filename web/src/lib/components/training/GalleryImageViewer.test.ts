@@ -160,8 +160,8 @@ describe('GalleryImageViewer', () => {
   });
 
   it('navigates with a horizontal swipe but ignores vertical movement', async () => {
-    const { container } = renderViewerAtMiddleCheckpoint();
-    const imageStage = container.querySelector('.viewer-image-stage') as HTMLElement;
+    renderViewerAtMiddleCheckpoint();
+    const imageStage = document.querySelector('.viewer-image-stage') as HTMLElement;
     await fireEvent.touchStart(imageStage, { touches: [{ clientX: 200, clientY: 100 }] });
     await fireEvent.touchEnd(imageStage, { changedTouches: [{ clientX: 120, clientY: 105 }] });
     expect(screen.getByText('Epoch 3 \u00b7 Step 300')).toBeInTheDocument();

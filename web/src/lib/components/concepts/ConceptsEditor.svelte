@@ -1,7 +1,7 @@
 <script lang="ts">
   import Select from '../form/ValueSelect.svelte';
-  import AddCard from '../ui/AddCard.svelte';
-  import Button from '../ui/Button.svelte';
+  import AddCard from '../collections/AddItemCard.svelte';
+  import { Button } from '$lib/components/ui/button';
   import { Input as TextInput } from '../ui/input/index.js';
   import { Checkbox } from '../ui/checkbox/index.js';
   import { Badge } from '../ui/badge/index.js';
@@ -240,7 +240,7 @@
         <Empty.Content>
           <Button
             type="button"
-            variant="primary"
+            variant="default"
             {disabled}
             onclick={handleAddConcept}
           >

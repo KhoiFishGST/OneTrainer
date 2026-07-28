@@ -1,6 +1,6 @@
 <script lang="ts">
   import { FolderOpen } from 'lucide-svelte';
-  import Button from '$lib/components/ui/Button.svelte';
+  import { Button } from '$lib/components/ui/button';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
   import { getRouteContext } from '$lib/config/context';
 

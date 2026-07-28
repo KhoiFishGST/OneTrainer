@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { Concept } from '$lib/api/types';
   import ResponsiveDialogDrawer from '$lib/components/overlays/ResponsiveDialogDrawer.svelte';
-  import Button from '$lib/components/ui/Button.svelte';
-  import TabBar from '$lib/components/ui/TabBar.svelte';
+  import { Button } from '$lib/components/ui/button';
+  import * as Tabs from '$lib/components/ui/tabs';
   import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
   import DirectoryPicker from '$lib/components/directory/DirectoryPicker.svelte';
   import DatasetPickerModal from '$lib/components/datasets/DatasetPickerModal.svelte';
@@ -140,17 +140,14 @@
     class="max-w-4xl max-h-[90vh]"
   >
     <div class="concept-modal-body">
-      <TabBar
-        variant="dialog"
-        tabs={[
-          { id: 'general', label: 'General' },
-          { id: 'image', label: 'Image Augmentations' },
-          { id: 'text', label: 'Text Augmentations' },
-          { id: 'stats', label: 'Statistics' },
-        ]}
-        active={activeTab}
-        onSelect={(tab) => (activeTab = tab as any)}
-      />
+      <Tabs.Root value={activeTab} onValueChange={(val) => { if (val) activeTab = val as any; }}>
+        <Tabs.List variant="line">
+          <Tabs.Trigger value="general">General</Tabs.Trigger>
+          <Tabs.Trigger value="image">Image Augmentations</Tabs.Trigger>
+          <Tabs.Trigger value="text">Text Augmentations</Tabs.Trigger>
+          <Tabs.Trigger value="stats">Statistics</Tabs.Trigger>
+        </Tabs.List>
+      </Tabs.Root>
 
       <ScrollArea class="tab-content-scroll">
         <div class="tab-content-inner">
@@ -188,7 +185,7 @@
         </Button>
         <Button
           type="button"
-          variant="primary"
+          variant="default"
           onclick={handleSave}
         >
           Save Concept Settings

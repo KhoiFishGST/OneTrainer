@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import ModalDialog from '../ui/ModalDialog.svelte';
+  import ResponsiveDialogDrawer from '$lib/components/overlays/ResponsiveDialogDrawer.svelte';
+  import { Button } from '$lib/components/ui/button';
   import Field from './Field.svelte';
   import { Switch as Toggle } from '../ui/switch/index.js';
   import { Input as TextInput } from '../ui/input/index.js';
@@ -14,37 +15,34 @@
     title = 'Optimizer / Scheduler Parameters',
     fields = [],
     values = {},
-    onSave,
-    onClose,
-  }: {
-    open?: boolean;
+    onSave = () => {},
+    onClose = () => {},
+  } = $props<{
+    open: boolean;
     title?: string;
     fields?: SchemaField[];
     values?: Record<string, any>;
-    onSave: (values: Record<string, any>) => void;
+    onSave?: (updatedValues: Record<string, any>) => void | Promise<void>;
     onClose?: () => void;
-  } = $props();
+  }>();
 
   let localValues = $state<Record<string, any>>({});
-  let wasOpen = $state(false);
   let isSubmitting = $state(false);
   let submitError = $state<string | null>(null);
 
   $effect(() => {
-    if (open && !wasOpen) {
+    if (open) {
       untrack(() => {
-        localValues = cloneDocument(values || {});
+        localValues = cloneDocument(values);
+        submitError = null;
       });
     }
-    wasOpen = open;
   });
 
-
-  function normalizeControl(control?: string): 'toggle' | 'text' | 'number' | 'select' {
-    const norm = (control || 'text').toLowerCase();
-    if (['toggle', 'checkbox', 'bool', 'boolean'].includes(norm)) return 'toggle';
-    if (['number', 'integer', 'int', 'float', 'double'].includes(norm)) return 'number';
-    if (['select', 'dropdown', 'enum'].includes(norm)) return 'select';
+  function normalizeControl(c?: string): 'toggle' | 'text' | 'number' | 'select' {
+    if (c === 'toggle' || c === 'checkbox') return 'toggle';
+    if (c === 'number' || c === 'range' || c === 'int' || c === 'float') return 'number';
+    if (c === 'select') return 'select';
     return 'text';
   }
 
@@ -85,13 +83,10 @@
   }
 </script>
 
-<ModalDialog
+<ResponsiveDialogDrawer
   bind:open
+  onOpenChange={(v) => { if (!v) handleClose(); }}
   {title}
-  {isSubmitting}
-  onClose={handleClose}
-  onApply={handleSave}
-  applyText="Save"
 >
   {#if submitError}
     <div class="rounded-md bg-destructive/15 border border-destructive/30 p-3 text-sm text-destructive font-medium mb-3" role="alert">
@@ -141,7 +136,15 @@
       </Field>
     {/each}
   </form>
-</ModalDialog>
+  {#snippet footer()}
+    <div class="flex items-center justify-end gap-2 p-2">
+      <Button variant="secondary" disabled={isSubmitting} onclick={handleClose}>Cancel</Button>
+      <Button variant="default" disabled={isSubmitting} onclick={handleSave}>
+        {isSubmitting ? 'Save...' : 'Save'}
+      </Button>
+    </div>
+  {/snippet}
+</ResponsiveDialogDrawer>
 
 <style>
   .optimizer-scheduler-form {
