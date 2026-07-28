@@ -132,7 +132,7 @@
 
 
 
-          <div class="grid grid-cols-3 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div class="flex flex-col gap-1.5">
               <label for={`card-width-${index}`} class="text-xs font-medium text-muted-foreground">Width</label>
               <NumberInput
@@ -158,7 +158,7 @@
               <div class="flex items-center gap-1">
                 <NumberInput
                   id={`card-seed-${index}`}
-                  class="h-[30px] w-full text-xs px-1.5"
+                  class="h-[30px] w-full min-w-0 text-xs px-1.5"
                   value={getDraftOrValue(sample, index, 'seed', -1)}
                   onInput={(val) => onDraftChange(index, 'seed', val)}
                   onChange={(val) => handleSeedChange(index, val)}
@@ -167,7 +167,7 @@
                   type="button"
                   variant="outline"
                   size="icon-xs"
-                  class={`shrink-0 h-[30px] w-7 ${(sample.seed ?? -1) === -1 ? 'active bg-success-surface text-success border-success/30 hover:bg-success-surface/80 hover:text-success' : 'text-muted-foreground'}`}
+                  class={`shrink-0 h-[30px] w-11 min-w-11 max-md:min-h-11 ${(sample.seed ?? -1) === -1 ? 'active bg-success-surface text-success border-success/30 hover:bg-success-surface/80 hover:text-success' : 'text-muted-foreground'}`}
                   title="Toggle random seed (-1)"
                   aria-label="Toggle random seed"
                   onclick={() => handleToggleRandomSeed(index, sample.seed ?? -1)}

@@ -151,18 +151,19 @@
 
       <div class="flex gap-1">
         {#if store.connectionState === 'connected'}
-          <Badge variant="outline" class="px-1.5 py-0.5 rounded text-[0.6875rem] font-semibold uppercase bg-success-surface text-success border-success/30">
+          <Badge variant="outline" class="status-tag px-1.5 py-0.5 rounded text-[0.6875rem] font-semibold uppercase bg-success-surface text-success border-success/30">
             {store.connectionState}
           </Badge>
         {:else if store.connectionState === 'connecting'}
-          <Badge variant="outline" class="px-1.5 py-0.5 rounded text-[0.6875rem] font-semibold uppercase bg-warning-surface text-warning border-warning/30">
+          <Badge variant="outline" class="status-tag px-1.5 py-0.5 rounded text-[0.6875rem] font-semibold uppercase bg-warning-surface text-warning border-warning/30">
             {store.connectionState}
           </Badge>
         {:else}
-          <Badge variant="outline" class="px-1.5 py-0.5 rounded text-[0.6875rem] font-semibold uppercase bg-destructive-surface text-destructive border-destructive/40">
+          <Badge variant="outline" class="status-tag px-1.5 py-0.5 rounded text-[0.6875rem] font-semibold uppercase bg-destructive-surface text-destructive border-destructive/40">
             {store.connectionState}
           </Badge>
         {/if}
+
         {#if store.gapState}
           <Badge variant="secondary" class="px-1.5 py-0.5 rounded text-[0.6875rem] font-semibold uppercase bg-warning-surface text-warning border-warning/30">
             resyncing
@@ -231,7 +232,7 @@
   </div>
 
   <div
-    class="flex-1 overflow-y-auto relative px-2 py-1"
+    class="terminal-viewport flex-1 overflow-y-auto relative px-2 py-1"
     bind:this={containerRef}
     onscroll={handleScroll}
     role="region"
@@ -240,7 +241,7 @@
     <div class="relative w-full" style="height: {totalHeight}px;">
       <div class="absolute top-0 left-0 right-0 will-change-transform" style="transform: translateY({topOffset}px);">
         {#each visibleRows as row (row.id)}
-          <div class={`h-5 leading-5 whitespace-pre overflow-hidden text-ellipsis ${row.channel === 'webui' ? 'opacity-85' : ''}`}>
+          <div class={`console-row h-5 leading-5 whitespace-pre overflow-hidden text-ellipsis ${row.channel === 'webui' ? 'opacity-85' : ''}`}>
             {#each row.spans as span}
               <span class={filterClasses(span.classes)}>{span.text}</span>
             {/each}
