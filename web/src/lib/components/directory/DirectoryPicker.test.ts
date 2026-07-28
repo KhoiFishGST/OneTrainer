@@ -42,7 +42,7 @@ describe("DirectoryPicker", () => {
 
     mockMatchMedia(false);
     render(DirectoryPicker, { initialPath: "/", list, onSelect: vi.fn(), open: true });
-    
+
     const dialogs = await screen.findAllByRole("dialog");
     expect(dialogs.length).toBe(1);
     expect(document.body.querySelector(".full-screen")).not.toBeInTheDocument();
@@ -59,7 +59,7 @@ describe("DirectoryPicker", () => {
 
     mockMatchMedia(true);
     render(DirectoryPicker, { initialPath: "/", list, onSelect: vi.fn(), open: true });
-    
+
     const dialog = await screen.findByRole("dialog");
     expect(dialog).toBeInTheDocument();
 

@@ -126,4 +126,3 @@ describe("OptimizerParamsModal", () => {
     await pendingSave;
   });
 });
-

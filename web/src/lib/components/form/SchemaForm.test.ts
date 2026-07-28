@@ -399,5 +399,3 @@ it("renders tooltip trigger as div role=button instead of button and handles key
   await fireEvent.keyDown(trigger, { key: " " });
   expect(screen.queryByText("This is a helpful tip")).not.toBeInTheDocument();
 });
-
-
