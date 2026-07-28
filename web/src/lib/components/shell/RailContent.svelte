@@ -120,7 +120,7 @@
                       {...props}
                       href={item.path}
                       class={cn(
-                        'flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors opacity-40 cursor-not-allowed',
+                        'flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors opacity-40 cursor-not-allowed max-md:min-h-[44px]',
                         props.class as string
                       )}
                       aria-disabled="true"
@@ -135,7 +135,7 @@
                       {...props}
                       href={item.path}
                       class={cn(
-                        'flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors hover:bg-muted hover:text-foreground',
+                        'flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors hover:bg-muted hover:text-foreground max-md:min-h-[44px]',
                         currentPath === item.path && 'bg-accent text-accent-foreground font-medium',
                         props.class as string
                       )}

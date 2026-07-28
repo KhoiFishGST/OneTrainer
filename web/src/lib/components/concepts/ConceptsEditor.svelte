@@ -357,7 +357,7 @@
               <DropdownMenu.Root>
                 <DropdownMenu.Trigger
                   onclick={(e) => e.stopPropagation()}
-                  class="dropdown-trigger-btn inline-flex items-center justify-center p-1.5 rounded border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted"
+                  class="dropdown-trigger-btn inline-flex items-center justify-center p-1.5 rounded border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted max-md:min-h-[44px] max-md:min-w-[44px]"
                   title="More actions"
                 >
                   <MoreVertical size={16} />

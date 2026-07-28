@@ -222,7 +222,7 @@
       <a
         href="/api/console/log"
         download
-        class="inline-flex items-center gap-1 h-6 px-2 text-xs rounded bg-muted border border-border text-foreground hover:bg-border no-underline"
+        class="inline-flex items-center gap-1 h-6 px-2 text-xs rounded bg-muted border border-border text-foreground hover:bg-border no-underline max-md:min-h-[44px]"
       >
         <Download size={14} />
         <span>Download Log</span>
