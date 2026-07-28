@@ -81,4 +81,28 @@ describe('normalizeConceptDraft', () => {
     expect(normalized.text?.tag_dropout_probability).toBe(0.0);
     expect(normalized.text?.caps_randomize_probability).toBe(0.0);
   });
+
+  it('does not add numeric keys that were absent from the source draft', () => {
+    const sparse: any = { name: 'Sparse Concept', path: '/data/sparse' };
+
+    const result: any = normalizeConceptDraft(sparse);
+
+    expect(result).toEqual({ name: 'Sparse Concept', path: '/data/sparse' });
+    expect('image_variations' in result).toBe(false);
+    expect('balancing' in result).toBe(false);
+    expect('loss_weight' in result).toBe(false);
+  });
+
+  it('normalizes a nested key only when its parent object exists', () => {
+    const withImage: any = {
+      name: 'Partial',
+      image: { random_rotate_max_angle: '12.5' },
+    };
+
+    const result: any = normalizeConceptDraft(withImage);
+
+    expect(result.image.random_rotate_max_angle).toBe(12.5);
+    expect('random_brightness_max_strength' in result.image).toBe(false);
+  });
 });
+

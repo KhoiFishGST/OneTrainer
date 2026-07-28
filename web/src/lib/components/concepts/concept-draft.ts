@@ -37,14 +37,18 @@ export function normalizeConceptDraft(draft: Concept): Concept {
 
   for (const { path, normalize } of NUMERIC_PATHS) {
     let current: any = result;
+    let reachable = true;
     for (let i = 0; i < path.length - 1; i++) {
-      if (!current || typeof current !== 'object') break;
+      if (!current || typeof current !== 'object' || !(path[i] in current)) {
+        reachable = false;
+        break;
+      }
       current = current[path[i]];
     }
-    if (current && typeof current === 'object') {
-      const lastKey = path[path.length - 1];
-      current[lastKey] = normalize(current[lastKey]);
-    }
+    if (!reachable || !current || typeof current !== 'object') continue;
+    const lastKey = path[path.length - 1];
+    if (!(lastKey in current)) continue;
+    current[lastKey] = normalize(current[lastKey]);
   }
 
   return result;
