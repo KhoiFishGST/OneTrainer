@@ -1,10 +1,10 @@
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import { expect, test, vi } from 'vitest';
-import AddCard from './AddCard.svelte';
+import AddItemCard from '$lib/components/collections/AddItemCard.svelte';
 
-test('renders AddCard with label and handles click', async () => {
+test('renders AddItemCard with label and handles click', async () => {
   const onClick = vi.fn();
-  render(AddCard, { label: 'Add Custom Item', onClick });
+  render(AddItemCard, { label: 'Add Custom Item', onClick });
 
   const button = screen.getByRole('button', { name: /add custom item/i });
   expect(button).toBeInTheDocument();

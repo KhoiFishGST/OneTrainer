@@ -1,9 +1,9 @@
 <script lang="ts">
-  import PageHeader from './PageHeader.svelte';
+  import PageHeader from '$lib/components/layout/PageHeader.svelte';
   import TabBar from './TabBar.svelte';
   import Alert from './Alert.svelte';
   import Toast from './Toast.svelte';
-  import FormPageSkeleton from './FormPageSkeleton.svelte';
+  import FormPageSkeleton from '$lib/components/loading/FormPageSkeleton.svelte';
 
   let {
     active = 'one',

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
   import LayoutContent from '$lib/components/LayoutContent.svelte';
+  import { Toaster } from '$lib/components/ui/sonner';
   import '../app.css';
 
   const queryClient = new QueryClient({
@@ -19,4 +20,5 @@
   <LayoutContent>
     {@render children()}
   </LayoutContent>
+  <Toaster />
 </QueryClientProvider>
