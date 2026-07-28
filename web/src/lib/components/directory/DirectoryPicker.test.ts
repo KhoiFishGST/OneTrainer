@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen } from "@testing-library/svelte";
+import { fireEvent, render, screen, cleanup } from "@testing-library/svelte";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { mockIsMobile } from "$lib/hooks/mock-is-mobile.svelte";
 import DirectoryPicker from "./DirectoryPicker.svelte";
@@ -36,6 +36,8 @@ function mockMatchMedia(matches: boolean) {
 
 describe("DirectoryPicker", () => {
   beforeEach(() => {
+    cleanup();
+    document.body.innerHTML = "";
     mockMatchMedia(false);
   });
 
