@@ -216,4 +216,26 @@ describe('SampleDetailModal Component', () => {
       })
     );
   });
+
+  it('keeps modal open if onSave rejects with error', async () => {
+    const onSave = vi.fn().mockRejectedValue(new Error('Failed to save'));
+    const onClose = vi.fn();
+
+    render(SampleDetailModal, {
+      props: {
+        open: true,
+        sample: sampleConfig,
+        mode: 'edit',
+        onSave,
+        onClose,
+      },
+    });
+
+    const saveBtn = screen.getByRole('button', { name: /save/i });
+    await fireEvent.click(saveBtn);
+
+    expect(onSave).toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
 });

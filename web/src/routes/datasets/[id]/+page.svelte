@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { ArrowLeft, Upload, Image as ImageIcon, FileText, Trash2, X } from 'lucide-svelte';
+  import { ArrowLeft, Upload, Image as ImageIcon, X } from 'lucide-svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import { FileInput } from '$lib/components/ui/file-input/index.js';
-  import { Textarea as TextArea } from '$lib/components/ui/textarea/index.js';
+  import * as Empty from '$lib/components/ui/empty/index.js';
+  import DatasetFileCard from '$lib/components/datasets/DatasetFileCard.svelte';
   import {
     createDatasetFilesQuery,
     createUploadDatasetFilesMutation,
@@ -56,6 +57,10 @@
       handleFileUpload(e.dataTransfer.files);
     }
   }
+
+  function handleImageClick(imageUrl: string) {
+    activeLightboxImage = imageUrl;
+  }
 </script>
 
 <div
@@ -99,48 +104,24 @@
   </div>
 
   {#if items.length === 0 && !loading}
-    <div class="empty-state">
-      <ImageIcon size={48} />
-      <p class="empty-title">No images or captions in this dataset yet</p>
-      <p class="empty-sub">Click "Add Files" or drag & drop files anywhere onto this page</p>
-    </div>
+    <Empty.Root class="empty-state">
+      <Empty.Media>
+        <ImageIcon size={48} />
+      </Empty.Media>
+      <Empty.Header>
+        <Empty.Title class="empty-title">No images or captions in this dataset yet</Empty.Title>
+        <Empty.Description class="empty-sub">Click "Add Files" or drag & drop files anywhere onto this page</Empty.Description>
+      </Empty.Header>
+    </Empty.Root>
   {:else}
     <div class="items-grid">
-      {#each items as item}
-        <div class="item-card">
-          <Button
-            variant="ghost"
-            class="card-image-area"
-            disabled={!item.image_name}
-            onclick={() => {
-              if (item.image_name) {
-                activeLightboxImage = `/api/datasets/image?dataset=${encodeURIComponent(datasetName)}&filename=${encodeURIComponent(item.image_name)}`;
-              }
-            }}
-          >
-            {#if item.image_name}
-              <img
-                src="/api/datasets/image?dataset={encodeURIComponent(datasetName)}&filename={encodeURIComponent(item.image_name)}&thumb=true"
-                alt={item.id}
-                class="item-img"
-              />
-            {:else}
-              <div class="no-image-placeholder">
-                <FileText size={32} />
-                <span>Text Only</span>
-              </div>
-            {/if}
-          </Button>
-          <div class="card-caption-area">
-            <span class="item-id-label">{item.id}</span>
-            <TextArea
-              class="caption-textarea"
-              placeholder="Add caption..."
-              value={item.caption_content}
-              onBlur={(val) => handleCaptionSave(item.caption_name || `${item.id}.txt`, val)}
-            />
-          </div>
-        </div>
+      {#each items as item (item.id)}
+        <DatasetFileCard
+          {item}
+          {datasetName}
+          onCaptionSave={handleCaptionSave}
+          onImageClick={handleImageClick}
+        />
       {/each}
     </div>
   {/if}
@@ -164,17 +145,20 @@
     min-height: 100vh;
     position: relative;
   }
+
   .detail-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
   }
+
   .header-left {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
   }
+
   .btn-back {
     display: inline-flex;
     align-items: center;
@@ -185,19 +169,23 @@
     margin-top: 0.25rem;
     transition: color 0.15s ease;
   }
+
   .btn-back:hover {
     color: var(--text, #e6ebef);
   }
+
   .dataset-title {
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--color-text-title, var(--accent, #3b82f6));
     margin: 0;
   }
+
   .dataset-path {
     font-size: 0.8125rem;
     color: var(--muted, #8995a1);
   }
+
   .detail-header :global(.btn-upload) {
     min-height: 0;
     display: flex;
@@ -210,88 +198,37 @@
     border-radius: 6px;
     cursor: pointer;
   }
+
   .detail-page :global(.hidden-file-input) {
     display: none;
   }
+
   .items-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 1.25rem;
   }
-  .item-card {
-    background: var(--panel, #182026);
-    border: 1px solid var(--line, #2d3741);
-    border-radius: 8px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-  .item-card :global(.card-image-area) {
-    width: 100%;
-    aspect-ratio: 1;
-    background: #0f1419;
-    cursor: pointer;
-    border: none;
-    padding: 0;
-    display: block;
-    text-align: left;
-  }
-  .item-card :global(.card-image-area:disabled) {
-    cursor: default;
-  }
-  .item-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  .no-image-placeholder {
+
+  :global(.empty-state) {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
-    color: var(--muted);
-    gap: 0.5rem;
-  }
-  .card-caption-area {
-    padding: 0.75rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  .item-id-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--muted);
-  }
-  .card-caption-area :global(.caption-textarea) {
-    width: 100%;
-    min-height: 60px;
-    background: var(--control, #14191f);
-    border: 1px solid var(--line, #2d3741);
-    border-radius: 4px;
-    color: var(--text);
-    padding: 0.5rem;
-    font-size: 0.8125rem;
-    resize: vertical;
-  }
-  .empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 4rem 2rem;
-    color: var(--muted);
+    padding: 4rem 2rem !important;
+    color: var(--muted) !important;
     gap: 0.75rem;
   }
-  .empty-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--text);
+
+  :global(.empty-title) {
+    font-size: 1.125rem !important;
+    font-weight: 600 !important;
+    color: var(--text) !important;
   }
-  .empty-sub {
-    font-size: 0.875rem;
+
+  :global(.empty-sub) {
+    font-size: 0.875rem !important;
   }
+
   .dropzone-overlay {
     position: absolute;
     inset: 0;
@@ -305,6 +242,7 @@
     gap: 1rem;
     color: var(--accent);
   }
+
   .lightbox-overlay {
     position: fixed;
     inset: 0;
@@ -314,12 +252,14 @@
     align-items: center;
     justify-content: center;
   }
+
   .lightbox-img {
     max-width: 90vw;
     max-height: 90vh;
     object-fit: contain;
     border-radius: 8px;
   }
+
   .lightbox-overlay :global(.btn-close-lightbox) {
     min-height: 0;
     width: auto;

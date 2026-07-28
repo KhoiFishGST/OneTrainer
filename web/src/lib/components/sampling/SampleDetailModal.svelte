@@ -16,7 +16,7 @@
     open: boolean;
     sample?: any;
     mode?: 'add' | 'edit';
-    onSave: (sample: any) => void;
+    onSave: (sample: any) => Promise<void> | void;
     onClose: () => void;
   } = $props();
 
@@ -87,10 +87,14 @@
     return normalizeDraftNumber(draft.width) === res && normalizeDraftNumber(draft.height) === res;
   }
 
-  function handleSave() {
+  async function handleSave() {
     const saved = { ...draft };
     for (const field of NUMERIC_FIELDS) saved[field] = normalizeDraftNumber(saved[field]);
-    onSave(saved);
+    try {
+      await onSave(saved);
+    } catch (err) {
+      console.error('Save failed in SampleDetailModal', err);
+    }
   }
 </script>
 

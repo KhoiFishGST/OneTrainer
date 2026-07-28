@@ -7,6 +7,8 @@
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
   import SampleDetailModal from '$lib/components/sampling/SampleDetailModal.svelte';
   import SamplePromptTable from '$lib/components/sampling/SamplePromptTable.svelte';
+  import SamplePromptCards from '$lib/components/sampling/SamplePromptCards.svelte';
+  import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
   import { trainingStore } from '$lib/events/training-store';
   import { api } from '$lib/api/client';
   import {
@@ -50,6 +52,9 @@
   let isConfigModalOpen = $state(false);
   let newConfigName = $state('');
   let configModalError = $state('');
+
+  let sampleToDeleteIndex = $state<number | null>(null);
+  let isDeleteConfirmOpen = $state(false);
 
   let toast = $state<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -162,7 +167,17 @@
     }
   }
 
-  async function handleDeleteSample(index: number) {
+  function promptDeleteSample(index: number) {
+    sampleToDeleteIndex = index;
+    isDeleteConfirmOpen = true;
+  }
+
+  async function confirmDeleteSample() {
+    if (sampleToDeleteIndex === null) return;
+    const index = sampleToDeleteIndex;
+    isDeleteConfirmOpen = false;
+    sampleToDeleteIndex = null;
+
     const updated = samples.filter((_: any, i: number) => i !== index);
     try {
       await $updateSamplesMutation.mutateAsync({ samples: updated, file: currentConfigFile });
@@ -180,12 +195,13 @@
     } else {
       updated = samples.map((s: any, i: number) => (i === editingIndex ? savedSample : s));
     }
-    isModalOpen = false;
     try {
       await $updateSamplesMutation.mutateAsync({ samples: updated, file: currentConfigFile });
+      isModalOpen = false;
       triggerToast(modalMode === 'add' ? 'Sample prompt added' : 'Sample prompt saved', 'success');
     } catch (err: any) {
       triggerToast(err?.message || 'Failed to save sample prompt', 'error');
+      throw err;
     }
   }
 </script>
@@ -260,14 +276,27 @@
       </Alert>
     {/if}
 
-    <SamplePromptTable
-      {samples}
-      onUpdate={handleUpdateSample}
-      onEditModal={handleEditSample}
-      onClone={handleCloneSample}
-      onDelete={handleDeleteSample}
-      onAdd={handleAddSample}
-    />
+    <div class="desktop-view">
+      <SamplePromptTable
+        {samples}
+        onUpdate={handleUpdateSample}
+        onEditModal={handleEditSample}
+        onClone={handleCloneSample}
+        onDelete={promptDeleteSample}
+        onAdd={handleAddSample}
+      />
+    </div>
+
+    <div class="mobile-view">
+      <SamplePromptCards
+        {samples}
+        onUpdate={handleUpdateSample}
+        onEditModal={handleEditSample}
+        onClone={handleCloneSample}
+        onDelete={promptDeleteSample}
+        onAdd={handleAddSample}
+      />
+    </div>
   </div>
 {/if}
 
@@ -298,6 +327,27 @@
     {/if}
   </div>
 </ModalDialog>
+
+{#if isDeleteConfirmOpen && sampleToDeleteIndex !== null}
+  <AlertDialog.Root open={isDeleteConfirmOpen} onOpenChange={(v) => { if (!v) { isDeleteConfirmOpen = false; sampleToDeleteIndex = null; } }}>
+    <AlertDialog.Content>
+      <AlertDialog.Header>
+        <AlertDialog.Title>Delete Sample Prompt</AlertDialog.Title>
+        <AlertDialog.Description>
+          Are you sure you want to delete this sample prompt?
+        </AlertDialog.Description>
+      </AlertDialog.Header>
+      <AlertDialog.Footer>
+        <AlertDialog.Cancel onclick={() => { isDeleteConfirmOpen = false; sampleToDeleteIndex = null; }}>
+          Cancel
+        </AlertDialog.Cancel>
+        <AlertDialog.Action disabled={$updateSamplesMutation.isPending} onclick={confirmDeleteSample}>
+          Delete
+        </AlertDialog.Action>
+      </AlertDialog.Footer>
+    </AlertDialog.Content>
+  </AlertDialog.Root>
+{/if}
 
 <SampleDetailModal
   open={isModalOpen}
@@ -449,5 +499,22 @@
     background: transparent;
     font-size: 0.8125rem;
     color: #f87171;
+  }
+
+  .desktop-view {
+    display: block;
+  }
+
+  .mobile-view {
+    display: none;
+  }
+
+  @media (max-width: 767px) {
+    .desktop-view {
+      display: none;
+    }
+    .mobile-view {
+      display: block;
+    }
   }
 </style>

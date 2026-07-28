@@ -1,7 +1,11 @@
 <script lang="ts">
-  import { Check, FolderKanban, AlertCircle } from 'lucide-svelte';
+  import { Check, AlertCircle } from 'lucide-svelte';
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
   import Button from '$lib/components/ui/Button.svelte';
+  import { Badge } from '$lib/components/ui/badge/index.js';
+  import { Skeleton } from '$lib/components/ui/skeleton/index.js';
+  import * as Empty from '$lib/components/ui/empty/index.js';
+  import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
   import { createDatasetsQuery } from '$lib/api/queries';
 
   interface DatasetItem {
@@ -33,7 +37,7 @@
   $effect(() => {
     if (currentPath && datasets.length > 0 && !selectedDataset) {
       const matched = datasets.find(
-        (d) => d.path === currentPath || d.name === currentPath
+        (d: DatasetItem) => d.path === currentPath || d.name === currentPath
       );
       if (matched) selectedDataset = matched;
     }
@@ -64,20 +68,28 @@
     onClose={onClose}
     onApply={confirmSelection}
   >
-    <div class="picker-body">
+    <ScrollArea class="picker-body">
       {#if loading}
         <div class="picker-loading">
-          <span class="spinner"></span>
+          <div class="skeleton-grid">
+            <Skeleton class="h-[140px] w-full rounded-lg" />
+            <Skeleton class="h-[140px] w-full rounded-lg" />
+            <Skeleton class="h-[140px] w-full rounded-lg" />
+          </div>
           <span>Loading datasets...</span>
         </div>
       {:else if datasets.length === 0}
-        <div class="picker-empty">
-          <AlertCircle size={40} />
-          <p class="empty-title">No datasets available</p>
-          <p class="empty-sub">
-            Create a dataset in the <strong>Datasets</strong> tab first to select it here.
-          </p>
-        </div>
+        <Empty.Root class="picker-empty">
+          <Empty.Media>
+            <AlertCircle size={40} />
+          </Empty.Media>
+          <Empty.Header>
+            <Empty.Title class="empty-title">No datasets available</Empty.Title>
+            <Empty.Description class="empty-sub">
+              Create a dataset in the <strong>Datasets</strong> tab first to select it here.
+            </Empty.Description>
+          </Empty.Header>
+        </Empty.Root>
       {:else}
         <div class="dataset-grid">
           {#each datasets as ds (ds.name)}
@@ -100,22 +112,23 @@
               <div class="card-content">
                 <h3 class="card-title">{ds.name}</h3>
                 <p class="card-meta">
-                  {ds.image_count} images • {ds.caption_count} captions
+                  <Badge variant="secondary">
+                    {ds.image_count} images • {ds.caption_count} captions
+                  </Badge>
                 </p>
               </div>
             </Button>
           {/each}
         </div>
       {/if}
-    </div>
+    </ScrollArea>
   </ModalDialog>
 {/if}
 
 <style>
-  .picker-body {
+  :global(.picker-body) {
     min-height: 280px;
     max-height: 480px;
-    overflow-y: auto;
     padding: 0.5rem;
   }
 
@@ -124,45 +137,37 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 240px;
+    min-height: 240px;
     gap: 1rem;
     color: var(--color-text-muted, #94a3b8);
   }
 
-  .spinner {
-    width: 28px;
-    height: 28px;
-    border: 3px solid var(--color-border, #334155);
-    border-top-color: var(--color-primary, #3b82f6);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+  .skeleton-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    width: 100%;
   }
 
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  .picker-empty {
+  :global(.picker-empty) {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 240px;
+    min-height: 240px;
     gap: 0.75rem;
     color: var(--color-text-muted, #94a3b8);
     text-align: center;
   }
 
-  .empty-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--color-text, #f8fafc);
+  :global(.empty-title) {
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    color: var(--color-text, #f8fafc) !important;
   }
 
-  .empty-sub {
-    font-size: 0.875rem;
+  :global(.empty-sub) {
+    font-size: 0.875rem !important;
   }
 
   .dataset-grid {

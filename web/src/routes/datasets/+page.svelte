@@ -1,14 +1,12 @@
 <script lang="ts">
-  import { Plus, Trash2 } from 'lucide-svelte';
   import { getRouteContext } from '$lib/config/context';
   import ModalDialog from '$lib/components/ui/ModalDialog.svelte';
-  import AddCard from '$lib/components/ui/AddCard.svelte';
   import PathInput from '$lib/components/form/PathInput.svelte';
   import { Switch as Toggle } from '$lib/components/ui/switch/index.js';
   import PageHeader from '$lib/components/ui/PageHeader.svelte';
-  import Button from '$lib/components/ui/Button.svelte';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
   import Alert from '$lib/components/ui/Alert.svelte';
+  import DatasetCollection from '$lib/components/datasets/DatasetCollection.svelte';
   import {
     queryKeys,
     getSafeQueryClient,
@@ -45,6 +43,7 @@
   let showCreateModal = $state(false);
   let newDatasetName = $state('');
   let createError = $state<string | null>(null);
+  let isDeleting = $derived($deleteMutation.isPending);
 
   async function handleBaseDirChange(newPath: string) {
     if (ctx?.workspace) {
@@ -85,10 +84,7 @@
     }
   }
 
-  async function handleDeleteDataset(e: MouseEvent, name: string) {
-    e.stopPropagation();
-    e.preventDefault();
-    if (!confirm(`Are you sure you want to delete dataset "${name}"?`)) return;
+  async function handleDeleteDataset(name: string) {
     try {
       await $deleteMutation.mutateAsync(name);
     } catch (err) {
@@ -145,36 +141,12 @@
     {/if}
   </div>
 
-  <div class="datasets-grid">
-    <AddCard label="Add Dataset" onClick={openCreateModal} />
-
-    {#each datasets as ds (ds.name)}
-      <a href="/datasets/{encodeURIComponent(ds.name)}" class="card dataset-card">
-        <div class="thumbnail-wrapper">
-          {#if ds.thumbnail_url}
-            <img src={ds.thumbnail_url} alt={ds.name} class="thumbnail-img" />
-          {/if}
-          <div class="thumbnail-overlay">
-            <span class="dataset-name">{ds.name}</span>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            class="btn-delete"
-            aria-label="Delete dataset"
-            onclick={(e) => handleDeleteDataset(e, ds.name)}
-          >
-            <Trash2 size={16} />
-          </Button>
-        </div>
-        <div class="card-footer">
-          <span class="count-badge">
-            {ds.image_count} {ds.image_count === 1 ? 'image' : 'images'} • {ds.caption_count} {ds.caption_count === 1 ? 'caption' : 'captions'}
-          </span>
-        </div>
-      </a>
-    {/each}
-  </div>
+  <DatasetCollection
+    {datasets}
+    onAdd={openCreateModal}
+    onDelete={handleDeleteDataset}
+    {isDeleting}
+  />
 </div>
 
 <ModalDialog
@@ -258,94 +230,6 @@
   .toggle-label {
     font-size: 0.875rem;
     color: var(--text, #e6ebef);
-  }
-
-  .datasets-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 1.25rem;
-  }
-
-  .card {
-    background: var(--panel, #182026);
-    border: 1px solid var(--line, #2d3741);
-    border-radius: 8px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    text-decoration: none;
-    color: inherit;
-    transition: transform 0.15s ease, border-color 0.15s ease;
-  }
-
-  .card:hover {
-    border-color: var(--accent, #3b82f6);
-    transform: translateY(-2px);
-  }
-
-  .dataset-card {
-    height: 220px;
-  }
-
-  .thumbnail-wrapper {
-    position: relative;
-    flex: 1;
-    background: var(--control, #101419);
-    overflow: hidden;
-  }
-
-  .thumbnail-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .thumbnail-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 0.75rem;
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
-    display: flex;
-    align-items: flex-end;
-  }
-
-  .dataset-name {
-    font-weight: 600;
-    color: #ffffff;
-    font-size: 0.9375rem;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-  }
-
-  .thumbnail-wrapper :global(.btn-delete) {
-    min-height: 0;
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    background: rgba(0, 0, 0, 0.6);
-    border: none;
-    color: var(--danger, #ef4444);
-    padding: 0.375rem;
-    border-radius: 4px;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.15s ease;
-  }
-
-  .dataset-card:hover :global(.btn-delete) {
-    opacity: 1;
-  }
-
-  .card-footer {
-    padding: 0.625rem 0.75rem;
-    background: var(--panel, #182026);
-    border-top: 1px solid var(--line, #2d3741);
-  }
-
-  .count-badge {
-    font-size: 0.75rem;
-    color: var(--muted, #8995a1);
   }
 
   .create-modal-content {

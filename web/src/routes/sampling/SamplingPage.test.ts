@@ -101,7 +101,7 @@ describe('SamplingPage', () => {
 
     render(SamplingPage);
     expect(screen.getByRole('button', { name: /Add Config/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Add Sample Prompt/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Add Sample Prompt/i })[0]).toBeInTheDocument();
   });
 
   it('renders title, Sample Now button, compact options panel, and Sample Prompts header', () => {
@@ -150,8 +150,8 @@ describe('SamplingPage', () => {
     render(SamplingPage);
 
     // Prompt input values in prompt table
-    expect(screen.getByDisplayValue('a cute shiba inu dog')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('a futuristic city at night')).toBeInTheDocument();
+    expect(screen.getAllByDisplayValue('a cute shiba inu dog')[0]).toBeInTheDocument();
+    expect(screen.getAllByDisplayValue('a futuristic city at night')[0]).toBeInTheDocument();
 
     // Clicking edit button on first prompt row opens modal
     const editBtn = screen.getAllByTitle('Edit sample prompt')[0];
@@ -224,7 +224,7 @@ describe('SamplingPage', () => {
 
     render(SamplingPage);
 
-    const cloneBtn = screen.getByTitle('Clone sample prompt');
+    const cloneBtn = screen.getAllByTitle('Clone sample prompt')[0];
     await fireEvent.click(cloneBtn);
 
     expect(mutateAsync).toHaveBeenCalled();
@@ -234,5 +234,63 @@ describe('SamplingPage', () => {
     expect(updatedSamples).toHaveLength(2);
     expect(updatedSamples[0].webui_id).toBe('prompt_a');
     expect(updatedSamples[1]).not.toHaveProperty('webui_id');
+  });
+
+  it('triggers AlertDialog for sample deletion, and leaves editor open on failed save', async () => {
+    const mutateAsync = vi
+      .fn()
+      .mockResolvedValueOnce({}) // Deletion resolves
+      .mockRejectedValueOnce(new Error('Save failed')); // Save rejects
+
+    vi.mocked(createSamplesQuery).mockReturnValue(
+      readable({
+        data: {
+          samples: [
+            {
+              webui_id: 'prompt_1',
+              prompt: 'a cute shiba inu dog',
+              enabled: true,
+            },
+          ],
+          queued: false,
+        },
+        isLoading: false,
+        isError: false,
+      }) as any
+    );
+    vi.mocked(createUpdateSamplesMutation).mockReturnValue(
+      readable({
+        mutateAsync,
+        isPending: false,
+      }) as any
+    );
+
+    render(SamplingPage);
+
+    // 1. Delete button opens AlertDialog
+    const deleteBtn = screen.getAllByTitle('Delete sample prompt')[0];
+    await fireEvent.click(deleteBtn);
+
+    const alertDialog = await screen.findByRole('alertdialog');
+    expect(alertDialog).toBeInTheDocument();
+    expect(screen.getByText(/Are you sure you want to delete this sample prompt\?/i)).toBeInTheDocument();
+
+    // Confirm deletion inside AlertDialog
+    const confirmDeleteBtn = screen.getByRole('button', { name: /^delete$/i });
+    await fireEvent.click(confirmDeleteBtn);
+    expect(mutateAsync).toHaveBeenCalled();
+
+    // 2. Open edit modal and attempt saving which fails
+    const editBtn = screen.getAllByTitle('Edit sample prompt')[0];
+    await fireEvent.click(editBtn);
+
+    const editDialog = screen.getByRole('dialog');
+    expect(editDialog).toBeInTheDocument();
+
+    const saveBtn = screen.getByRole('button', { name: /save/i });
+    await fireEvent.click(saveBtn);
+
+    // After failed save, dialog should STILL be open
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 });
