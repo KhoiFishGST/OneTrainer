@@ -22,7 +22,7 @@
     class?: string;
   }>();
 
-  let mobile = $derived(isMobile.current || (typeof window !== 'undefined' && window.innerWidth < 768));
+  let mobile = $derived(isMobile.current || (typeof window !== 'undefined' && window.innerWidth > 0 && window.innerWidth < 768));
 </script>
 
 {#if !mobile}
