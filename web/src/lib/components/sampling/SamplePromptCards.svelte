@@ -65,22 +65,24 @@
   }
 </script>
 
-<div class="cards-container">
-  <div class="cards-list">
+<div class="w-full flex flex-col gap-4">
+  <div class="flex flex-col gap-4">
     {#each samples as sample, index (sample.webui_id || index)}
-      <Card.Root class="sample-card {!sample.enabled ? 'disabled' : ''}">
-        <Card.Header class="card-header">
-          <div class="card-header-left">
+      <Card.Root class={`p-4 bg-card border-border rounded-lg ${!sample.enabled ? 'opacity-60' : ''}`}>
+        <Card.Header class="flex items-center justify-between p-0 pb-3 border-b border-border">
+          <div class="flex items-center gap-3">
             <Checkbox
               value={sample.enabled}
               onChange={(checked) => handleEnabledChange(index, checked)}
             />
-            <Badge variant="secondary" class="sample-badge">#{index + 1}</Badge>
+            <Badge variant="secondary" class="text-xs font-semibold">#{index + 1}</Badge>
           </div>
-          <div class="card-actions">
+          <div class="flex items-center gap-1">
             <Button
               type="button"
-              class="btn-icon"
+              variant="ghost"
+              size="icon-xs"
+              class="text-muted-foreground hover:text-foreground"
               title="Edit sample prompt"
               aria-label="Edit sample prompt"
               onclick={() => onEditModal(index)}
@@ -89,7 +91,9 @@
             </Button>
             <Button
               type="button"
-              class="btn-icon"
+              variant="ghost"
+              size="icon-xs"
+              class="text-muted-foreground hover:text-foreground"
               title="Clone sample prompt"
               aria-label="Clone sample prompt"
               onclick={() => onClone(index)}
@@ -98,7 +102,9 @@
             </Button>
             <Button
               type="button"
-              class="btn-icon danger"
+              variant="ghost"
+              size="icon-xs"
+              class="text-muted-foreground hover:text-destructive"
               title="Delete sample prompt"
               aria-label="Delete sample prompt"
               onclick={() => onDelete(index)}
@@ -108,51 +114,53 @@
           </div>
         </Card.Header>
 
-        <Card.Content class="card-body">
-          <div class="prompt-field">
-            <label for={`card-prompt-${index}`} class="field-label">Prompt Text</label>
+        <Card.Content class="flex flex-col gap-3 p-0 pt-3">
+          <div class="flex flex-col gap-1.5">
+            <label for={`card-prompt-${index}`} class="text-xs font-medium text-muted-foreground">Prompt Text</label>
             <TextInput
               id={`card-prompt-${index}`}
-              class="prompt-input"
+              class="h-[30px] w-full text-sm px-2"
               value={sample.prompt ?? ''}
               onChange={(val) => handlePromptChange(index, val)}
             />
           </div>
 
-          <div class="params-grid">
-            <div class="param-item">
-              <label for={`card-width-${index}`} class="field-label">Width</label>
+          <div class="grid grid-cols-3 gap-3">
+            <div class="flex flex-col gap-1.5">
+              <label for={`card-width-${index}`} class="text-xs font-medium text-muted-foreground">Width</label>
               <NumberInput
                 id={`card-width-${index}`}
-                class="num-input"
+                class="h-[30px] w-full text-xs px-1.5"
                 value={getDraftOrValue(sample, index, 'width', 512)}
                 onInput={(val) => onDraftChange(index, 'width', val)}
                 onChange={(val) => handleWidthChange(index, val)}
               />
             </div>
-            <div class="param-item">
-              <label for={`card-height-${index}`} class="field-label">Height</label>
+            <div class="flex flex-col gap-1.5">
+              <label for={`card-height-${index}`} class="text-xs font-medium text-muted-foreground">Height</label>
               <NumberInput
                 id={`card-height-${index}`}
-                class="num-input"
+                class="h-[30px] w-full text-xs px-1.5"
                 value={getDraftOrValue(sample, index, 'height', 512)}
                 onInput={(val) => onDraftChange(index, 'height', val)}
                 onChange={(val) => handleHeightChange(index, val)}
               />
             </div>
-            <div class="param-item seed-item">
-              <label for={`card-seed-${index}`} class="field-label">Seed</label>
-              <div class="seed-cell">
+            <div class="flex flex-col gap-1.5">
+              <label for={`card-seed-${index}`} class="text-xs font-medium text-muted-foreground">Seed</label>
+              <div class="flex items-center gap-1">
                 <NumberInput
                   id={`card-seed-${index}`}
-                  class="num-input seed-input"
+                  class="h-[30px] w-full text-xs px-1.5"
                   value={getDraftOrValue(sample, index, 'seed', -1)}
                   onInput={(val) => onDraftChange(index, 'seed', val)}
                   onChange={(val) => handleSeedChange(index, val)}
                 />
                 <Button
                   type="button"
-                  class={`dice-btn ${(sample.seed ?? -1) === -1 ? 'active' : ''}`}
+                  variant="outline"
+                  size="icon-xs"
+                  class={`shrink-0 h-[30px] w-7 ${(sample.seed ?? -1) === -1 ? 'active bg-success-surface text-success border-success/30 hover:bg-success-surface/80 hover:text-success' : 'text-muted-foreground'}`}
                   title="Toggle random seed (-1)"
                   aria-label="Toggle random seed"
                   onclick={() => handleToggleRandomSeed(index, sample.seed ?? -1)}
@@ -167,170 +175,15 @@
     {/each}
   </div>
 
-  <div class="add-row">
-    <Button type="button" class="add-btn" onclick={onAdd}>
+  <div class="p-2.5 text-center bg-black/10 rounded-md">
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      class="border-dashed text-primary hover:bg-primary/10 hover:text-primary gap-1.5"
+      onclick={onAdd}
+    >
       <Plus size={16} /> Add Sample Prompt
     </Button>
   </div>
 </div>
-
-<style>
-  .cards-container {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .cards-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  /* Bits UI boundary: style Card root component */
-  :global(.sample-card) {
-    background: var(--card, #1e242b) !important;
-    border: 1px solid var(--border, #2d3741) !important;
-    border-radius: 8px !important;
-    padding: 1rem !important;
-  }
-
-  /* Bits UI boundary: style disabled Card component */
-  :global(.sample-card.disabled) {
-    opacity: 0.6;
-  }
-
-  /* Bits UI boundary: style Card header component */
-  :global(.card-header) {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 0 0.75rem 0 !important;
-    border-bottom: 1px solid var(--border, #2d3741);
-  }
-
-  .card-header-left {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  /* Bits UI boundary: style Card badge component */
-  :global(.sample-badge) {
-    font-size: 0.75rem !important;
-    font-weight: 600 !important;
-  }
-
-  .card-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-
-  /* Bits UI boundary: style Card action button component */
-  .card-actions :global(.btn-icon) {
-    min-height: 0;
-    background: none;
-    border: none;
-    color: var(--muted-foreground, #8b9bb4);
-    cursor: pointer;
-    padding: 4px;
-  }
-
-  /* Bits UI boundary: style Card action button hover */
-  .card-actions :global(.btn-icon:hover) { color: #fff; }
-  .card-actions :global(.btn-icon.danger:hover) { color: #ef4444; }
-
-  /* Bits UI boundary: style Card body component */
-  :global(.card-body) {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    padding: 0.75rem 0 0 0 !important;
-  }
-
-  .prompt-field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
-  }
-
-  .field-label {
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--muted-foreground, #8b9bb4);
-  }
-
-  .params-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.75rem;
-  }
-
-  .param-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
-  }
-
-  /* Bits UI boundary: style NumberInput child component */
-  :global(.num-input) {
-    width: 100%;
-    height: 30px;
-    background: var(--muted, #13171c);
-    border: 1px solid var(--border, #2d3741);
-    color: var(--foreground, #fff);
-    border-radius: 4px;
-    padding: 0 6px;
-  }
-
-  .seed-cell { display: flex; align-items: center; gap: 4px; }
-  /* Bits UI boundary: style dice Button component */
-  .seed-cell :global(.dice-btn) {
-    min-height: 0;
-    height: 30px;
-    width: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--muted, #13171c);
-    border: 1px solid var(--border, #2d3741);
-    color: var(--muted-foreground, #8b9bb4);
-    border-radius: 4px;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-
-  /* Bits UI boundary: style active dice Button component */
-  .seed-cell :global(.dice-btn.active) {
-    color: #10b981;
-    border-color: #10b981;
-    background: rgba(16, 185, 129, 0.1);
-  }
-
-  .add-row {
-    padding: 10px;
-    text-align: center;
-    background: rgba(0,0,0,0.1);
-    border-radius: 6px;
-  }
-
-  /* Bits UI boundary: style Add button component */
-  .add-row :global(.add-btn) {
-    min-height: 0;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: none;
-    border: 1px dashed var(--border, #2d3741);
-    color: var(--primary, #3b82f6);
-    padding: 6px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.875rem;
-  }
-
-  /* Bits UI boundary: style Add button hover state */
-  .add-row :global(.add-btn:hover) { background: rgba(59, 130, 246, 0.1); }
-</style>

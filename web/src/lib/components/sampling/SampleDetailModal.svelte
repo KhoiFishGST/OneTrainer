@@ -107,9 +107,9 @@
     title={mode === 'add' ? 'Add Sample Prompt' : 'Edit Sample Prompt'}
     class="max-w-xl"
   >
-    <div class="sample-modal-body">
-      <div class="form-row">
-        <label for="sample-prompt">Prompt</label>
+    <div class="flex flex-col gap-4">
+      <div class="flex flex-col gap-1.5">
+        <label for="sample-prompt" class="text-sm font-medium text-foreground">Prompt</label>
         <TextArea
           id="sample-prompt"
           value={draft.prompt}
@@ -119,8 +119,8 @@
         />
       </div>
 
-      <div class="form-row">
-        <label for="sample-negative-prompt">Negative Prompt</label>
+      <div class="flex flex-col gap-1.5">
+        <label for="sample-negative-prompt" class="text-sm font-medium text-foreground">Negative Prompt</label>
         <TextArea
           id="sample-negative-prompt"
           value={draft.negative_prompt}
@@ -130,8 +130,8 @@
         />
       </div>
 
-      <div class="form-row inline">
-        <label for="sample-enabled">Enabled</label>
+      <div class="flex items-center justify-between">
+        <label for="sample-enabled" class="text-sm font-medium text-foreground">Enabled</label>
         <Checkbox
           id="sample-enabled"
           value={draft.enabled}
@@ -139,27 +139,33 @@
         />
       </div>
 
-      <div class="resolution-section">
-        <div class="resolution-header">
-          <span class="section-label">Resolution</span>
-          <div class="preset-buttons">
+      <div class="flex flex-col gap-3 p-3 bg-muted border border-border rounded-md">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-medium text-foreground">Resolution</span>
+          <div class="flex gap-1.5">
             <Button
               type="button"
-              class={`preset-btn ${isPresetResolution(512) ? 'active' : ''}`}
+              variant={isPresetResolution(512) ? 'default' : 'outline'}
+              size="xs"
+              class={isPresetResolution(512) ? 'active' : ''}
               onclick={() => setPresetResolution(512)}
             >
               512
             </Button>
             <Button
               type="button"
-              class={`preset-btn ${isPresetResolution(768) ? 'active' : ''}`}
+              variant={isPresetResolution(768) ? 'default' : 'outline'}
+              size="xs"
+              class={isPresetResolution(768) ? 'active' : ''}
               onclick={() => setPresetResolution(768)}
             >
               768
             </Button>
             <Button
               type="button"
-              class={`preset-btn ${isPresetResolution(1024) ? 'active' : ''}`}
+              variant={isPresetResolution(1024) ? 'default' : 'outline'}
+              size="xs"
+              class={isPresetResolution(1024) ? 'active' : ''}
               onclick={() => setPresetResolution(1024)}
             >
               1024
@@ -167,9 +173,9 @@
           </div>
         </div>
 
-        <div class="form-grid-2">
-          <div class="form-row">
-            <label for="sample-width">Width</label>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label for="sample-width" class="text-sm font-medium text-foreground">Width</label>
             <NumberInput
               id="sample-width"
               type="text"
@@ -179,8 +185,8 @@
               onInput={(val) => setDraftNumber('width', val)}
             />
           </div>
-          <div class="form-row">
-            <label for="sample-height">Height</label>
+          <div class="flex flex-col gap-1.5">
+            <label for="sample-height" class="text-sm font-medium text-foreground">Height</label>
             <NumberInput
               id="sample-height"
               type="text"
@@ -193,9 +199,9 @@
         </div>
       </div>
 
-      <div class="form-grid-2">
-        <div class="form-row">
-          <label for="sample-steps">Diffusion Steps</label>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1.5">
+          <label for="sample-steps" class="text-sm font-medium text-foreground">Diffusion Steps</label>
           <NumberInput
             id="sample-steps"
             type="text"
@@ -205,8 +211,8 @@
             onInput={(val) => setDraftNumber('diffusion_steps', val)}
           />
         </div>
-        <div class="form-row">
-          <label for="sample-cfg">CFG Scale</label>
+        <div class="flex flex-col gap-1.5">
+          <label for="sample-cfg" class="text-sm font-medium text-foreground">CFG Scale</label>
           <NumberInput
             id="sample-cfg"
             type="text"
@@ -219,9 +225,9 @@
         </div>
       </div>
 
-      <div class="form-grid-2">
-        <div class="form-row">
-          <label for="sample-seed">Seed (-1 for random)</label>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1.5">
+          <label for="sample-seed" class="text-sm font-medium text-foreground">Seed (-1 for random)</label>
           <NumberInput
             id="sample-seed"
             type="text"
@@ -229,8 +235,8 @@
             onInput={(val) => setDraftNumber('seed', val)}
           />
         </div>
-        <div class="form-row">
-          <label for="sample-scheduler">Noise Scheduler</label>
+        <div class="flex flex-col gap-1.5">
+          <label for="sample-scheduler" class="text-sm font-medium text-foreground">Noise Scheduler</label>
           <Select
             id="sample-scheduler"
             value={draft.noise_scheduler}
@@ -242,7 +248,7 @@
     </div>
 
     {#snippet footer()}
-      <div class="dialog-actions-footer">
+      <div class="flex items-center justify-end gap-3 w-full">
         <Button
           type="button"
           variant="secondary"
@@ -261,116 +267,3 @@
     {/snippet}
   </ResponsiveDialogDrawer>
 {/if}
-
-<style>
-  .dialog-actions-footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.75rem;
-    width: 100%;
-  }
-
-  .sample-modal-body {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .form-row {
-    display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
-  }
-
-  .form-row.inline {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .form-row label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--foreground, #f8fafc);
-  }
-
-  /* Bits UI boundary: style TextArea / NumberInput child components */
-  .form-row :global(.textarea-input),
-  .form-row :global(.number-input) {
-    padding: 0.5rem 0.75rem;
-    background-color: var(--muted, #14191f);
-    border: 1px solid var(--border, #2d3741);
-    border-radius: 6px;
-    color: var(--foreground, #f8fafc);
-    font-size: 0.875rem;
-    font-family: inherit;
-  }
-
-  /* Bits UI boundary: style TextArea / NumberInput child components focus state */
-  .form-row :global(.textarea-input:focus),
-  .form-row :global(.number-input:focus) {
-    outline: none;
-    border-color: var(--primary, #3b82f6);
-  }
-
-  .form-grid-2 {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
-  }
-
-  .resolution-section {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    background-color: var(--muted, #14191f);
-    border: 1px solid var(--border, #2d3741);
-    border-radius: 6px;
-  }
-
-  .resolution-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .section-label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--foreground, #f8fafc);
-  }
-
-  .preset-buttons {
-    display: flex;
-    gap: 0.375rem;
-  }
-
-  /* Bits UI boundary: style preset Button child components */
-  .preset-buttons :global(.preset-btn) {
-    min-height: 0;
-    padding: 0.25rem 0.625rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: 4px;
-    border: 1px solid var(--border, #2d3741);
-    background: var(--card, #1d242c);
-    color: var(--muted-foreground, #94a3b8);
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  /* Bits UI boundary: style preset Button child component hover state */
-  .preset-buttons :global(.preset-btn:hover) {
-    color: var(--foreground, #f8fafc);
-    border-color: var(--primary, #3b82f6);
-  }
-
-  /* Bits UI boundary: style preset Button child component active state */
-  .preset-buttons :global(.preset-btn.active) {
-    background: var(--primary, #3b82f6);
-    color: #ffffff;
-    border-color: var(--primary, #3b82f6);
-  }
-</style>

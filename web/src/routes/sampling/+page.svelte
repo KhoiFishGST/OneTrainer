@@ -277,7 +277,7 @@
 {#if !ctx.workspace}
   <FormPageSkeleton label="Loading sampling configuration" />
 {:else}
-  <div class="route-page">
+  <div class="p-6 flex flex-col gap-6">
     <PageHeader title={tab.label || 'Sampling'}>
       {#snippet actions()}
         <Button
@@ -298,12 +298,12 @@
       </Alert>
     {/if}
 
-    <div class="config-bar">
-      <div class="config-selector">
-        <label for="sample-config-select" class="config-label">
+    <div class="mb-6 p-4 bg-card border border-border rounded-lg">
+      <div class="flex items-center gap-3 flex-wrap">
+        <label for="sample-config-select" class="text-sm font-semibold text-foreground whitespace-nowrap">
           Sample Definition File
         </label>
-        <div class="select-wrapper">
+        <div class="min-w-[220px]">
           <Select
             id="sample-config-select"
             value={currentConfigFile}
@@ -314,7 +314,7 @@
         <Button
           type="button"
           variant="secondary"
-          class="add-config-btn"
+          class="whitespace-nowrap"
           onclick={handleOpenAddConfigModal}
         >
           <Plus size={16} />
@@ -323,7 +323,7 @@
       </div>
     </div>
 
-    <div class="options-panel">
+    <div class="options-panel w-[740px] max-w-full mb-8 box-border">
       {#if (tab.groups?.length ?? 0) > 0}
         <SchemaForm
           {tab}
@@ -335,9 +335,9 @@
       {/if}
     </div>
 
-    <div class="prompts-section">
-      <div class="section-divider">
-        <h2 class="section-title">Sample Prompts ({samples.length})</h2>
+    <div>
+      <div class="mb-4 pb-2 border-b border-border">
+        <h2 class="text-lg font-semibold m-0 text-foreground">Sample Prompts ({samples.length})</h2>
       </div>
 
       {#if mobile}
@@ -375,8 +375,8 @@
   title="New Sample Definition File"
   class="max-w-md"
 >
-  <div class="config-modal-body">
-    <label for="new-config-filename-input" class="modal-label">Filename</label>
+  <div class="flex flex-col gap-2">
+    <label for="new-config-filename-input" class="text-sm font-medium text-foreground">Filename</label>
     <TextInput
       id="new-config-filename-input"
       value={newConfigName}
@@ -384,12 +384,12 @@
       placeholder="e.g. portrait_samples.json"
     />
     {#if configModalError}
-      <Alert variant="destructive" class="modal-error">{configModalError}</Alert>
+      <Alert variant="destructive" class="p-0 border-0 bg-transparent text-xs text-destructive">{configModalError}</Alert>
     {/if}
   </div>
 
   {#snippet footer()}
-    <div class="dialog-actions-footer">
+    <div class="flex items-center justify-end gap-3 w-full">
       <Button
         type="button"
         variant="secondary"
@@ -441,132 +441,3 @@
     </AlertDialog.Content>
   </AlertDialog.Root>
 {/if}
-
-<style>
-  .dialog-actions-footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.75rem;
-    width: 100%;
-  }
-
-  .route-page {
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-
-  /* Bits UI boundary: style disabled Button component */
-  .route-page :global(.btn:disabled) {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  /* Bits UI boundary: style secondary Button component */
-  .route-page :global(.btn-secondary) {
-    background-color: var(--card, #14191f);
-    color: var(--foreground, #e6ebef);
-    border-color: var(--border, #2d3741);
-  }
-
-  /* Bits UI boundary: style secondary Button component hover state */
-  .route-page :global(.btn-secondary:hover:not(:disabled)) {
-    background-color: var(--border, #2d3741);
-  }
-
-  .config-bar {
-    margin-bottom: 1.5rem;
-    padding: 1rem;
-    background: var(--card, #1d242c);
-    border: 1px solid var(--border, #2d3741);
-    border-radius: 8px;
-  }
-
-  .config-selector {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-  }
-
-  .config-label {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--foreground, #e6ebef);
-    white-space: nowrap;
-  }
-
-  .select-wrapper {
-    min-width: 220px;
-  }
-
-  /* Bits UI boundary: style add config Button component */
-  .config-selector :global(.add-config-btn) {
-    white-space: nowrap;
-  }
-
-  .options-panel {
-    width: 740px;
-    max-width: 100%;
-    margin-bottom: 2rem;
-    box-sizing: border-box;
-  }
-
-  .section-divider {
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border, #2d3741);
-  }
-
-  .section-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    margin: 0;
-    color: var(--foreground, #f8fafc);
-  }
-
-  .config-modal-body {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  /* Bits UI boundary: style TextInput child component */
-  .config-modal-body :global(.text-input) {
-    min-width: 0;
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border-radius: 6px;
-    border: 1px solid var(--border, #2d3741);
-    background: var(--muted, #14191f);
-    color: var(--foreground, #e6ebef);
-    font-size: 0.875rem;
-    box-sizing: border-box;
-  }
-
-  /* Bits UI boundary: style TextInput focus state */
-  .config-modal-body :global(.text-input:focus) {
-    outline: none;
-    border-color: var(--primary, #3b82f6);
-    box-shadow: none;
-  }
-
-  .modal-label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--foreground, #e6ebef);
-  }
-
-  /* Bits UI boundary: style modal error Alert component */
-  .config-modal-body :global(.modal-error) {
-    display: block;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    font-size: 0.8125rem;
-    color: #f87171;
-  }
-</style>
