@@ -12,6 +12,8 @@ it('updates fields and preserves clone/remove/browse callbacks', async () => {
   expect(embedding.model_name).toBe('/model.pt');
   await fireEvent.click(screen.getByTitle('Clone embedding'));
   await fireEvent.click(screen.getByTitle('Remove embedding'));
+  const confirmBtn = screen.getAllByRole('button', { name: /^remove$/i }).pop()!;
+  await fireEvent.click(confirmBtn);
   expect(onClone).toHaveBeenCalledWith(0);
   expect(onRemove).toHaveBeenCalledWith(0);
 });

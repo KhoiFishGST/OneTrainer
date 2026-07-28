@@ -74,7 +74,7 @@
         class="action-btn remove-btn"
         title="Remove embedding"
         {disabled}
-        onclick={() => onRemove(index)}
+        onclick={() => (showDeleteConfirm = true)}
       >
         <Trash2 size={15} />
         <span>Remove</span>

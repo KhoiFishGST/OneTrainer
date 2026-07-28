@@ -350,7 +350,7 @@
                 title="Delete Concept"
                 onclick={(e) => {
                   e.stopPropagation();
-                  handleRemoveConcept(originalIndex);
+                  deleteTargetIndex = originalIndex;
                 }}
               >
                 <Trash2 size={15} />
@@ -376,7 +376,7 @@
                   <DropdownMenu.Separator />
                   <DropdownMenu.Item
                     class="text-destructive focus:text-destructive"
-                    onclick={() => handleRemoveConcept(originalIndex)}
+                    onclick={() => (deleteTargetIndex = originalIndex)}
                   >
                     <Trash2 size={14} class="mr-2" />
                     <span>Delete</span>

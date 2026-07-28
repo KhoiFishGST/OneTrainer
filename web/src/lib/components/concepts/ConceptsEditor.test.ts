@@ -50,6 +50,8 @@ describe('ConceptsEditor', () => {
     expect(deleteBtns.length).toBe(2);
 
     await fireEvent.click(deleteBtns[0]);
+    const confirmBtn = screen.getByRole('button', { name: /^delete$/i });
+    await fireEvent.click(confirmBtn);
     expect(onChange).toHaveBeenCalled();
     expect(onChange.mock.calls[0][0].length).toBe(1);
     expect(onChange.mock.calls[0][0][0].name).toBe('Dog');
@@ -100,8 +102,8 @@ describe('ConceptsEditor', () => {
     render(ConceptsEditor, { props: { concepts: [{ name: 'A', path: '/a', enabled: true }], onChange } });
     await fireEvent.click(screen.getByTitle('Duplicate Concept'));
     expect(onChange).toHaveBeenLastCalledWith(expect.arrayContaining([expect.objectContaining({ name: 'A (Copy)' })]));
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Concept Configuration/i)).not.toBeInTheDocument();
     await fireEvent.click(screen.getAllByTitle('Delete Concept')[0]);
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Concept Configuration/i)).not.toBeInTheDocument();
   });
 });

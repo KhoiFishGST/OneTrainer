@@ -119,6 +119,8 @@ describe("Embeddings page model capability and embedding card list", () => {
 
     const removeBtns = screen.getAllByRole("button", { name: /Remove|Delete/i });
     await fireEvent.click(removeBtns[0]); // Remove first embedding (index 0)
+    const confirmBtn = screen.getAllByRole("button", { name: /^remove$/i }).pop()!;
+    await fireEvent.click(confirmBtn);
 
     expect(mockSetRaw).toHaveBeenCalledWith("additional_embeddings", [
       expect.objectContaining({ placeholder: "<my_style2>" }),
