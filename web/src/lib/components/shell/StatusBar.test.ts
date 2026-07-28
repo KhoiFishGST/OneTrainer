@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/svelte';
-import { expect, it, describe, beforeEach, vi } from 'vitest';
+import { expect, it, describe, beforeEach, afterEach, vi } from 'vitest';
 import StatusBarTestWrapper from './StatusBarTestWrapper.svelte';
 import { trainingStore } from '../../events/training-store';
 import { api } from '../../api/client';
@@ -7,6 +7,11 @@ import { api } from '../../api/client';
 describe('StatusBar component', () => {
   beforeEach(() => {
     trainingStore.reset();
+    vi.restoreAllMocks();
+  });
+
+  afterEach(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 50));
     vi.restoreAllMocks();
   });
 
