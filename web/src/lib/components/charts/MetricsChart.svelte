@@ -256,7 +256,7 @@
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
-    color: var(--primary, #3b82f6);
+    color: var(--ring);
   }
 
   .chart-controls {

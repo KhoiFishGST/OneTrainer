@@ -259,15 +259,6 @@
       {#each filteredConcepts as { concept, originalIndex } (originalIndex)}
         <Card.Root
           class="concept-card {concept.enabled === false ? 'disabled' : ''}"
-          onclick={() => handleEditConcept(originalIndex)}
-          onkeydown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              handleEditConcept(originalIndex);
-            }
-          }}
-          role="button"
-          tabindex={0}
         >
           <!-- Preview Thumbnail -->
           <div class="thumbnail-wrapper">
@@ -294,6 +285,7 @@
                 onkeydown={(e) => e.stopPropagation()}
               >
                 <Checkbox
+                  ariaLabel="Toggle concept enabled"
                   value={concept.enabled !== false}
                   onChange={(checked) => {
                     const updated = concepts.map((c, i) =>

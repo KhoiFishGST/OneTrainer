@@ -239,7 +239,7 @@
           {/if}
           <Button
             variant="ghost"
-            class={`crumb-btn h-auto px-1.5 py-0.5 text-sm ${crumb.path === currentPath ? 'font-semibold text-foreground' : 'text-primary'}`}
+            class={`crumb-btn h-auto px-1.5 py-0.5 text-sm ${crumb.path === currentPath ? 'font-semibold text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             onclick={() => loadDirectory(crumb.path)}
           >
             {crumb.label}

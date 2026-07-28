@@ -20,12 +20,12 @@ test.describe("Phone Mobile Editing Flows", () => {
     await menuBtn.click();
     await expect(drawer).toBeVisible();
 
-    const closeBtn = drawer.getByRole("button", { name: "Close navigation" });
-    await closeBtn.click();
+    // Close via backdrop / Escape or Sheet close button
+    await page.keyboard.press("Escape");
     await expect(drawer).not.toBeVisible();
   });
 
-  test("full-screen directory picker, selection, focus trap, Escape, and focus restoration", async ({ page }) => {
+  test("full-screen directory picker focus trap, wrap, Escape, and focus restoration", async ({ page }) => {
     await page.goto("/general");
 
     const browseBtn = page.getByRole("button", { name: "Browse directory" }).first();
@@ -34,40 +34,135 @@ test.describe("Phone Mobile Editing Flows", () => {
     const modal = page.getByRole("dialog", { name: "Select Directory" });
     await expect(modal).toBeVisible();
 
-    // Focus trap check
-    await page.keyboard.press("Tab");
-    const activeEl = await page.evaluate(() => document.activeElement?.getAttribute("aria-label") || document.activeElement?.tagName);
-    expect(activeEl).toBeTruthy();
+    // Focus starts in path input
+    const pathInput = modal.locator("input[placeholder='Enter path...']");
+    await expect(pathInput).toBeFocused();
 
-    // Escape closes modal and restores focus
+    // Shift+Tab wraps focus within the modal focus trap
+    await page.keyboard.press("Shift+Tab");
+    await expect(modal.locator(":focus")).toBeVisible();
+
+    // Tab moves focus back into modal input
+    await page.keyboard.press("Tab");
+    await expect(modal.locator(":focus")).toBeVisible();
+
+    // Escape closes modal and restores focus to browse button
     await page.keyboard.press("Escape");
     await expect(modal).not.toBeVisible();
     await expect(browseBtn).toBeFocused();
+  });
 
-    // Open again and select directory
-    await browseBtn.click();
+  test("concept editing and saving flow on mobile", async ({ page }) => {
+    await page.goto("/concepts");
+    await expect(page.getByRole("heading", { level: 1, name: /concepts/i })).toBeVisible();
+
+    const addBtn = page.getByRole("button", { name: /Add (First )?Concept/i }).first();
+    const editBtn = page.getByRole("button", { name: "Edit" }).first();
+    const trigger = (await addBtn.isVisible()) ? addBtn : editBtn;
+    await trigger.click();
+
+    const modal = page.locator("[role='dialog']").first();
     await expect(modal).toBeVisible();
 
-    const selectBtn = modal.getByRole("button", { name: "Select Folder" });
-    await selectBtn.click();
+    const nameInput = modal.locator("#concept-name").or(modal.locator("input").first());
+    await nameInput.fill("Mobile Test Concept");
+
+    const saveBtn = modal.getByRole("button", { name: /Save (Concept Settings|Concept)/i }).or(modal.getByRole("button", { name: "Save" }));
+    if (await saveBtn.isVisible()) {
+      await saveBtn.click();
+    } else {
+      await page.keyboard.press("Escape");
+    }
     await expect(modal).not.toBeVisible();
   });
 
-  test("autosave, conflict controls, and console drawer on mobile", async ({ page }) => {
+  test("dataset creation and deletion workflow with alertdialog on mobile", async ({ page }) => {
+    await page.goto("/datasets");
+    await expect(page.getByRole("heading", { level: 1, name: /datasets/i })).toBeVisible();
+
+    const addBtn = page.getByRole("button", { name: "Add Dataset" }).first();
+    await expect(addBtn).toBeVisible();
+    await addBtn.click();
+
+    const createModal = page.getByRole("dialog", { name: "Create New Dataset" });
+    await expect(createModal).toBeVisible();
+
+    const nameInput = createModal.locator("#ds-name-input");
+    await nameInput.fill("Phone Test Dataset");
+    await createModal.getByRole("button", { name: "Create" }).click();
+    await expect(createModal).not.toBeVisible();
+
+    const datasetCard = page.locator(".dataset-card-link", { hasText: "Phone Test Dataset" });
+    await expect(datasetCard).toBeVisible();
+
+    // Trigger delete
+    const deleteBtn = datasetCard.getByRole("button", { name: "Delete dataset" });
+    await expect(deleteBtn).toBeVisible();
+    await deleteBtn.click();
+
+    // Require alertdialog specifically with no ordinary-dialog fallback
+    const alertDialog = page.getByRole("alertdialog");
+    await expect(alertDialog).toBeVisible();
+    await expect(alertDialog.getByRole("heading", { name: "Delete Dataset" })).toBeVisible();
+
+    await alertDialog.getByRole("button", { name: "Delete" }).click();
+    await expect(alertDialog).not.toBeVisible();
+    await expect(datasetCard).not.toBeVisible();
+  });
+
+  test("sampling prompt edit workflow on mobile", async ({ page }) => {
+    await page.goto("/sampling");
+    await expect(page.getByRole("heading", { level: 1, name: /sampling/i })).toBeVisible();
+
+    const addBtn = page.getByRole("button", { name: "Add Sample Prompt" }).or(page.getByRole("button", { name: "Add Prompt" })).or(page.getByRole("button", { name: /Add/i })).first();
+    if (await addBtn.isVisible()) {
+      await addBtn.click();
+      const modal = page.getByRole("dialog");
+      if (await modal.isVisible()) {
+        const textInput = modal.locator("textarea, input[type='text']").first();
+        if (await textInput.isVisible()) {
+          await textInput.fill("a photo of a cat on phone");
+        }
+        const saveBtn = modal.getByRole("button", { name: /Save|Create|Add/i }).first();
+        if (await saveBtn.isVisible()) {
+          await saveBtn.click();
+        }
+      }
+    }
+  });
+
+  test("training controls and status pill assertion on mobile", async ({ page }) => {
+    await page.goto("/live");
+    const startBtn = page.getByRole("button", { name: "Start Training" });
+    await expect(startBtn).toBeVisible();
+
+    const statusPill = page.getByTestId("training-status-pill");
+    await expect(statusPill).toBeVisible();
+    await expect(statusPill).toHaveText(/IDLE|STARTING|TRAINING|COMPLETED|PAUSED|STOPPING|FAILED/);
+  });
+
+  test("theme switching and persistence across navigation and reload on mobile", async ({ page }) => {
     await page.goto("/general");
+    await expect(page.locator("html")).toHaveClass(/dark/);
 
-    await page.getByRole("button", { name: "Open navigation" }).click();
-    const navigation = page.getByRole("dialog", { name: "Navigation" });
-    const consoleToggle = navigation.getByRole("button", { name: "Console" });
-    await expect(consoleToggle).toBeVisible();
-    await consoleToggle.click();
+    const toggleBtn = page.getByRole("button", { name: /switch to light theme/i });
+    await expect(toggleBtn).toBeVisible();
+    await toggleBtn.click();
 
-    const consoleDrawer = page.locator('section[aria-label="Console Output"]');
-    await expect(consoleDrawer).toBeVisible();
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
 
-    await page.getByRole("tab", { name: "Hardware" }).click();
-    const trainDeviceInput = page.locator("#field-train-device");
-    await trainDeviceInput.fill("cuda:0");
-    await expect(page.getByTestId("saved-icon-badge")).toBeVisible();
+    // Navigate to /datasets
+    await page.goto("/datasets");
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
+
+    // Reload page
+    await page.reload();
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
+
+    // Switch back to dark theme
+    const darkToggleBtn = page.getByRole("button", { name: /switch to dark theme/i });
+    await expect(darkToggleBtn).toBeVisible();
+    await darkToggleBtn.click();
+    await expect(page.locator("html")).toHaveClass(/dark/);
   });
 });

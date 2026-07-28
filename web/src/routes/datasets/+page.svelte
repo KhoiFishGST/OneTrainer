@@ -121,7 +121,7 @@
             value={Boolean(ctx.workspace.draft?.aspect_ratio_bucketing)}
             onChange={(val) => ctx.workspace.setRaw('aspect_ratio_bucketing', val)}
           />
-          <span class="toggle-label">Aspect Ratio Bucketing</span>
+          <label for="aspect_ratio_bucketing" class="toggle-label">Aspect Ratio Bucketing</label>
         </div>
         <div class="toggle-item">
           <Toggle
@@ -129,7 +129,7 @@
             value={Boolean(ctx.workspace.draft?.latent_caching)}
             onChange={(val) => ctx.workspace.setRaw('latent_caching', val)}
           />
-          <span class="toggle-label">Latent Caching</span>
+          <label for="latent_caching" class="toggle-label">Latent Caching</label>
         </div>
         <div class="toggle-item">
           <Toggle
@@ -137,7 +137,7 @@
             value={Boolean(ctx.workspace.draft?.clear_cache_before_training)}
             onChange={(val) => ctx.workspace.setRaw('clear_cache_before_training', val)}
           />
-          <span class="toggle-label">Clear cache before training</span>
+          <label for="clear_cache_before_training" class="toggle-label">Clear cache before training</label>
         </div>
       </div>
     {/if}

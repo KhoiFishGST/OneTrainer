@@ -28,12 +28,17 @@ export default defineConfig({
     {
       name: "webkit-phone",
       testMatch: /mobile|responsive-workflows|accessibility/,
-      use: Object.assign({}, devices["iPhone 13"]),
+      use: Object.assign({}, devices["iPhone 13"], {
+        viewport: { width: 390, height: 844 },
+      }),
     },
     {
       name: "chromium-phone",
-      testMatch: /mobile|responsive-workflows|accessibility/,
-      use: Object.assign({}, devices["iPhone 13"], { defaultBrowserType: "chromium" }),
+      testMatch: /mobile|responsive-workflows|accessibility|theme|visual/,
+      use: Object.assign({}, devices["iPhone 13"], {
+        defaultBrowserType: "chromium",
+        viewport: { width: 390, height: 844 },
+      }),
     },
     {
       name: "firefox-smoke",

@@ -43,7 +43,7 @@
 <CheckboxPrimitive.Root
 	bind:ref
 	aria-describedby={ariaDescribedBy ?? (restProps as Record<string, unknown>)['aria-describedby'] as string | undefined}
-	aria-label={ariaLabel ?? (restProps as Record<string, unknown>)['aria-label'] as string | undefined}
+	aria-label={ariaLabel ?? ((restProps as Record<string, unknown>)['aria-label'] as string | undefined) ?? (restProps.id ? String(restProps.id).replace(/_/g, ' ') : "Toggle")}
 	data-slot={dataSlot}
 	class={cn(
 		"border-input data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground data-[state=checked]:border-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 peer shadow-xs size-4 shrink-0 rounded-[4px] border transition-shadow outline-none focus-visible:ring-3 disabled:cursor-not-allowed disabled:opacity-50",

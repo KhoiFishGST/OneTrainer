@@ -5,20 +5,15 @@ test.describe("Visual Regression Baselines", () => {
 
   async function switchToLightTheme(page: any) {
     const toggle = page.getByRole("button", { name: /switch to light theme/i });
-    if (await toggle.isVisible()) {
-      await toggle.click();
-    } else {
-      await page.evaluate(() => {
-        localStorage.setItem("webui.theme", "light");
-        document.documentElement.classList.remove("dark");
-        document.documentElement.style.colorScheme = "light";
-      });
-    }
+    await expect(toggle).toBeVisible();
+    await toggle.click();
     await expect(page.locator("html")).not.toHaveClass(/dark/);
   }
 
-  test.describe("Desktop Viewport (1280x720)", () => {
-    test.use({ viewport: { width: 1280, height: 720 } });
+  test.describe("Desktop Viewport", () => {
+    test.beforeEach(async ({}, testInfo) => {
+      if (!testInfo.project.name.includes("desktop")) test.skip();
+    });
 
     test("shell desktop dark and light", async ({ page }) => {
       await page.goto("/general");
@@ -37,7 +32,26 @@ test.describe("Visual Regression Baselines", () => {
     });
 
     test("dataset collection desktop table", async ({ page }) => {
+      await page.route("**/api/datasets", (route) =>
+        route.fulfill({
+          status: 200,
+          json: {
+            datasets: [
+              {
+                name: "Seeded Dataset 1",
+                path: "/training/datasets/seeded_1",
+                image_count: 42,
+                caption_count: 42,
+                thumbnail_url: "",
+              },
+            ],
+            base_dir: "training_datasets",
+          },
+        })
+      );
       await page.goto("/datasets");
+      await expect(page.getByRole("table")).toBeVisible();
+      await expect(page.getByText("Seeded Dataset 1")).toBeVisible();
       await expect(page.locator("main.main-content")).toHaveScreenshot("dataset-collection-desktop-table.png", screenshotOpts);
     });
 
@@ -59,8 +73,10 @@ test.describe("Visual Regression Baselines", () => {
     });
   });
 
-  test.describe("Phone Viewport (390x844)", () => {
-    test.use({ viewport: { width: 390, height: 844 } });
+  test.describe("Phone Viewport", () => {
+    test.beforeEach(async ({}, testInfo) => {
+      if (!testInfo.project.name.includes("phone")) test.skip();
+    });
 
     test("shell phone dark and light", async ({ page }) => {
       await page.goto("/general");
@@ -79,7 +95,26 @@ test.describe("Visual Regression Baselines", () => {
     });
 
     test("dataset collection phone cards", async ({ page }) => {
+      await page.route("**/api/datasets", (route) =>
+        route.fulfill({
+          status: 200,
+          json: {
+            datasets: [
+              {
+                name: "Seeded Phone Dataset 1",
+                path: "/training/datasets/seeded_phone_1",
+                image_count: 15,
+                caption_count: 15,
+                thumbnail_url: "",
+              },
+            ],
+            base_dir: "training_datasets",
+          },
+        })
+      );
       await page.goto("/datasets");
+      await expect(page.locator(".datasets-grid")).toBeVisible();
+      await expect(page.getByText("Seeded Phone Dataset 1")).toBeVisible();
       await expect(page.locator("main.main-content")).toHaveScreenshot("dataset-collection-phone-cards.png", screenshotOpts);
     });
 
@@ -102,27 +137,43 @@ test.describe("Visual Regression Baselines", () => {
   });
 
   test.describe("States: Loading, Empty, and Error", () => {
-    test.use({ viewport: { width: 1280, height: 720 } });
+    test.beforeEach(async ({}, testInfo) => {
+      if (!testInfo.project.name.includes("desktop")) test.skip();
+    });
 
     test("empty state rendering", async ({ page }) => {
+      await page.route("**/api/datasets", (route) =>
+        route.fulfill({
+          status: 200,
+          json: {
+            datasets: [],
+            base_dir: "training_datasets",
+          },
+        })
+      );
       await page.goto("/datasets");
       await expect(page.locator("main.main-content")).toHaveScreenshot("empty-state.png", screenshotOpts);
     });
 
     test("loading state rendering", async ({ page }) => {
+      await page.route("**/api/concepts**", () => {});
       await page.goto("/concepts");
+      await expect(page.getByRole("status")).toBeVisible();
       await expect(page.locator("main.main-content")).toHaveScreenshot("loading-state.png", screenshotOpts);
     });
 
     test("persistent error state rendering", async ({ page }) => {
-      await page.route("/api/health", (route) => route.fulfill({ status: 500, body: "Server Error" }));
+      await page.route("**/api/health**", (route) =>
+        route.fulfill({
+          status: 500,
+          contentType: "application/json",
+          body: JSON.stringify({ detail: "Server Error" }),
+        })
+      );
       await page.goto("/general");
       const banner = page.locator(".error-banner");
-      if (await banner.isVisible()) {
-        await expect(banner).toHaveScreenshot("persistent-error-state.png", screenshotOpts);
-      } else {
-        await expect(page.locator(".app-shell")).toHaveScreenshot("persistent-error-state.png", screenshotOpts);
-      }
+      await expect(banner).toBeVisible({ timeout: 15000 });
+      await expect(banner).toHaveScreenshot("persistent-error-state.png", screenshotOpts);
     });
   });
 });

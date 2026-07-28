@@ -37,7 +37,7 @@
 	checked={currentChecked}
 	onCheckedChange={handleCheckedChange}
 	aria-describedby={ariaDescribedBy ?? (restProps as Record<string, unknown>)['aria-describedby'] as string | undefined}
-	aria-label={ariaLabel ?? (restProps as Record<string, unknown>)['aria-label'] as string | undefined}
+	aria-label={ariaLabel ?? ((restProps as Record<string, unknown>)['aria-label'] as string | undefined) ?? (restProps.id ? String(restProps.id).replace(/_/g, ' ') : undefined)}
 	data-slot="switch"
 	data-size={size}
 	class={cn(

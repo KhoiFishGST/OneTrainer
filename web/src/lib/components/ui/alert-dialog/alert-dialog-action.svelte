@@ -29,7 +29,7 @@
 	{...restProps}
 >
 	{#snippet child({ props })}
-		<button {...props} {disabled}>
+		<button {...props} class={cn(buttonVariants({ variant, size }), "cn-alert-dialog-action", className, props.class)} {disabled}>
 			{@render children?.()}
 		</button>
 	{/snippet}

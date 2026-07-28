@@ -479,7 +479,7 @@
     gap: 8px;
     font-weight: 700;
     font-size: 1.125rem;
-    color: var(--primary, #3b82f6);
+    color: var(--ring);
   }
 
   .brand-logo {

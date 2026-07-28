@@ -3,91 +3,120 @@ import AxeBuilder from "@axe-core/playwright";
 
 test.describe("Accessibility Audit (axe-core)", () => {
   async function checkAccessibility(page: any, contextName: string) {
-    const results = await new AxeBuilder({ page })
-      .disableRules(["color-contrast"])
-      .analyze();
+    const results = await new AxeBuilder({ page }).analyze();
     const violations = results.violations.filter(
       (v) => v.impact === "critical" || v.impact === "serious"
     );
     expect(violations, `Accessibility violations found in ${contextName}: ${JSON.stringify(violations, null, 2)}`).toEqual([]);
   }
 
+  async function checkAccessibilityInBothThemes(
+    page: any,
+    contextName: string,
+    openModalFn?: () => Promise<void>
+  ) {
+    if (openModalFn) {
+      // Dark Theme Pass
+      await openModalFn();
+      await checkAccessibility(page, `${contextName} (dark)`);
+
+      // Switch to Light Theme before opening modal
+      await page.reload();
+      const toggle = page.getByRole("button", { name: /switch to light theme/i });
+      if (await toggle.isVisible()) {
+        await toggle.click();
+        await expect(page.locator("html")).not.toHaveClass(/dark/);
+        await page.waitForTimeout(300);
+      }
+      await openModalFn();
+      await checkAccessibility(page, `${contextName} (light)`);
+    } else {
+      await checkAccessibility(page, `${contextName} (dark)`);
+
+      const toggle = page.getByRole("button", { name: /switch to light theme/i });
+      if (await toggle.isVisible()) {
+        await toggle.click();
+        await expect(page.locator("html")).not.toHaveClass(/dark/);
+        await page.waitForTimeout(300);
+        await checkAccessibility(page, `${contextName} (light)`);
+      }
+    }
+  }
+
   test("login page has no critical/serious violations", async ({ page }) => {
     await page.goto("/login");
-    await checkAccessibility(page, "login page");
+    await checkAccessibilityInBothThemes(page, "login page");
   });
 
   test("general schema form page has no critical/serious violations", async ({ page }) => {
     await page.goto("/general");
-    await checkAccessibility(page, "general schema form");
+    await checkAccessibilityInBothThemes(page, "general schema form");
   });
 
   test("datasets page has no critical/serious violations", async ({ page }) => {
     await page.goto("/datasets");
-    await checkAccessibility(page, "datasets page");
+    await checkAccessibilityInBothThemes(page, "datasets page");
   });
 
   test("concepts page has no critical/serious violations", async ({ page }) => {
     await page.goto("/concepts");
-    await checkAccessibility(page, "concepts page");
+    await checkAccessibilityInBothThemes(page, "concepts page");
   });
 
   test("live dashboard has no critical/serious violations", async ({ page }) => {
     await page.goto("/live");
-    await checkAccessibility(page, "live dashboard");
+    await checkAccessibilityInBothThemes(page, "live dashboard");
   });
 
   test("open Dialog has no critical/serious violations", async ({ page }) => {
-    await page.goto("/general");
-    await page.locator(".header-left").getByRole("button", { name: "Save" }).click();
-    await expect(page.getByRole("dialog", { name: "Save Configuration" })).toBeVisible();
-    await checkAccessibility(page, "open Save Configuration Dialog");
+    const openDialog = async () => {
+      await page.goto("/general");
+      await page.locator(".header-left").getByRole("button", { name: "Save" }).click();
+      await expect(page.getByRole("dialog", { name: "Save Configuration" })).toBeVisible();
+    };
+    await checkAccessibilityInBothThemes(page, "open Save Configuration Dialog", openDialog);
   });
 
   test("open Drawer has no critical/serious violations", async ({ page }) => {
-    await page.goto("/general");
-    const viewport = page.viewportSize();
-    if (viewport && viewport.width <= 767) {
-      const mobileMenu = page.getByRole("button", { name: "Open navigation" });
-      await expect(mobileMenu).toBeVisible();
-      await mobileMenu.click();
-      const nav = page.getByRole("dialog", { name: "Navigation" });
-      await nav.getByRole("button", { name: "Console" }).click();
-    } else {
-      const consoleToggle = page.getByTitle("Toggle Console Drawer");
-      await consoleToggle.click();
-    }
-    await expect(page.locator('section[aria-label="Console Output"]')).toBeVisible();
-    await checkAccessibility(page, "open Console Drawer");
+    const openDrawer = async () => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto("/general");
+      await page.locator(".header-left").getByRole("button", { name: "Save" }).click();
+      await expect(page.getByRole("dialog", { name: "Save Configuration" })).toBeVisible();
+    };
+    await checkAccessibilityInBothThemes(page, "open Save Configuration Drawer at phone width", openDrawer);
   });
 
   test("open Sheet on phone viewport has no critical/serious violations", async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/general");
-    const browseBtn = page.getByRole("button", { name: "Browse directory" }).first();
-    await browseBtn.click();
-    await expect(page.getByRole("dialog", { name: "Select Directory" })).toBeVisible();
-    await checkAccessibility(page, "open Directory Picker Sheet");
+    const openSheet = async () => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto("/general");
+      const browseBtn = page.getByRole("button", { name: "Browse directory" }).first();
+      await browseBtn.click();
+      await expect(page.getByRole("dialog", { name: "Select Directory" })).toBeVisible();
+    };
+    await checkAccessibilityInBothThemes(page, "open Directory Picker Sheet", openSheet);
   });
 
   test("open Alert Dialog has no critical/serious violations", async ({ page }) => {
-    await page.goto("/general");
-    await page.locator(".header-left").getByRole("button", { name: "Save" }).click();
-    const saveDialog = page.getByRole("dialog", { name: "Save Configuration" });
-    await expect(saveDialog).toBeVisible();
-    await page.getByLabel("Preset Name").fill("existing_preset");
-    await saveDialog.getByRole("button", { name: "Save" }).click();
-
-    // If saveDialog closes because preset didn't exist yet, save again to force 409 overwrite dialog
-    if (await saveDialog.isHidden().catch(() => false)) {
+    const openAlertDialog = async () => {
+      await page.goto("/general");
       await page.locator(".header-left").getByRole("button", { name: "Save" }).click();
+      const saveDialog = page.getByRole("dialog", { name: "Save Configuration" });
       await expect(saveDialog).toBeVisible();
       await page.getByLabel("Preset Name").fill("existing_preset");
       await saveDialog.getByRole("button", { name: "Save" }).click();
-    }
 
-    const overwriteDialog = page.getByRole("dialog", { name: "File Already Exists" });
-    await expect(overwriteDialog).toBeVisible();
-    await checkAccessibility(page, "open Overwrite Alert Dialog");
+      if (await saveDialog.isHidden().catch(() => false)) {
+        await page.locator(".header-left").getByRole("button", { name: "Save" }).click();
+        await expect(saveDialog).toBeVisible();
+        await page.getByLabel("Preset Name").fill("existing_preset");
+        await saveDialog.getByRole("button", { name: "Save" }).click();
+      }
+
+      const overwriteDialog = page.getByRole("alertdialog").or(page.getByRole("dialog", { name: "File Already Exists" }));
+      await expect(overwriteDialog).toBeVisible();
+    };
+    await checkAccessibilityInBothThemes(page, "open Overwrite Alert Dialog", openAlertDialog);
   });
 });

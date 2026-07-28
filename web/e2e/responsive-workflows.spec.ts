@@ -144,19 +144,19 @@ test.describe("Responsive Workflows & Accessibility Controls", () => {
       await createModal.getByRole("button", { name: "Create" }).click();
       await expect(createModal).not.toBeVisible();
 
-      const datasetCard = page.locator(".dataset-card-link", { hasText: "Dataset For Deletion" });
-      await expect(datasetCard).toBeVisible();
+      const datasetItem = page
+        .locator("tbody tr", { hasText: "Dataset For Deletion" })
+        .or(page.locator(".dataset-card-link", { hasText: "Dataset For Deletion" }));
+      await expect(datasetItem).toBeVisible();
 
       // Trigger deletion confirmation dialog
-      await datasetCard.hover();
-      const deleteBtn = datasetCard.getByRole("button", { name: "Delete dataset" });
+      await datasetItem.hover();
+      const deleteBtn = datasetItem.getByRole("button", { name: "Delete dataset" });
       await expect(deleteBtn).toBeVisible();
       await deleteBtn.click();
 
       // Assert AlertDialog ("Delete dataset" confirmation title/description) appears
-      const alertDialog = page
-        .getByRole("alertdialog")
-        .or(page.getByRole("dialog", { name: "Delete Dataset" }));
+      const alertDialog = page.getByRole("alertdialog");
       await expect(alertDialog).toBeVisible();
       await expect(alertDialog.getByRole("heading", { name: "Delete Dataset" })).toBeVisible();
       await expect(
@@ -166,18 +166,40 @@ test.describe("Responsive Workflows & Accessibility Controls", () => {
       // Click Cancel and verify dataset was NOT deleted
       await alertDialog.getByRole("button", { name: "Cancel" }).click();
       await expect(alertDialog).not.toBeVisible();
-      await expect(datasetCard).toBeVisible();
+      await expect(datasetItem).toBeVisible();
 
       // Trigger deletion again and click Confirm/Delete
-      await datasetCard.hover();
+      await datasetItem.hover();
       await deleteBtn.click();
       await expect(alertDialog).toBeVisible();
 
       await alertDialog.getByRole("button", { name: "Delete" }).click();
       await expect(alertDialog).not.toBeVisible();
 
-      // Verify dataset deletion behavior (card is removed)
-      await expect(datasetCard).not.toBeVisible();
+      // Verify dataset deletion behavior (item is removed)
+      await expect(datasetItem).not.toBeVisible();
+    });
+
+    test("responsive viewport transition retains draft in open editor dialog", async ({ page }) => {
+      await page.goto("/general");
+      const browseBtn = page.getByRole("button", { name: "Browse directory" }).first();
+      await browseBtn.click();
+
+      const input = page.locator("input[placeholder='Enter path...']");
+      await expect(input).toBeVisible();
+      await input.fill("/custom/incomplete/draft/path");
+
+      // Transition viewport from desktop to phone
+      await page.setViewportSize({ width: 390, height: 844 });
+
+      // Assert exactly one dialog and draft path retained
+      await expect(page.getByRole("dialog")).toHaveCount(1);
+      await expect(input).toHaveValue(/\/custom\/incomplete\/draft\/path$/);
+
+      // Transition viewport back to desktop
+      await page.setViewportSize({ width: 1280, height: 720 });
+      await expect(page.getByRole("dialog")).toHaveCount(1);
+      await expect(input).toHaveValue(/\/custom\/incomplete\/draft\/path$/);
     });
   });
 });

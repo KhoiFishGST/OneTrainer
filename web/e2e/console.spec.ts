@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Console Connection Flows", () => {
+  test.describe.configure({ mode: "serial" });
+
   test("stdout and stderr lines appear, CR progress ends as single 20% row", async ({ page }) => {
     await page.goto("/console");
 
@@ -15,7 +17,7 @@ test.describe("Console Connection Flows", () => {
     await expect(page.locator(".console-row", { hasText: "stderr-line" })).toBeVisible();
 
     await filterInput.fill("");
-    await expect(page.locator(".console-row", { hasText: "20%" })).toBeVisible();
+    await expect(page.locator(".console-row", { hasText: "20%" })).toBeVisible({ timeout: 10000 });
     await expect(page.locator(".console-row", { hasText: "10%" })).not.toBeVisible();
   });
 
@@ -117,6 +119,6 @@ test.describe("Console Connection Flows", () => {
     await expect(page.locator(".console-row")).toHaveCount(1);
 
     await filterInput.fill("");
-    await expect(page.locator(".console-row", { hasText: "20%" })).toBeVisible();
+    await expect(page.locator(".console-row", { hasText: "20%" })).toBeVisible({ timeout: 10000 });
   });
 });

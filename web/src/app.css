@@ -41,14 +41,14 @@
   --secondary: #e6ebf2;
   --secondary-foreground: #17202a;
   --muted: #f0f4f8;
-  --muted-foreground: #657384;
+  --muted-foreground: #334155;
   --accent: #e6ebf2;
   --accent-foreground: #17202a;
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
   --border: #d6dee8;
   --input: #d6dee8;
-  --ring: #2563eb;
+  --ring: #1d4ed8;
   --radius: 0.5rem;
 
   /* Desktop Control Variables */
@@ -71,12 +71,12 @@
   --card-foreground: #e8edf2;
   --popover: #18212b;
   --popover-foreground: #e8edf2;
-  --primary: #3b82f6;
+  --primary: #2563eb;
   --primary-foreground: #ffffff;
   --secondary: #1f2a37;
   --secondary-foreground: #e8edf2;
   --muted: #18212b;
-  --muted-foreground: #8d99a6;
+  --muted-foreground: #94a3b8;
   --accent: #1f2a37;
   --accent-foreground: #e8edf2;
   --destructive: #ef4444;

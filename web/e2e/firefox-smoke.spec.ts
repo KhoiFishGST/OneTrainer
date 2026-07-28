@@ -23,7 +23,7 @@ test.describe("Firefox Smoke Flows", () => {
 
     // Tab navigation focus check
     await page.keyboard.press("Tab");
-    const activeElTag = await page.evaluate(() => document.activeElement?.tagName);
-    expect(activeElTag).toBeTruthy();
+    const isFocused = await page.evaluate(() => document.activeElement !== document.body && document.activeElement !== null);
+    expect(isFocused).toBe(true);
   });
 });
