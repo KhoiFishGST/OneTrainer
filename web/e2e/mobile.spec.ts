@@ -110,7 +110,6 @@ test.describe("Phone Mobile Editing Flows", () => {
 
   test("sampling prompt edit workflow on mobile", async ({ page }) => {
     await page.goto("/sampling");
-
     await expect(page.getByRole("heading", { level: 1, name: /sampling/i })).toBeVisible();
 
     const addBtn = page.getByRole("button", { name: /add (sample )?prompt/i }).first();
@@ -130,23 +129,6 @@ test.describe("Phone Mobile Editing Flows", () => {
 
     await expect(page.getByText("a photo of a cat on phone").first()).toBeVisible();
   });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   test("training controls and status pill assertion on mobile", async ({ page }) => {
     await page.goto("/live");

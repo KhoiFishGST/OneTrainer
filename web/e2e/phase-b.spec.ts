@@ -85,7 +85,7 @@ test.describe("Phase B Configuration Surface", () => {
     // Modal opens for concept detail
     const modal = page.getByRole("dialog");
     await expect(modal).toBeVisible();
-    await modal.getByLabel("Name").fill("E2E Concept");
+    await modal.getByRole("textbox", { name: "Name" }).fill("E2E Concept");
 
     // Save concept settings
     await modal.getByRole("button", { name: "Save Concept Settings" }).click();
