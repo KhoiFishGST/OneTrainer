@@ -269,27 +269,33 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 16px;
-    padding-top: calc(8px + env(safe-area-inset-top, 0px));
+    padding: 6px 16px;
+    padding-top: calc(6px + env(safe-area-inset-top, 0px));
     gap: 12px;
     flex-wrap: wrap;
   }
 
   @media (max-width: 767px) {
     .header {
-      padding: 4px 8px;
+      padding: 4px 4px;
       padding-top: calc(4px + env(safe-area-inset-top, 0px));
-      gap: 4px;
+      gap: 2px;
       flex-wrap: nowrap;
     }
 
     .header-left {
-      gap: 4px;
+      gap: 1px;
       min-width: 0;
+      flex-shrink: 0;
     }
 
-    /* The wordmark is the first thing to give when width runs out. */
-    .app-title {
+    .header-right {
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
+    /* On mobile, the hamburger menu is present; brand is hidden to make room for config controls. */
+    .brand {
       display: none;
     }
 

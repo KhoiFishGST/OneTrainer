@@ -74,7 +74,9 @@ test.describe("Accessibility Audit (axe-core)", () => {
   test("open Dialog has no critical/serious violations", async ({ page }) => {
     const openDialog = async () => {
       await page.goto("/general");
-      await page.locator(".header-left").getByRole("button", { name: "Save" }).click();
+      const isMobile = page.viewportSize() && page.viewportSize()!.width <= 767;
+      const bar = isMobile ? page.getByTestId("header-mobile-bar") : page.getByTestId("header-desktop-bar");
+      await bar.getByRole("button", { name: "Save" }).click();
       await expect(page.getByRole("dialog", { name: "Save Configuration" })).toBeVisible();
     };
     await checkAccessibilityInBothThemes(page, "open Save Configuration Dialog", openDialog);
@@ -84,7 +86,7 @@ test.describe("Accessibility Audit (axe-core)", () => {
     const openDrawer = async () => {
       await page.setViewportSize({ width: 390, height: 844 });
       await page.goto("/general");
-      await page.locator(".header-left").getByRole("button", { name: "Save" }).click();
+      await page.getByTestId("header-mobile-bar").getByRole("button", { name: "Save" }).click();
       await expect(page.getByRole("dialog", { name: "Save Configuration" })).toBeVisible();
     };
     await checkAccessibilityInBothThemes(page, "open Save Configuration Drawer at phone width", openDrawer);
@@ -104,7 +106,9 @@ test.describe("Accessibility Audit (axe-core)", () => {
   test("open Alert Dialog has no critical/serious violations", async ({ page }) => {
     const openAlertDialog = async () => {
       await page.goto("/general");
-      await page.locator(".header-left").getByRole("button", { name: "Save" }).click();
+      const isMobile = page.viewportSize() && page.viewportSize()!.width <= 767;
+      const bar = isMobile ? page.getByTestId("header-mobile-bar") : page.getByTestId("header-desktop-bar");
+      await bar.getByRole("button", { name: "Save" }).click();
       const saveDialog = page.getByRole("dialog", { name: "Save Configuration" });
       await expect(saveDialog).toBeVisible();
       await page.getByLabel("Preset Name").fill("existing_preset");

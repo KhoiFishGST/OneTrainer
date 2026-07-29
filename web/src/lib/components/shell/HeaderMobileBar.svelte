@@ -44,11 +44,11 @@
   });
 </script>
 
-<div class="flex items-center gap-0.5 md:hidden" data-testid="header-mobile-bar">
+<div class="flex items-center gap-0 md:hidden" data-testid="header-mobile-bar">
   <Button
     variant="ghost"
     size="icon"
-    class="max-md:min-w-[44px]"
+    class="max-md:min-h-[44px] max-md:min-w-[44px]"
     aria-label="Model type"
     onclick={() => (activeSheet = 'model')}
   >
@@ -58,7 +58,7 @@
   <Button
     variant="ghost"
     size="icon"
-    class="max-md:min-w-[44px]"
+    class="max-md:min-h-[44px] max-md:min-w-[44px]"
     aria-label="Training method"
     onclick={() => (activeSheet = 'method')}
   >
@@ -68,7 +68,7 @@
   <Button
     variant="ghost"
     size="icon"
-    class="max-md:min-w-[44px]"
+    class="max-md:min-h-[44px] max-md:min-w-[44px]"
     aria-label="Preset"
     onclick={() => (activeSheet = 'preset')}
   >
@@ -78,7 +78,7 @@
   <Button
     variant="ghost"
     size="icon"
-    class="max-md:min-w-[44px]"
+    class="max-md:min-h-[44px] max-md:min-w-[44px]"
     aria-label="Load"
     onclick={onLoadConfig}
   >
@@ -88,7 +88,7 @@
   <Button
     variant="ghost"
     size="icon"
-    class="max-md:min-w-[44px]"
+    class="max-md:min-h-[44px] max-md:min-w-[44px]"
     aria-label="Save"
     onclick={onSavePreset}
   >

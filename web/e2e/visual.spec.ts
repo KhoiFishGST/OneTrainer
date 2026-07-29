@@ -120,7 +120,7 @@ test.describe("Visual Regression Baselines", () => {
 
     test("ordinary editor Drawer phone", async ({ page }) => {
       await page.goto("/general");
-      await page.locator(".header-left").getByRole("button", { name: "Save" }).click();
+      await page.getByTestId("header-mobile-bar").getByRole("button", { name: "Save" }).click();
       const drawer = page.getByRole("dialog", { name: "Save Configuration" });
       await expect(drawer).toBeVisible();
       await expect(drawer).toHaveScreenshot("ordinary-editor-drawer-phone.png", screenshotOpts);

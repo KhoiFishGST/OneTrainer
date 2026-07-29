@@ -113,7 +113,12 @@ test.describe("Responsive Workflows & Accessibility Controls", () => {
   test.describe("Core Workflow Controls & Modals", () => {
     test("schema editing updates saved badge", async ({ page }) => {
       await page.goto("/general");
-      await page.getByRole("tab", { name: "Hardware" }).click();
+      const isMobile = page.viewportSize() && page.viewportSize()!.width <= 767;
+      if (isMobile) {
+        await page.getByRole("combobox", { name: "General section" }).selectOption({ label: "Hardware" });
+      } else {
+        await page.getByRole("tab", { name: "Hardware" }).click();
+      }
       const trainDeviceInput = page.locator("#field-train-device");
       await trainDeviceInput.fill("cuda:0");
       await expect(page.getByTestId("saved-icon-badge")).toBeVisible();
