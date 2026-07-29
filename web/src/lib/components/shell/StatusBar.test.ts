@@ -199,5 +199,24 @@ describe('StatusBar component', () => {
 
     expect(source).not.toContain('isMobile');
   });
+
+  it('shows the training status at the start of the phone status bar', () => {
+    render(StatusBarTestWrapper, {});
+
+    const pill = screen.getByTestId('training-status-pill-mobile');
+    expect(pill).toHaveTextContent('IDLE');
+    expect(pill.className).toContain('md:hidden');
+  });
+
+  it('pushes the controls away from the status pill without disturbing desktop', () => {
+    render(StatusBarTestWrapper, {});
+
+    const pill = screen.getByTestId('training-status-pill-mobile');
+    // `mr-auto` on the pill, not `justify-between` on the footer: the pill is
+    // display:none at md+, so justify-between would leave one child and drop
+    // the desktop controls to the left edge.
+    expect(pill.className).toContain('mr-auto');
+    expect(pill.closest('footer')!.className).toContain('justify-end');
+  });
 });
 

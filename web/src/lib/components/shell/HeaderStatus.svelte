@@ -1,23 +1,10 @@
 <script lang="ts">
   import { Save, RotateCcw, RefreshCw, AlertTriangle } from '@lucide/svelte';
   import { Button } from '$lib/components/ui/button';
-  import { cn } from '$lib/utils';
-  import { trainingStore } from '../../events/training-store';
   import type { ConfigWorkspace } from '../../config/workspace.svelte';
+  import TrainingStatusPill from './TrainingStatusPill.svelte';
 
   let { workspace = null } = $props<{ workspace?: ConfigWorkspace | null }>();
-
-  const trainingState = $derived($trainingStore.status?.state ?? 'IDLE');
-
-  const statusClasses: Record<string, string> = {
-    IDLE: 'bg-muted text-muted-foreground border-border',
-    STARTING: 'bg-info-surface text-info border-info/30 animate-pulse',
-    TRAINING: 'bg-info-surface text-info border-info/30 animate-pulse',
-    PAUSED: 'bg-warning-surface text-warning border-warning/30',
-    STOPPING: 'bg-destructive-surface text-destructive border-destructive/40',
-    FAILED: 'bg-destructive-surface text-destructive border-destructive/40',
-    COMPLETED: 'bg-success-surface text-success border-success/30',
-  };
 </script>
 
 {#if workspace}
@@ -48,17 +35,7 @@
   {/if}
 {/if}
 
-<span
-  data-testid="training-status-pill"
-  class={cn(
-    'status-pill',
-    'max-[380px]:h-3 max-[380px]:w-3 max-[380px]:rounded-full max-[380px]:p-0 max-[380px]:text-[0px] max-[380px]:leading-none',
-    statusClasses[trainingState] ?? statusClasses.IDLE
-  )}
-  title={$trainingStore.status?.error_message ?? ''}
->
-  {trainingState}
-</span>
+<TrainingStatusPill testId="training-status-pill" class="hidden md:inline-flex" />
 
 <style>
   .state-badge {
@@ -82,20 +59,5 @@
   .saved-icon-badge:hover {
     opacity: 1;
     transform: scale(1.1);
-  }
-
-  .status-pill {
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    border-width: 1px;
-    border-style: solid;
   }
 </style>

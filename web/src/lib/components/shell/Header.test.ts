@@ -197,14 +197,16 @@ describe('Header component', () => {
     expect(setRawCalls).toEqual([['training_method', 'LORA']]);
   });
 
-  it('keeps the training status readable as a dot on very narrow screens', () => {
+  it('keeps the training status out of the mobile header row', () => {
     render(HeaderTestWrapper, {});
 
     const pill = screen.getByTestId('training-status-pill');
-    // The text stays in the DOM for the accessible name; only its visual
-    // presentation collapses below 380px.
     expect(pill).toHaveTextContent('IDLE');
-    expect(pill.className).toContain('max-[380px]:');
+    // The phone shows its status in the bottom bar instead -- the top row is
+    // full of config icons.
+    expect(pill.className).toContain('hidden');
+    expect(pill.className).toContain('md:inline-flex');
+    expect(pill.className).not.toContain('max-[380px]:');
   });
 
   it('presents overwrite confirmation in an Alert Dialog, guards pending state, prevents duplicate calls, retains error on failure, and closes on resolution', async () => {

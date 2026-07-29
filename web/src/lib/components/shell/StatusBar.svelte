@@ -11,6 +11,7 @@
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
   import { trainingStore } from '../../events/training-store';
   import { api } from '../../api/client';
+  import TrainingStatusPill from './TrainingStatusPill.svelte';
 
   const trainingState = $derived($trainingStore.status?.state ?? 'IDLE');
 
@@ -112,6 +113,17 @@
 <footer
   class="min-h-[52px] h-auto bg-card border-t border-border flex items-center justify-end px-4 py-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom,0px))] text-sm z-50"
 >
+  <!--
+    Phones only: the top bar is full of config icons, so the training state
+    lives down here. Desktop keeps it in the header.
+
+    `mr-auto` here rather than `justify-between` on the footer: at md+ this
+    pill is display:none, which leaves the footer with a single child -- and
+    justify-between would then place the desktop controls at the LEFT edge.
+    Keeping justify-end means the desktop layout is bit-for-bit unchanged.
+  -->
+  <TrainingStatusPill testId="training-status-pill-mobile" class="inline-flex md:hidden mr-auto" />
+
   <div class="flex items-center gap-3">
     <div class="flex items-center gap-2 ml-1 flex-wrap">
       {#if trainingState === 'IDLE' || trainingState === 'COMPLETED' || trainingState === 'FAILED'}
