@@ -99,8 +99,8 @@
                       {...props}
                       href={item.path}
                       class={cn(
-                        'flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors opacity-40 cursor-not-allowed max-md:min-h-[44px] max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2',
-                        props.class as string
+                        props.class as string,
+                        'relative flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap transition-colors opacity-40 cursor-not-allowed max-md:min-h-[36px] max-md:h-auto max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2 max-md:overflow-visible after:absolute after:-top-1 after:-bottom-1 after:left-0 after:right-0 after:content-[\'\']'
                       )}
                       aria-disabled="true"
                       title="Unavailable in Phase A"
@@ -114,9 +114,9 @@
                       {...props}
                       href={item.path}
                       class={cn(
-                        'flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors max-md:min-h-[44px] max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2',
-                        currentPath === item.path && 'bg-accent text-accent-foreground font-medium',
-                        props.class as string
+                        props.class as string,
+                        'relative flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap transition-colors max-md:min-h-[36px] max-md:h-auto max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2 max-md:overflow-visible after:absolute after:-top-1 after:-bottom-1 after:left-0 after:right-0 after:content-[\'\']',
+                        currentPath === item.path && 'bg-accent text-accent-foreground font-medium'
                       )}
                       onclick={() => {
                         if (mobile) sidebar.setOpenMobile(false);
@@ -138,9 +138,9 @@
                     {...props}
                     variant="ghost"
                     class={cn(
-                      'flex w-full items-center justify-start gap-3 px-2.5 py-2 text-muted-foreground rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors font-normal h-auto min-h-0 hover:bg-muted hover:text-foreground max-md:min-h-[44px] max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2',
-                      isConsoleOpen && 'bg-accent text-accent-foreground font-medium',
-                      props.class as string
+                      props.class as string,
+                      'relative flex w-full items-center justify-start gap-3 px-2.5 py-2 text-muted-foreground rounded-md text-sm whitespace-nowrap transition-colors font-normal h-auto min-h-0 hover:bg-muted hover:text-foreground max-md:min-h-[36px] max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2 max-md:overflow-visible after:absolute after:-top-1 after:-bottom-1 after:left-0 after:right-0 after:content-[\'\']',
+                      isConsoleOpen && 'bg-accent text-accent-foreground font-medium'
                     )}
                     onclick={() => {
                       onToggleConsole();
