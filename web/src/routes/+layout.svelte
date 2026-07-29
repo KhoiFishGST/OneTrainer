@@ -1,17 +1,11 @@
 <script lang="ts">
-  import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
+  import { QueryClientProvider } from '@tanstack/svelte-query';
   import LayoutContent from '$lib/components/LayoutContent.svelte';
   import { Toaster } from '$lib/components/ui/sonner';
+  import { createAppQueryClient } from '$lib/api/query-client';
   import '../app.css';
 
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 1000 * 60,
-        refetchOnWindowFocus: false,
-      },
-    },
-  });
+  const queryClient = createAppQueryClient();
 
   let { children } = $props();
 </script>
