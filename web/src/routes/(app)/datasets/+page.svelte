@@ -5,7 +5,9 @@
   import PathInput from '$lib/components/form/PathInput.svelte';
   import { Switch as Toggle } from '$lib/components/ui/switch/index.js';
   import PageHeader from '$lib/components/layout/PageHeader.svelte';
+  import RoutePage from '$lib/components/layout/RoutePage.svelte';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
+
   import { Alert } from '$lib/components/ui/alert';
   import DatasetCollection from '$lib/components/datasets/DatasetCollection.svelte';
   import {
@@ -95,10 +97,10 @@
   }
 </script>
 
-<div class="p-6 flex flex-col gap-6">
+<RoutePage>
   <PageHeader title="Datasets" />
 
-  <div class="flex flex-col gap-4 bg-card p-4 md:p-5 rounded-lg border border-border w-[740px] max-w-full box-border">
+  <div class="flex flex-col gap-4 bg-card p-4 md:p-5 rounded-lg border border-border w-full">
     <div class="flex items-center gap-4">
       <span class="text-sm font-medium text-muted-foreground whitespace-nowrap">Base Directory:</span>
       <div class="flex-1">
@@ -149,7 +151,8 @@
     onDelete={handleDeleteDataset}
     {isDeleting}
   />
-</div>
+</RoutePage>
+
 
 <ResponsiveDialogDrawer
   bind:open={showCreateModal}

@@ -28,3 +28,25 @@ describe('schema-form route containers', () => {
     expect(routeSources[file]).not.toMatch(/\.route-page\s*\{[^}]*padding:\s*1\.5rem/);
   });
 });
+
+const DASHBOARD_ROUTES = [
+  '/src/routes/(app)/live/+page.svelte',
+  '/src/routes/(app)/gallery/+page.svelte',
+  '/src/routes/(app)/concepts/+page.svelte',
+  '/src/routes/(app)/datasets/+page.svelte',
+];
+
+describe('dashboard and collection route containers', () => {
+  it.each(DASHBOARD_ROUTES)('%s imports RoutePage', (file) => {
+    expect(routeSources[file]).toContain('RoutePage');
+  });
+
+  it.each(DASHBOARD_ROUTES)('%s declares no width of its own', (file) => {
+    const source = routeSources[file];
+    expect(source).not.toContain('max-w-[1600px]');
+    expect(source).not.toContain('max-width: 1600px');
+    expect(source).not.toContain('max-width: 1200px');
+    expect(source).not.toContain('w-[740px]');
+  });
+});
+

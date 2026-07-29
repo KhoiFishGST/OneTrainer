@@ -5,8 +5,10 @@
   import ConceptsEditor from '$lib/components/concepts/ConceptsEditor.svelte';
   import { AlertCircle } from '@lucide/svelte';
   import PageHeader from '$lib/components/layout/PageHeader.svelte';
+  import RoutePage from '$lib/components/layout/RoutePage.svelte';
   import { Alert } from '$lib/components/ui/alert';
   import { Skeleton } from '$lib/components/ui/skeleton';
+
 
   const conceptsQuery = createConceptsQuery();
   const updateConceptsMutation = createUpdateConceptsMutation();
@@ -61,7 +63,7 @@
   );
 </script>
 
-<div class="concepts-page">
+<RoutePage class="gap-5">
   <PageHeader title="Concepts" />
 
   {#if errorMessage}
@@ -83,22 +85,13 @@
       onChange={handleSave}
     />
   {/if}
-</div>
+</RoutePage>
 
 <style>
-  .concepts-page {
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-    max-width: 1200px;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
   .skeleton-container {
     display: flex;
     flex-direction: column;
     gap: 1rem;
   }
 </style>
+

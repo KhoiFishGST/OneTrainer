@@ -13,8 +13,10 @@
   import GpuMonitor from '$lib/components/training/GpuMonitor.svelte';
   import SampleGallery from '$lib/components/training/SampleGallery.svelte';
   import PageHeader from '$lib/components/layout/PageHeader.svelte';
+  import RoutePage from '$lib/components/layout/RoutePage.svelte';
   import { Alert } from '$lib/components/ui/alert';
   import { toast as sonnerToast } from 'svelte-sonner';
+
 
   const sampleMutation = createRequestSampleMutation();
   const backupMutation = createRequestBackupMutation();
@@ -93,105 +95,106 @@
   }
 </script>
 
-<div class="live-dashboard" data-testid="live-dashboard">
-  <PageHeader title="Live Training Dashboard" class="mb-2">
-    {#snippet status()}
-      <span class="status-badge status-{($trainingStore.status?.state || 'IDLE').toLowerCase()}">
-        {$trainingStore.status?.state || 'IDLE'}
-      </span>
-    {/snippet}
-  </PageHeader>
-
-  {#if status.error_message}
-    <Alert variant="destructive" class="mb-2">
-      <strong>Training Error:</strong> {status.error_message}
-    </Alert>
-  {/if}
-
-  <!-- Progress Card -->
-  <section class="dashboard-card progress-card" data-testid="progress-card">
-    <div class="progress-card-header">
-      <h3 class="card-title">Training Progress</h3>
-      <div class="progress-stats-summary">
-        <span class="stat-highlight">{stepPct.toFixed(1)}%</span>
-      </div>
-    </div>
-
-    <div class="progress-bar-container">
-      <div class="progress-bar-track">
-        <div class="progress-bar-fill" style="width: {stepPct}%;"></div>
-      </div>
-    </div>
-
-    <div class="metrics-summary-grid">
-      <div class="stat-item">
-        <span class="stat-label">Steps</span>
-        <span class="stat-value">{status.step} / {status.max_steps || '\u221e'}</span>
-      </div>
-
-      <div class="stat-item">
-        <span class="stat-label">Epoch</span>
-        <span class="stat-value">{status.epoch} / {status.max_epochs || '\u221e'}</span>
-      </div>
-
-      <div class="stat-item">
-        <span class="stat-label">Speed</span>
-        <span class="stat-value">
-          {#if status.speed_its > 0}
-            {status.speed_its.toFixed(2)} it/s
-          {:else}
-            -- it/s
-          {/if}
+<RoutePage>
+  <div class="live-dashboard" data-testid="live-dashboard">
+    <PageHeader title="Live Training Dashboard" class="mb-2">
+      {#snippet status()}
+        <span class="status-badge status-{($trainingStore.status?.state || 'IDLE').toLowerCase()}">
+          {$trainingStore.status?.state || 'IDLE'}
         </span>
+      {/snippet}
+    </PageHeader>
+
+    {#if status.error_message}
+      <Alert variant="destructive" class="mb-2">
+        <strong>Training Error:</strong> {status.error_message}
+      </Alert>
+    {/if}
+
+    <!-- Progress Card -->
+    <section class="dashboard-card progress-card" data-testid="progress-card">
+      <div class="progress-card-header">
+        <h3 class="card-title">Training Progress</h3>
+        <div class="progress-stats-summary">
+          <span class="stat-highlight">{stepPct.toFixed(1)}%</span>
+        </div>
       </div>
 
-      <div class="stat-item">
-        <span class="stat-label">Elapsed Time</span>
-        <span class="stat-value">{formatTime(status.elapsed_seconds)}</span>
+      <div class="progress-bar-container">
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" style="width: {stepPct}%;"></div>
+        </div>
       </div>
 
-      <div class="stat-item">
-        <span class="stat-label">ETA</span>
-        <span class="stat-value">{formatTime(status.eta_seconds)}</span>
+      <div class="metrics-summary-grid">
+        <div class="stat-item">
+          <span class="stat-label">Steps</span>
+          <span class="stat-value">{status.step} / {status.max_steps || '\u221e'}</span>
+        </div>
+
+        <div class="stat-item">
+          <span class="stat-label">Epoch</span>
+          <span class="stat-value">{status.epoch} / {status.max_epochs || '\u221e'}</span>
+        </div>
+
+        <div class="stat-item">
+          <span class="stat-label">Speed</span>
+          <span class="stat-value">
+            {#if status.speed_its > 0}
+              {status.speed_its.toFixed(2)} it/s
+            {:else}
+              -- it/s
+            {/if}
+          </span>
+        </div>
+
+        <div class="stat-item">
+          <span class="stat-label">Elapsed Time</span>
+          <span class="stat-value">{formatTime(status.elapsed_seconds)}</span>
+        </div>
+
+        <div class="stat-item">
+          <span class="stat-label">ETA</span>
+          <span class="stat-value">{formatTime(status.eta_seconds)}</span>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Metrics Charts -->
-  <section class="charts-section">
-    <div class="charts-grid">
-      <MetricsChart {metrics} metricKey="loss" title="Training Loss" height={280} />
-      <MetricsChart {metrics} metricKey="lr" title="Learning Rate" height={280} />
-    </div>
-  </section>
+    <!-- Metrics Charts -->
+    <section class="charts-section">
+      <div class="charts-grid">
+        <MetricsChart {metrics} metricKey="loss" title="Training Loss" height={280} />
+        <MetricsChart {metrics} metricKey="lr" title="Learning Rate" height={280} />
+      </div>
+    </section>
 
-  <!-- GPU Telemetry Monitor -->
-  <section class="gpu-section">
-    <GpuMonitor {gpuStats} />
-  </section>
+    <!-- GPU Telemetry Monitor -->
+    <section class="gpu-section">
+      <GpuMonitor {gpuStats} />
+    </section>
 
-  <!-- Live Sample Gallery -->
-  <section class="gallery-section">
-    <SampleGallery
-      {gallery}
-      loading={galleryLoading}
-      error={galleryError}
-      title="Latest Sample Set"
-      sortOrder="desc"
-      limit={1}
-    />
-  </section>
-</div>
+    <!-- Live Sample Gallery -->
+    <section class="gallery-section">
+      <SampleGallery
+        {gallery}
+        loading={galleryLoading}
+        error={galleryError}
+        title="Latest Sample Set"
+        sortOrder="desc"
+        limit={1}
+      />
+    </section>
+  </div>
+</RoutePage>
 
 <style>
   .live-dashboard {
-    padding: 1.5rem;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-    max-width: 1600px;
     width: 100%;
   }
+
 
   .status-badge {
     padding: 0.35rem 0.85rem;

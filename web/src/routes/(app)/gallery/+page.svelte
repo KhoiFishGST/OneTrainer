@@ -8,8 +8,10 @@
   import SampleGallery from '$lib/components/training/SampleGallery.svelte';
   import Select from '$lib/components/form/ValueSelect.svelte';
   import PageHeader from '$lib/components/layout/PageHeader.svelte';
+  import RoutePage from '$lib/components/layout/RoutePage.svelte';
 
   const runsQuery = createGalleryRunsQuery();
+
   const currentQuery = createGalleryCurrentQuery();
 
   let userSelectedKey = $state<string | null>(null);
@@ -82,33 +84,36 @@
   });
 </script>
 
-<div class="p-6 flex flex-col gap-6 max-w-[1600px] w-full" data-testid="gallery-page">
-  <PageHeader title="Sample Gallery" class="mb-2">
-    {#snippet actions()}
-      <label for="gallery-run-select" class="text-sm font-medium text-muted-foreground">Gallery run</label>
-      <Select
-        id="gallery-run-select"
-        ariaLabel="Gallery run"
-        bind:value={userSelectedKey}
-        options={availableRuns.map((r) => ({
-          value: r.key,
-          label: `${r.key}${r.active ? ' (Active)' : ''}`,
-        }))}
-        placeholder={availableRuns.length === 0 ? 'No runs available' : 'Select run...'}
-        disabled={availableRuns.length === 0}
-        onChange={(val) => {
-          userSelectedKey = val || null;
-        }}
-      />
-    {/snippet}
-  </PageHeader>
+<RoutePage>
+  <div class="contents" data-testid="gallery-page">
+    <PageHeader title="Sample Gallery">
+      {#snippet actions()}
+        <label for="gallery-run-select" class="text-sm font-medium text-muted-foreground">Gallery run</label>
+        <Select
+          id="gallery-run-select"
+          ariaLabel="Gallery run"
+          bind:value={userSelectedKey}
+          options={availableRuns.map((r) => ({
+            value: r.key,
+            label: `${r.key}${r.active ? ' (Active)' : ''}`,
+          }))}
+          placeholder={availableRuns.length === 0 ? 'No runs available' : 'Select run...'}
+          disabled={availableRuns.length === 0}
+          onChange={(val) => {
+            userSelectedKey = val || null;
+          }}
+        />
+      {/snippet}
+    </PageHeader>
 
-  <section class="w-full">
-    <SampleGallery
-      gallery={displayGallery}
-      loading={displayLoading}
-      error={displayError}
-      title="Sample Gallery"
-    />
-  </section>
-</div>
+    <section class="w-full">
+      <SampleGallery
+        gallery={displayGallery}
+        loading={displayLoading}
+        error={displayError}
+        title="Sample Gallery"
+      />
+    </section>
+  </div>
+</RoutePage>
+

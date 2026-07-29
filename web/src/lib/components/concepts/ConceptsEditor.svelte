@@ -439,10 +439,10 @@
     border: 1px solid var(--border);
     padding: 1.25rem;
     border-radius: 8px;
-    width: 740px;
-    max-width: 100%;
+    width: 100%;
     box-sizing: border-box;
   }
+
 
   .toolbar-row {
     display: flex;
@@ -521,11 +521,12 @@
     margin: 0;
     font-size: 0.9375rem;
     font-weight: 600;
-    color: var(--primary);
+    color: var(--foreground);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
 
   .concept-path {
     margin: 0;
