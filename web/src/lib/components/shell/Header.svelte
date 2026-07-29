@@ -277,30 +277,34 @@
 
   @media (max-width: 767px) {
     .header {
-      padding: 4px 4px;
+      padding: 4px 6px;
       padding-top: calc(4px + env(safe-area-inset-top, 0px));
-      gap: 2px;
+      gap: 4px;
       flex-wrap: nowrap;
     }
 
     .header-left {
-      gap: 1px;
+      gap: 4px;
       min-width: 0;
       flex-shrink: 0;
     }
 
     .header-right {
-      gap: 2px;
+      gap: 4px;
       flex-shrink: 0;
     }
 
-    /* On mobile, the hamburger menu is present; brand is hidden to make room for config controls. */
+    /* Show brand logo icon but hide OneTrainer text on mobile */
     .brand {
+      gap: 0;
+    }
+
+    .app-title {
       display: none;
     }
 
     .header-divider {
-      display: none;
+      height: 18px;
     }
   }
 

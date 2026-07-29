@@ -48,51 +48,51 @@
   <Button
     variant="ghost"
     size="icon"
-    class="max-md:min-h-[44px] max-md:min-w-[44px]"
+    class="max-md:h-11 max-md:w-8 max-md:min-h-[44px] max-md:px-0"
     aria-label="Model type"
     onclick={() => (activeSheet = 'model')}
   >
-    <Box size={20} />
+    <Box size={18} />
   </Button>
 
   <Button
     variant="ghost"
     size="icon"
-    class="max-md:min-h-[44px] max-md:min-w-[44px]"
+    class="max-md:h-11 max-md:w-8 max-md:min-h-[44px] max-md:px-0"
     aria-label="Training method"
     onclick={() => (activeSheet = 'method')}
   >
-    <Cpu size={20} />
+    <Cpu size={18} />
   </Button>
 
   <Button
     variant="ghost"
     size="icon"
-    class="max-md:min-h-[44px] max-md:min-w-[44px]"
+    class="max-md:h-11 max-md:w-8 max-md:min-h-[44px] max-md:px-0"
     aria-label="Preset"
     onclick={() => (activeSheet = 'preset')}
   >
-    <Star size={20} />
+    <Star size={18} />
   </Button>
 
   <Button
     variant="ghost"
     size="icon"
-    class="max-md:min-h-[44px] max-md:min-w-[44px]"
+    class="max-md:h-11 max-md:w-8 max-md:min-h-[44px] max-md:px-0"
     aria-label="Load"
     onclick={onLoadConfig}
   >
-    <FolderOpen size={20} />
+    <FolderOpen size={18} />
   </Button>
 
   <Button
     variant="ghost"
     size="icon"
-    class="max-md:min-h-[44px] max-md:min-w-[44px]"
+    class="max-md:h-11 max-md:w-8 max-md:min-h-[44px] max-md:px-0"
     aria-label="Save"
     onclick={onSavePreset}
   >
-    <Save size={20} />
+    <Save size={18} />
   </Button>
 </div>
 
