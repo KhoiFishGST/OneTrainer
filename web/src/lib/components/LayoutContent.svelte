@@ -22,7 +22,6 @@
   import { consoleStore } from '$lib/events/console-store.svelte';
   import { EventClient } from '$lib/events/client';
   import { api } from '$lib/api/client';
-  import { isMobile } from '$lib/hooks/is-mobile.svelte';
 
   let { children }: { children?: Snippet } = $props();
 
@@ -225,7 +224,6 @@
   <div class="flex-1 flex overflow-hidden relative">
     <Rail
       {currentPath}
-      mobile={isMobile.current}
       onToggleConsole={toggleDrawer}
       isConsoleOpen={drawerOpen}
     />

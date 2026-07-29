@@ -13,7 +13,6 @@
     Tv,
     Images,
     PanelLeft,
-    Menu,
     Key,
   } from '@lucide/svelte';
   import { Button } from '$lib/components/ui/button';
@@ -38,7 +37,6 @@
     isConsoleOpen = false,
     expanded = false,
     onToggleExpand,
-    isStandalone = false,
   } = $props<{
     currentPath?: string;
     mobile?: boolean;
@@ -46,16 +44,9 @@
     isConsoleOpen?: boolean;
     expanded?: boolean;
     onToggleExpand?: () => void;
-    isStandalone?: boolean;
   }>();
 
   const sidebar = useSidebar();
-
-  $effect(() => {
-    if (!mobile) {
-      sidebar.setOpenMobile(false);
-    }
-  });
 
   const navItems = [
     { name: 'Live', path: '/live', icon: Tv, disabled: false },
@@ -74,20 +65,6 @@
   ];
 </script>
 
-{#if mobile && isStandalone}
-  <div class="mobile-toggle-owner">
-    <Button
-      variant="ghost"
-      size="icon"
-      class="text-muted-foreground hover:text-foreground hover:bg-muted"
-      aria-label="Open navigation"
-      onclick={() => sidebar.setOpenMobile(true)}
-    >
-      <Menu size={20} />
-    </Button>
-  </div>
-{/if}
-
 <Sidebar
   {mobile}
   collapsible={mobile ? 'offcanvas' : 'none'}
@@ -96,7 +73,7 @@
 >
 
   {#if !mobile}
-    <SidebarHeader class="h-12 flex items-center px-2 border-b border-border">
+    <SidebarHeader class="h-12 flex items-center justify-start px-2 border-b border-border">
       <Button
         variant="ghost"
         size="icon"
@@ -211,10 +188,6 @@
 </Sidebar>
 
 <style>
-  .mobile-toggle-owner {
-    display: contents;
-  }
-
   .nav-label {
     white-space: nowrap;
     overflow: hidden;
