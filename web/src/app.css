@@ -88,6 +88,12 @@
   --sidebar-ring: #1d4ed8;
   --radius: 0.5rem;
 
+  /* Layout: the single source of truth for page and control width.
+     Consumed via var() in component styles; not a Tailwind utility namespace. */
+  --width-page: 1600px;
+  --width-field-control: 420px;
+
+
   /* Desktop Control Variables */
   --control-height: 2.25rem;
   --rail-compact: 48px;
