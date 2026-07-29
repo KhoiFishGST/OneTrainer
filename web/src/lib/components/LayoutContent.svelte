@@ -15,9 +15,7 @@
   import Header from './shell/Header.svelte';
   import Rail from './shell/Rail.svelte';
   import StatusBar from './shell/StatusBar.svelte';
-  import ConsoleDrawer from './shell/ConsoleDrawer.svelte';
   import ErrorBanner from './shell/ErrorBanner.svelte';
-  import DirectoryPicker from './directory/DirectoryPicker.svelte';
   import Toaster from '$lib/components/ui/sonner/sonner.svelte';
   import { SidebarProvider } from '$lib/components/ui/sidebar';
   import { toast } from 'svelte-sonner';
@@ -40,6 +38,27 @@
   let pickerOnSelect = $state<((selectedPath: string) => void) | null>(null);
   let drawerOpen = $state(false);
   let eventClient = $state<EventClient | null>(null);
+
+  // Both are overlays: nothing renders them until the user opens one, so
+  // keeping them out of the first-paint graph costs nothing at runtime.
+  let ConsoleDrawer = $state<typeof import('./shell/ConsoleDrawer.svelte').default | null>(null);
+  let DirectoryPicker = $state<typeof import('./directory/DirectoryPicker.svelte').default | null>(null);
+
+  $effect(() => {
+    if (drawerOpen && !ConsoleDrawer) {
+      import('./shell/ConsoleDrawer.svelte').then((module) => {
+        ConsoleDrawer = module.default;
+      });
+    }
+  });
+
+  $effect(() => {
+    if (pickerOpen && !DirectoryPicker) {
+      import('./directory/DirectoryPicker.svelte').then((module) => {
+        DirectoryPicker = module.default;
+      });
+    }
+  });
 
   const currentModelType = $derived(
     workspace?.draft?.model_type ?? $configQuery.data?.config?.model_type
@@ -181,24 +200,28 @@
         {/if}
       </main>
 
-      <ConsoleDrawer open={drawerOpen && currentPath !== '/console'} onClose={closeDrawer} store={consoleStore} />
+      {#if ConsoleDrawer}
+        <ConsoleDrawer open={drawerOpen && currentPath !== '/console'} onClose={closeDrawer} store={consoleStore} />
+      {/if}
       <StatusBar />
     </div>
   </div>
 
-  <DirectoryPicker
-    open={pickerOpen}
-    initialPath={pickerInitialPath}
-    mode={pickerMode}
-    extensions={pickerExtensions}
-    onSelect={(selectedPath) => {
-      if (pickerOnSelect) {
-        pickerOnSelect(selectedPath);
-      }
-      pickerOpen = false;
-    }}
-    onClose={() => {
-      pickerOpen = false;
-    }}
-  />
+  {#if DirectoryPicker}
+    <DirectoryPicker
+      open={pickerOpen}
+      initialPath={pickerInitialPath}
+      mode={pickerMode}
+      extensions={pickerExtensions}
+      onSelect={(selectedPath) => {
+        if (pickerOnSelect) {
+          pickerOnSelect(selectedPath);
+        }
+        pickerOpen = false;
+      }}
+      onClose={() => {
+        pickerOpen = false;
+      }}
+    />
+  {/if}
 </SidebarProvider>
