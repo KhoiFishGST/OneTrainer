@@ -3,6 +3,15 @@ import AxeBuilder from "@axe-core/playwright";
 
 test.describe("Accessibility Audit (axe-core)", () => {
   async function checkAccessibility(page: any, contextName: string) {
+    // The sheet slide animation (app.css) means toBeVisible() can resolve
+    // while the panel is still moving, so axe would audit a transient
+    // mid-animation frame -- e.g. a button composited against the sliding
+    // backdrop reads as a contrast violation that doesn't exist once the
+    // sheet settles. Wait for every running animation to finish before
+    // auditing so axe only ever sees the settled state.
+    await page.evaluate(async () => {
+      await Promise.all(document.getAnimations().map((a) => a.finished.catch(() => {})));
+    });
     const results = await new AxeBuilder({ page }).analyze();
     const violations = results.violations.filter(
       (v) => v.impact === "critical" || v.impact === "serious"
