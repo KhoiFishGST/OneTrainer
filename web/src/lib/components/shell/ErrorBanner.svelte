@@ -31,6 +31,7 @@
 
 {#if message && !dismissed}
   <div class="error-banner">
+    <!-- py-[7px] preserves the 44px banner height expected by visual baseline persistent-error-state.png -->
     <Alert variant="destructive" class="bg-destructive-surface text-destructive border-b border-destructive flex items-center justify-between gap-3 px-4 py-[7px] text-sm">
       <div class="flex items-center gap-2">
         <strong>Error:</strong>

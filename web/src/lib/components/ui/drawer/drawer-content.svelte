@@ -19,6 +19,14 @@
 
 <DrawerPortal {...portalProps}>
 	<DrawerOverlay />
+	<!--
+		LOCAL MODIFICATION: the `bottom` direction is an inset floating card
+		(inset-x-3 / bottom-3 / max-w-md / rounded-xl / border) rather than
+		upstream's full-bleed sheet (inset-x-0 / bottom-0 / mt-24 / rounded-t-xl /
+		border-t). Every bottom drawer in the app inherits this -- the save-preset
+		drawer, OptionSheet, the concept editor and the dataset picker. Re-running
+		`shadcn-svelte add drawer` will revert it.
+	-->
 	<DrawerPrimitive.Content
 		bind:ref
 		data-slot="drawer-content"
