@@ -1,23 +1,17 @@
 <script lang="ts">
   import { tick } from 'svelte';
-  import { Save, FolderOpen, RotateCcw, RefreshCw, AlertTriangle, Menu } from '@lucide/svelte';
+  import { Save, FolderOpen, Menu } from '@lucide/svelte';
   import Select from '../form/ValueSelect.svelte';
   import { Input as TextInput } from '../ui/input/index.js';
   import { Alert } from '$lib/components/ui/alert';
   import { Button } from '$lib/components/ui/button';
   import { useSidebar } from '$lib/components/ui/sidebar';
-  import { cn } from '$lib/utils';
-  import {
-    createMetaQuery,
-    createPresetsQuery,
-    createLoadPresetMutation,
-    createSavePresetMutation,
-  } from '../../api/queries';
   import { getRouteContext } from '../../config/context';
   import type { ConfigWorkspace } from '../../config/workspace.svelte';
-  import { trainingStore } from '../../events/training-store';
   import { api } from '../../api/client';
   import ThemeToggle from './ThemeToggle.svelte';
+  import HeaderConfigControls from './HeaderConfigControls.svelte';
+  import HeaderStatus from './HeaderStatus.svelte';
 
   const sidebar = (() => {
     try {
@@ -46,13 +40,6 @@
   }
 
   const workspace = $derived(workspaceProp ?? ctx?.workspace);
-  const metaQuery = createMetaQuery();
-  const presetsQuery = createPresetsQuery();
-  const loadPresetMutation = createLoadPresetMutation();
-  const savePresetMutation = createSavePresetMutation();
-
-  const metaData = $derived(metaDataProp ?? $metaQuery.data);
-  const presetsData = $derived(presetsDataProp ?? $presetsQuery.data);
 
   let presetName = $state('');
   let showSaveDialog = $state(false);
@@ -82,93 +69,6 @@
   let saveError = $state<string | null>(null);
   let isOverwritePending = $state(false);
   let overwriteError = $state<string | null>(null);
-
-  const modelTypes = $derived(
-    metaData?.model_types?.map((mt: any) => ({
-      value: mt.value,
-      label: mt.label,
-    })) ?? []
-  );
-
-  const currentModelType = $derived(workspace?.draft?.model_type ?? '');
-
-  const currentModelTypeObj = $derived(
-    metaData?.model_types?.find((mt: any) => mt.value === currentModelType)
-  );
-
-  const trainingMethods = $derived(
-    currentModelTypeObj?.training_methods?.map((tm: any) => ({
-      value: tm.value,
-      label: tm.label,
-    })) ?? []
-  );
-
-  const currentTrainingMethod = $derived(workspace?.draft?.training_method ?? '');
-
-  const presetsTree = $derived(presetsData ?? []);
-
-  const flattenedPresets = $derived.by(() => {
-    const list: Array<{ id: string; label: string }> = [];
-
-    function traverse(nodes: any[], prefix = '') {
-      if (!Array.isArray(nodes)) return;
-      for (const node of nodes) {
-        if (!node) continue;
-        if (node.children && Array.isArray(node.children)) {
-          const nextPrefix = prefix ? `${prefix} / ${node.label}` : node.label;
-          traverse(node.children, nextPrefix);
-        } else if (node.id) {
-          const label = prefix ? `${prefix} / ${node.label}` : node.label;
-          list.push({ id: node.id, label });
-        }
-      }
-    }
-
-    traverse(presetsTree);
-    return list;
-  });
-
-  function handleModelTypeChange(newModelType: string) {
-    if (!workspace) return;
-
-    const newModelTypeObj = metaData?.model_types?.find(
-      (mt: any) => mt.value === newModelType
-    );
-    const supportedMethods =
-      newModelTypeObj?.training_methods?.map((tm: any) => tm.value) ?? [];
-
-    if (
-      supportedMethods.length > 0 &&
-      !supportedMethods.includes(currentTrainingMethod)
-    ) {
-      workspace.setRaw('training_method', supportedMethods[0]);
-    }
-
-    workspace.setRaw('model_type', newModelType);
-  }
-
-  function handleTrainingMethodChange(newMethod: string) {
-    if (!workspace) return;
-    workspace.setRaw('training_method', newMethod);
-  }
-
-  async function handleSelectPreset(presetId: string) {
-    if (!presetId || !workspace) return;
-
-    try {
-      await $loadPresetMutation.mutateAsync({
-        preset_id: presetId,
-        base_revision: workspace.revision,
-        overwrite: false,
-      });
-    } catch (err: any) {
-      const status = err?.status ?? err?.statusCode;
-      if (status === 409) {
-        workspace.conflictRevision = err?.detail?.current_revision ?? null;
-        workspace.state = 'conflict';
-      }
-    }
-  }
 
   function handleLoadConfig() {
     if (ctx?.openFile) {
@@ -250,18 +150,6 @@
   async function handleConfirmOverwrite() {
     await executeSaveConfig(true);
   }
-
-  const trainingState = $derived($trainingStore.status?.state ?? 'IDLE');
-
-  const statusClasses: Record<string, string> = {
-    IDLE: 'bg-muted text-muted-foreground border-border',
-    STARTING: 'bg-info-surface text-info border-info/30 animate-pulse',
-    TRAINING: 'bg-info-surface text-info border-info/30 animate-pulse',
-    PAUSED: 'bg-warning-surface text-warning border-warning/30',
-    STOPPING: 'bg-destructive-surface text-destructive border-destructive/40',
-    FAILED: 'bg-destructive-surface text-destructive border-destructive/40',
-    COMPLETED: 'bg-success-surface text-success border-success/30',
-  };
 </script>
 
 <header class="header">
@@ -284,115 +172,73 @@
 
     <div class="header-divider"></div>
 
-    <div class="selectors">
-      <div class="selector-field">
-        <span class="label-text">Model</span>
-        <div class="header-select-wrapper">
-          <Select
-            ariaLabel="Model Type"
-            value={currentModelType}
-            options={modelTypes}
-            onChange={handleModelTypeChange}
-          />
+    <HeaderConfigControls {workspace} metaData={metaDataProp} presetsData={presetsDataProp}>
+      {#snippet children(config)}
+        <div class="selectors">
+          <div class="selector-field">
+            <span class="label-text">Model</span>
+            <div class="header-select-wrapper">
+              <Select
+                ariaLabel="Model Type"
+                value={config.currentModelType}
+                options={config.modelTypes}
+                onChange={config.onModelTypeChange}
+              />
+            </div>
+          </div>
+
+          <div class="selector-field">
+            <span class="label-text">Method</span>
+            <div class="header-select-wrapper">
+              <Select
+                ariaLabel="Training Method"
+                value={config.currentTrainingMethod}
+                options={config.trainingMethods}
+                onChange={config.onTrainingMethodChange}
+              />
+            </div>
+          </div>
+
+          <div class="selector-field">
+            <span class="label-text">Preset</span>
+            <div class="header-select-wrapper">
+              <Select
+                ariaLabel="Presets"
+                value=""
+                placeholder="Select preset..."
+                options={config.presets}
+                onChange={config.onSelectPreset}
+              />
+            </div>
+          </div>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            class="self-end gap-1.5"
+            onclick={handleLoadConfig}
+          >
+            <FolderOpen size={15} />
+            <span>Load</span>
+          </Button>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            class="self-end gap-1.5"
+            onclick={openSavePresetModal}
+          >
+            <Save size={15} />
+            <span>Save</span>
+          </Button>
         </div>
-      </div>
-
-      <div class="selector-field">
-        <span class="label-text">Method</span>
-        <div class="header-select-wrapper">
-          <Select
-            ariaLabel="Training Method"
-            value={currentTrainingMethod}
-            options={trainingMethods}
-            onChange={handleTrainingMethodChange}
-          />
-        </div>
-      </div>
-
-      <div class="selector-field">
-        <span class="label-text">Preset</span>
-        <div class="header-select-wrapper">
-          <Select
-            ariaLabel="Presets"
-            value=""
-            placeholder="Select preset..."
-            options={flattenedPresets.map((p) => ({ value: p.id, label: p.label }))}
-            onChange={handleSelectPreset}
-          />
-        </div>
-      </div>
-
-      <Button
-        variant="secondary"
-        size="sm"
-        class="self-end gap-1.5"
-        onclick={handleLoadConfig}
-      >
-        <FolderOpen size={15} />
-        <span>Load</span>
-      </Button>
-
-      <Button
-        variant="secondary"
-        size="sm"
-        class="self-end gap-1.5"
-        onclick={openSavePresetModal}
-      >
-        <Save size={15} />
-        <span>Save</span>
-      </Button>
-    </div>
+      {/snippet}
+    </HeaderConfigControls>
   </div>
 
   <div class="header-right">
     <ThemeToggle />
-    {#if workspace}
-      {#if workspace.state === 'saved'}
-        <span
-          class="saved-icon-badge text-success"
-          title="All changes saved to training_presets/#.json"
-          data-testid="saved-icon-badge"
-        >
-          <Save size={16} />
-        </span>
-      {:else if workspace.state === 'failed'}
-        <span class="state-badge bg-destructive-surface text-destructive">Save Failed</span>
-        <Button
-          variant="secondary"
-          size="sm"
-          onclick={() => workspace.retry()}
-        >
-          <RotateCcw size={14} />
-          <span>Retry</span>
-        </Button>
-      {:else if workspace.state === 'conflict'}
-        <span class="state-badge bg-destructive-surface text-destructive">Conflict</span>
-        <Button
-          variant="secondary"
-          size="sm"
-          onclick={() => workspace.reloadServer(true)}
-        >
-          <RefreshCw size={14} />
-          <span>Reload</span>
-        </Button>
-        <Button
-          variant="destructive"
-          size="sm"
-          onclick={() => workspace.overwriteServer()}
-        >
-          <AlertTriangle size={14} />
-          <span>Overwrite</span>
-        </Button>
-      {/if}
-    {/if}
-
-    <span
-      data-testid="training-status-pill"
-      class={cn('status-pill', statusClasses[trainingState] ?? statusClasses.IDLE)}
-      title={$trainingStore.status?.error_message ?? ''}
-    >
-      {trainingState}
-    </span>
+    <HeaderStatus {workspace} />
   </div>
 </header>
 
@@ -400,14 +246,6 @@
   <div class="header-alert-owner">
     <Alert variant="destructive">
       {saveError}
-    </Alert>
-  </div>
-{/if}
-
-{#if trainingState === 'FAILED' && $trainingStore.status?.error_message}
-  <div class="header-alert-owner">
-    <Alert variant="destructive">
-      {$trainingStore.status.error_message}
     </Alert>
   </div>
 {/if}
@@ -543,14 +381,6 @@
     letter-spacing: 0.05em;
   }
 
-  .state-badge {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-  }
-
   .modal-field {
     display: flex;
     flex-direction: column;
@@ -561,35 +391,4 @@
   .header-alert-owner {
     display: contents;
   }
-
-  .saved-icon-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 4px;
-    border-radius: 4px;
-    opacity: 0.9;
-    transition: opacity 0.2s ease, transform 0.2s ease;
-  }
-
-  .saved-icon-badge:hover {
-    opacity: 1;
-    transform: scale(1.1);
-  }
-
-  .status-pill {
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    border-width: 1px;
-    border-style: solid;
-  }
 </style>
-
