@@ -138,6 +138,7 @@
         {@const error = getFieldError(field)}
         {@const fieldValue = getFieldValue(field, 0)}
         {@const isFullWidth = ['base_model_name', 'model_type', 'output_model_destination'].includes(primaryKey)}
+        {@const wantsRoom = controlType === 'directory' || controlType === 'text'}
 
         <Field
           id={field.id}
@@ -146,6 +147,7 @@
           {error}
           inline={false}
           fullWidth={isFullWidth}
+          wide={wantsRoom}
         >
           {#snippet children({ id, ariaDescribedBy })}
             {#if controlType === 'toggle'}
@@ -330,25 +332,53 @@
     }
   }
 
+  /* The label and control tracks live here, on the group, rather than on each
+     field. That is what lets every control in a panel line up: the label track
+     resolves to the widest label in the panel, and each field opts into these
+     shared tracks with `grid-template-columns: subgrid` (see Field.svelte).
+
+     Tracks are content-sized rather than 1fr, so a control sits just after its
+     label and any leftover width collects at the right edge of the panel. */
   .group-fields {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 0.625rem 1.5rem;
+    /* Column gap separates one label/control pair from the next. The tighter
+       gap *within* a pair is set by Field.svelte's own column-gap. */
+    gap: 0.625rem 2rem;
     width: 100%;
     align-items: start;
+    justify-content: start;
   }
 
-  @container (min-width: 900px) {
-    .group-fields:not(.components-table) {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Narrow panels stack label above control; from here they sit side by side.
+     Field.svelte switches to subgrid at the same width. */
+  @container (min-width: 560px) {
+    .group-fields {
+      grid-template-columns:
+        fit-content(var(--width-field-label))
+        fit-content(var(--width-field-control));
     }
   }
 
+  /* Wide enough for a second label/control pair. Both tracks are content-sized
+     with the tokens as ceilings, so a panel of short selects packs tight while
+     a panel of paths still gets full-width inputs. Sized with margin to spare:
+     a realistic worst case is ~1180px, and a 1440px window yields ~1280px of
+     panel interior. */
+  @container (min-width: 1200px) {
+    .group-fields:not(.components-table) {
+      grid-template-columns:
+        fit-content(var(--width-field-label))
+        fit-content(var(--width-field-control))
+        fit-content(var(--width-field-label))
+        fit-content(var(--width-field-control));
+    }
+  }
+
+  /* Model components stay a single pair at any width, but share the same grid
+     so their fields can use subgrid too. */
   .group-fields.components-table {
-    display: flex;
-    flex-direction: column;
-    gap: 0.875rem;
+    gap: 0.875rem 1.25rem;
     align-items: stretch;
-    width: 100%;
   }
 </style>

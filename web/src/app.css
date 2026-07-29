@@ -91,7 +91,15 @@
   /* Layout: the single source of truth for page and control width.
      Consumed via var() in component styles; not a Tailwind utility namespace. */
   --width-page: 1600px;
-  --width-field-control: 420px;
+  /* Ceiling for the control column, not a fixed width: the column sizes to the
+     widest control in its panel and stops here. There is deliberately no floor
+     — a column of toggles should collapse to the toggles, pulling the next
+     column left rather than padding dead space after each switch. */
+  --width-field-control: 360px;
+  /* Upper bound on the label column. The column itself sizes to the longest
+     label in its panel; this only stops one outlier label from pushing every
+     control in that panel to the right. Longer labels wrap. */
+  --width-field-label: 280px;
 
 
   /* Desktop Control Variables */

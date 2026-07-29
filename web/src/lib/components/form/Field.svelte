@@ -10,6 +10,7 @@
     error,
     inline = false,
     fullWidth = false,
+    wide = false,
     children,
   }: {
     id: string;
@@ -18,6 +19,12 @@
     error?: string;
     inline?: boolean;
     fullWidth?: boolean;
+    /**
+     * The control benefits from room to read its value — a path, a filename,
+     * free text. Such controls claim the full control-width token; everything
+     * else lets the shared column shrink to fit its content.
+     */
+    wide?: boolean;
     children?: Snippet<[{ id: string; ariaDescribedBy?: string }]>;
   } = $props();
 
@@ -107,7 +114,7 @@
       </div>
     {/if}
 
-    <div class="field-control-side">
+    <div class="field-control-side" class:is-wide={wide}>
       {#if children}
         {@render children({ id: inputId, ariaDescribedBy })}
       {/if}
@@ -126,26 +133,38 @@
 </div>
 
 <style>
+  /* Narrow panels: label stacked above control, one field per row. */
   .form-field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-column: span 1;
+    align-items: center;
+    /* Set the two axes separately: the shorthand would also collapse the
+       label-to-control gutter to the error-row spacing. */
+    row-gap: 0.25rem;
+    column-gap: 0.75rem;
     width: 100%;
+  }
+
+  /* Wide enough for label and control side by side. The field adopts the
+     group's shared tracks (SchemaForm.svelte) instead of defining its own, so
+     every control in the panel aligns to the panel's longest label. The
+     matching breakpoint lives there — keep the two in step. */
+  @container (min-width: 560px) {
+    .form-field {
+      grid-template-columns: subgrid;
+      grid-column: span 2;
+      width: auto;
+    }
   }
 
   .form-field.is-full-width {
-    flex: 1 1 100%;
-    width: 100%;
     grid-column: 1 / -1;
   }
 
+  /* The row is only a grouping wrapper; its children are the real grid items. */
   .field-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    gap: 0.75rem;
-    min-height: 36px;
+    display: contents;
   }
 
   .field-label-side {
@@ -153,32 +172,40 @@
     display: flex;
     align-items: center;
     gap: 0.375rem;
-    flex: 1 1 auto;
     min-width: 0;
+    min-height: 36px;
   }
 
+  /* The control column is content-sized (see SchemaForm), so a short select or
+     a toggle leaves no dead space before the next pair. No floor here: the
+     column should be free to shrink to a 32px switch. */
   .field-control-side {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    flex: 0 1 var(--width-field-control);
-    width: var(--width-field-control);
+    width: 100%;
     min-width: 0;
+    min-height: 36px;
   }
 
-  @media (max-width: 767px) {
-    .field-row {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.5rem;
-    }
-
-    .field-control-side {
-      flex: 1 1 100%;
-      width: 100%;
-      min-width: 0;
+  /* Paths and free text read badly when cropped, so they claim the full
+     control width and, being the widest item, size the shared column. Scoped
+     to the paired layout: while stacked, the control is already full width and
+     a 360px floor would overflow a phone. */
+  @container (min-width: 560px) {
+    .field-control-side.is-wide {
+      min-width: var(--width-field-control);
     }
   }
+
+  /* A full-width field has no second pair beside it, so let its control use
+     the remaining tracks rather than stopping at the first control track. */
+  @container (min-width: 560px) {
+    .form-field.is-full-width .field-control-side {
+      grid-column: 2 / -1;
+    }
+  }
+
 
   .field-label {
     font-size: 0.875rem;
@@ -228,6 +255,7 @@
   }
 
   .field-error {
+    grid-column: 1 / -1;
     font-size: 0.75rem;
     color: var(--destructive);
     font-weight: 500;
