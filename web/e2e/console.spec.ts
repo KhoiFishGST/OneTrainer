@@ -16,9 +16,18 @@ test.describe("Console Connection Flows", () => {
     await filterInput.fill("stderr-line");
     await expect(page.locator(".console-row", { hasText: "stderr-line" })).toBeVisible();
 
-    await filterInput.fill("");
-    await expect(page.locator(".console-row", { hasText: "20%" })).toBeVisible({ timeout: 10000 });
-    await expect(page.locator(".console-row", { hasText: "10%" })).not.toBeVisible();
+    // Filter instead of clearing. The console viewport is virtualised and
+    // follows the tail, so it renders only ~33 rows around the scroll position.
+    // The four marker lines are written at server start, and by the time this
+    // spec runs inside a full suite the backlog has grown past 5,000 lines of
+    // request logging -- the markers are then nowhere in the DOM, and asserting
+    // on them races the auto-scroll. Filtering to "0%" matches only the CR
+    // progress output, which is what this test is actually about.
+    await filterInput.fill("0%");
+    await expect(page.locator(".console-row", { hasText: "20%" })).toBeVisible();
+    await expect(page.locator(".console-row", { hasText: "10%" })).toHaveCount(0);
+    // The CR sequence must have collapsed into exactly one row.
+    await expect(page.locator(".console-row")).toHaveCount(1);
   });
 
   test("scrolling pauses follow mode, Jump to latest resumes it, filtering works", async ({ page }) => {
@@ -118,7 +127,12 @@ test.describe("Console Connection Flows", () => {
     await expect(page.locator(".console-row", { hasText: "stderr-line" })).toBeVisible();
     await expect(page.locator(".console-row")).toHaveCount(1);
 
-    await filterInput.fill("");
-    await expect(page.locator(".console-row", { hasText: "20%" })).toBeVisible({ timeout: 10000 });
+    // Same reason as the first test: filter rather than clear, because the
+    // virtualised viewport does not render the oldest rows once the backlog is
+    // large. Exactly one match also proves the reconnect did not re-apply the
+    // backlog on top of the rows already held.
+    await filterInput.fill("0%");
+    await expect(page.locator(".console-row", { hasText: "20%" })).toBeVisible();
+    await expect(page.locator(".console-row")).toHaveCount(1);
   });
 });
