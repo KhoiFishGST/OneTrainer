@@ -68,7 +68,7 @@
 <Sidebar
   {mobile}
   collapsible={mobile ? 'offcanvas' : 'none'}
-  class={cn('rail w-[var(--rail-width)] bg-card border-r border-border flex flex-col h-full transition-[width] duration-200 ease-in-out overflow-hidden select-none', expanded && 'expanded', mobile && 'p-4')}
+  class={cn('rail w-[var(--rail-width)] bg-card border-r border-border flex flex-col h-full transition-[width] duration-200 ease-in-out overflow-hidden select-none', expanded && 'expanded', mobile && 'p-2.5 py-3')}
   style="--rail-width: {expanded ? 'var(--rail-expanded)' : 'var(--rail-compact)'}"
 >
 
@@ -86,10 +86,10 @@
     </SidebarHeader>
   {/if}
 
-  <SidebarContent class={cn('flex flex-col p-2 gap-1 overflow-y-auto flex-1', mobile && 'p-4 gap-2')}>
+  <SidebarContent class={cn('flex flex-col p-2 gap-1 overflow-y-auto flex-1', mobile && 'p-1 gap-1')}>
     <SidebarGroup class="p-0">
       <SidebarGroupContent>
-        <SidebarMenu class={mobile ? 'gap-2' : 'gap-1'} aria-label={mobile ? 'Mobile Navigation' : 'Sidebar'}>
+        <SidebarMenu class={mobile ? 'gap-0.5' : 'gap-1'} aria-label={mobile ? 'Mobile Navigation' : 'Sidebar'}>
           {#each navItems as item}
             <SidebarMenuItem>
               <SidebarMenuButton isActive={currentPath === item.path}>
@@ -99,14 +99,14 @@
                       {...props}
                       href={item.path}
                       class={cn(
-                        'flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors opacity-40 cursor-not-allowed max-md:min-h-[44px]',
+                        'flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors opacity-40 cursor-not-allowed max-md:min-h-[32px] max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2',
                         props.class as string
                       )}
                       aria-disabled="true"
                       title="Unavailable in Phase A"
                       onclick={(e) => e.preventDefault()}
                     >
-                      <item.icon size={20} class="shrink-0 w-5 h-5" />
+                      <item.icon size={20} class="shrink-0 w-5 h-5 max-md:w-4 max-md:h-4" />
                       <span class={cn('nav-label', !expanded && !mobile && 'opacity-0 w-0 pointer-events-none')}>{item.name}</span>
                     </a>
                   {:else}
@@ -114,7 +114,7 @@
                       {...props}
                       href={item.path}
                       class={cn(
-                        'flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors max-md:min-h-[44px]',
+                        'flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors max-md:min-h-[32px] max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2',
                         currentPath === item.path && 'bg-accent text-accent-foreground font-medium',
                         props.class as string
                       )}
@@ -122,7 +122,7 @@
                         if (mobile) sidebar.setOpenMobile(false);
                       }}
                     >
-                      <item.icon size={20} class="shrink-0 w-5 h-5" />
+                      <item.icon size={20} class="shrink-0 w-5 h-5 max-md:w-4 max-md:h-4" />
                       <span class={cn('nav-label', !expanded && !mobile && 'opacity-0 w-0 pointer-events-none')}>{item.name}</span>
                     </a>
                   {/if}
@@ -138,7 +138,7 @@
                     {...props}
                     variant="ghost"
                     class={cn(
-                      'flex w-full items-center justify-start gap-3 px-2.5 py-2 text-muted-foreground rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors font-normal h-auto min-h-0 hover:bg-muted hover:text-foreground',
+                      'flex w-full items-center justify-start gap-3 px-2.5 py-2 text-muted-foreground rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors font-normal h-auto min-h-0 hover:bg-muted hover:text-foreground max-md:min-h-[32px] max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2',
                       isConsoleOpen && 'bg-accent text-accent-foreground font-medium',
                       props.class as string
                     )}
@@ -147,7 +147,7 @@
                       sidebar.setOpenMobile(false);
                     }}
                   >
-                    <Terminal size={20} class="shrink-0 w-5 h-5" />
+                    <Terminal size={20} class="shrink-0 w-5 h-5 max-md:w-4 max-md:h-4" />
                     <span class="nav-label">Console</span>
                   </Button>
                 {/snippet}
