@@ -2,6 +2,7 @@
   import { getRouteContext } from '$lib/config/context';
   import SchemaForm from '$lib/components/form/SchemaForm.svelte';
   import PageHeader from '$lib/components/layout/PageHeader.svelte';
+  import RoutePage from '$lib/components/layout/RoutePage.svelte';
   import FormPageSkeleton from '$lib/components/loading/FormPageSkeleton.svelte';
   import * as Tabs from '$lib/components/ui/tabs';
 
@@ -31,8 +32,8 @@
 {#if !ctx.workspace}
   <FormPageSkeleton />
 {:else}
-  <div class="route-page">
-    <PageHeader title={tab.label || 'Model'} class="mb-4" />
+  <RoutePage>
+    <PageHeader title={tab.label || 'Model'} />
 
     <!-- Connected Text-Only Model Sub-Nav Tabs -->
     <div class="model-tab-container">
@@ -56,18 +57,13 @@
         />
       </div>
     </div>
-  </div>
+  </RoutePage>
 {/if}
 
 <style>
-  .route-page {
-    padding: 1.5rem;
-  }
-
   .model-tab-container {
     display: flex;
     flex-direction: column;
-    width: 740px;
-    max-width: 100%;
+    width: 100%;
   }
 </style>

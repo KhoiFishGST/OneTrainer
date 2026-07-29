@@ -5,6 +5,7 @@
   import Field from '$lib/components/form/Field.svelte';
   import Select from '$lib/components/form/ValueSelect.svelte';
   import PageHeader from '$lib/components/layout/PageHeader.svelte';
+  import RoutePage from '$lib/components/layout/RoutePage.svelte';
   import { Alert } from '$lib/components/ui/alert';
   import FormPageSkeleton from '$lib/components/loading/FormPageSkeleton.svelte';
 
@@ -56,11 +57,11 @@
 {#if !ctx.workspace}
   <FormPageSkeleton />
 {:else}
-  <div class="route-page">
-    <PageHeader title={tab.label || 'LoRA'} class="mb-4" />
+  <RoutePage>
+    <PageHeader title={tab.label || 'LoRA'} />
 
     {#if !isLoraActive}
-      <Alert class="mb-5 max-w-[740px]">
+      <Alert>
         <span class="warning-icon" aria-hidden="true">⚠️</span>
         <div class="warning-text">
           LoRA / PEFT options are disabled because the current training method is <strong>{trainingMethod}</strong>.
@@ -96,14 +97,10 @@
         </FormPanel>
       </div>
     </fieldset>
-  </div>
+  </RoutePage>
 {/if}
 
 <style>
-  .route-page {
-    padding: 1.5rem;
-  }
-
   .warning-icon {
     font-size: 1.125rem;
     line-height: 1;
@@ -135,7 +132,6 @@
   .lora-container {
     display: flex;
     flex-direction: column;
-    width: 740px;
-    max-width: 100%;
+    width: 100%;
   }
 </style>

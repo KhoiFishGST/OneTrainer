@@ -4,6 +4,7 @@
   import OptimizerParamsModal from '$lib/components/form/OptimizerParamsModal.svelte';
   import SchedulerParamsModal from '$lib/components/form/SchedulerParamsModal.svelte';
   import PageHeader from '$lib/components/layout/PageHeader.svelte';
+  import RoutePage from '$lib/components/layout/RoutePage.svelte';
   import FormPageSkeleton from '$lib/components/loading/FormPageSkeleton.svelte';
   import * as Tabs from '$lib/components/ui/tabs';
 
@@ -67,8 +68,8 @@
 {#if !ctx.workspace}
   <FormPageSkeleton />
 {:else}
-  <div class="route-page">
-    <PageHeader title={tab.label || 'Training'} class="mb-4" />
+  <RoutePage>
+    <PageHeader title={tab.label || 'Training'} />
 
     <!-- Connected Text-Only Training Sub-Nav Tabs -->
     <div class="training-tab-container">
@@ -94,30 +95,25 @@
         />
       </div>
     </div>
+  </RoutePage>
 
-    <OptimizerParamsModal
-      bind:open={optimizerModalOpen}
-      values={ctx.workspace.draft}
-      onSave={handleSaveOptimizer}
-    />
+  <OptimizerParamsModal
+    bind:open={optimizerModalOpen}
+    values={ctx.workspace.draft}
+    onSave={handleSaveOptimizer}
+  />
 
-    <SchedulerParamsModal
-      bind:open={schedulerModalOpen}
-      values={ctx.workspace.draft}
-      onSave={handleSaveScheduler}
-    />
-  </div>
+  <SchedulerParamsModal
+    bind:open={schedulerModalOpen}
+    values={ctx.workspace.draft}
+    onSave={handleSaveScheduler}
+  />
 {/if}
 
 <style>
-  .route-page {
-    padding: 1.5rem;
-  }
-
   .training-tab-container {
     display: flex;
     flex-direction: column;
-    width: 740px;
-    max-width: 100%;
+    width: 100%;
   }
 </style>

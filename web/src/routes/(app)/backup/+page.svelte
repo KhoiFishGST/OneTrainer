@@ -10,6 +10,7 @@
     createRequestSaveMutation,
   } from '$lib/api/queries';
   import PageHeader from '$lib/components/layout/PageHeader.svelte';
+  import RoutePage from '$lib/components/layout/RoutePage.svelte';
   import FormPageSkeleton from '$lib/components/loading/FormPageSkeleton.svelte';
   import { Button } from '$lib/components/ui/button';
   import { toast as sonnerToast } from 'svelte-sonner';
@@ -69,8 +70,8 @@
 {#if !ctx.workspace}
   <FormPageSkeleton />
 {:else}
-  <div class="route-page">
-    <PageHeader title={tab.label || 'Backup'} class="mb-6">
+  <RoutePage>
+    <PageHeader title={tab.label || 'Backup'}>
       {#snippet actions()}
         <Button
           variant="secondary"
@@ -109,11 +110,5 @@
       setRaw={(path: string, val: any) => ctx.workspace?.setRaw(path, val)}
       openDirectory={ctx.openDirectory}
     />
-  </div>
+  </RoutePage>
 {/if}
-
-<style>
-  .route-page {
-    padding: 1.5rem;
-  }
-</style>
