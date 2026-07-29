@@ -136,6 +136,7 @@
   .form-field.is-full-width {
     flex: 1 1 100%;
     width: 100%;
+    grid-column: 1 / -1;
   }
 
   .field-row {
@@ -160,9 +161,9 @@
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    flex: 0 0 420px;
-    width: 420px;
-    min-width: 420px;
+    flex: 0 1 var(--width-field-control);
+    width: var(--width-field-control);
+    min-width: 0;
   }
 
   @media (max-width: 767px) {

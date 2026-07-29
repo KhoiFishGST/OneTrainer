@@ -301,8 +301,7 @@
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-    width: 740px;
-    max-width: 100%;
+    width: 100%;
   }
 
   .schema-form.is-training-tab {
@@ -332,10 +331,17 @@
   }
 
   .group-fields {
-    display: flex;
-    flex-direction: column;
-    gap: 0.625rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.625rem 1.5rem;
     width: 100%;
+    align-items: start;
+  }
+
+  @container (min-width: 900px) {
+    .group-fields:not(.components-table) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
 
   .group-fields.components-table {

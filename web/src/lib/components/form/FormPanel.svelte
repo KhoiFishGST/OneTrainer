@@ -16,7 +16,7 @@
   } = $props();
 </script>
 
-<Card.Root class={cn("form-panel w-full max-w-[740px] p-5 flex flex-col gap-4 border border-border bg-card text-card-foreground rounded-lg shadow-sm", isComponentsGroup && "is-components-group")}>
+<Card.Root class={cn("form-panel @container w-full p-5 flex flex-col gap-4 border border-border bg-card text-card-foreground rounded-lg shadow-sm", isComponentsGroup && "is-components-group")}>
   {#if title && !hideTitle}
     <Card.Header class="p-0 space-y-0">
       <Card.Title class="panel-title text-base font-semibold text-primary">{title}</Card.Title>
