@@ -7,7 +7,7 @@ import { expect, test } from "@playwright/test";
  * rather than raising the numbers.
  */
 const LOGIN_FILE_BUDGET = 26; // measured 23 files
-const LIVE_BYTE_BUDGET = 860 * 1024; // measured 786,180 bytes (~768 KB)
+const LIVE_BYTE_BUDGET = 800 * 1024; // measured ~786,180 bytes
 
 test.describe("bundle budgets", () => {
   test("the login page does not download the application shell", async ({ page }) => {
