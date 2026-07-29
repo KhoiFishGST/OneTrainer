@@ -32,8 +32,12 @@ describe('RailContent component', () => {
     const panel = screen.getByText('Live').closest('[role="dialog"]');
     // `w-(--sidebar-width)` alone loses to sheet-content's
     // `data-[side=left]:w-3/4`, which carries an attribute qualifier and so
-    // has higher specificity. Matching the variant lets tailwind-merge drop
-    // the loser instead.
+    // has higher specificity. Matching the variant is what wins -- but not by
+    // tailwind-merge dropping the loser: the two classes sit in different
+    // tailwind-merge groups (`w` vs `data-[side=left]:w`), so both reach the
+    // DOM. They tie on specificity, and Tailwind sorts arbitrary values after
+    // named ones, so ours lands later in the stylesheet and takes effect. The
+    // e2e asserts the rendered width; this only pins the class.
     expect(panel?.className).toContain('data-[side=left]:w-[var(--sidebar-width)]');
   });
 });

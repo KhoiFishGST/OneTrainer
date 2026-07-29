@@ -71,6 +71,14 @@
   class={cn(
     'rail w-[var(--rail-width)] bg-card border-r border-border flex flex-col h-full transition-[width] duration-200 ease-in-out overflow-hidden select-none',
     expanded && 'expanded',
+    // The `data-[side=left]:` variant is load-bearing. A plain
+    // `w-[var(--sidebar-width)]` loses to sheet-content's
+    // `data-[side=left]:w-3/4` on specificity, and tailwind-merge will not
+    // save us: the two are in different merge groups (`w` vs
+    // `data-[side=left]:w`), so both ship to the DOM. Matching the variant
+    // ties the specificity, and Tailwind sorts arbitrary values after named
+    // ones, so ours lands later in the stylesheet and wins. Drop the variant
+    // and the drawer silently reverts to 75% of the viewport.
     mobile && 'p-2 data-[side=left]:w-[var(--sidebar-width)]'
   )}
   style="--rail-width: {expanded ? 'var(--rail-expanded)' : 'var(--rail-compact)'}"
@@ -94,11 +102,11 @@
     <SidebarGroup class={cn('p-0', mobile && 'flex-1')}>
       <SidebarGroupContent class={mobile ? 'h-full' : undefined}>
         <SidebarMenu
-          class={mobile ? 'h-full gap-1' : 'gap-1'}
+          class={mobile ? 'h-full gap-0.5' : 'gap-1'}
           aria-label={mobile ? 'Mobile Navigation' : 'Sidebar'}
         >
           {#each navItems as item}
-            <SidebarMenuItem class={mobile ? 'flex-1 min-h-[40px]' : undefined}>
+            <SidebarMenuItem class={mobile ? 'flex-1 min-h-[44px]' : undefined}>
               <SidebarMenuButton isActive={currentPath === item.path}>
                 {#snippet child({ props })}
                   {#if item.disabled}
@@ -138,7 +146,7 @@
             </SidebarMenuItem>
           {/each}
           {#if mobile && onToggleConsole}
-            <SidebarMenuItem class={mobile ? 'flex-1 min-h-[40px]' : undefined}>
+            <SidebarMenuItem class={mobile ? 'flex-1 min-h-[44px]' : undefined}>
               <SidebarMenuButton isActive={isConsoleOpen}>
                 {#snippet child({ props })}
                   <Button

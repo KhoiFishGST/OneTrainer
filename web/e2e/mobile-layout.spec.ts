@@ -100,29 +100,110 @@ test.describe("Phone layout", () => {
     expect(box.width).toBeGreaterThanOrEqual(143);
   });
 
-  test("navigation rows are at least 44px apart", async ({ page }) => {
+  test("the navigation drawer slides in from the edge", async ({ page }) => {
     await page.goto("/general");
-    await page.getByRole("button", { name: "Open navigation" }).click();
-    await expect(page.getByRole("dialog", { name: "Navigation" })).toBeVisible();
+    await page.waitForLoadState("networkidle");
 
-    const tooTight = await page.evaluate(() => {
-      const dlg = document.querySelector('[role="dialog"]')!;
-      const rows = [...dlg.querySelectorAll('a[href]')] as HTMLElement[];
-      const out: string[] = [];
-      for (let i = 1; i < rows.length; i++) {
-        const pitch =
-          rows[i].getBoundingClientRect().top - rows[i - 1].getBoundingClientRect().top;
-        if (pitch < 44) {
-          out.push(`${rows[i - 1].textContent?.trim()} -> ${rows[i].textContent?.trim()}: ${Math.round(pitch)}px`);
+    // Arm before opening. The animation is 200ms and does not persist after it
+    // finishes, so sampling after the click is a race. The observer catches the
+    // drawer the moment bits-ui inserts it, pauses its animation, and reads the
+    // box at both ends of the timeline -- deterministic, no timing assumptions.
+    await page.evaluate(() => {
+      (window as unknown as Record<string, unknown>).__sheetSample = null;
+      const observer = new MutationObserver(() => {
+        const el = document.querySelector("[data-dialog-content][data-side]") as HTMLElement | null;
+        if (!el) return;
+        observer.disconnect();
+        const anims = el.getAnimations();
+        const sample: Record<string, unknown> = {
+          animationCount: anims.length,
+          animationName: getComputedStyle(el).animationName,
+          width: el.getBoundingClientRect().width,
+        };
+        if (anims.length > 0) {
+          const anim = anims[0];
+          anim.pause();
+          anim.currentTime = 0;
+          sample.startX = el.getBoundingClientRect().x;
+          anim.currentTime = Number(anim.effect!.getComputedTiming().duration) || 200;
+          sample.endX = el.getBoundingClientRect().x;
+          anim.play();
         }
-      }
-      return out;
+        (window as unknown as Record<string, unknown>).__sheetSample = sample;
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
     });
 
-    // Pitch, not box height: two 36px rows 2px apart satisfy a box check via
-    // overlapping ::after overlays while the lower half of each row actually
-    // activates its neighbour.
-    expect(tooTight, `Rows closer than 44px:\n${tooTight.join("\n")}`).toEqual([]);
+    await page.getByRole("button", { name: "Open navigation" }).click();
+    await page.waitForFunction(() => (window as unknown as Record<string, unknown>).__sheetSample !== null);
+
+    const sample = (await page.evaluate(
+      () => (window as unknown as Record<string, unknown>).__sheetSample
+    )) as { animationCount: number; animationName: string; width: number; startX?: number; endX?: number };
+
+    expect(
+      sample.animationCount,
+      `The drawer has no running animation (animation-name: ${sample.animationName}). ` +
+        `The sheet keyframes in src/app.css are the only thing that animates it; ` +
+        `Tailwind's animate-in/slide-in-from-* utilities compile to nothing in this project.`
+    ).toBeGreaterThan(0);
+    expect(sample.animationName).not.toBe("none");
+
+    // It must travel by its own width, from fully off the left edge to rest.
+    expect(sample.startX!, "drawer does not start off-screen").toBeLessThanOrEqual(
+      -sample.width + 1
+    );
+    expect(sample.endX!, "drawer does not come to rest at the left edge").toBeGreaterThanOrEqual(-1);
+    expect(sample.endX! - sample.startX!, "drawer barely moves").toBeGreaterThanOrEqual(
+      sample.width - 1
+    );
+
+    // The animation must not have cost the drawer its overlay or its focus trap.
+    await expect(page.getByRole("dialog", { name: "Navigation" })).toBeVisible();
+    await expect(page.locator("[data-dialog-overlay]")).toBeVisible();
+  });
+
+  test("navigation rows are at least 44px apart and 44px tall", async ({ page }) => {
+    // 844 is the suite's default phone, 667 an iPhone SE, 640 a common short
+    // Android. Rows are `flex-1` inside the drawer, so their height falls out
+    // of the viewport height -- a single tall-phone run cannot see the floor.
+    for (const height of [844, 667, 640]) {
+      await page.setViewportSize({ width: 390, height });
+      await page.goto("/general");
+      await page.getByRole("button", { name: "Open navigation" }).click();
+      await expect(page.getByRole("dialog", { name: "Navigation" })).toBeVisible();
+
+      const problems = await page.evaluate(() => {
+        const dlg = document.querySelector('[role="dialog"]')!;
+        // `a[href], button` rather than anchors alone: the last nav anchor and
+        // the console button are adjacent, so anchors-only leaves that pair
+        // unchecked.
+        const rows = ([...dlg.querySelectorAll('a[href], button')] as HTMLElement[]).filter(
+          (r) => r.getBoundingClientRect().height > 0
+        );
+        const out: string[] = [];
+        for (let i = 0; i < rows.length; i++) {
+          const box = rows[i].getBoundingClientRect();
+          const label = rows[i].textContent?.trim();
+          // Pitch alone is not enough: two 36px rows 8px apart have a 44px
+          // pitch while each tap target is 36px. Box height alone is not
+          // enough either -- overlapping ::after overlays satisfied it while
+          // the lower half of each row activated its neighbour. Assert both.
+          if (box.height < 44) {
+            out.push(`${label}: ${Math.round(box.height)}px tall`);
+          }
+          if (i > 0) {
+            const pitch = box.top - rows[i - 1].getBoundingClientRect().top;
+            if (pitch < 44) {
+              out.push(`${rows[i - 1].textContent?.trim()} -> ${label}: ${Math.round(pitch)}px apart`);
+            }
+          }
+        }
+        return out;
+      });
+
+      expect(problems, `Undersized rows at ${height}px tall:\n${problems.join("\n")}`).toEqual([]);
+    }
   });
 
   test("the navigation fills its drawer without dead space or scrolling", async ({ page }) => {
