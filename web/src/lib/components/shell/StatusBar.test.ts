@@ -1,19 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/svelte';
 import { expect, it, describe, beforeEach, afterEach, vi } from 'vitest';
-import { mockIsMobile } from '$lib/hooks/mock-is-mobile.svelte';
 import StatusBarTestWrapper from './StatusBarTestWrapper.svelte';
 import { trainingStore } from '../../events/training-store';
 import { api } from '../../api/client';
 
-vi.mock('$lib/hooks/is-mobile.svelte', () => ({
-  get isMobile() {
-    return mockIsMobile;
-  },
-}));
-
 describe('StatusBar component', () => {
   beforeEach(() => {
-    mockIsMobile.current = false;
     trainingStore.reset();
     vi.restoreAllMocks();
   });
@@ -133,7 +125,6 @@ describe('StatusBar component', () => {
     const sampleSpy = vi.spyOn(api, 'requestSample').mockResolvedValue(undefined as any);
     const backupSpy = vi.spyOn(api, 'requestBackup').mockResolvedValue(undefined as any);
 
-    mockIsMobile.current = true;
     Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 390 });
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
@@ -169,4 +160,44 @@ describe('StatusBar component', () => {
     await fireEvent.click(sampleMenuItem);
     expect(sampleSpy).toHaveBeenCalled();
   });
+
+  it('keeps secondary control labels accessible while hiding them visually on phones', () => {
+    trainingStore.setStatus({
+      state: 'TRAINING',
+      step: 10,
+      max_steps: 100,
+      epoch: 1,
+      max_epochs: 10,
+      speed_its: 1.5,
+      elapsed_seconds: 10,
+      eta_seconds: 90,
+      has_snapshot: true,
+    });
+
+    render(StatusBarTestWrapper, {});
+
+    // The label element still exists (so the button keeps its accessible
+    // name) but is sr-only below md, which is what makes it icon-only.
+    const pauseLabel = screen.getByText('Pause');
+    expect(pauseLabel.className).toContain('max-md:sr-only');
+
+    // The primary action keeps its label at every width.
+    trainingStore.reset();
+  });
+
+  it('keeps the primary action labelled at every width', () => {
+    render(StatusBarTestWrapper, {});
+
+    const startLabel = screen.getByText('Start Training');
+    expect(startLabel.className).not.toContain('sr-only');
+  });
+
+  it('does not gate the status bar on the isMobile media query', async () => {
+    const source = (
+      await import('./StatusBar.svelte?raw')
+    ).default as unknown as string;
+
+    expect(source).not.toContain('isMobile');
+  });
 });
+
