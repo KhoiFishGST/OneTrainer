@@ -136,12 +136,16 @@
   --popover-foreground: #e8edf2;
   --primary: #2563eb;
   --primary-foreground: #ffffff;
-  /* Dark theme hover goes lighter -- darkening would recede into the
-     background instead of reading as emphasis. #3b82f6 (the shadcn default)
-     only holds 3.68:1 against white text, below the 4.5:1 floor, so this is
-     pulled back to #2d6aea: 4.815:1 contrast with a 9.74% luminance shift,
-     still clearly lighter than the resting --primary. */
-  --primary-hover: #2d6aea;
+  /* Primary darkens on hover in BOTH themes, not just light. The
+     foreground text is white, so lightening the button burns contrast --
+     #3b82f6 (the shadcn default) only holds 3.68:1, below the 4.5:1 floor,
+     and even the more conservative #2d6aea barely cleared it (4.815:1) with
+     a hover step too small to read as emphasis (9.74% luminance change).
+     Darkening instead moves away from the white foreground, so contrast
+     goes up, not down, and a solid blue block stays legible against the
+     dark page when darkened. Same value as the light theme: 6.70:1 against
+     white text, 30.3% luminance shift. */
+  --primary-hover: #1d4ed8;
   --secondary: #1f2a37;
   --secondary-foreground: #e8edf2;
   --secondary-hover: #2a3746;
@@ -152,10 +156,15 @@
   --destructive: #ef4444;
   --destructive-foreground: #0c1118;
   --destructive-surface: #2a1215;
-  /* Lighter than the resting surface (same direction as the other dark
-     hover tokens): 4.507:1 against --destructive text, 21.6% luminance
-     shift. */
-  --destructive-surface-hover: #301417;
+  /* Darker than the resting surface, same reasoning as --primary-hover
+     above: the foreground here is --destructive (#ef4444), a light red,
+     sitting well above this surface's luminance, so darkening moves away
+     from it and raises contrast instead of burning it. A lighter surface
+     (previously tried: #301417) only cleared the 4.5:1 floor by a hair
+     (4.507:1); darkening instead gives 4.957:1 against --destructive text
+     with a 35.7% luminance shift -- a clearly visible step with real
+     margin above the floor. */
+  --destructive-surface-hover: #200d0f;
   --success: #4ade80;
   --success-foreground: #0c1118;
   --success-surface: #10241a;
