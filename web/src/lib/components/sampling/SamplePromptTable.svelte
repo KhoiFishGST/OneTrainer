@@ -129,7 +129,6 @@
             </div>
           </Table.Cell>
           <Table.Cell class="w-auto p-2">
-            <span class="text-sm text-foreground">{sample.prompt}</span>
             <TextInput
               aria-label="Prompt Text"
               class="h-[30px] min-w-0 w-full text-sm px-2"

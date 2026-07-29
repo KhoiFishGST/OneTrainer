@@ -91,4 +91,18 @@ describe('SamplePromptCards Component', () => {
     await fireEvent.change(seedInput, { target: { value: 'invalid' } });
     expect(onUpdate).toHaveBeenCalledWith(0, expect.objectContaining({ seed: -1 }));
   });
+
+  it('renders the prompt body only as an editable input, keeping the card title', () => {
+    const { container } = render(SamplePromptCards, { samples: sampleData });
+
+    const prompt = 'A cinematic photo of a mountain';
+    expect(screen.getByDisplayValue(prompt)).toBeInTheDocument();
+
+    // The truncated card-header title is intentional; the body copy is not.
+    const bodyCopies = Array.from(container.querySelectorAll('p')).filter(
+      (el) => el.textContent === prompt
+    );
+    expect(bodyCopies).toHaveLength(0);
+  });
 });
+

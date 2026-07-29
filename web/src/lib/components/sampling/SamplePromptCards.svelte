@@ -119,7 +119,6 @@
         <Card.Content class="flex flex-col gap-3 p-0 pt-3">
           <div class="flex flex-col gap-1.5">
             <label for={`card-prompt-${index}`} class="text-xs font-medium text-muted-foreground">Prompt Text</label>
-            <p class="text-sm text-foreground">{sample.prompt}</p>
             <TextInput
               id={`card-prompt-${index}`}
               aria-label="Prompt Text"

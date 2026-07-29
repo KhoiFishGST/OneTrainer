@@ -1,27 +1,31 @@
 import '@testing-library/jest-dom/vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 import SamplePromptTable from './SamplePromptTable.svelte';
 
 describe('SamplePromptTable Component', () => {
-  const sampleData = [
-    {
-      webui_id: 'prompt_1',
-      enabled: true,
-      width: 512,
-      height: 768,
-      seed: -1,
-      prompt: 'A cinematic photo of a mountain',
-    },
-    {
-      webui_id: 'prompt_2',
-      enabled: false,
-      width: 1024,
-      height: 1024,
-      seed: 12345,
-      prompt: 'An abstract painting',
-    },
-  ];
+  let sampleData: any[];
+
+  beforeEach(() => {
+    sampleData = [
+      {
+        webui_id: 'prompt_1',
+        enabled: true,
+        width: 512,
+        height: 768,
+        seed: -1,
+        prompt: 'A cinematic photo of a mountain',
+      },
+      {
+        webui_id: 'prompt_2',
+        enabled: false,
+        width: 1024,
+        height: 1024,
+        seed: 12345,
+        prompt: 'An abstract painting',
+      },
+    ];
+  });
 
   it('renders table rows with tailored widths and dice toggle button', async () => {
     render(SamplePromptTable, { samples: sampleData });
@@ -145,4 +149,13 @@ describe('SamplePromptTable Component', () => {
 
     expect(onAdd).toHaveBeenCalledTimes(1);
   });
+
+  it('renders each prompt only once, as an editable input', () => {
+    render(SamplePromptTable, { samples: sampleData });
+
+    const prompt = 'A cinematic photo of a mountain';
+    expect(screen.getByDisplayValue(prompt)).toBeInTheDocument();
+    expect(screen.queryByText(prompt)).not.toBeInTheDocument();
+  });
 });
+
