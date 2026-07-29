@@ -99,7 +99,7 @@
                       {...props}
                       href={item.path}
                       class={cn(
-                        'flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors opacity-40 cursor-not-allowed max-md:min-h-[32px] max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2',
+                        'flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors opacity-40 cursor-not-allowed max-md:min-h-[44px] max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2',
                         props.class as string
                       )}
                       aria-disabled="true"
@@ -114,7 +114,7 @@
                       {...props}
                       href={item.path}
                       class={cn(
-                        'flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors max-md:min-h-[32px] max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2',
+                        'flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors max-md:min-h-[44px] max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2',
                         currentPath === item.path && 'bg-accent text-accent-foreground font-medium',
                         props.class as string
                       )}
@@ -138,7 +138,7 @@
                     {...props}
                     variant="ghost"
                     class={cn(
-                      'flex w-full items-center justify-start gap-3 px-2.5 py-2 text-muted-foreground rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors font-normal h-auto min-h-0 hover:bg-muted hover:text-foreground max-md:min-h-[32px] max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2',
+                      'flex w-full items-center justify-start gap-3 px-2.5 py-2 text-muted-foreground rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors font-normal h-auto min-h-0 hover:bg-muted hover:text-foreground max-md:min-h-[44px] max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2',
                       isConsoleOpen && 'bg-accent text-accent-foreground font-medium',
                       props.class as string
                     )}

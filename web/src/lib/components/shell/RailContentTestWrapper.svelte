@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Button } from '$lib/components/ui/button';
   import { SidebarProvider, useSidebar } from '$lib/components/ui/sidebar';
   import RailContent from './RailContent.svelte';
 
@@ -15,12 +16,12 @@
 {#snippet Content()}
   {@const sidebar = useSidebar()}
   {#if props.mobile}
-    <button
+    <Button
       data-testid="open-sidebar"
       aria-label="Open sidebar"
       onclick={() => sidebar.setOpenMobile(true)}
       style="display: none;"
-    ></button>
+    />
   {/if}
   <RailContent {...props} />
 {/snippet}
