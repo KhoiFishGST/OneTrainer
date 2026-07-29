@@ -160,51 +160,45 @@
   const currentPath = $derived($page?.url?.pathname ?? '/live');
 </script>
 
-{#if currentPath === '/login'}
-  {#if children}
-    {@render children()}
+<SidebarProvider class="app-shell flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
+  <Header />
+  {#if isApiError}
+    <ErrorBanner message={errorMessage} />
   {/if}
-{:else}
-  <SidebarProvider class="app-shell flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
-    <Header />
-    {#if isApiError}
-      <ErrorBanner message={errorMessage} />
-    {/if}
-    <Toaster />
+  <Toaster />
 
-    <div class="flex-1 flex overflow-hidden relative">
-      <Rail
-        {currentPath}
-        mobile={isMobile.current}
-        onToggleConsole={toggleDrawer}
-        isConsoleOpen={drawerOpen}
-      />
-      <div class="flex-1 flex flex-col overflow-hidden relative">
-        <main class="main-content flex-1 flex flex-col overflow-y-auto p-4">
-          {#if children}
-            {@render children()}
-          {/if}
-        </main>
-
-        <ConsoleDrawer open={drawerOpen && currentPath !== '/console'} onClose={closeDrawer} store={consoleStore} />
-        <StatusBar />
-      </div>
-    </div>
-
-    <DirectoryPicker
-      open={pickerOpen}
-      initialPath={pickerInitialPath}
-      mode={pickerMode}
-      extensions={pickerExtensions}
-      onSelect={(selectedPath) => {
-        if (pickerOnSelect) {
-          pickerOnSelect(selectedPath);
-        }
-        pickerOpen = false;
-      }}
-      onClose={() => {
-        pickerOpen = false;
-      }}
+  <div class="flex-1 flex overflow-hidden relative">
+    <Rail
+      {currentPath}
+      mobile={isMobile.current}
+      onToggleConsole={toggleDrawer}
+      isConsoleOpen={drawerOpen}
     />
-  </SidebarProvider>
-{/if}
+    <div class="flex-1 flex flex-col overflow-hidden relative">
+      <main class="main-content flex-1 flex flex-col overflow-y-auto p-4">
+        {#if children}
+          {@render children()}
+        {/if}
+      </main>
+
+      <ConsoleDrawer open={drawerOpen && currentPath !== '/console'} onClose={closeDrawer} store={consoleStore} />
+      <StatusBar />
+    </div>
+  </div>
+
+  <DirectoryPicker
+    open={pickerOpen}
+    initialPath={pickerInitialPath}
+    mode={pickerMode}
+    extensions={pickerExtensions}
+    onSelect={(selectedPath) => {
+      if (pickerOnSelect) {
+        pickerOnSelect(selectedPath);
+      }
+      pickerOpen = false;
+    }}
+    onClose={() => {
+      pickerOpen = false;
+    }}
+  />
+</SidebarProvider>

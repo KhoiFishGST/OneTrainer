@@ -8,7 +8,7 @@ import { EventClient } from '$lib/events/client';
 import { toast } from 'svelte-sonner';
 
 vi.mock('$app/stores', () => ({
-  page: readable({ url: new URL('http://localhost/live') }),
+  page: readable({ url: new URL('http://localhost/login') }),
 }));
 
 vi.mock('svelte-sonner', () => ({
@@ -61,5 +61,10 @@ describe('LayoutContent', () => {
 
     eventClient.emit({ type: 'gallery_warning', message: 'thumbnail failed', run_key: 'run_a' });
     expect(toast.warning).toHaveBeenCalledWith('thumbnail failed');
+  });
+
+  it('always renders the application shell, because login lives outside this layout', () => {
+    renderLayoutContent();
+    expect(screen.getByRole('main')).toBeInTheDocument();
   });
 });
