@@ -18,6 +18,7 @@ class QuietPollFilter(logging.Filter):
 
 logging.getLogger("uvicorn.access").addFilter(QuietPollFilter())
 
+from modules.webui.compression import SelectiveGZipMiddleware
 from modules.webui.config_service import ConfigService, ConfigSnapshot
 from modules.webui.directories import DirectoryService
 from modules.webui.events import EventHub, EventType
@@ -54,6 +55,7 @@ class HTTP413Exception(Exception):
 
 
 MAX_BODY_SIZE = 1_048_576  # 1 MiB
+IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable"
 
 
 class LimitUploadSizeMiddleware:
@@ -230,6 +232,10 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
 
         return await call_next(request)
 
+    # Added last among request-path middleware so it wraps everything below it,
+    # including auth redirects and the static file handler.
+    app.add_middleware(SelectiveGZipMiddleware)
+
     if settings.dev:
         app.add_middleware(
             CORSMiddleware,
@@ -274,6 +280,10 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
                 raise HTTPException(status_code=400, detail="Invalid path") from err
 
             if target_path.is_file():
+                # Everything under _app/immutable has a content hash in its
+                # filename, so it can never go stale.
+                if rel_path.startswith("_app/immutable/"):
+                    return FileResponse(target_path, headers={"cache-control": IMMUTABLE_CACHE_CONTROL})
                 return FileResponse(target_path)
 
             if Path(rel_path).suffix != "":
