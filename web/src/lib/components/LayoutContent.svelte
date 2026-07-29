@@ -215,7 +215,7 @@
   const currentPath = $derived($page?.url?.pathname ?? '/live');
 </script>
 
-<SidebarProvider class="app-shell flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
+<SidebarProvider class="app-shell flex flex-col h-[100dvh] w-screen overflow-hidden bg-background text-foreground">
   <Header />
   {#if isApiError}
     <ErrorBanner message={errorMessage} />
