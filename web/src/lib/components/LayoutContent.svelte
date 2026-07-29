@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import { page } from '$app/stores';
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { useQueryClient } from '@tanstack/svelte-query';
   import { ConfigWorkspace } from '../config/workspace.svelte';
   import { setRouteContext } from '../config/context';
@@ -60,6 +60,26 @@
     }
   });
 
+  onMount(() => {
+    const preloadOverlays = () => {
+      if (!ConsoleDrawer) {
+        import('./shell/ConsoleDrawer.svelte').then((m) => {
+          ConsoleDrawer = m.default;
+        });
+      }
+      if (!DirectoryPicker) {
+        import('./directory/DirectoryPicker.svelte').then((m) => {
+          DirectoryPicker = m.default;
+        });
+      }
+    };
+    if (typeof requestIdleCallback !== 'undefined') {
+      requestIdleCallback(preloadOverlays);
+    } else {
+      setTimeout(preloadOverlays, 50);
+    }
+  });
+
   const currentModelType = $derived(
     workspace?.draft?.model_type ?? $configQuery.data?.config?.model_type
   );
@@ -103,18 +123,28 @@
     get schema() {
       return schemaData;
     },
-    openDirectory: (currentPath: string, onSelect?: (selectedPath: string) => void) => {
+    openDirectory: async (currentPath: string, onSelect?: (selectedPath: string) => void) => {
       pickerMode = 'dir';
       pickerExtensions = [];
       pickerInitialPath = currentPath || '/';
       pickerOnSelect = onSelect ?? null;
+      if (!DirectoryPicker) {
+        const mod = await import('./directory/DirectoryPicker.svelte');
+        DirectoryPicker = mod.default;
+        await tick();
+      }
       pickerOpen = true;
     },
-    openFile: (currentPath: string, extensions: string[], onSelect?: (selectedPath: string) => void) => {
+    openFile: async (currentPath: string, extensions: string[], onSelect?: (selectedPath: string) => void) => {
       pickerMode = 'file';
       pickerExtensions = extensions;
       pickerInitialPath = currentPath || 'training_configs';
       pickerOnSelect = onSelect ?? null;
+      if (!DirectoryPicker) {
+        const mod = await import('./directory/DirectoryPicker.svelte');
+        DirectoryPicker = mod.default;
+        await tick();
+      }
       pickerOpen = true;
     },
   });
@@ -151,8 +181,14 @@
     };
   });
 
-  function toggleDrawer() {
-    drawerOpen = !drawerOpen;
+  async function toggleDrawer() {
+    const nextState = !drawerOpen;
+    if (nextState && !ConsoleDrawer) {
+      const mod = await import('./shell/ConsoleDrawer.svelte');
+      ConsoleDrawer = mod.default;
+      await tick();
+    }
+    drawerOpen = nextState;
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('console_drawer_open', drawerOpen.toString());
     }
