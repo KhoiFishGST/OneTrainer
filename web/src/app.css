@@ -197,7 +197,17 @@ body {
   :root {
     --control-height: 2.75rem;
   }
-  button,
+  /*
+    Blanket phone target as a backstop. Controls that are meant to stay
+    visually small -- switch, checkbox -- opt out here and supply their own
+    44px target with a transparent ::after overlay instead; forcing the border
+    box to 44px turns a pill switch into a circle and a 14px checkbox into a
+    slab. These utilities live in @layer utilities, and unlayered rules like
+    this one beat layered ones regardless of specificity, so a Tailwind
+    min-h-0 cannot override it -- the exemption has to happen here.
+    e2e/touch-targets.spec.ts hit-tests the real target, not the border box.
+  */
+  button:not([data-slot='switch']):not([data-slot='checkbox']),
   input,
   select,
   textarea,
