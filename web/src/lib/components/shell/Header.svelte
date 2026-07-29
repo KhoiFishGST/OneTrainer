@@ -283,10 +283,16 @@
       flex-wrap: nowrap;
     }
 
+    /*
+      The row must be able to give. Pinning both sides to flex-shrink: 0 is
+      what pushed the theme toggle outside the viewport -- and because the
+      shell is overflow-hidden, it was clipped rather than scrolled, so
+      nothing reported it.
+    */
     .header-left {
       gap: 4px;
       min-width: 0;
-      flex-shrink: 0;
+      flex-shrink: 1;
     }
 
     .header-right {
@@ -294,9 +300,11 @@
       flex-shrink: 0;
     }
 
-    /* Show brand logo icon but hide OneTrainer text on mobile */
     .brand {
       gap: 0;
+      flex-shrink: 1;
+      min-width: 0;
+      overflow: hidden;
     }
 
     .app-title {
@@ -305,6 +313,28 @@
 
     .header-divider {
       height: 18px;
+    }
+  }
+
+  /*
+    Below 380px the five config icons, the hamburger and the theme toggle
+    consume the whole row. The wordmark is already gone; the logo and divider
+    are the only remaining decoration, so they go next rather than pushing a
+    control off-screen.
+  */
+  @media (max-width: 379px) {
+    .header {
+      padding: 4px 2px;
+      gap: 0;
+    }
+
+    .header-left {
+      gap: 0;
+    }
+
+    .brand,
+    .header-divider {
+      display: none;
     }
   }
 
