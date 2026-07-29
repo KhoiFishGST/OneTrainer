@@ -13,7 +13,7 @@
     label: string;
   }>();
 
-  const options = $derived(items.map((item) => ({ value: item.id, label: item.label })));
+  const options = $derived(items.map((item: SubNavItem) => ({ value: item.id, label: item.label })));
 </script>
 
 <!--
