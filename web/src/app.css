@@ -108,8 +108,11 @@
   --rail-expanded: 160px;
   --status-height: 52px;
 
+  /* No font-size override here on purpose. This used to pin the root to 14px,
+     which silently shrank the UI for anyone who had raised their browser's
+     default font size for readability. Leaving it unset means rem-based sizing
+     follows the user's preference. */
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  font-size: 14px;
 }
 
 .dark {
@@ -172,7 +175,6 @@ body {
   width: 100%;
   overflow: hidden;
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  font-size: 14px;
 }
 
 /* Global focus-visible rings */
