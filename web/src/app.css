@@ -9,8 +9,10 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary-hover: var(--secondary-hover);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
@@ -18,6 +20,7 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-destructive-surface: var(--destructive-surface);
+  --color-destructive-surface-hover: var(--destructive-surface-hover);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-success-surface: var(--success-surface);
@@ -57,8 +60,13 @@
   --popover-foreground: #17202a;
   --primary: #2563eb;
   --primary-foreground: #ffffff;
+  /* Hover tokens: solid buttons shift to these on :hover instead of an
+     opacity blend, which lightens rather than emphasises on a light page.
+     Light theme hover goes darker for emphasis against the light page. */
+  --primary-hover: #1d4ed8;
   --secondary: #e6ebf2;
   --secondary-foreground: #17202a;
+  --secondary-hover: #d5dee9;
   --muted: #f0f4f8;
   --muted-foreground: #334155;
   --accent: #e6ebf2;
@@ -66,6 +74,7 @@
   --destructive: #b91c1c;
   --destructive-foreground: #ffffff;
   --destructive-surface: #fdeaea;
+  --destructive-surface-hover: #fbd5d5;
   --success: #067647;
   --success-foreground: #ffffff;
   --success-surface: #e7f6ee;
@@ -127,8 +136,15 @@
   --popover-foreground: #e8edf2;
   --primary: #2563eb;
   --primary-foreground: #ffffff;
+  /* Dark theme hover goes lighter -- darkening would recede into the
+     background instead of reading as emphasis. #3b82f6 (the shadcn default)
+     only holds 3.68:1 against white text, below the 4.5:1 floor, so this is
+     pulled back to #2d6aea: 4.815:1 contrast with a 9.74% luminance shift,
+     still clearly lighter than the resting --primary. */
+  --primary-hover: #2d6aea;
   --secondary: #1f2a37;
   --secondary-foreground: #e8edf2;
+  --secondary-hover: #2a3746;
   --muted: #18212b;
   --muted-foreground: #94a3b8;
   --accent: #1f2a37;
@@ -136,6 +152,10 @@
   --destructive: #ef4444;
   --destructive-foreground: #0c1118;
   --destructive-surface: #2a1215;
+  /* Lighter than the resting surface (same direction as the other dark
+     hover tokens): 4.507:1 against --destructive text, 21.6% luminance
+     shift. */
+  --destructive-surface-hover: #301417;
   --success: #4ade80;
   --success-foreground: #0c1118;
   --success-surface: #10241a;
