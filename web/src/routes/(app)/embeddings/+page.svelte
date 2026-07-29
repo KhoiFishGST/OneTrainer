@@ -4,6 +4,7 @@
   import SchemaForm from '$lib/components/form/SchemaForm.svelte';
   import EmbeddingCard from '$lib/components/embeddings/EmbeddingCard.svelte';
   import PageHeader from '$lib/components/layout/PageHeader.svelte';
+  import RoutePage from '$lib/components/layout/RoutePage.svelte';
   import { Alert } from '$lib/components/ui/alert';
   import FormPageSkeleton from '$lib/components/loading/FormPageSkeleton.svelte';
   import { Button } from '$lib/components/ui/button';
@@ -112,8 +113,8 @@
 {#if !ctx.workspace}
   <FormPageSkeleton label="Loading embeddings configuration" />
 {:else}
-  <div class="route-page">
-    <PageHeader title={tab.label || 'Embeddings'} class="embeddings-header" />
+  <RoutePage>
+    <PageHeader title={tab.label || 'Embeddings'} />
 
     {#if !isEmbeddingSupported}
       <Alert class="embeddings-warning-alert bg-warning-surface text-warning border-warning-border flex items-start gap-3 rounded-lg p-4">
@@ -221,17 +222,10 @@
         </div>
       </div>
     </fieldset>
-  </div>
+  </RoutePage>
 {/if}
 
 <style>
-  .route-page {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    padding: 1.5rem;
-  }
-
   .warning-icon {
     font-size: 1.25rem;
     line-height: 1;
