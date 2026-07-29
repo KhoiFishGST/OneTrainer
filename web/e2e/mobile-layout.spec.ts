@@ -100,6 +100,57 @@ test.describe("Phone layout", () => {
     expect(box.width).toBeGreaterThanOrEqual(143);
   });
 
+  test("navigation rows are at least 44px apart", async ({ page }) => {
+    await page.goto("/general");
+    await page.getByRole("button", { name: "Open navigation" }).click();
+    await expect(page.getByRole("dialog", { name: "Navigation" })).toBeVisible();
+
+    const tooTight = await page.evaluate(() => {
+      const dlg = document.querySelector('[role="dialog"]')!;
+      const rows = [...dlg.querySelectorAll('a[href]')] as HTMLElement[];
+      const out: string[] = [];
+      for (let i = 1; i < rows.length; i++) {
+        const pitch =
+          rows[i].getBoundingClientRect().top - rows[i - 1].getBoundingClientRect().top;
+        if (pitch < 44) {
+          out.push(`${rows[i - 1].textContent?.trim()} -> ${rows[i].textContent?.trim()}: ${Math.round(pitch)}px`);
+        }
+      }
+      return out;
+    });
+
+    // Pitch, not box height: two 36px rows 2px apart satisfy a box check via
+    // overlapping ::after overlays while the lower half of each row actually
+    // activates its neighbour.
+    expect(tooTight, `Rows closer than 44px:\n${tooTight.join("\n")}`).toEqual([]);
+  });
+
+  test("the navigation fills its drawer without dead space or scrolling", async ({ page }) => {
+    for (const height of [844, 667]) {
+      await page.setViewportSize({ width: 390, height });
+      await page.goto("/general");
+      await page.getByRole("button", { name: "Open navigation" }).click();
+      await expect(page.getByRole("dialog", { name: "Navigation" })).toBeVisible();
+
+      const fit = await page.evaluate(() => {
+        const dlg = document.querySelector('[role="dialog"]') as HTMLElement;
+        const rows = [...dlg.querySelectorAll('a[href], button')] as HTMLElement[];
+        const visible = rows.filter((r) => r.getBoundingClientRect().height > 0);
+        const last = visible[visible.length - 1].getBoundingClientRect();
+        const scroller = [...dlg.querySelectorAll('*')].find(
+          (el) => getComputedStyle(el as HTMLElement).overflowY === 'auto'
+        ) as HTMLElement | undefined;
+        return {
+          slackBelowLastRow: Math.round(dlg.getBoundingClientRect().bottom - last.bottom),
+          scrolls: scroller ? scroller.scrollHeight > scroller.clientHeight + 1 : false,
+        };
+      });
+
+      expect(fit.scrolls, `drawer scrolls at ${height}px tall`).toBe(false);
+      expect(fit.slackBelowLastRow, `dead space at ${height}px tall`).toBeLessThanOrEqual(24);
+    }
+  });
+
   /**
    * The app shell is `overflow-hidden`, so content pushed past the right edge
    * is clipped rather than scrolled. `document.scrollWidth` therefore stays

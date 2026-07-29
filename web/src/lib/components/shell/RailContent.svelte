@@ -90,12 +90,15 @@
     </SidebarHeader>
   {/if}
 
-  <SidebarContent class={cn('flex flex-col p-2 gap-1 overflow-y-auto flex-1', mobile && 'p-1 gap-1')}>
-    <SidebarGroup class="p-0">
-      <SidebarGroupContent>
-        <SidebarMenu class={mobile ? 'gap-0.5' : 'gap-1'} aria-label={mobile ? 'Mobile Navigation' : 'Sidebar'}>
+  <SidebarContent class={cn('flex flex-col p-2 gap-1 overflow-y-auto flex-1', mobile && 'p-0 gap-0')}>
+    <SidebarGroup class={cn('p-0', mobile && 'flex-1')}>
+      <SidebarGroupContent class={mobile ? 'h-full' : undefined}>
+        <SidebarMenu
+          class={mobile ? 'h-full gap-1' : 'gap-1'}
+          aria-label={mobile ? 'Mobile Navigation' : 'Sidebar'}
+        >
           {#each navItems as item}
-            <SidebarMenuItem>
+            <SidebarMenuItem class={mobile ? 'flex-1 min-h-[40px]' : undefined}>
               <SidebarMenuButton isActive={currentPath === item.path}>
                 {#snippet child({ props })}
                   {#if item.disabled}
@@ -104,7 +107,7 @@
                       href={item.path}
                       class={cn(
                         props.class as string,
-                        'relative flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors opacity-40 cursor-not-allowed max-md:min-h-[36px] max-md:h-auto max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2 max-md:overflow-visible after:absolute after:-top-1 after:-bottom-1 after:left-0 after:right-0 after:content-[\'\']'
+                        'relative flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors opacity-40 cursor-not-allowed max-md:h-full max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2 max-md:overflow-visible'
                       )}
                       aria-disabled="true"
                       title="Unavailable in Phase A"
@@ -119,7 +122,7 @@
                       href={item.path}
                       class={cn(
                         props.class as string,
-                        'relative flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors max-md:min-h-[36px] max-md:h-auto max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2 max-md:overflow-visible after:absolute after:-top-1 after:-bottom-1 after:left-0 after:right-0 after:content-[\'\']',
+                        'relative flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors max-md:h-full max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2 max-md:overflow-visible',
                         currentPath === item.path && 'bg-accent text-accent-foreground font-medium'
                       )}
                       onclick={() => {
@@ -135,7 +138,7 @@
             </SidebarMenuItem>
           {/each}
           {#if mobile && onToggleConsole}
-            <SidebarMenuItem>
+            <SidebarMenuItem class={mobile ? 'flex-1 min-h-[40px]' : undefined}>
               <SidebarMenuButton isActive={isConsoleOpen}>
                 {#snippet child({ props })}
                   <Button
@@ -143,7 +146,7 @@
                     variant="ghost"
                     class={cn(
                       props.class as string,
-                      'relative flex w-full items-center justify-start gap-3 px-2.5 py-2 text-muted-foreground rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors font-normal h-auto min-h-0 hover:bg-muted hover:text-foreground max-md:min-h-[36px] max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2 max-md:overflow-visible after:absolute after:-top-1 after:-bottom-1 after:left-0 after:right-0 after:content-[\'\']',
+                      'relative flex w-full items-center justify-start gap-3 px-2.5 py-2 text-muted-foreground rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors font-normal h-auto min-h-0 hover:bg-muted hover:text-foreground max-md:h-full max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2 max-md:overflow-visible',
                       isConsoleOpen && 'bg-accent text-accent-foreground font-medium'
                     )}
                     onclick={() => {
