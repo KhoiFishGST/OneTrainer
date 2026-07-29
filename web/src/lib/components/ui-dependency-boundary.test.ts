@@ -114,7 +114,7 @@ describe('UI component dependency boundary', () => {
 
   it('ensures no UI components import domain modules', () => {
     const violations = Object.entries(uiSources).flatMap(([file, source]) =>
-      file.includes('.test.') || file.includes('.spec.') ? [] : findForbiddenImports(source, file)
+      findForbiddenImports(source, file)
     );
     expect(violations).toEqual([]);
   });
