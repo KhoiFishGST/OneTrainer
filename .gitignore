@@ -48,6 +48,8 @@ CLAUDE.md
 /web/node_modules/
 /web/.build-source
 /web/.e2e/
+# e2e_server.py --root .e2e creates this wherever it is invoked from
+/.e2e/
 /web/test-results/
 /web/playwright-report/
 
