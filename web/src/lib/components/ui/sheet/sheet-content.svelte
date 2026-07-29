@@ -31,17 +31,22 @@
 <SheetPortal {...portalProps}>
 	<SheetOverlay />
 	<!--
-		LOCAL MODIFICATION: left and right sheets slide by their own width
-		(`-full`) instead of upstream's 2.5rem `-10` nudge, so the navigation
-		drawer slides in from the edge like the desktop rail. Top and bottom
-		sheets keep `-10`. Re-running `shadcn-svelte add sheet` will revert this.
+		LOCAL MODIFICATION: upstream's `animate-in` / `fade-in-0` /
+		`slide-in-from-*` utilities are removed from the class string below.
+		They need the `tw-animate-css` plugin, which this project does not
+		import, so every one of them compiled to nothing -- the sheet had no
+		animation at all and the classes only suggested otherwise. The slide is
+		hand-written in `src/app.css` against the `data-side` / `data-state`
+		attributes this component and bits-ui already set. Re-running
+		`shadcn-svelte add sheet` will put the dead classes back; it will not
+		break the animation, but it will mislead the next reader.
 	-->
 	<SheetPrimitive.Content
 		bind:ref
 		data-slot="sheet-content"
 		data-side={side}
 		class={cn(
-			"bg-popover text-popover-foreground fixed z-50 flex flex-col gap-4 bg-clip-padding text-sm shadow-lg transition duration-200 ease-in-out data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:h-auto data-[side=bottom]:border-t data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:h-full data-[side=left]:w-3/4 data-[side=left]:border-r data-[side=right]:inset-y-0 data-[side=right]:right-0 data-[side=right]:h-full data-[side=right]:w-3/4 data-[side=right]:border-l data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:h-auto data-[side=top]:border-b data-[side=left]:sm:max-w-sm data-[side=right]:sm:max-w-sm data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[side=bottom]:data-[state=open]:slide-in-from-bottom-10 data-[side=left]:data-[state=open]:slide-in-from-left-full data-[side=right]:data-[state=open]:slide-in-from-right-full data-[side=top]:data-[state=open]:slide-in-from-top-10 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[side=bottom]:data-[state=closed]:slide-out-to-bottom-10 data-[side=left]:data-[state=closed]:slide-out-to-left-full data-[side=right]:data-[state=closed]:slide-out-to-right-full data-[side=top]:data-[state=closed]:slide-out-to-top-10",
+			"bg-popover text-popover-foreground fixed z-50 flex flex-col gap-4 bg-clip-padding text-sm shadow-lg transition duration-200 ease-in-out data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:h-auto data-[side=bottom]:border-t data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:h-full data-[side=left]:w-3/4 data-[side=left]:border-r data-[side=right]:inset-y-0 data-[side=right]:right-0 data-[side=right]:h-full data-[side=right]:w-3/4 data-[side=right]:border-l data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:h-auto data-[side=top]:border-b data-[side=left]:sm:max-w-sm data-[side=right]:sm:max-w-sm",
 			className
 		)}
 		{...restProps}

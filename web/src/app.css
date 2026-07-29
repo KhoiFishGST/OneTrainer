@@ -195,6 +195,116 @@ body {
   }
 }
 
+/*
+  Sheet slide animation.
+
+  shadcn-svelte's sheet ships `animate-in` / `slide-in-from-left-full` classes
+  that need an animation plugin (`tw-animate-css`). This project imports plain
+  `@import "tailwindcss"` with no such plugin, so every one of those utilities
+  compiled to nothing and the sheet popped in and out with no transition at
+  all. Adding the plugin would switch animation on for nine vendored overlay
+  components at once, which is a bigger visual change than the nav drawer
+  needs, so the sheet's slide is hand-written here instead.
+
+  The selector is `[data-dialog-content][data-side]`: bits-ui sets
+  `data-dialog-content` and `data-state` on the content element, and
+  `sheet-content.svelte` sets `data-side`. Together they match sheets and
+  nothing else -- plain dialogs have no `data-side`, and menus and tooltips
+  carry `data-side` but are not dialog content.
+
+  Duration and easing match the desktop rail's `transition-[width]
+  duration-200 ease-in-out`, so the two navigation surfaces move alike.
+*/
+@keyframes sheet-slide-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes sheet-slide-out-left {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes sheet-slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes sheet-slide-out-right {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Top and bottom sheets are `h-auto` and sized by their content, so a full
+   translate would throw them much further than a side panel travels. They get
+   a shallow 2.5rem nudge with a fade, which is what upstream's `-10` meant. */
+@keyframes sheet-slide-in-top {
+  from {
+    transform: translateY(-2.5rem);
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-slide-out-top {
+  to {
+    transform: translateY(-2.5rem);
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-slide-in-bottom {
+  from {
+    transform: translateY(2.5rem);
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-slide-out-bottom {
+  to {
+    transform: translateY(2.5rem);
+    opacity: 0;
+  }
+}
+
+[data-dialog-content][data-side='left'][data-state='open'] {
+  animation: sheet-slide-in-left 200ms ease-in-out;
+}
+[data-dialog-content][data-side='left'][data-state='closed'] {
+  animation: sheet-slide-out-left 200ms ease-in-out;
+}
+[data-dialog-content][data-side='right'][data-state='open'] {
+  animation: sheet-slide-in-right 200ms ease-in-out;
+}
+[data-dialog-content][data-side='right'][data-state='closed'] {
+  animation: sheet-slide-out-right 200ms ease-in-out;
+}
+[data-dialog-content][data-side='top'][data-state='open'] {
+  animation: sheet-slide-in-top 200ms ease-in-out;
+}
+[data-dialog-content][data-side='top'][data-state='closed'] {
+  animation: sheet-slide-out-top 200ms ease-in-out;
+}
+[data-dialog-content][data-side='bottom'][data-state='open'] {
+  animation: sheet-slide-in-bottom 200ms ease-in-out;
+}
+[data-dialog-content][data-side='bottom'][data-state='closed'] {
+  animation: sheet-slide-out-bottom 200ms ease-in-out;
+}
+
+/* The blanket reduced-motion block above already clamps every animation to
+   0.01ms. Naming the sheet explicitly keeps that guarantee if the blanket rule
+   is ever narrowed, and skips the closing animation outright rather than
+   running an imperceptible one. */
+@media (prefers-reduced-motion: reduce) {
+  [data-dialog-content][data-side] {
+    animation: none !important;
+  }
+}
+
 /* Form grid layout: two-column above 768px, one-column below */
 .form-grid {
   display: grid;

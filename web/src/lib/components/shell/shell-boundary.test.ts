@@ -90,17 +90,15 @@ describe('shell boundaries', () => {
     );
     expect(violations).toEqual([]);
   });
-
-  it('slides side sheets in from the edge rather than nudging them', () => {
-    const source = allSources['/src/lib/components/ui/sheet/sheet-content.svelte'];
-
-    // `-10` is a 2.5rem offset: the panel appears to fade with a nudge. `-full`
-    // translates by the panel's own width, which is what makes the nav drawer
-    // slide the way the desktop rail does.
-    for (const side of ['left', 'right']) {
-      expect(source).toContain(`data-[side=${side}]:data-[state=open]:slide-in-from-${side}-full`);
-      expect(source).toContain(`data-[side=${side}]:data-[state=closed]:slide-out-to-${side}-full`);
-    }
-  });
 });
+
+// The sheet's slide animation deliberately has no test here. There used to be
+// one, asserting that sheet-content.svelte's class string contained
+// `slide-in-from-left-full`. It passed for the entire life of the defect,
+// because those utilities need a Tailwind animation plugin this project does
+// not import and so compiled to nothing -- the assertion proved the presence of
+// a string, not the presence of an animation. A source grep cannot tell a live
+// utility from a dead one. The replacement measures the drawer's real geometry
+// mid-animation in the browser:
+// e2e/mobile-layout.spec.ts, "the navigation drawer slides in from the edge".
 
