@@ -85,6 +85,21 @@ test.describe("Phone layout", () => {
     await expect(subnav).toHaveValue("1");
   });
 
+  test("the navigation drawer is as narrow as its configured width", async ({ page }) => {
+    await page.goto("/general");
+    await page.getByRole("button", { name: "Open navigation" }).click();
+
+    const drawer = page.getByRole("dialog", { name: "Navigation" });
+    await expect(drawer).toBeVisible();
+
+    // 9rem at the app's 16px root. Asserting the rendered width rather than
+    // the constant: the constant was already 9rem while the drawer rendered
+    // at 293px, because the sheet's own `w-3/4` outranked it.
+    const box = (await drawer.boundingBox())!;
+    expect(box.width).toBeLessThanOrEqual(145);
+    expect(box.width).toBeGreaterThanOrEqual(143);
+  });
+
   /**
    * The app shell is `overflow-hidden`, so content pushed past the right edge
    * is clipped rather than scrolled. `document.scrollWidth` therefore stays

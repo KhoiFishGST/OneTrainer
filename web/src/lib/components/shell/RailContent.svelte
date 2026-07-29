@@ -68,7 +68,11 @@
 <Sidebar
   {mobile}
   collapsible={mobile ? 'offcanvas' : 'none'}
-  class={cn('rail w-[var(--rail-width)] bg-card border-r border-border flex flex-col h-full transition-[width] duration-200 ease-in-out overflow-hidden select-none', expanded && 'expanded', mobile && 'p-2.5 py-3')}
+  class={cn(
+    'rail w-[var(--rail-width)] bg-card border-r border-border flex flex-col h-full transition-[width] duration-200 ease-in-out overflow-hidden select-none',
+    expanded && 'expanded',
+    mobile && 'p-2 data-[side=left]:w-[var(--sidebar-width)]'
+  )}
   style="--rail-width: {expanded ? 'var(--rail-expanded)' : 'var(--rail-compact)'}"
 >
 
