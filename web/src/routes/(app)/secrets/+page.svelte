@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { ShieldAlert, Key, Eye, EyeOff, Save, Lock, Unlock } from '@lucide/svelte';
   import PageHeader from '$lib/components/layout/PageHeader.svelte';
+  import RoutePage from '$lib/components/layout/RoutePage.svelte';
   import { Alert } from '$lib/components/ui/alert';
   import { Skeleton } from '$lib/components/ui/skeleton';
   import { Button } from '$lib/components/ui/button';
@@ -120,11 +121,11 @@
   }
 </script>
 
-<div class="secrets-page">
-  <PageHeader title="Secrets & Security Settings" class="mb-6" />
+<RoutePage>
+  <PageHeader title="Secrets & Security Settings" />
 
   {#if isHttpInsecure}
-    <Alert variant="destructive" class="mb-6 flex items-start gap-4">
+    <Alert variant="destructive" class="flex items-start gap-4">
       <ShieldAlert size={24} class="mt-0.5 shrink-0 text-destructive" />
       <div class="banner-text">
         <strong>Insecure Connection (HTTP) Detected</strong>
@@ -261,40 +262,35 @@
         </div>
       </div>
     </div>
-
-    <AlertDialog.Root open={isConfirmClearOpen} onOpenChange={(v) => { if (!v && !isClearingPassword) { isConfirmClearOpen = false; clearPasswordError = null; } }}>
-      <AlertDialog.Content>
-        <AlertDialog.Header>
-          <AlertDialog.Title>Clear Web Portal Password?</AlertDialog.Title>
-          <AlertDialog.Description>
-            Are you sure you want to clear password protection? This will allow open access to your instance.
-          </AlertDialog.Description>
-        </AlertDialog.Header>
-        {#if clearPasswordError}
-          <Alert variant="destructive" class="my-2">
-            <span>{clearPasswordError}</span>
-          </Alert>
-        {/if}
-        <AlertDialog.Footer>
-          <AlertDialog.Cancel disabled={isClearingPassword} onclick={() => { isConfirmClearOpen = false; clearPasswordError = null; }}>Cancel</AlertDialog.Cancel>
-          <AlertDialog.Action
-            disabled={isClearingPassword}
-            onclick={handleClearPassword}
-          >
-            Confirm Clear
-          </AlertDialog.Action>
-        </AlertDialog.Footer>
-      </AlertDialog.Content>
-    </AlertDialog.Root>
   {/if}
-</div>
+</RoutePage>
+
+<AlertDialog.Root open={isConfirmClearOpen} onOpenChange={(v) => { if (!v && !isClearingPassword) { isConfirmClearOpen = false; clearPasswordError = null; } }}>
+  <AlertDialog.Content>
+    <AlertDialog.Header>
+      <AlertDialog.Title>Clear Web Portal Password?</AlertDialog.Title>
+      <AlertDialog.Description>
+        Are you sure you want to clear password protection? This will allow open access to your instance.
+      </AlertDialog.Description>
+    </AlertDialog.Header>
+    {#if clearPasswordError}
+      <Alert variant="destructive" class="my-2">
+        <span>{clearPasswordError}</span>
+      </Alert>
+    {/if}
+    <AlertDialog.Footer>
+      <AlertDialog.Cancel disabled={isClearingPassword} onclick={() => { isConfirmClearOpen = false; clearPasswordError = null; }}>Cancel</AlertDialog.Cancel>
+      <AlertDialog.Action
+        disabled={isClearingPassword}
+        onclick={handleClearPassword}
+      >
+        Confirm Clear
+      </AlertDialog.Action>
+    </AlertDialog.Footer>
+  </AlertDialog.Content>
+</AlertDialog.Root>
 
 <style>
-  .secrets-page {
-    padding: 1.5rem;
-    max-width: 900px;
-  }
-
   .banner-text strong {
     display: block;
     font-size: 1rem;
@@ -309,9 +305,10 @@
   }
 
   .card-grid {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr));
     gap: 1.5rem;
+    align-items: start;
   }
 
   .settings-card {
@@ -378,8 +375,8 @@
   }
 
   .skeleton-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr));
+    gap: 1.5rem;
   }
 </style>
