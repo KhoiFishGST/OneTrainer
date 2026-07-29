@@ -1,7 +1,6 @@
 <script lang="ts">
   import { tick } from 'svelte';
-  import { Save, FolderOpen, Menu } from '@lucide/svelte';
-  import Select from '../form/ValueSelect.svelte';
+  import { Menu } from '@lucide/svelte';
   import { Input as TextInput } from '../ui/input/index.js';
   import { Alert } from '$lib/components/ui/alert';
   import { Button } from '$lib/components/ui/button';
@@ -12,6 +11,8 @@
   import ThemeToggle from './ThemeToggle.svelte';
   import HeaderConfigControls from './HeaderConfigControls.svelte';
   import HeaderStatus from './HeaderStatus.svelte';
+  import HeaderDesktopBar from './HeaderDesktopBar.svelte';
+  import HeaderMobileBar from './HeaderMobileBar.svelte';
 
   const sidebar = (() => {
     try {
@@ -174,64 +175,16 @@
 
     <HeaderConfigControls {workspace} metaData={metaDataProp} presetsData={presetsDataProp}>
       {#snippet children(config)}
-        <div class="selectors">
-          <div class="selector-field">
-            <span class="label-text">Model</span>
-            <div class="header-select-wrapper">
-              <Select
-                ariaLabel="Model Type"
-                value={config.currentModelType}
-                options={config.modelTypes}
-                onChange={config.onModelTypeChange}
-              />
-            </div>
-          </div>
-
-          <div class="selector-field">
-            <span class="label-text">Method</span>
-            <div class="header-select-wrapper">
-              <Select
-                ariaLabel="Training Method"
-                value={config.currentTrainingMethod}
-                options={config.trainingMethods}
-                onChange={config.onTrainingMethodChange}
-              />
-            </div>
-          </div>
-
-          <div class="selector-field">
-            <span class="label-text">Preset</span>
-            <div class="header-select-wrapper">
-              <Select
-                ariaLabel="Presets"
-                value=""
-                placeholder="Select preset..."
-                options={config.presets}
-                onChange={config.onSelectPreset}
-              />
-            </div>
-          </div>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            class="self-end gap-1.5"
-            onclick={handleLoadConfig}
-          >
-            <FolderOpen size={15} />
-            <span>Load</span>
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            class="self-end gap-1.5"
-            onclick={openSavePresetModal}
-          >
-            <Save size={15} />
-            <span>Save</span>
-          </Button>
-        </div>
+        <HeaderDesktopBar
+          {config}
+          onLoadConfig={handleLoadConfig}
+          onSavePreset={openSavePresetModal}
+        />
+        <HeaderMobileBar
+          {config}
+          onLoadConfig={handleLoadConfig}
+          onSavePreset={openSavePresetModal}
+        />
       {/snippet}
     </HeaderConfigControls>
   </div>
@@ -317,8 +270,32 @@
     align-items: center;
     justify-content: space-between;
     padding: 8px 16px;
+    padding-top: calc(8px + env(safe-area-inset-top, 0px));
     gap: 12px;
     flex-wrap: wrap;
+  }
+
+  @media (max-width: 767px) {
+    .header {
+      padding: 4px 8px;
+      padding-top: calc(4px + env(safe-area-inset-top, 0px));
+      gap: 4px;
+      flex-wrap: nowrap;
+    }
+
+    .header-left {
+      gap: 4px;
+      min-width: 0;
+    }
+
+    /* The wordmark is the first thing to give when width runs out. */
+    .app-title {
+      display: none;
+    }
+
+    .header-divider {
+      display: none;
+    }
   }
 
   .header-left {
@@ -354,31 +331,6 @@
     height: 26px;
     object-fit: contain;
     border-radius: 4px;
-  }
-
-  .selectors {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .selector-field {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .header-select-wrapper {
-    min-width: 140px;
-  }
-
-  .label-text {
-    font-size: 0.75rem;
-    color: var(--muted-foreground);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
   }
 
   .modal-field {

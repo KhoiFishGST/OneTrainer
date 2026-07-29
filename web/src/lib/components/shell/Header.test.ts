@@ -77,7 +77,8 @@ describe('Header component', () => {
       workspace: mockWorkspace,
     });
 
-    const savePresetBtn = screen.getByRole('button', { name: 'Save' });
+    const desktopBar = screen.getByTestId('header-desktop-bar');
+    const savePresetBtn = within(desktopBar).getByRole('button', { name: 'Save' });
     await fireEvent.click(savePresetBtn);
 
     await vi.waitFor(() => {
@@ -116,7 +117,9 @@ describe('Header component', () => {
 
     render(HeaderTestWrapper, { workspace: mockWorkspace });
 
-    const saveBtn = screen.getByRole('button', { name: 'Save' });
+    const saveBtn = within(screen.getByTestId('header-desktop-bar')).getByRole('button', {
+      name: 'Save',
+    });
     await fireEvent.click(saveBtn);
     await vi.waitFor(() => {
       expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -148,11 +151,60 @@ describe('Header component', () => {
     expect(presetsSelect).toHaveTextContent('Direct Preset');
   });
 
-  it('maintains action reachability at 390px phone width and renders ThemeToggle', () => {
+  it('offers every config action as an icon button on the mobile bar and renders ThemeToggle', () => {
     render(HeaderTestWrapper, {});
+
+    const mobileBar = screen.getByTestId('header-mobile-bar');
     expect(screen.getByRole('button', { name: /Switch to (light|dark) theme/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Load' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+    for (const name of ['Model type', 'Training method', 'Preset', 'Load', 'Save']) {
+      expect(within(mobileBar).getByRole('button', { name })).toBeInTheDocument();
+    }
+  });
+
+  it('opens an option sheet from the mobile method button and applies the choice', async () => {
+    const setRawCalls: [string, any][] = [];
+    const mockWorkspace = {
+      draft: { model_type: 'FLUX_1', training_method: 'FINE_TUNE' },
+      setRaw: (path: string, val: any) => {
+        setRawCalls.push([path, val]);
+      },
+      state: 'saved',
+      revision: 'rev-1',
+    } as any;
+
+    const mockMeta = {
+      version: '1.0',
+      model_types: [
+        {
+          value: 'FLUX_1',
+          label: 'Flux 1',
+          training_methods: [
+            { value: 'FINE_TUNE', label: 'Fine Tune' },
+            { value: 'LORA', label: 'LoRA' },
+          ],
+        },
+      ],
+    };
+
+    render(HeaderTestWrapper, { workspace: mockWorkspace, metaData: mockMeta });
+
+    const mobileBar = screen.getByTestId('header-mobile-bar');
+    await fireEvent.click(within(mobileBar).getByRole('button', { name: 'Training method' }));
+
+    const listbox = await screen.findByRole('listbox');
+    await fireEvent.click(within(listbox).getByRole('option', { name: 'LoRA' }));
+
+    expect(setRawCalls).toEqual([['training_method', 'LORA']]);
+  });
+
+  it('keeps the training status readable as a dot on very narrow screens', () => {
+    render(HeaderTestWrapper, {});
+
+    const pill = screen.getByTestId('training-status-pill');
+    // The text stays in the DOM for the accessible name; only its visual
+    // presentation collapses below 380px.
+    expect(pill).toHaveTextContent('IDLE');
+    expect(pill.className).toContain('max-[380px]:');
   });
 
   it('presents overwrite confirmation in an Alert Dialog, guards pending state, prevents duplicate calls, retains error on failure, and closes on resolution', async () => {
@@ -182,7 +234,9 @@ describe('Header component', () => {
     render(HeaderTestWrapper, { workspace: mockWorkspace });
 
     // Open save modal
-    await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await fireEvent.click(
+      within(screen.getByTestId('header-desktop-bar')).getByRole('button', { name: 'Save' })
+    );
     await vi.waitFor(() => {
       expect(screen.getByRole('dialog')).toBeInTheDocument();
     });

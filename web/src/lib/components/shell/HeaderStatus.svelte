@@ -50,7 +50,11 @@
 
 <span
   data-testid="training-status-pill"
-  class={cn('status-pill', statusClasses[trainingState] ?? statusClasses.IDLE)}
+  class={cn(
+    'status-pill',
+    'max-[380px]:h-3 max-[380px]:w-3 max-[380px]:rounded-full max-[380px]:p-0 max-[380px]:text-[0px] max-[380px]:leading-none',
+    statusClasses[trainingState] ?? statusClasses.IDLE
+  )}
   title={$trainingStore.status?.error_message ?? ''}
 >
   {trainingState}
