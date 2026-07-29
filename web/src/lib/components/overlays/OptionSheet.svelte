@@ -8,6 +8,7 @@
 <script lang="ts">
   import { Check } from '@lucide/svelte';
   import ResponsiveDialogDrawer from './ResponsiveDialogDrawer.svelte';
+  import { Button } from '$lib/components/ui/button';
 
   let {
     open = false,
@@ -38,18 +39,19 @@
   -->
   <div role="listbox" aria-label={title} class="flex max-h-[60vh] flex-col overflow-y-auto py-1">
     {#each options as option (option.value)}
-      <button
+      <Button
         type="button"
+        variant="ghost"
         role="option"
         aria-selected={option.value === value}
-        class="flex min-h-[44px] w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm text-foreground transition-colors hover:bg-muted"
+        class="flex min-h-[44px] w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm text-foreground transition-colors hover:bg-muted h-auto rounded-none font-normal"
         onclick={() => choose(option.value)}
       >
         <span class="truncate">{option.label}</span>
         {#if option.value === value}
           <Check size={16} class="shrink-0 text-primary" />
         {/if}
-      </button>
+      </Button>
     {/each}
   </div>
 </ResponsiveDialogDrawer>

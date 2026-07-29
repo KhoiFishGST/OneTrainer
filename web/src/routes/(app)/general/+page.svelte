@@ -4,7 +4,7 @@
   import PageHeader from '$lib/components/layout/PageHeader.svelte';
   import RoutePage from '$lib/components/layout/RoutePage.svelte';
   import FormPageSkeleton from '$lib/components/loading/FormPageSkeleton.svelte';
-  import * as Tabs from '$lib/components/ui/tabs';
+  import SubNav from '$lib/components/layout/SubNav.svelte';
 
   const ctx = getRouteContext();
 
@@ -36,13 +36,12 @@
 
     <!-- Connected Text-Only General Sub-Nav Tabs -->
     <div class="general-tab-container">
-      <Tabs.Root value={activeSubTab} onValueChange={(val) => { if (val) activeSubTab = val as GeneralSubTab; }}>
-        <Tabs.List variant="line">
-          {#each subnavTabs as subtab (subtab.id)}
-            <Tabs.Trigger value={subtab.id}>{subtab.label}</Tabs.Trigger>
-          {/each}
-        </Tabs.List>
-      </Tabs.Root>
+      <SubNav
+        items={subnavTabs}
+        value={activeSubTab}
+        onChange={(id) => (activeSubTab = id as GeneralSubTab)}
+        label="General section"
+      />
 
       <div class="tab-panel-body">
         <SchemaForm

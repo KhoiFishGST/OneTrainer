@@ -2,7 +2,7 @@
   import type { Concept } from '$lib/api/types';
   import ResponsiveDialogDrawer from '$lib/components/overlays/ResponsiveDialogDrawer.svelte';
   import { Button } from '$lib/components/ui/button';
-  import * as Tabs from '$lib/components/ui/tabs';
+  import SubNav from '$lib/components/layout/SubNav.svelte';
   import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
   import DirectoryPicker from '$lib/components/directory/DirectoryPicker.svelte';
   import DatasetPickerModal from '$lib/components/datasets/DatasetPickerModal.svelte';
@@ -30,6 +30,13 @@
     onClose: () => void;
     openDirectory?: (mode: 'file' | 'dir', currentPath?: string) => Promise<string | null>;
   }>();
+
+  const conceptTabs = [
+    { id: 'general', label: 'General' },
+    { id: 'image', label: 'Image Augmentations' },
+    { id: 'text', label: 'Text Augmentations' },
+    { id: 'stats', label: 'Statistics' },
+  ];
 
   let activeTab = $state<'general' | 'image' | 'text' | 'stats'>('general');
   let draft = $state<Concept | null>(null);
@@ -153,14 +160,12 @@
     class="max-w-4xl max-h-[90vh]"
   >
     <div class="concept-modal-body">
-      <Tabs.Root value={activeTab} onValueChange={(val) => { if (val) activeTab = val as any; }}>
-        <Tabs.List variant="line">
-          <Tabs.Trigger value="general">General</Tabs.Trigger>
-          <Tabs.Trigger value="image">Image Augmentations</Tabs.Trigger>
-          <Tabs.Trigger value="text">Text Augmentations</Tabs.Trigger>
-          <Tabs.Trigger value="stats">Statistics</Tabs.Trigger>
-        </Tabs.List>
-      </Tabs.Root>
+      <SubNav
+        items={conceptTabs}
+        value={activeTab}
+        onChange={(id) => (activeTab = id as any)}
+        label="Concept section"
+      />
 
       <ScrollArea class="h-[520px] max-h-[60vh]">
         <div class="tab-content-inner">
