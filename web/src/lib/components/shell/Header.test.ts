@@ -244,6 +244,7 @@ describe('Header component', () => {
     await waitFor(() => {
       expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     });
+    await new Promise((r) => setTimeout(r, 60));
   });
 
   it('renders status pills with semantic token classes rather than hex colours', async () => {

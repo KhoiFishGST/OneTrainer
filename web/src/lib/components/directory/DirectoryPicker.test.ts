@@ -344,6 +344,7 @@ describe("DirectoryPicker", () => {
     await vi.waitFor(() => {
       expect(document.activeElement).toBe(triggerButton);
     });
+    await new Promise((r) => setTimeout(r, 60));
 
     document.body.removeChild(triggerButton);
   });
