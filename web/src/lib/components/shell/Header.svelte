@@ -1,7 +1,7 @@
 <script lang="ts">
+  import { flushSync, tick } from 'svelte';
   import { Save, FolderOpen, RotateCcw, RefreshCw, AlertTriangle, Menu } from '@lucide/svelte';
   import Select from '../form/ValueSelect.svelte';
-  import ResponsiveDialogDrawer from '$lib/components/overlays/ResponsiveDialogDrawer.svelte';
   import { Input as TextInput } from '../ui/input/index.js';
   import { Alert } from '$lib/components/ui/alert';
   import { Button } from '$lib/components/ui/button';
@@ -18,8 +18,6 @@
   import { trainingStore } from '../../events/training-store';
   import { api } from '../../api/client';
   import ThemeToggle from './ThemeToggle.svelte';
-
-  import * as AlertDialog from '../ui/alert-dialog/index.js';
 
   const sidebar = (() => {
     try {
@@ -59,6 +57,28 @@
   let presetName = $state('');
   let showSaveDialog = $state(false);
   let showOverwriteDialog = $state(false);
+
+  // vaul + the bits-ui dialog machinery are ~100 KB and only ever needed once
+  // the user saves a preset.
+  let SaveDrawer = $state<typeof import('$lib/components/overlays/ResponsiveDialogDrawer.svelte').default | null>(null);
+  let AlertDialog = $state<typeof import('../ui/alert-dialog/index.js') | null>(null);
+
+  $effect(() => {
+    if (showSaveDialog && !SaveDrawer) {
+      import('$lib/components/overlays/ResponsiveDialogDrawer.svelte').then((module) => {
+        SaveDrawer = module.default;
+      });
+    }
+  });
+
+  $effect(() => {
+    if (showOverwriteDialog && !AlertDialog) {
+      import('../ui/alert-dialog/index.js').then((module) => {
+        AlertDialog = module;
+      });
+    }
+  });
+
   let saveError = $state<string | null>(null);
   let isOverwritePending = $state(false);
   let overwriteError = $state<string | null>(null);
@@ -169,6 +189,11 @@
   async function openSavePresetModal() {
     saveError = null;
     overwriteError = null;
+    if (!SaveDrawer) {
+      const module = await import('$lib/components/overlays/ResponsiveDialogDrawer.svelte');
+      SaveDrawer = module.default;
+      await tick();
+    }
     if (workspace) {
       try {
         await workspace.beforePresetSave();
@@ -201,6 +226,10 @@
       const status = err?.status ?? err?.statusCode;
       if (status === 409 || err?.detail?.exists) {
         overwriteError = null;
+        if (!AlertDialog) {
+          AlertDialog = await import('../ui/alert-dialog/index.js');
+          await tick();
+        }
         showOverwriteDialog = true;
       } else if (overwrite) {
         overwriteError = err?.message ?? 'Failed to overwrite configuration file';
@@ -383,58 +412,62 @@
   </div>
 {/if}
 
-<ResponsiveDialogDrawer
-  open={showSaveDialog && !showOverwriteDialog}
-  onOpenChange={(v) => { if (!v) showSaveDialog = false; }}
-  title="Save Configuration"
->
-  {#if saveError}
-    <p class="text-sm text-destructive">{saveError}</p>
-  {/if}
-  <label class="modal-field">
-    <span>Configuration Name</span>
-    <TextInput
-      aria-label="Preset Name"
-      bind:value={presetName}
-      placeholder="my_config"
-      onkeydown={(event) => {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          handleSavePreset();
-        }
-      }}
-    />
-  </label>
-  {#snippet footer()}
-    <div class="flex items-center justify-end gap-2 p-2">
-      <Button variant="secondary" onclick={() => (showSaveDialog = false)}>Cancel</Button>
-      <Button variant="default" onclick={handleSavePreset}>Save</Button>
-    </div>
-  {/snippet}
-</ResponsiveDialogDrawer>
+{#if SaveDrawer}
+  <SaveDrawer
+    bind:open={showSaveDialog}
+    onOpenChange={(v) => { if (!v) showSaveDialog = false; }}
+    title="Save Configuration"
+  >
+    {#if saveError}
+      <p class="text-sm text-destructive">{saveError}</p>
+    {/if}
+    <label class="modal-field">
+      <span>Configuration Name</span>
+      <TextInput
+        aria-label="Preset Name"
+        bind:value={presetName}
+        placeholder="my_config"
+        onkeydown={(event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            handleSavePreset();
+          }
+        }}
+      />
+    </label>
+    {#snippet footer()}
+      <div class="flex items-center justify-end gap-2 p-2">
+        <Button variant="secondary" onclick={() => (showSaveDialog = false)}>Cancel</Button>
+        <Button variant="default" onclick={handleSavePreset}>Save</Button>
+      </div>
+    {/snippet}
+  </SaveDrawer>
+{/if}
 
 {#if showOverwriteDialog}
-  <AlertDialog.Root open={showOverwriteDialog} onOpenChange={(v) => { if (!v && !isOverwritePending) showOverwriteDialog = false; }}>
-    <AlertDialog.Content>
-      <AlertDialog.Header>
-        <AlertDialog.Title>File Already Exists</AlertDialog.Title>
-        <AlertDialog.Description>
-          The configuration file <strong>{presetName}.json</strong> already exists in <code>training_configs</code>. Do you want to overwrite it?
-        </AlertDialog.Description>
-      </AlertDialog.Header>
-      {#if overwriteError}
-        <Alert variant="destructive" class="my-2">
-          <span>{overwriteError}</span>
-        </Alert>
-      {/if}
-      <AlertDialog.Footer>
-        <AlertDialog.Cancel disabled={isOverwritePending} onclick={() => (showOverwriteDialog = false)}>Cancel</AlertDialog.Cancel>
-        <AlertDialog.Action disabled={isOverwritePending} onclick={handleConfirmOverwrite}>
-          Overwrite
-        </AlertDialog.Action>
-      </AlertDialog.Footer>
-    </AlertDialog.Content>
-  </AlertDialog.Root>
+  {#if AlertDialog}
+    <AlertDialog.Root bind:open={showOverwriteDialog} onOpenChange={(v) => { if (!v && !isOverwritePending) showOverwriteDialog = false; }}>
+      <AlertDialog.Content>
+        <AlertDialog.Header>
+          <AlertDialog.Title>File Already Exists</AlertDialog.Title>
+          <AlertDialog.Description>
+            The configuration file <strong>{presetName}.json</strong> already exists in <code>training_configs</code>. Do you want to overwrite it?
+          </AlertDialog.Description>
+        </AlertDialog.Header>
+        {#if overwriteError}
+          <Alert variant="destructive" class="my-2">
+            <span>{overwriteError}</span>
+          </Alert>
+        {/if}
+        <AlertDialog.Footer>
+          <AlertDialog.Cancel disabled={isOverwritePending} onclick={() => (showOverwriteDialog = false)}>Cancel</AlertDialog.Cancel>
+          <AlertDialog.Action disabled={isOverwritePending} onclick={handleConfirmOverwrite}>
+            Overwrite
+          </AlertDialog.Action>
+        </AlertDialog.Footer>
+      </AlertDialog.Content>
+    </AlertDialog.Root>
+  {/if}
 {/if}
 
 <style>

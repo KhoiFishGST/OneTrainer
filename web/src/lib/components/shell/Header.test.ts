@@ -1,11 +1,15 @@
-import { fireEvent, render, screen, waitFor, act, within } from '@testing-library/svelte';
+import { fireEvent, render, screen, waitFor, act, within, cleanup } from '@testing-library/svelte';
 import { tick } from 'svelte';
-import { expect, it, describe, vi } from 'vitest';
+import { expect, it, describe, vi, beforeEach } from 'vitest';
 import HeaderTestWrapper from './HeaderTestWrapper.svelte';
 import { trainingStore } from '../../events/training-store';
 import { api } from '../../api/client';
 
 describe('Header component', () => {
+  beforeEach(() => {
+    cleanup();
+    document.body.innerHTML = '';
+  });
   it('coerces training_method to first supported when new model_type does not support current training_method', async () => {
     const setRawCalls: [string, any][] = [];
     const mockWorkspace = {
@@ -76,7 +80,9 @@ describe('Header component', () => {
     const savePresetBtn = screen.getByRole('button', { name: 'Save' });
     await fireEvent.click(savePresetBtn);
 
-    expect(beforePresetSaveSpy).toHaveBeenCalled();
+    await vi.waitFor(() => {
+      expect(beforePresetSaveSpy).toHaveBeenCalled();
+    });
   });
 
   it('renders saved icon badge when workspace state is saved, hides during unsaved, and renders retry button on failure', () => {
@@ -112,8 +118,12 @@ describe('Header component', () => {
 
     const saveBtn = screen.getByRole('button', { name: 'Save' });
     await fireEvent.click(saveBtn);
+    await vi.waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
 
-    const input = screen.getByPlaceholderText('my_config');
+    const dialog = screen.getByRole('dialog');
+    const input = within(dialog).getByPlaceholderText('my_config');
     await fireEvent.input(input, { target: { value: 'my_enter_config' } });
     await fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
 
@@ -173,15 +183,22 @@ describe('Header component', () => {
 
     // Open save modal
     await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    const input = screen.getByPlaceholderText('my_config');
+    await vi.waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+    const dialog = screen.getByRole('dialog');
+    const input = within(dialog).getByPlaceholderText('my_config');
     await fireEvent.input(input, { target: { value: 'existing_preset' } });
 
     // Trigger save (will fail with 409 and open overwrite dialog)
     const modalSaveBtn = within(screen.getByRole('dialog')).getByRole('button', { name: /^Save$/i });
     await fireEvent.click(modalSaveBtn);
+    await vi.waitFor(() => {
+      expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    });
 
     // Overwrite dialog should be an Alert Dialog
-    const alertDialog = await screen.findByRole('alertdialog');
+    const alertDialog = screen.getByRole('alertdialog');
     expect(alertDialog).toBeInTheDocument();
     expect(screen.getByText(/already exists in/i)).toBeInTheDocument();
 

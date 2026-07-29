@@ -17,6 +17,10 @@ export const CRITICAL_PATH_MODULES: Record<string, string[]> = {
     './shell/ConsoleDrawer.svelte',
     './directory/DirectoryPicker.svelte',
   ],
+  '/src/lib/components/shell/Header.svelte': [
+    '$lib/components/overlays/ResponsiveDialogDrawer.svelte',
+    '../ui/alert-dialog/index.js',
+  ],
 };
 
 /**
