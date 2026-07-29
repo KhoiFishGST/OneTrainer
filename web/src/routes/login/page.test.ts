@@ -1,6 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/svelte';
 import { beforeEach, expect, it, vi, describe } from 'vitest';
 import Page from './+page.svelte';
+import { goto } from '$app/navigation';
+
+vi.mock('$app/navigation', () => ({
+  goto: vi.fn(),
+}));
 
 beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, json: async () => ({ detail: 'Invalid password' }) }));
@@ -46,5 +51,16 @@ describe('Login Page', () => {
         value: originalLocation,
       });
     }
+  });
+
+  it('navigates client-side to the app on a successful login', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ status: 'ok' }) }));
+
+    render(Page);
+    await fireEvent.input(screen.getByLabelText('Password'), { target: { value: 'correct-horse' } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Sign In' }));
+
+    expect(fetch).toHaveBeenCalledWith('/api/auth/login', expect.objectContaining({ method: 'POST' }));
+    expect(goto).toHaveBeenCalledWith('/live');
   });
 });

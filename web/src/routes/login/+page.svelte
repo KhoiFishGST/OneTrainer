@@ -4,6 +4,7 @@
   import { Button } from '$lib/components/ui/button';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
   import { Alert } from '$lib/components/ui/alert';
+  import { goto } from '$app/navigation';
 
   let password = $state('');
   let errorMsg = $state('');
@@ -33,7 +34,10 @@
       });
 
       if (res.ok) {
-        window.location.href = '/';
+        // The session cookie is set by the response above, so a client-side
+        // navigation is enough — a full reload would re-download the bundle
+        // and then eat a server redirect from / to /live.
+        await goto('/live');
       } else {
         const data = await res.json();
         errorMsg = data.detail || 'Invalid password. Please try again.';
