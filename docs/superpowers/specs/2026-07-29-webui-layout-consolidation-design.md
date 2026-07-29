@@ -33,6 +33,13 @@ and make future drift a failing test rather than a code-review catch.
 Colour, typography, spacing scale, and component-level visual design are unchanged.
 This is width and field flow only.
 
+## Constraints
+
+Python changes are confined to `modules/webui/`. No core OneTrainer training source is
+touched. The only Python edit in this design is §3.1, to
+`modules/webui/schema/builders/sampling.py`, which builds the web UI's schema payload
+and has no consumer outside the web UI.
+
 ## Decisions
 
 | Question | Decision |
