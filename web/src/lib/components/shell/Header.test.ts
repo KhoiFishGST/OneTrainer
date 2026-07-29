@@ -197,6 +197,9 @@ describe('Header component', () => {
       expect(screen.getByRole('alertdialog')).toBeInTheDocument();
     });
 
+    // Save drawer should be hidden while overwrite dialog is open
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
     // Overwrite dialog should be an Alert Dialog
     const alertDialog = screen.getByRole('alertdialog');
     expect(alertDialog).toBeInTheDocument();

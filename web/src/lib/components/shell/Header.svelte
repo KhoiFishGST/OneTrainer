@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { flushSync, tick } from 'svelte';
+  import { tick } from 'svelte';
   import { Save, FolderOpen, RotateCcw, RefreshCw, AlertTriangle, Menu } from '@lucide/svelte';
   import Select from '../form/ValueSelect.svelte';
   import { Input as TextInput } from '../ui/input/index.js';
@@ -414,7 +414,7 @@
 
 {#if SaveDrawer}
   <SaveDrawer
-    bind:open={showSaveDialog}
+    open={showSaveDialog && !showOverwriteDialog}
     onOpenChange={(v) => { if (!v) showSaveDialog = false; }}
     title="Save Configuration"
   >
@@ -446,7 +446,7 @@
 
 {#if showOverwriteDialog}
   {#if AlertDialog}
-    <AlertDialog.Root bind:open={showOverwriteDialog} onOpenChange={(v) => { if (!v && !isOverwritePending) showOverwriteDialog = false; }}>
+    <AlertDialog.Root open={showOverwriteDialog} onOpenChange={(v) => { if (!v && !isOverwritePending) showOverwriteDialog = false; }}>
       <AlertDialog.Content>
         <AlertDialog.Header>
           <AlertDialog.Title>File Already Exists</AlertDialog.Title>
