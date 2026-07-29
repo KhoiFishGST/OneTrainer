@@ -84,4 +84,48 @@ test.describe("Phone layout", () => {
     await subnav.selectOption({ index: 1 });
     await expect(subnav).toHaveValue("1");
   });
+
+  /**
+   * The app shell is `overflow-hidden`, so content pushed past the right edge
+   * is clipped rather than scrolled. `document.scrollWidth` therefore stays
+   * equal to `clientWidth` and the horizontal-scroll check above cannot see
+   * it. Measure the controls themselves instead.
+   */
+  for (const width of [320, 360, 390, 430]) {
+    test(`no shell control is clipped at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto("/general");
+      await page.waitForLoadState("networkidle");
+
+      const clipped = await page.evaluate((vw) => {
+        const selectors = [
+          '[aria-label="Open navigation"]',
+          '[data-testid="header-mobile-bar"] button',
+          '[aria-label^="Switch to"]',
+          '[data-testid="training-status-pill-mobile"]',
+          "footer button",
+        ];
+        const out: string[] = [];
+        for (const selector of selectors) {
+          const nodes = [...document.querySelectorAll(selector)] as HTMLElement[];
+          if (nodes.length === 0) {
+            out.push(`${selector}: not rendered`);
+            continue;
+          }
+          for (const el of nodes) {
+            const r = el.getBoundingClientRect();
+            if (r.width === 0 && r.height === 0) continue;
+            if (r.right > vw + 1 || r.left < -1) {
+              const name = el.getAttribute("aria-label") ?? el.textContent?.trim() ?? selector;
+              out.push(`${name}: ${Math.round(r.left)}..${Math.round(r.right)} outside 0..${vw}`);
+            }
+          }
+        }
+        return out;
+      }, width);
+
+      expect(clipped, `Clipped at ${width}px:\n${clipped.join("\n")}`).toEqual([]);
+    });
+  }
 });
+
