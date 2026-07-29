@@ -240,3 +240,20 @@ def test_meta_json_dump_without_nan_or_inf_error():
     assert isinstance(serialized, str)
     assert '"inf"' in serialized or '"-inf"' in serialized or 'default' in serialized
 
+
+def test_sampling_tab_excludes_web_ui_managed_fields():
+    """The sampling route renders its own definition-file picker and prompt
+    table, so the generic schema form must not also emit those fields."""
+    from modules.util.enum.ModelType import ModelType
+    from modules.util.enum.TrainingMethod import TrainingMethod
+    from modules.webui.schema.builders.sampling import build_sampling_tab
+
+    tab = build_sampling_tab(ModelType.STABLE_DIFFUSION_15, TrainingMethod.FINE_TUNE)
+    field_ids = {field.id for group in tab.groups for field in group.fields}
+
+    assert "sample-def-filename" not in field_ids
+    assert "samples" not in field_ids
+    assert "sample-after" in field_ids
+    assert len(field_ids) == 7
+
+

@@ -142,17 +142,32 @@ describe('SamplingPage', () => {
       }) as any
     );
 
-    const { container } = render(SamplingPage);
+    render(SamplingPage);
 
     expect(screen.getByRole('heading', { level: 1, name: 'Sampling' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /sample now/i })).toBeInTheDocument();
-    
-    // Compact options panel wrapper
-    const optionsPanel = container.querySelector('.options-panel');
-    expect(optionsPanel).toBeInTheDocument();
 
     // Section header
     expect(screen.getByRole('heading', { level: 2, name: /sample prompts \(0\)/i })).toBeInTheDocument();
+  });
+
+  it('renders the definition-file selector inside the Sample Prompts header, not above the settings panel', () => {
+    vi.mocked(createSamplesQuery).mockReturnValue(
+      readable({ data: [], isLoading: false, isError: false }) as any
+    );
+    vi.mocked(createUpdateSamplesMutation).mockReturnValue(
+      readable({ mutateAsync: vi.fn(), isPending: false }) as any
+    );
+
+    const { container } = render(SamplingPage);
+
+    const header = container.querySelector('[data-testid="sample-prompts-header"]');
+    expect(header).toBeInTheDocument();
+    expect(header?.querySelector('#sample-config-select')).toBeInTheDocument();
+    expect(
+      header?.querySelector('button')?.textContent
+    ).toBeDefined();
+    expect(screen.getByRole('button', { name: /Add Config/i })).toBeInTheDocument();
   });
 
   it('renders prompt table rows from createSamplesQuery mock and opens SampleDetailModal on edit click', async () => {

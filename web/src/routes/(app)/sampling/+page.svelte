@@ -19,6 +19,7 @@
     createCreateSampleFileMutation,
   } from '$lib/api/queries';
   import PageHeader from '$lib/components/layout/PageHeader.svelte';
+  import RoutePage from '$lib/components/layout/RoutePage.svelte';
   import { Alert } from '$lib/components/ui/alert';
   import FormPageSkeleton from '$lib/components/loading/FormPageSkeleton.svelte';
   import { Button } from '$lib/components/ui/button';
@@ -104,23 +105,13 @@
     }
   });
 
-  const rawTab = $derived(
+  const tab = $derived(
     ctx.schema?.tabs?.find((t) => t.id === 'sampling') ?? {
       id: 'sampling',
       label: 'Sampling',
       groups: [],
     }
   );
-
-  const tab = $derived({
-    ...rawTab,
-    groups: (rawTab.groups || []).map((group: any) => ({
-      ...group,
-      fields: (group.fields || []).filter(
-        (f: any) => f.id !== 'samples' && f.id !== 'sample_definition_file_name'
-      ),
-    })),
-  });
 
   const status = $derived($trainingStore.status);
 
@@ -282,7 +273,7 @@
 {#if !ctx.workspace}
   <FormPageSkeleton label="Loading sampling configuration" />
 {:else}
-  <div class="p-6 flex flex-col gap-6">
+  <RoutePage>
     <PageHeader title={tab.label || 'Sampling'}>
       {#snippet actions()}
         <Button
@@ -303,32 +294,7 @@
       </Alert>
     {/if}
 
-    <div class="mb-6 p-4 bg-card border border-border rounded-lg">
-      <div class="flex items-center gap-3 flex-wrap">
-        <label for="sample-config-select" class="text-sm font-semibold text-foreground whitespace-nowrap">
-          Sample Definition File
-        </label>
-        <div class="min-w-[220px]">
-          <Select
-            id="sample-config-select"
-            value={currentConfigFile}
-            options={sampleFileOptions}
-            onChange={handleSelectConfigFile}
-          />
-        </div>
-        <Button
-          type="button"
-          variant="secondary"
-          class="whitespace-nowrap"
-          onclick={handleOpenAddConfigModal}
-        >
-          <Plus size={16} />
-          <span>Add Config</span>
-        </Button>
-      </div>
-    </div>
-
-    <div class="options-panel w-[740px] max-w-full mb-8 box-border">
+    <div class="options-panel w-full">
       {#if (tab.groups?.length ?? 0) > 0}
         <SchemaForm
           {tab}
@@ -341,8 +307,34 @@
     </div>
 
     <div>
-      <div class="mb-4 pb-2 border-b border-border">
+      <div
+        class="mb-4 pb-2 border-b border-border flex items-center justify-between gap-4 flex-wrap"
+        data-testid="sample-prompts-header"
+      >
         <h2 class="text-lg font-semibold m-0 text-foreground">Sample Prompts ({samples.length})</h2>
+
+        <div class="flex items-center gap-3 flex-wrap">
+          <label for="sample-config-select" class="text-sm font-medium text-muted-foreground whitespace-nowrap">
+            Definition file
+          </label>
+          <div class="min-w-[220px]">
+            <Select
+              id="sample-config-select"
+              value={currentConfigFile}
+              options={sampleFileOptions}
+              onChange={handleSelectConfigFile}
+            />
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            class="whitespace-nowrap"
+            onclick={handleOpenAddConfigModal}
+          >
+            <Plus size={16} />
+            <span>Add Config</span>
+          </Button>
+        </div>
       </div>
 
       {#if mobile}
@@ -369,7 +361,7 @@
         />
       {/if}
     </div>
-  </div>
+  </RoutePage>
 {/if}
 
 <ResponsiveDialogDrawer
