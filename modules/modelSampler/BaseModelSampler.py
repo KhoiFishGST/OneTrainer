@@ -24,7 +24,6 @@ class ModelSamplerOutput:
 
     ):
         self.file_type = file_type
-        self.filepath: str | None = None
         if isinstance(data, bytes):
             assert file_type == FileType.IMAGE
             self.data = Image.open(io.BytesIO(data))
@@ -93,10 +92,7 @@ class BaseModelSampler(metaclass=ABCMeta):
             if image_format is None:
                 raise ValueError("Image format required for sampling an image")
             image = sampler_output.data
-            ext = image_format.extension() if hasattr(image_format, "extension") else ".png"
-            full_path = destination + ext
-            sampler_output.filepath = full_path
-            image.save(full_path, format=image_format.pil_format() if hasattr(image_format, "pil_format") else "PNG")
+            image.save(destination + image_format.extension(), format=image_format.pil_format())
         elif sampler_output.file_type == FileType.VIDEO:
             if video_format is None:
                 raise ValueError("Video format required for sampling a video")

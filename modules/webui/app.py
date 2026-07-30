@@ -39,6 +39,7 @@ from modules.webui.routers.presets import router as presets_router
 from modules.webui.routers.samples import router as samples_router
 from modules.webui.routers.secrets import router as secrets_router
 from modules.webui.routers.training import router as training_router
+from modules.webui.runtime_patches import install_runtime_patches
 from modules.webui.sampling_coordinator import SamplingCoordinator
 from modules.webui.schema import SchemaRegistry
 from modules.webui.settings_store import SettingsStore
@@ -111,6 +112,8 @@ class LimitUploadSizeMiddleware:
 
 
 def create_app(settings: WebUISettings, capture=None) -> FastAPI:
+    install_runtime_patches()
+
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         config_svc = ConfigService.load(settings)

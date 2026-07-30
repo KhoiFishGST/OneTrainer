@@ -17,39 +17,6 @@ logger = logging.getLogger(__name__)
 
 _active_training_service: Optional["TrainingService"] = None
 
-try:
-    from torch.utils.tensorboard import SummaryWriter
-    _orig_add_scalar = SummaryWriter.add_scalar
-
-    def _global_add_scalar(writer_self, tag, scalar_value, global_step=None, walltime=None):
-        with contextlib.suppress(Exception):
-            _orig_add_scalar(writer_self, tag, scalar_value, global_step, walltime)
-        if _active_training_service is not None:
-            try:
-                tag_lower = tag.lower()
-                val = float(scalar_value)
-                step_val = global_step if global_step is not None else _active_training_service._step
-
-                metric_payload = {
-                    "step": step_val,
-                    "epoch": _active_training_service._epoch,
-                }
-                key = tag.replace("/", "_")
-                metric_payload[key] = val
-
-                if "loss" in tag_lower:
-                    metric_payload["loss"] = val
-                if "lr" in tag_lower or "learning_rate" in tag_lower:
-                    metric_payload["lr"] = val
-
-                _active_training_service.record_metric(metric_payload)
-            except Exception:
-                pass
-
-    SummaryWriter.add_scalar = _global_add_scalar
-except Exception:
-    pass
-
 
 class TrainingState(str, Enum):
     IDLE = "IDLE"
@@ -395,39 +362,6 @@ class TrainingService:
                     on_update_train_progress=on_progress,
                     on_sample_default=self._handle_default_sample,
                 )
-
-                # Patch SummaryWriter to record real-time loss/learning rate metrics
-                try:
-                    from torch.utils.tensorboard import SummaryWriter
-                    orig_add_scalar = SummaryWriter.add_scalar
-
-                    def custom_add_scalar(writer_self, tag, scalar_value, global_step=None, walltime=None):
-                        with contextlib.suppress(Exception):
-                            orig_add_scalar(writer_self, tag, scalar_value, global_step, walltime)
-                        try:
-                            tag_lower = tag.lower()
-                            val = float(scalar_value)
-                            step_val = global_step if global_step is not None else self._step
-
-                            metric_payload = {
-                                "step": step_val,
-                                "epoch": self._epoch,
-                            }
-                            key = tag.replace("/", "_")
-                            metric_payload[key] = val
-
-                            if "loss" in tag_lower:
-                                metric_payload["loss"] = val
-                            if "lr" in tag_lower or "learning_rate" in tag_lower:
-                                metric_payload["lr"] = val
-
-                            self.record_metric(metric_payload)
-                        except Exception:
-                            pass
-
-                    SummaryWriter.add_scalar = custom_add_scalar
-                except Exception:
-                    pass
 
                 logging.info("TrainingService: Instantiating PyTorch trainer...")
                 trainer = create.create_trainer(train_config, callbacks, commands)
