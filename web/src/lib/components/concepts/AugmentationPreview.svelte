@@ -1,9 +1,10 @@
 <script lang="ts">
   import type { Concept } from '$lib/api/types';
   import { api } from '$lib/api/client';
+  import ResponsiveDialogDrawer from '$lib/components/overlays/ResponsiveDialogDrawer.svelte';
   import { Button } from '$lib/components/ui/button';
   import { Checkbox } from '$lib/components/ui/checkbox/index.js';
-  import { ChevronLeft, ChevronRight, X } from '@lucide/svelte';
+  import { ChevronLeft, ChevronRight } from '@lucide/svelte';
 
   let {
     draft,
@@ -56,93 +57,95 @@
 </script>
 
 {#if open}
-  <div class="aug-preview-backdrop" role="dialog" aria-modal="true" aria-label="Image Augmentations Live Test">
-    <div class="aug-preview-dialog">
-      <div class="aug-preview-header">
-        <h3 class="aug-preview-title">Image Augmentations Live Test - Sample #{previewIndex + 1}</h3>
-        <Button type="button" variant="ghost" size="icon" onclick={onClose} aria-label="Close">
-          <X size={18} />
-        </Button>
+  <ResponsiveDialogDrawer
+    {open}
+    onOpenChange={(val) => {
+      if (!val) onClose();
+    }}
+    title="Image Augmentations Live Test - Sample #{previewIndex + 1}"
+    class="max-w-2xl"
+  >
+    <div class="aug-preview-modal-body flex flex-col gap-4">
+      <div class="preview-toolbar flex items-center">
+        <label class="preview-toggle-lbl flex items-center gap-2 text-sm cursor-pointer" for="preview-augmentations">
+          <Checkbox
+            id="preview-augmentations"
+            checked={previewAugmentations}
+            onChange={(checked) => {
+              previewAugmentations = checked;
+              fetchAugPreview();
+            }}
+          />
+          <span>Preview Augmentations</span>
+        </label>
       </div>
 
-      <div class="aug-preview-modal-body">
-        <div class="preview-toolbar">
-          <label class="preview-toggle-lbl" for="preview-augmentations">
-            <Checkbox
-              id="preview-augmentations"
-              value={previewAugmentations}
-              onChange={(value) => {
-                previewAugmentations = value;
-                fetchAugPreview();
-              }}
+      <div class="preview-display-box flex flex-col gap-3">
+        <div class="preview-img-container relative w-full h-[320px] bg-muted border border-border rounded-lg flex items-center justify-center overflow-hidden">
+          {#if previewLoading}
+            <div class="preview-loading-overlay absolute inset-0 bg-black/60 text-foreground flex items-center justify-center text-sm font-medium z-10">
+              Testing Pipeline...
+            </div>
+          {/if}
+
+          {#if previewData?.image_data}
+            <img
+              src={previewData.image_data}
+              alt="Augmented Preview"
+              class="preview-img max-w-full max-h-full object-contain"
             />
-            <span>Preview Augmentations</span>
-          </label>
+          {:else}
+            <img
+              src="/api/concepts/preview-image?path={encodeURIComponent(
+                draft.path || ''
+              )}&include_subdirectories={draft.include_subdirectories}"
+              alt="Concept Preview"
+              class="preview-img max-w-full max-h-full object-contain"
+            />
+          {/if}
+
+          <div class="nav-controls-bar absolute bottom-2 flex items-center gap-2 bg-black/75 px-2 py-1 rounded-full backdrop-blur-xs">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              class="h-6 w-6 rounded-full bg-white/10 p-0 text-white hover:bg-white/20 disabled:opacity-40"
+              disabled={previewIndex <= 0 || previewLoading}
+              onclick={handlePrevPreview}
+            >
+              <ChevronLeft size={16} />
+            </Button>
+            <span class="nav-idx-lbl text-xs text-foreground font-semibold">Sample #{previewIndex + 1}</span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              class="h-6 w-6 rounded-full bg-white/10 p-0 text-white hover:bg-white/20 disabled:opacity-40"
+              disabled={previewLoading}
+              onclick={handleNextPreview}
+            >
+              <ChevronRight size={16} />
+            </Button>
+          </div>
         </div>
 
-        <div class="preview-display-box">
-          <div class="preview-img-container">
-            {#if previewLoading}
-              <div class="preview-loading-overlay">Testing Pipeline...</div>
-            {/if}
-
-            {#if previewData?.image_data}
-              <img
-                src={previewData.image_data}
-                alt="Augmented Preview"
-                class="preview-img"
-              />
-            {:else}
-              <img
-                src="/api/concepts/preview-image?path={encodeURIComponent(
-                  draft.path || ''
-                )}&include_subdirectories={draft.include_subdirectories}"
-                alt="Concept Preview"
-                class="preview-img"
-              />
-            {/if}
-
-            <div class="nav-controls-bar">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                class="h-[26px] w-[26px] rounded-full bg-white/10 p-0 text-white hover:bg-white/20 disabled:opacity-40"
-                disabled={previewIndex <= 0 || previewLoading}
-                onclick={handlePrevPreview}
-              >
-                <ChevronLeft size={16} />
-              </Button>
-              <span class="nav-idx-lbl">Sample #{previewIndex + 1}</span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                class="h-[26px] w-[26px] rounded-full bg-white/10 p-0 text-white hover:bg-white/20 disabled:opacity-40"
-                disabled={previewLoading}
-                onclick={handleNextPreview}
-              >
-                <ChevronRight size={16} />
-              </Button>
-            </div>
+        <div class="preview-meta-container flex flex-col gap-2 bg-card p-3 border border-border rounded-lg text-xs">
+          <div class="meta-row flex gap-2">
+            <span class="meta-lbl text-muted-foreground font-medium">Filename:</span>
+            <span class="meta-val text-foreground">{previewData?.filename || 'sample.png'}</span>
           </div>
-
-          <div class="preview-meta-container">
-            <div class="meta-row">
-              <span class="meta-lbl">Filename:</span>
-              <span class="meta-val">{previewData?.filename || 'sample.png'}</span>
-            </div>
-            <div class="meta-col">
-              <span class="meta-lbl">Augmented Prompt Output:</span>
-              <div class="prompt-output-box">
-                {previewData?.prompt || '[No caption output]'}
-              </div>
+          <div class="meta-col flex flex-col gap-1">
+            <span class="meta-lbl text-muted-foreground font-medium">Augmented Prompt Output:</span>
+            <div class="prompt-output-box bg-muted border border-border p-2 rounded font-mono text-xs break-all max-h-20 overflow-y-auto">
+              {previewData?.prompt || '[No caption output]'}
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <div class="aug-preview-footer">
+    {#snippet footer()}
+      <div class="aug-preview-footer flex justify-end w-full">
         <Button
           type="button"
           variant="secondary"
@@ -151,177 +154,6 @@
           Close Preview
         </Button>
       </div>
-    </div>
-  </div>
+    {/snippet}
+  </ResponsiveDialogDrawer>
 {/if}
-
-<style>
-  .aug-preview-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    backdrop-filter: blur(2px);
-  }
-
-  .aug-preview-dialog {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    width: 100%;
-    max-width: 640px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-  }
-
-  .aug-preview-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .aug-preview-title {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--foreground);
-  }
-
-  .aug-preview-modal-body {
-    padding: 1.25rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .preview-toolbar {
-    display: flex;
-    align-items: center;
-  }
-
-  .preview-toggle-lbl {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-    color: var(--foreground);
-    cursor: pointer;
-  }
-
-  .preview-display-box {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .preview-img-container {
-    position: relative;
-    width: 100%;
-    height: 320px;
-    background: var(--muted);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-  }
-
-  .preview-img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-  }
-
-  .preview-loading-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    color: var(--foreground);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.875rem;
-    font-weight: 500;
-    z-index: 10;
-  }
-
-  .nav-controls-bar {
-    position: absolute;
-    bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: rgba(0, 0, 0, 0.75);
-    padding: 0.25rem 0.5rem;
-    border-radius: 20px;
-    backdrop-filter: blur(4px);
-  }
-
-  .nav-idx-lbl {
-    font-size: 0.75rem;
-    color: var(--foreground);
-    font-weight: 600;
-  }
-
-  .preview-meta-container {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    background: var(--card);
-    padding: 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-size: 0.8125rem;
-  }
-
-  .meta-row {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .meta-col {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .meta-lbl {
-    color: var(--muted-foreground);
-    font-weight: 500;
-  }
-
-  .meta-val {
-    color: var(--foreground);
-  }
-
-  .prompt-output-box {
-    background: var(--muted);
-    border: 1px solid var(--border);
-    padding: 0.5rem;
-    border-radius: 4px;
-    color: var(--foreground);
-    font-family: monospace;
-    font-size: 0.75rem;
-    word-break: break-all;
-    max-height: 80px;
-    overflow-y: auto;
-  }
-
-  .aug-preview-footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding: 0.875rem 1.25rem;
-    border-top: 1px solid var(--border);
-    background: var(--muted);
-  }
-</style>
