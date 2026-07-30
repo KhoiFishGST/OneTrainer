@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import { getRouteContext } from '$lib/config/context';
   import ResponsiveDialogDrawer from '$lib/components/overlays/ResponsiveDialogDrawer.svelte';
   import { Button } from '$lib/components/ui/button';
@@ -49,19 +50,34 @@
   let baseDir = $derived(
     baseDirDraft ?? $datasetsQuery.data?.base_dir ?? 'training_datasets'
   );
+  let baseDirError = $state<string | null>(null);
   let commitTimer: ReturnType<typeof setTimeout> | undefined;
 
   function handleBaseDirChange(newPath: string) {
     baseDirDraft = newPath;
+    baseDirError = null;
     if (commitTimer) clearTimeout(commitTimer);
     commitTimer = setTimeout(() => {
       $setBaseDirMutation.mutate(newPath, {
-        onSettled: () => {
+        onSuccess: () => {
+          // Runs after the datasets query has refetched, so dropping the
+          // draft reveals the new server value rather than the stale one.
           baseDirDraft = null;
+          baseDirError = null;
+        },
+        onError: (err: any) => {
+          // Keep the draft so the user's text is not destroyed.
+          baseDirError = err?.message || 'Failed to set base directory';
         },
       });
     }, 600);
   }
+
+  onDestroy(() => {
+    // Drop any pending edit: a path the user typed and navigated away from
+    // must not be committed behind their back.
+    if (commitTimer) clearTimeout(commitTimer);
+  });
 
   function openCreateModal() {
     const existingNames = new Set(datasets.map((d: DatasetItem) => d.name));
@@ -119,6 +135,10 @@
         />
       </div>
     </div>
+
+    {#if baseDirError}
+      <Alert variant="destructive" class="text-xs m-0 text-destructive">{baseDirError}</Alert>
+    {/if}
 
     {#if ctx?.workspace}
       <div class="h-px bg-border"></div>

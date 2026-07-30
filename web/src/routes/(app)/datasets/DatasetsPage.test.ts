@@ -116,3 +116,45 @@ test('dataset deletion opens AlertDialog, handles pending state, prevents duplic
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
   });
 });
+
+test('failed base directory PUT keeps the typed value and surfaces an error', async () => {
+  vi.useFakeTimers();
+  try {
+    vi.spyOn(queries, 'createDatasetsQuery').mockReturnValue(
+      readable({
+        data: { datasets: [], base_dir: 'training_datasets' },
+        isLoading: false,
+      }) as any
+    );
+
+    // Stand-in for the real mutation: invokes the per-call onError, as
+    // TanStack Query does when PUT /api/datasets/base-dir 500s.
+    const mutate = vi.fn((_path: string, opts: any) => {
+      opts?.onError?.(new Error('Settings file is not writable'));
+    });
+    vi.spyOn(queries, 'createSetDatasetsBaseDirMutation').mockReturnValue(
+      readable({ mutate, isPending: false }) as any
+    );
+
+    render(DatasetsPage);
+
+    const input = document.getElementById('base-datasets-dir') as HTMLInputElement;
+    await fireEvent.input(input, { target: { value: 'my_datasets' } });
+
+    // Nothing is sent until the 600ms debounce elapses.
+    expect(mutate).not.toHaveBeenCalled();
+    await act(async () => {
+      vi.advanceTimersByTime(600);
+    });
+    expect(mutate).toHaveBeenCalledTimes(1);
+    expect(mutate.mock.calls[0][0]).toBe('my_datasets');
+
+    // The draft survives the failure and the reason is visible.
+    expect((document.getElementById('base-datasets-dir') as HTMLInputElement).value).toBe(
+      'my_datasets'
+    );
+    expect(screen.getByText('Settings file is not writable')).toBeInTheDocument();
+  } finally {
+    vi.useRealTimers();
+  }
+});

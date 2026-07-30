@@ -286,9 +286,10 @@ export function createSetDatasetsBaseDirMutation() {
   return createMutation(
     {
       mutationFn: (path: string) => api.setDatasetsBaseDir(path),
-      onSuccess: () => {
-        client.invalidateQueries({ queryKey: queryKeys.datasets() });
-      },
+      // Returned promise is awaited by TanStack Query before the per-call
+      // onSuccess/onSettled run, so callers can rely on fresh data being in
+      // the cache by then (no flicker back to the stale value).
+      onSuccess: () => client.invalidateQueries({ queryKey: queryKeys.datasets() }),
     },
     client
   );
