@@ -133,13 +133,13 @@ async def preview_concept_augmentation(request: Request):
             "prompt": "[Augmentation preview requires mgds package]",
         }
 
-    concept = ConceptConfig()
-    concept.from_dict(concept_dict)
-
-    train_config = await app_state.config_service.get_config()
-    controller = ConceptWindowController(train_config, concept)
-
     try:
+        concept = ConceptConfig.default_values()
+        concept.from_dict(concept_dict)
+
+        train_config = await app_state.config_service.get_config()
+        controller = ConceptWindowController(train_config, concept)
+
         pil_img, filename, prompt_text = controller.get_preview_image(
             index, preview_aug
         )

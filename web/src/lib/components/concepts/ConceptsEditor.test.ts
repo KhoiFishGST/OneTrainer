@@ -34,7 +34,7 @@ describe('ConceptsEditor', () => {
     render(ConceptsEditor, { props: { concepts: initialConcepts, onChange } });
 
     expect(screen.getByText('MyDogConcept')).toBeInTheDocument();
-    expect(screen.getByText('/tmp/dogs')).toBeInTheDocument();
+    expect(screen.getAllByText('STANDARD').length).toBeGreaterThan(0);
   });
 
   it('removes a concept when delete button is clicked', async () => {

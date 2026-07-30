@@ -258,18 +258,6 @@
       </div>
     </div>
   </div>
-
-  <div class="aug-bottom-action-bar">
-    <Button
-      type="button"
-      variant="default"
-      size="sm"
-      onclick={onOpenPreview}
-    >
-      <Eye size={14} />
-      <span>Preview</span>
-    </Button>
-  </div>
 </div>
 
 <style>

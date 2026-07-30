@@ -14,7 +14,7 @@
   import ConceptStatsPanel from './ConceptStatsPanel.svelte';
   import AugmentationPreview from './AugmentationPreview.svelte';
 
-  import { AlertCircle } from '@lucide/svelte';
+  import { AlertCircle, Eye } from '@lucide/svelte';
   import { Alert } from '$lib/components/ui/alert';
 
   let {
@@ -213,6 +213,17 @@
             <AlertCircle size={16} />
             <span>{saveError}</span>
           </Alert>
+        {/if}
+        {#if activeTab === 'image'}
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isSaving}
+            onclick={() => (showAugPreviewModal = true)}
+          >
+            <Eye size={16} />
+            <span>Preview</span>
+          </Button>
         {/if}
         <Button
           type="button"

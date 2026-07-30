@@ -299,10 +299,6 @@
               </div>
             </div>
 
-            <p class="concept-path" title={concept.path}>
-              {concept.path || 'No directory path set'}
-            </p>
-
             <div class="concept-meta">
               <Badge variant="secondary" class="meta-tag text-[0.6875rem] px-1.5 py-0.5 rounded bg-muted text-foreground border border-border">Balancing: {concept.balancing ?? 1}x ({concept.balancing_strategy || 'REPEATS'})</Badge>
               <Badge variant="secondary" class="meta-tag text-[0.6875rem] px-1.5 py-0.5 rounded bg-muted text-foreground border border-border">Loss Wt: {concept.loss_weight ?? 1}</Badge>
@@ -498,7 +494,7 @@
   }
 
   .thumbnail-wrapper {
-    width: 130px;
+    width: 85px;
     position: relative;
     background: var(--muted);
     flex-shrink: 0;
@@ -525,19 +521,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-
-  .concept-path {
-    margin: 0;
-    font-size: 0.75rem;
-    color: var(--muted-foreground);
-    word-break: break-all;
-    display: -webkit-box;
-    line-clamp: 2;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
   }
 
   .concept-meta {
