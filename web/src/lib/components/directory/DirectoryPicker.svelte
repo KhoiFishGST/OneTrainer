@@ -220,7 +220,17 @@
   class="sm:max-w-[650px] data-[vaul-drawer-direction=bottom]:max-h-[90dvh]"
 >
   {#snippet children()}
-    <div class="picker-container flex flex-col gap-3">
+    <!--
+      md:p-1, not a plain p-1: this snippet renders inside BOTH
+      ResponsiveDialogDrawer branches. The Drawer (mobile) branch already
+      supplies px-4 via its own body wrapper, so padding here would double
+      it. The Dialog (desktop) branch has no such wrapper -- Dialog.Content
+      already applies p-4 of its own -- so it still needs this 4px. Dialog
+      only renders at >=768px (`isMobile` is false), which is exactly
+      Tailwind's `md` breakpoint, so `md:p-1` lands on the Dialog branch and
+      nowhere else. Do not simplify this back to `p-1`.
+    -->
+    <div class="picker-container flex flex-col gap-3 md:p-1">
       <div class="picker-path-bar flex gap-2">
         <TextInput
           bind:this={pathInputControl}
