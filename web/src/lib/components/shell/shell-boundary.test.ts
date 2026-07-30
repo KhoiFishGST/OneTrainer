@@ -30,9 +30,11 @@ export function findViewportUnitViolations(source: string, filename: string): st
 
   const violations: string[] = [];
   source.split('\n').forEach((line, i) => {
-    if (/\bh-screen\b/.test(line) || /\b100vh\b/.test(line)) {
+    // `\d+vh` deliberately does not match `100dvh` -- the character before
+    // `vh` there is `d`, not a digit.
+    if (/\bh-screen\b/.test(line) || /\d+vh\b/.test(line)) {
       violations.push(
-        `${filename}:${i + 1}: use 100dvh -- 100vh occludes the status bar on iOS Safari`
+        `${filename}:${i + 1}: use dvh -- vh measures the tallest viewport, not the visible one, so it overflows under iOS Safari's chrome`
       );
     }
   });

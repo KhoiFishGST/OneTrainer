@@ -209,7 +209,7 @@
             <img
               src={currentImageUrl}
               alt="Sample Epoch {activeEntry.batch.epoch ?? activeEntry.batch.progress?.epoch ?? 0} Step {activeEntry.batch.global_step ?? activeEntry.batch.progress?.global_step ?? 0}"
-              class="max-w-full max-h-[65vh] object-contain"
+              class="max-w-full max-h-[65dvh] object-contain"
             />
           {:else}
             <div class="text-muted-foreground text-sm">No Image Available</div>
@@ -240,7 +240,7 @@
           </Button>
         </div>
 
-        <div class="flex flex-col gap-5 bg-card rounded-lg p-4 border border-border overflow-y-auto max-h-[65vh]">
+        <div class="flex flex-col gap-5 bg-card rounded-lg p-4 border border-border overflow-y-auto max-h-[65dvh]">
           {#if activeEntry.prompt}
             <div class="flex flex-col gap-2">
               <h4 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground m-0">Prompt</h4>

@@ -37,7 +37,7 @@
     role="option" rather than a bare button: the icon button that opens this
     sheet shares its accessible name, so a `button` query would match both.
   -->
-  <div role="listbox" aria-label={title} class="flex max-h-[60vh] flex-col overflow-y-auto py-1">
+  <div role="listbox" aria-label={title} class="flex max-h-[60dvh] flex-col overflow-y-auto py-1">
     {#each options as option (option.value)}
       <Button
         type="button"

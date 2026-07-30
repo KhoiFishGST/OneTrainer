@@ -133,7 +133,7 @@
 
 {#if activeLightboxImage}
   <div class="fixed inset-0 bg-black/85 z-[1000] flex items-center justify-center" onclick={() => (activeLightboxImage = null)} role="presentation">
-    <img src={activeLightboxImage} alt="Preview" class="max-w-[90vw] max-h-[90vh] object-contain rounded-lg" />
+    <img src={activeLightboxImage} alt="Preview" class="max-w-[90vw] max-h-[90dvh] object-contain rounded-lg" />
     <Button variant="ghost" size="icon" class="absolute top-4 right-4 bg-transparent border-none text-white cursor-pointer w-auto h-auto" onclick={() => (activeLightboxImage = null)}>
       <X size={24} />
     </Button>

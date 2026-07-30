@@ -157,7 +157,7 @@
       if (!val && !isSaving) onClose();
     }}
     title="Concept Configuration - {draft.name || draft.path || 'New Concept'}"
-    class="max-w-4xl max-h-[90vh]"
+    class="max-w-4xl max-h-[90dvh]"
   >
     <div class="concept-modal-body">
       <SubNav
@@ -167,7 +167,7 @@
         label="Concept section"
       />
 
-      <ScrollArea class="h-[520px] max-h-[60vh]">
+      <ScrollArea class="h-[520px] max-h-[60dvh]">
         <div class="tab-content-inner">
           {#if activeTab === 'general'}
             <ConceptGeneralFields
