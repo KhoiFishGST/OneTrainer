@@ -135,7 +135,7 @@ test.describe("Phone Mobile Editing Flows", () => {
     const startBtn = page.getByRole("button", { name: "Start Training" });
     await expect(startBtn).toBeVisible();
 
-    const statusPill = page.getByTestId("training-status-pill-mobile");
+    const statusPill = page.getByTestId("training-status-pill");
     await expect(statusPill).toBeVisible();
     await expect(statusPill).toHaveText(/IDLE|STARTING|TRAINING|COMPLETED|PAUSED|STOPPING|FAILED/);
   });

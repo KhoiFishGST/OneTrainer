@@ -86,14 +86,20 @@ test.describe("Button hover states", () => {
 
   test("destructive variant button changes background on hover in dark theme", async ({ page }) => {
     await gotoSecretsWithPasswordSet(page);
-    const clearBtn = page.getByRole("button", { name: "Clear Password" });
+    // The password card's destructive button is labelled "Clear" (it was
+    // "Clear Password" before the secrets-page label pass); `exact` keeps it
+    // off the confirmation dialog's "Confirm Clear".
+    const clearBtn = page.getByRole("button", { name: "Clear", exact: true });
     await assertHoverChanges(page, clearBtn);
   });
 
   test("destructive variant button changes background on hover in light theme", async ({ page }) => {
     await gotoSecretsWithPasswordSet(page);
     await switchToLightTheme(page);
-    const clearBtn = page.getByRole("button", { name: "Clear Password" });
+    // The password card's destructive button is labelled "Clear" (it was
+    // "Clear Password" before the secrets-page label pass); `exact` keeps it
+    // off the confirmation dialog's "Confirm Clear".
+    const clearBtn = page.getByRole("button", { name: "Clear", exact: true });
     await assertHoverChanges(page, clearBtn);
   });
 });

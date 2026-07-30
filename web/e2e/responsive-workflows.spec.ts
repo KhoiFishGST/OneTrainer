@@ -147,22 +147,26 @@ test.describe("Responsive Workflows & Accessibility Controls", () => {
       await expect(page.getByRole("button", { name: "Start Training" })).toBeVisible();
     });
 
-    test("console access via drawer toggle", async ({ page }) => {
+    test("console is reachable from the shell", async ({ page }) => {
       await page.goto("/general");
       const viewport = page.viewportSize();
       if (viewport && viewport.width <= 767) {
+        // On phones the console is a route, not a drawer: the mobile nav
+        // exposes it as an ordinary link to /console.
         const mobileMenu = page.getByRole("button", { name: "Open navigation" });
         await expect(mobileMenu).toBeVisible();
         await mobileMenu.click();
         const nav = page.getByRole("dialog", { name: "Navigation" });
-        await nav.getByRole("button", { name: "Console" }).click();
+        await nav.getByRole("link", { name: "Console" }).click();
+        await expect(page).toHaveURL(/\/console$/);
       } else {
         const consoleToggle = page.getByTitle("Toggle Console Drawer");
         await consoleToggle.click();
+        await expect(page.locator('section[aria-label="Console Output"]')).toBeVisible();
       }
 
-      const consoleDrawer = page.locator('section[aria-label="Console Output"]');
-      await expect(consoleDrawer).toBeVisible();
+      // Same observable either way: the console output viewport is on screen.
+      await expect(page.getByRole("region", { name: "Terminal Output Viewport" })).toBeVisible();
     });
 
     test("destructive confirmation dialog on dataset delete", async ({ page }) => {

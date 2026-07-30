@@ -249,7 +249,7 @@ test.describe("Phone layout", () => {
           '[aria-label="Open navigation"]',
           '[data-testid="header-mobile-bar"] button',
           '[aria-label^="Switch to"]',
-          '[data-testid="training-status-pill-mobile"]',
+          '[data-testid="training-status-pill"]',
           "footer button",
         ];
         const out: string[] = [];
