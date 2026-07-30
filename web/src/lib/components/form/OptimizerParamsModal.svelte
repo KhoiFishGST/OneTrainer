@@ -193,7 +193,7 @@
   class="max-w-4xl"
   bodyClass="flex min-h-0 flex-col"
 >
-  <div class="opt-modal-body">
+  <div class="opt-modal-body min-h-0">
     {#if submitError}
       <div class="shrink-0 rounded-md bg-destructive/15 border border-destructive/30 p-3 text-sm text-destructive font-medium" role="alert">
         {submitError}
@@ -277,7 +277,6 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    min-height: 0;
   }
 
   .header-bar,

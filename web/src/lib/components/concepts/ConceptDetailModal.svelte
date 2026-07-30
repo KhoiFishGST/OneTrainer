@@ -171,7 +171,7 @@
     class="max-w-4xl max-h-[90dvh] data-[vaul-drawer-direction=bottom]:max-h-[90dvh]"
     bodyClass="flex min-h-0 flex-col"
   >
-    <div class="concept-modal-body">
+    <div class="concept-modal-body min-h-0">
       <div class="shrink-0">
         <SubNav
           items={conceptTabs}
@@ -277,7 +277,6 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    min-height: 0;
   }
 
   .tab-content-inner {

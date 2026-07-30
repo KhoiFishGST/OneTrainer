@@ -504,6 +504,7 @@ test.describe("Phone layout", () => {
       for (const height of [844, 667, 600, 500]) {
         await page.setViewportSize({ width: 390, height });
         await page.goto(c.route);
+        await page.waitForLoadState("networkidle");
         await page.getByRole("button", { name: new RegExp(c.open, "i") }).first().click();
         const dialog = page.getByRole("dialog").first();
         await expect(dialog).toBeVisible();
