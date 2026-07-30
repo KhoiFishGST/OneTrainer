@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, act, within, cleanup } from '@testi
 import { tick } from 'svelte';
 import { expect, it, describe, vi, beforeEach } from 'vitest';
 import HeaderTestWrapper from './HeaderTestWrapper.svelte';
+import TrainingStatusPill from './TrainingStatusPill.svelte';
 import { trainingStore } from '../../events/training-store';
 import { api } from '../../api/client';
 
@@ -86,11 +87,11 @@ describe('Header component', () => {
     });
   });
 
-  it('renders saved icon badge when workspace state is saved, hides during unsaved, and renders retry button on failure', () => {
+  it('does not render saved icon badge when workspace state is saved or unsaved, and renders retry button on failure', () => {
     const savedWorkspace = { state: 'saved' } as any;
     const { rerender } = render(HeaderTestWrapper, { workspace: savedWorkspace });
 
-    expect(screen.getByTestId('saved-icon-badge')).toBeInTheDocument();
+    expect(screen.queryByTestId('saved-icon-badge')).not.toBeInTheDocument();
     expect(screen.queryByText('Saved')).not.toBeInTheDocument();
 
     const unsavedWorkspace = { state: 'unsaved' } as any;
@@ -197,16 +198,10 @@ describe('Header component', () => {
     expect(setRawCalls).toEqual([['training_method', 'LORA']]);
   });
 
-  it('keeps the training status out of the mobile header row', () => {
+  it('keeps the training status out of the header', () => {
     render(HeaderTestWrapper, {});
 
-    const pill = screen.getByTestId('training-status-pill');
-    expect(pill).toHaveTextContent('IDLE');
-    // The phone shows its status in the bottom bar instead -- the top row is
-    // full of config icons.
-    expect(pill.className).toContain('hidden');
-    expect(pill.className).toContain('md:inline-flex');
-    expect(pill.className).not.toContain('max-[380px]:');
+    expect(screen.queryByTestId('training-status-pill')).not.toBeInTheDocument();
   });
 
   it('presents overwrite confirmation in an Alert Dialog, guards pending state, prevents duplicate calls, retains error on failure, and closes on resolution', async () => {
@@ -305,7 +300,7 @@ describe('Header component', () => {
 
   it('renders status pills with semantic token classes rather than hex colours', async () => {
     trainingStore.setStatus({ state: 'COMPLETED' } as any);
-    render(HeaderTestWrapper, { workspace: null, metaData: {}, presetsData: [] });
+    render(TrainingStatusPill, { testId: 'training-status-pill' });
 
     const pill = await screen.findByTestId('training-status-pill');
     expect(pill.className).toMatch(/success/);

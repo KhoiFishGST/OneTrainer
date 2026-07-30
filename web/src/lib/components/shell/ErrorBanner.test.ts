@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/svelte';
 import { expect, it } from 'vitest';
 import ErrorBanner from './ErrorBanner.svelte';
 import HeaderTestWrapper from './HeaderTestWrapper.svelte';
+import TrainingStatusPill from './TrainingStatusPill.svelte';
 import Rail from './Rail.svelte';
 
 it('displays error message and allows dismissal', async () => {
@@ -46,7 +47,7 @@ it('resets dismissal when a non-empty message changes or is cleared and re-emitt
 });
 
 it('ensures IDLE status pill uses distinct text token and active navigation uses semantic tokens', () => {
-  render(HeaderTestWrapper, {});
+  render(TrainingStatusPill, { testId: 'training-status-pill' });
   const statusPill = screen.getByTestId('training-status-pill');
   expect(statusPill).toHaveTextContent('IDLE');
   expect(statusPill.className).toContain('text-muted-foreground');
