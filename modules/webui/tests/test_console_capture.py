@@ -11,7 +11,7 @@ from modules.webui.events import EventHub
 def test_capture_tees_stdout_stderr_and_restores_descriptors(tmp_path):
     result = tmp_path / "result.json"
     process = subprocess.run(
-        [sys.executable, "tests/webui/fixtures/console_capture_probe.py", str(result)],
+        [sys.executable, "modules/webui/tests/fixtures/console_capture_probe.py", str(result)],
         capture_output=True,
         text=True,
         check=True,

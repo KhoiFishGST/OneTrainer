@@ -14,7 +14,7 @@ export default defineConfig({
   webServer: {
     // Build first: e2e_server.py serves the static `build/` directory, so
     // without this the suite silently tests the previous build.
-    command: "npm run build && python ../tests/webui/e2e_server.py --root .e2e --port 7801",
+    command: "npm run build && python ../modules/webui/tests/e2e_server.py --root .e2e --port 7801",
     url: "http://127.0.0.1:7801/api/health",
     reuseExistingServer: false,
     timeout: 180000,
