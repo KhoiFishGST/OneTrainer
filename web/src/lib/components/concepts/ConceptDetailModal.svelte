@@ -151,13 +151,24 @@
 </script>
 
 {#if isOpen && draft}
+  <!--
+    The height is stated twice on purpose. Plain `max-h-[90dvh]` is what the
+    desktop Dialog branch needs -- and it is (0,1,0), so on the mobile Drawer
+    branch it loses to drawer-content's own
+    `data-[vaul-drawer-direction=bottom]:max-h-[80dvh]` at (0,2,0) and the
+    editor silently capped at 80dvh instead of the 90 it asks for. The prefixed
+    copy ties that specificity so ours wins there; see the same note in
+    DirectoryPicker. Deleting either line changes a height. `max-w-4xl` needs no
+    prefix: it only has to beat Dialog.Content's `sm:max-w-lg`, and the drawer
+    card is deliberately inset-x-3 / max-w-md.
+  -->
   <ResponsiveDialogDrawer
     open={isOpen}
     onOpenChange={(val) => {
       if (!val && !isSaving) onClose();
     }}
     title="Concept Configuration - {draft.name || draft.path || 'New Concept'}"
-    class="max-w-4xl max-h-[90dvh]"
+    class="max-w-4xl max-h-[90dvh] data-[vaul-drawer-direction=bottom]:max-h-[90dvh]"
   >
     <div class="concept-modal-body">
       <SubNav
@@ -266,7 +277,13 @@
   }
 
   .tab-content-inner {
-    padding: 0.5rem 0.25rem;
+    /*
+      Vertical only. The 0.25rem horizontal component nested inside the drawer
+      body's own px-4 for a 20px inset on mobile -- the same doubled inset that
+      was dropped from DatasetPickerModal's p-2, so the two consumers are
+      treated the same way.
+    */
+    padding: 0.5rem 0;
   }
 
   .dialog-actions-footer {

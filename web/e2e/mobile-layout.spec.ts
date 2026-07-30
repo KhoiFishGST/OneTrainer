@@ -377,5 +377,101 @@ test.describe("Phone layout", () => {
     expect(shortBox.height).toBeGreaterThanOrEqual(448);
     expect(shortBox.height).toBeLessThanOrEqual(451);
   });
+
+  test("the file dialog's actions stay inside the card on short viewports", async ({ page }) => {
+    // The e2e fixture's filesystem root holds 3 entries, which fit the listing
+    // at every viewport -- so the real API cannot exercise the case that
+    // matters: a listing long enough to have to scroll. Stub a long one.
+    await page.route("**/api/fs/list*", async (route) => {
+      await route.fulfill({
+        json: {
+          path: "/",
+          parent: null,
+          roots: ["/"],
+          entries: Array.from({ length: 40 }, (_, i) => ({
+            name: `folder-${i}`,
+            path: `/folder-${i}`,
+            is_dir: true,
+          })),
+        },
+      });
+    });
+
+    await page.goto("/general");
+    await page.getByRole("button", { name: "Browse directory" }).first().click();
+
+    const dialog = page.getByRole("dialog", { name: "Select Directory" });
+    await expect(dialog).toBeVisible();
+
+    // The card is capped at 90dvh. `boundingBox()` returns that *capped* box
+    // whether or not the children fit inside it, so asserting the card's own
+    // height -- which the "wide inset card" test above does -- goes green at a
+    // viewport where the Select button renders 163px below the viewport floor.
+    // Measure the footer's bottom edge instead: against the card, because
+    // content escaping the rounded border is the defect, and against the
+    // viewport, because that is what makes the primary action unreachable.
+    //
+    // 844 is the suite's default phone. 667 is an iPhone SE/8. 600 and 500
+    // stand in for the *visible* (dvh) height of a short phone with its
+    // browser toolbars showing -- on a real iPhone SE that is ~553px, which no
+    // nominal device size in this suite reaches.
+    const problems: string[] = [];
+    for (const height of [844, 667, 600, 500]) {
+      await page.setViewportSize({ width: 390, height });
+      await expect(dialog).toBeVisible();
+      await page.evaluate(async () => {
+        await Promise.all(document.getAnimations().map((a) => a.finished.catch(() => {})));
+      });
+
+      const m = await page.evaluate(() => {
+        const card = document.querySelector("[data-slot='drawer-content']") as HTMLElement;
+        const footer = document.querySelector(".picker-footer") as HTMLElement;
+        const select = document.querySelector(".select-btn") as HTMLElement;
+        const view = document.querySelector(
+          ".picker-body [data-slot='scroll-area-viewport']"
+        ) as HTMLElement;
+        const r = (el: HTMLElement) => el.getBoundingClientRect();
+        return {
+          cardBottom: r(card).bottom,
+          footerBottom: r(footer).bottom,
+          selectBottom: r(select).bottom,
+          viewportH: window.innerHeight,
+          listClient: view.clientHeight,
+          listScroll: view.scrollHeight,
+        };
+      });
+
+      const at = `${height}px tall:`;
+      // 1px of tolerance for sub-pixel rounding; the card has no bottom padding
+      // of its own beyond the footer's, so the footer may sit flush with it.
+      if (m.footerBottom > m.cardBottom + 1) {
+        problems.push(
+          `${at} footer bottom ${Math.round(m.footerBottom)} is ` +
+            `${Math.round(m.footerBottom - m.cardBottom)}px below the card bottom ` +
+            `${Math.round(m.cardBottom)}`
+        );
+      }
+      if (m.selectBottom > m.viewportH + 1) {
+        problems.push(
+          `${at} Select button bottom ${Math.round(m.selectBottom)} is ` +
+            `${Math.round(m.selectBottom - m.viewportH)}px below the viewport floor ` +
+            `${m.viewportH}`
+        );
+      }
+      // The shortfall has to be absorbed by the listing scrolling internally,
+      // not by the listing being erased. `/` always lists more rows than fit.
+      if (m.listScroll <= m.listClient + 1) {
+        problems.push(
+          `${at} the listing does not scroll internally ` +
+            `(scrollHeight ${Math.round(m.listScroll)} <= clientHeight ${Math.round(m.listClient)})`
+        );
+      }
+      if (m.listClient < 40) {
+        problems.push(`${at} the listing collapsed to ${Math.round(m.listClient)}px`);
+      }
+    }
+
+    expect(problems, `Picker overflow:\n${problems.join("\n")}`).toEqual([]);
+  });
 });
 

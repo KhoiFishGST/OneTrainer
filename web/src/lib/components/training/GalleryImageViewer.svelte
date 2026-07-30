@@ -187,6 +187,16 @@
 >
   {#if activeEntry}
     <div class="flex flex-col gap-4 text-foreground">
+      <!--
+        max-md:px-4, not px-4: this viewer opts out of the drawer body's padding
+        (`flush` above) so the image stage can be full-bleed, which leaves this
+        heading touching the card edge on mobile. Plain px-4 would stack on
+        Dialog.Content's unconditional p-4 on desktop. `max-md` is 48rem while
+        `isMobile` is (max-width: 767px) in CSS px, so the two coincide only at a
+        16px root font size -- an assumption, not a guarantee, since 1b3859a1
+        unpinned it. Worst case is 16px of padding on the wrong side of the
+        branch, i.e. cosmetic.
+      -->
       <div class="flex items-center gap-4 flex-wrap max-md:px-4">
         <span class="text-xl font-semibold text-foreground">
           Epoch {activeEntry.batch.epoch ?? activeEntry.batch.progress?.epoch ?? 0} {'\u00b7'} Step {activeEntry.batch.global_step ?? activeEntry.batch.progress?.global_step ?? 0}

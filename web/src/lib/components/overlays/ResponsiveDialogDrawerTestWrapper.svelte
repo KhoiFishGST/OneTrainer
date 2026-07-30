@@ -10,7 +10,8 @@
     onOpenChange = () => {},
     parentCount = 0,
     flush = false,
-    withFooter = true
+    withFooter = true,
+    bodyClass = ''
   } = $props<{
     open?: boolean;
     title?: string;
@@ -19,6 +20,7 @@
     parentCount?: number;
     flush?: boolean;
     withFooter?: boolean;
+    bodyClass?: string;
   }>();
 
   let text = $state('draft content');
@@ -31,6 +33,7 @@
   {description}
   {onOpenChange}
   {flush}
+  {bodyClass}
   footer={withFooter ? footer : undefined}
 >
   <div data-testid="content">

@@ -212,12 +212,24 @@
   same trap that shipped the deleted sheet at 293px wide. Matching the variant
   ties the specificity so ours (later in the stylesheet) wins. Drop the
   variant and the picker silently reverts to 80dvh.
+
+  The width is stated twice for the same reason, one copy per branch. Plain
+  `sm:max-w-[650px]` is (0,1,0) and is what the desktop Dialog uses; on the
+  Drawer branch it loses to drawer-content's
+  `data-[vaul-drawer-direction=bottom]:max-w-md` (0,2,0), which measured 448px
+  at a 700px-wide viewport -- still the Drawer branch, since `isMobile` covers
+  everything below 768px. The prefixed copy ties that specificity and restores
+  650px there. Deleting the unprefixed copy narrows the desktop dialog to
+  Dialog.Content's own `sm:max-w-lg` (512px) and drifts its visual baseline;
+  deleting the prefixed copy puts 640-767px back at 448px. Phone widths are
+  unaffected either way (the 12px inset wins below 448px).
 -->
 <ResponsiveDialogDrawer
   bind:open
   onOpenChange={handleOpenChange}
   title={modalTitle}
-  class="sm:max-w-[650px] data-[vaul-drawer-direction=bottom]:max-h-[90dvh]"
+  class="sm:max-w-[650px] data-[vaul-drawer-direction=bottom]:sm:max-w-[650px] data-[vaul-drawer-direction=bottom]:max-h-[90dvh]"
+  bodyClass="flex min-h-0 flex-col"
 >
   {#snippet children()}
     <!--
@@ -226,12 +238,37 @@
       supplies px-4 via its own body wrapper, so padding here would double
       it. The Dialog (desktop) branch has no such wrapper -- Dialog.Content
       already applies p-4 of its own -- so it still needs this 4px. Dialog
-      only renders at >=768px (`isMobile` is false), which is exactly
-      Tailwind's `md` breakpoint, so `md:p-1` lands on the Dialog branch and
-      nowhere else. Do not simplify this back to `p-1`.
+      only renders at >=768px (`isMobile` is false), and Tailwind's `md` is
+      48rem, so the two coincide at a 16px root font size -- which is an
+      assumption, not a guarantee: 1b3859a1 unpinned the root size, so a reader
+      with a larger browser font opens a band where the JS branch and the CSS
+      variant disagree and the Dialog loses this 4px. Cosmetic at that size.
+      Do not simplify this back to `p-1`.
     -->
-    <div class="picker-container flex flex-col gap-3 md:p-1">
-      <div class="picker-path-bar flex gap-2">
+    <!--
+      min-h-0 goes with the `bodyClass="flex min-h-0 flex-col"` above: it makes
+      this container a flex item of the drawer's body wrapper that is allowed to
+      fall below its own content height, so the listing below can absorb the
+      shortfall when the card's 90dvh cap engages. Without the pair the footer
+      -- Cancel/Select -- is pushed out of the card and off the bottom of the
+      screen on any viewport shorter than ~700px. `h-full` does NOT work here in
+      place of it: measured at 390x500, the wrapper is 288px tall but a `h-full`
+      child still lays out at its 464px content height, because the wrapper's
+      height comes from flex-shrink and Chrome will not resolve a percentage
+      against it. On the Dialog branch there is no wrapper and no cap, so this
+      is inert there.
+    -->
+    <div class="picker-container flex min-h-0 flex-col gap-3 md:p-1">
+      <!--
+        shrink-0 on every row except the listing. The two bars below are
+        overflow-x-auto, which zeroes their automatic minimum height, so without
+        this the shrink is shared with them: measured at 390x500 they collapsed
+        from 52px to 30px each while the 44px tap targets inside them kept their
+        height and spilled 7px past both edges of their own row. The listing is
+        the only row that can lose height without something inside it
+        overflowing, so it is the only one allowed to.
+      -->
+      <div class="picker-path-bar flex shrink-0 gap-2">
         <TextInput
           bind:this={pathInputControl}
           bind:value={typedPath}
@@ -250,7 +287,7 @@
         </Button>
       </div>
 
-      <nav class="breadcrumb-bar flex items-center gap-1 overflow-x-auto py-1 text-sm whitespace-nowrap" aria-label="Breadcrumb">
+      <nav class="breadcrumb-bar flex shrink-0 items-center gap-1 overflow-x-auto py-1 text-sm whitespace-nowrap" aria-label="Breadcrumb">
         {#each getBreadcrumbs(currentPath) as crumb, index (crumb.path)}
           {#if index > 0}
             <span class="crumb-separator text-xs text-muted-foreground">/</span>
@@ -266,7 +303,7 @@
       </nav>
 
       {#if directoryData?.roots && directoryData.roots.length > 0}
-        <div class="roots-bar flex items-center gap-2 overflow-x-auto py-1 text-sm">
+        <div class="roots-bar flex shrink-0 items-center gap-2 overflow-x-auto py-1 text-sm">
           <span class="roots-label font-medium text-muted-foreground">Roots:</span>
           {#each directoryData.roots as root}
             <Button
@@ -281,18 +318,31 @@
       {/if}
 
       {#if error}
-        <Alert variant="destructive" class="error-message">
+        <Alert variant="destructive" class="error-message shrink-0">
           {error}
         </Alert>
       {/if}
 
       {#if directoryData?.truncated}
-        <Alert class="warning-message">
+        <Alert class="warning-message shrink-0">
           Results truncated. Refine your path or search.
         </Alert>
       {/if}
 
-      <ScrollArea class="picker-body h-[280px] w-full rounded-md border border-border p-2">
+      <!--
+        min-h-[96px] alongside the fixed h-[280px], not instead of it. The
+        listing is the one part of the picker that may shrink, so it has to
+        absorb the difference when the drawer card's 90dvh cap bites -- with a
+        rigid 280px the whole ~626px stack overflowed the card and pushed
+        Cancel/Select off the bottom of the screen. A flex item's default
+        `min-height: auto` is what forbade the shrink; naming a floor lifts it.
+        h-[280px] stays as the flex basis so nothing changes when there is room
+        (desktop's Dialog has no cap and never shrinks). The floor is 96px, not
+        the 120px first tried: with the rest of the stack rigid the listing has
+        to reach 104px at 390x500 -- the shortest viewport asserted -- and a
+        120px floor put the footer back outside the card there by 16px.
+      -->
+      <ScrollArea class="picker-body h-[280px] min-h-[96px] w-full rounded-md border border-border p-2">
         {#if directoryData?.parent}
           <Button
             variant="ghost"

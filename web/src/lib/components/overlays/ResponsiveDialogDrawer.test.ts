@@ -144,6 +144,30 @@ describe('ResponsiveDialogDrawer', () => {
     expect(body.className).not.toContain('pb-4');
   });
 
+  it('lets the drawer body shrink, and lets a consumer make it a flex column', () => {
+    mockMatchMedia(true);
+    const { unmount } = render(ResponsiveDialogDrawerTestWrapper, {});
+    // min-h-0 is unconditional: Drawer.Content is a capped flex column with no
+    // scroll container, and a flex item's default `min-height: auto` is what
+    // shoved the file picker's Cancel/Select row out of the card and off the
+    // screen.
+    expect(screen.getByTestId('content').parentElement!.className).toContain('min-h-0');
+    unmount();
+    cleanup();
+
+    render(ResponsiveDialogDrawerTestWrapper, { bodyClass: 'flex min-h-0 flex-col' });
+    expect(screen.getByTestId('content').parentElement!.className).toContain('flex-col');
+  });
+
+  it('ignores bodyClass on the desktop Dialog branch, which has no body wrapper', () => {
+    mockMatchMedia(false);
+    render(ResponsiveDialogDrawerTestWrapper, { bodyClass: 'flex min-h-0 flex-col' });
+
+    // No wrapper to carry it: the content's parent is Dialog.Content itself, so
+    // a mobile-only body layout must not leak into desktop.
+    expect(screen.getByTestId('content').parentElement!.className).not.toContain('flex-col');
+  });
+
   it('adds top padding only when there is no header to supply it', () => {
     mockMatchMedia(true);
     const { unmount } = render(ResponsiveDialogDrawerTestWrapper, {});

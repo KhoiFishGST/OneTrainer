@@ -83,18 +83,18 @@ test.describe("Responsive Workflows & Accessibility Controls", () => {
       await expect(drawer).not.toBeVisible();
     });
 
-    test("directory picker opens as Sheet on phone viewport", async ({ page }) => {
+    test("directory picker opens as Drawer on phone viewport", async ({ page }) => {
       await page.goto("/general");
       const browseBtn = page.getByRole("button", { name: "Browse directory" }).first();
       await browseBtn.click();
 
-      const sheet = page.getByRole("dialog", { name: "Select Directory" });
-      await expect(sheet).toBeVisible();
+      const drawer = page.getByRole("dialog", { name: "Select Directory" });
+      await expect(drawer).toBeVisible();
       // On mobile viewport (width 390), the picker renders as the bottom drawer.
-      await expect(sheet).toHaveAttribute("data-slot", "drawer-content");
+      await expect(drawer).toHaveAttribute("data-slot", "drawer-content");
 
       await page.keyboard.press("Escape");
-      await expect(sheet).not.toBeVisible();
+      await expect(drawer).not.toBeVisible();
     });
 
     test("no horizontal page overflow at 390px viewport across main routes", async ({ page }) => {
