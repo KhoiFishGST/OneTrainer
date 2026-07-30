@@ -183,6 +183,7 @@
   data-batch-id={selection?.batchId}
   data-prompt-id={selection?.promptId}
   data-variant={selection?.variant}
+  flush
 >
   {#if activeEntry}
     <div class="flex flex-col gap-4 text-foreground">

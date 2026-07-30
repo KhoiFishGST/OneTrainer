@@ -66,7 +66,7 @@
     title="Select Dataset"
     class="max-w-3xl"
   >
-    <ScrollArea class="min-h-[280px] max-h-[480px] p-2">
+    <ScrollArea class="min-h-[280px] max-h-[480px]">
       {#if loading}
         <div class="flex flex-col items-center justify-center min-h-[240px] gap-4 text-muted-foreground">
           <div class="grid grid-cols-3 gap-4 w-full">

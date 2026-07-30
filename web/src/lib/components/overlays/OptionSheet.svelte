@@ -32,7 +32,7 @@
   }
 </script>
 
-<ResponsiveDialogDrawer {open} {onOpenChange} {title}>
+<ResponsiveDialogDrawer {open} {onOpenChange} {title} flush>
   <!--
     role="option" rather than a bare button: the icon button that opens this
     sheet shares its accessible name, so a `button` query would match both.

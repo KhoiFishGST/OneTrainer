@@ -1,6 +1,13 @@
 import { fireEvent, render, screen, cleanup } from '@testing-library/svelte';
 import { expect, it, describe, vi, beforeEach } from 'vitest';
+import { mockIsMobile } from '$lib/hooks/mock-is-mobile.svelte';
 import OptionSheet from './OptionSheet.svelte';
+
+vi.mock('$lib/hooks/is-mobile.svelte', () => ({
+  get isMobile() {
+    return mockIsMobile;
+  },
+}));
 
 const OPTIONS = [
   { value: 'FINE_TUNE', label: 'Fine Tune' },
@@ -12,6 +19,7 @@ describe('OptionSheet', () => {
   beforeEach(() => {
     cleanup();
     document.body.innerHTML = '';
+    mockIsMobile.current = false;
   });
 
   it('lists every option and marks the current one as selected', async () => {
@@ -66,5 +74,23 @@ describe('OptionSheet', () => {
     });
 
     expect(screen.queryAllByRole('option')).toHaveLength(0);
+  });
+
+  it('renders its rows edge-to-edge so the full row width stays tappable', async () => {
+    mockIsMobile.current = true;
+    render(OptionSheet, {
+      open: true,
+      title: 'Training Method',
+      options: OPTIONS,
+      value: 'LORA',
+      onSelect: vi.fn(),
+      onOpenChange: vi.fn(),
+    });
+
+    const option = await screen.findByRole('option', { name: 'Fine Tune' });
+    // The option list must not sit inside the drawer's padded body wrapper:
+    // insetting it would shrink the 44px-wide tap target on every row.
+    const listbox = option.closest('[role="listbox"]')!;
+    expect(listbox.parentElement!.className).not.toContain('px-4');
   });
 });
