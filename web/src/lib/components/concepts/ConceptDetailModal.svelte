@@ -169,16 +169,19 @@
     }}
     title="Concept Configuration - {draft.name || draft.path || 'New Concept'}"
     class="max-w-4xl max-h-[90dvh] data-[vaul-drawer-direction=bottom]:max-h-[90dvh]"
+    bodyClass="flex min-h-0 flex-col"
   >
     <div class="concept-modal-body">
-      <SubNav
-        items={conceptTabs}
-        value={activeTab}
-        onChange={(id) => (activeTab = id as any)}
-        label="Concept section"
-      />
+      <div class="shrink-0">
+        <SubNav
+          items={conceptTabs}
+          value={activeTab}
+          onChange={(id) => (activeTab = id as any)}
+          label="Concept section"
+        />
+      </div>
 
-      <ScrollArea class="h-[520px] max-h-[60dvh]">
+      <ScrollArea class="h-[520px] max-h-[60dvh] min-h-[96px]">
         <div class="tab-content-inner">
           {#if activeTab === 'general'}
             <ConceptGeneralFields
@@ -274,6 +277,7 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    min-height: 0;
   }
 
   .tab-content-inner {

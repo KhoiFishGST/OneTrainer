@@ -65,8 +65,9 @@
     onOpenChange={(val) => { if (!val) onClose(); }}
     title="Select Dataset"
     class="max-w-3xl"
+    bodyClass="flex min-h-0 flex-col"
   >
-    <ScrollArea class="min-h-[280px] max-h-[480px] py-2">
+    <ScrollArea class="min-h-[120px] max-h-[480px] py-2">
       {#if loading}
         <div class="flex flex-col items-center justify-center min-h-[240px] gap-4 text-muted-foreground">
           <div class="grid grid-cols-3 gap-4 w-full">

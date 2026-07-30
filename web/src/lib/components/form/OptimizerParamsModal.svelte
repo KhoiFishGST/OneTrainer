@@ -191,10 +191,11 @@
   onOpenChange={(v) => { if (!v) open = false; }}
   title="Configure Optimizer Parameters"
   class="max-w-4xl"
+  bodyClass="flex min-h-0 flex-col"
 >
   <div class="opt-modal-body">
     {#if submitError}
-      <div class="rounded-md bg-destructive/15 border border-destructive/30 p-3 text-sm text-destructive font-medium" role="alert">
+      <div class="shrink-0 rounded-md bg-destructive/15 border border-destructive/30 p-3 text-sm text-destructive font-medium" role="alert">
         {submitError}
       </div>
     {/if}
@@ -276,6 +277,12 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    min-height: 0;
+  }
+
+  .header-bar,
+  .params-divider {
+    flex-shrink: 0;
   }
 
   .header-bar {
@@ -309,6 +316,8 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
+    overflow-y: auto;
+    min-height: 6rem;
   }
 
   .param-item {

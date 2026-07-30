@@ -487,5 +487,55 @@ test.describe("Phone layout", () => {
 
     expect(problems, `Picker overflow:\n${problems.join("\n")}`).toEqual([]);
   });
+
+  // Drawer.Footer has no background and Drawer.Content sets no overflow, so a
+  // body taller than its wrapper paints straight through the footer. The parent
+  // branch gave these three the shared wrapper's `min-h-0` -- which rescued
+  // their footers from below the viewport floor -- without the rest of the
+  // treatment, so their bodies overflow instead.
+  const OVERFLOW_CASES = [
+    { name: "optimizer params", route: "/training", open: "Configure", body: ".opt-modal-body" },
+    { name: "concept editor", route: "/concepts", open: "Add|Configure|Edit", body: ".concept-modal-body" },
+  ];
+
+  for (const c of OVERFLOW_CASES) {
+    test(`${c.name} body stays inside its card on short viewports`, async ({ page }) => {
+      const problems: string[] = [];
+      for (const height of [844, 667, 600, 500]) {
+        await page.setViewportSize({ width: 390, height });
+        await page.goto(c.route);
+        await page.getByRole("button", { name: new RegExp(c.open, "i") }).first().click();
+        const dialog = page.getByRole("dialog").first();
+        await expect(dialog).toBeVisible();
+        await page.evaluate(async () => {
+          await Promise.all(document.getAnimations().map((a) => a.finished.catch(() => {})));
+        });
+
+        const m = await page.evaluate((sel) => {
+          const card = document.querySelector("[data-slot='drawer-content']") as HTMLElement;
+          const body = document.querySelector(sel) as HTMLElement;
+          if (!card || !body) return null;
+          return {
+            cardBottom: card.getBoundingClientRect().bottom,
+            bodyBottom: body.getBoundingClientRect().bottom,
+          };
+        }, c.body);
+
+        if (!m) {
+          problems.push(`${height}px tall: could not find card or ${c.body}`);
+          continue;
+        }
+        if (m.bodyBottom > m.cardBottom + 1) {
+          problems.push(
+            `${height}px tall: body bottom ${Math.round(m.bodyBottom)} is ` +
+              `${Math.round(m.bodyBottom - m.cardBottom)}px below the card bottom ` +
+              `${Math.round(m.cardBottom)}`
+          );
+        }
+      }
+      expect(problems, problems.join("\n")).toEqual([]);
+    });
+  }
 });
+
 
