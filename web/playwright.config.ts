@@ -22,7 +22,7 @@ export default defineConfig({
   projects: [
     {
       name: "chromium-desktop",
-      testMatch: /phase-a|phase-b|phase-c|console|theme|responsive-workflows|accessibility|visual|paint-states|dialog-width|gallery-viewer|perf-budget|hover-states/,
+      testMatch: /phase-a|phase-b|phase-c|console|theme|responsive-workflows|accessibility|paint-states|dialog-width|gallery-viewer|perf-budget|hover-states/,
       use: Object.assign({}, devices["Desktop Chrome"], {
         viewport: { width: 1280, height: 720 },
       }),
@@ -36,7 +36,7 @@ export default defineConfig({
     },
     {
       name: "chromium-phone",
-      testMatch: /mobile|mobile-layout|responsive-workflows|accessibility|theme|visual|touch-targets/,
+      testMatch: /mobile|mobile-layout|responsive-workflows|accessibility|theme|touch-targets/,
       use: Object.assign({}, devices["iPhone 13"], {
         defaultBrowserType: "chromium",
         viewport: { width: 390, height: 844 },

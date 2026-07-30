@@ -19,6 +19,7 @@ debug*.py
 /update.var
 config.json
 secrets.json
+webui.json
 .env*
 *.zip
 
@@ -40,9 +41,8 @@ train.bat
 debug_report.log
 config_diff.txt
 CLAUDE.md
-
 .superpowers
-.impeccable
+
 /web/build/
 /web/.svelte-kit/
 /web/node_modules/
