@@ -8,25 +8,37 @@
     title = 'Test Title',
     description = 'Test Description',
     onOpenChange = () => {},
-    parentCount = 0
+    parentCount = 0,
+    flush = false,
+    withFooter = true
   } = $props<{
     open?: boolean;
     title?: string;
     description?: string;
     onOpenChange?: (open: boolean) => void;
     parentCount?: number;
+    flush?: boolean;
+    withFooter?: boolean;
   }>();
 
   let text = $state('draft content');
 </script>
 
 <Button id="trigger-btn">Open Trigger</Button>
-<ResponsiveDialogDrawer {open} {title} {description} {onOpenChange}>
+<ResponsiveDialogDrawer
+  {open}
+  {title}
+  {description}
+  {onOpenChange}
+  {flush}
+  footer={withFooter ? footer : undefined}
+>
   <div data-testid="content">
     <p>Parent count: {parentCount}</p>
     <Input data-testid="draft-input" value={text} onInput={(v) => text = v} />
   </div>
-  {#snippet footer()}
-    <Button data-testid="footer-btn">Submit</Button>
-  {/snippet}
 </ResponsiveDialogDrawer>
+
+{#snippet footer()}
+  <Button data-testid="footer-btn">Submit</Button>
+{/snippet}

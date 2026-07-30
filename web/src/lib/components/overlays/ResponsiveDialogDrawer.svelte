@@ -3,6 +3,7 @@
   import { isMobile } from '$lib/hooks/is-mobile.svelte';
   import * as Dialog from '$lib/components/ui/dialog';
   import * as Drawer from '$lib/components/ui/drawer';
+  import { cn } from '$lib/utils';
 
   let {
     open = $bindable(false),
@@ -12,6 +13,7 @@
     children,
     footer,
     class: className = '',
+    flush = false,
     ...restProps
   } = $props<{
     open?: boolean;
@@ -21,6 +23,7 @@
     children?: Snippet;
     footer?: Snippet;
     class?: string;
+    flush?: boolean;
     [key: string]: any;
   }>();
 
@@ -64,7 +67,23 @@
         </Drawer.Header>
       {/if}
       {#if children}
-        {@render children()}
+        <!--
+          Drawer.Content has no padding of its own, so an input rendered here
+          would touch the card border. Header and Footer each carry p-4, so the
+          body only supplies the vertical padding they are not already giving.
+          This wrapper is deliberately absent from the Dialog branch above:
+          Dialog.Content already applies p-4, and doubling it would inset
+          desktop content twice.
+        -->
+        <div
+          class={cn(
+            !flush && 'px-4',
+            !flush && !(title || description) && 'pt-4',
+            !flush && !footer && 'pb-4'
+          )}
+        >
+          {@render children()}
+        </div>
       {/if}
       {#if footer}
         <Drawer.Footer>

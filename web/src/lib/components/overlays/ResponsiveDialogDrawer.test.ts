@@ -115,4 +115,59 @@ describe('ResponsiveDialogDrawer', () => {
     expect(dialog.classList.contains('safe-area-overlay') || dialog.querySelector('.safe-area-overlay') !== null).toBe(true);
     expect(dialog.classList.contains('p-safe')).toBe(false);
   });
+
+  it('pads the drawer body so content clears the card edge', () => {
+    mockMatchMedia(true);
+    render(ResponsiveDialogDrawerTestWrapper, {});
+
+    const body = screen.getByTestId('content').parentElement!;
+    expect(body.className).toContain('px-4');
+  });
+
+  it('leaves the desktop dialog body unpadded, since Dialog.Content already pads it', () => {
+    mockMatchMedia(false);
+    render(ResponsiveDialogDrawerTestWrapper, {});
+
+    const body = screen.getByTestId('content').parentElement!;
+    // Doubling p-4 from Dialog.Content with another px-4 would inset desktop
+    // content twice.
+    expect(body.className).not.toContain('px-4');
+  });
+
+  it('drops body padding entirely when flush is set', () => {
+    mockMatchMedia(true);
+    render(ResponsiveDialogDrawerTestWrapper, { flush: true });
+
+    const body = screen.getByTestId('content').parentElement!;
+    expect(body.className).not.toContain('px-4');
+    expect(body.className).not.toContain('pt-4');
+    expect(body.className).not.toContain('pb-4');
+  });
+
+  it('adds top padding only when there is no header to supply it', () => {
+    mockMatchMedia(true);
+    const { unmount } = render(ResponsiveDialogDrawerTestWrapper, {});
+    expect(screen.getByTestId('content').parentElement!.className).not.toContain('pt-4');
+    unmount();
+    cleanup();
+
+    // Svelte's default-parameter semantics mean an explicit `undefined` prop is
+    // indistinguishable from an omitted one, so the wrapper's own `title =
+    // 'Test Title'` default would still apply; an empty string sentinel bypasses
+    // that default while still failing the `title || description` truthiness
+    // check in ResponsiveDialogDrawer.
+    render(ResponsiveDialogDrawerTestWrapper, { title: '', description: '' });
+    expect(screen.getByTestId('content').parentElement!.className).toContain('pt-4');
+  });
+
+  it('adds bottom padding only when there is no footer to supply it', () => {
+    mockMatchMedia(true);
+    const { unmount } = render(ResponsiveDialogDrawerTestWrapper, {});
+    expect(screen.getByTestId('content').parentElement!.className).not.toContain('pb-4');
+    unmount();
+    cleanup();
+
+    render(ResponsiveDialogDrawerTestWrapper, { withFooter: false });
+    expect(screen.getByTestId('content').parentElement!.className).toContain('pb-4');
+  });
 });
