@@ -1,18 +1,25 @@
 from modules.util.enum.FileType import FileType
 from modules.util.enum.ImageFormat import ImageFormat
 from modules.util.enum.VideoFormat import VideoFormat
+from modules.webui import runtime_patches
 from modules.webui.runtime_patches import install_runtime_patches
 
 from PIL import Image
 
 
 def test_save_sampler_output_signature_is_what_we_patch():
-    # Guards against upstream changing the seam the patch depends on.
+    # Guards against upstream changing the seam the patch depends on. Checked
+    # against the pristine original (captured at install time) rather than
+    # BaseModelSampler.save_sampler_output directly, since by the time this
+    # runs in the full suite an earlier test module may have already
+    # installed the patches, at which point that attribute is our own
+    # `patched` wrapper -- whose signature is hard-coded to these names and
+    # so can never fail this assertion.
     import inspect
 
-    from modules.modelSampler.BaseModelSampler import BaseModelSampler
+    install_runtime_patches()
 
-    params = list(inspect.signature(BaseModelSampler.save_sampler_output).parameters)
+    params = list(inspect.signature(runtime_patches._original_save_sampler_output).parameters)
     assert params == [
         "sampler_output",
         "destination",

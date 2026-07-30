@@ -1,4 +1,5 @@
 import contextlib
+import threading
 
 # The web UI needs two behaviours that core OneTrainer does not provide:
 #   1. the on-disk path of each written sample, for the gallery
@@ -6,25 +7,38 @@ import contextlib
 # Both are installed here as runtime patches so no core file is modified.
 
 _installed = False
+_install_lock = threading.Lock()
+
+# The pristine, unwrapped save_sampler_output, captured the first (and only)
+# time the patch is installed. Kept around so tests can assert against the
+# real upstream signature even after the patch has already been applied by
+# an earlier test module.
+_original_save_sampler_output = None
 
 
 def install_runtime_patches() -> None:
     global _installed
     if _installed:
         return
-    _patch_sampler_output()
-    _patch_summary_writer()
-    _installed = True
+    with _install_lock:
+        if _installed:
+            return
+        _patch_sampler_output()
+        _patch_summary_writer()
+        _installed = True
 
 
 def _patch_sampler_output() -> None:
     # save_sampler_output is the single point every concrete sampler writes
     # through, and each one calls it before invoking on_sample, so filepath is
     # populated by the time the web UI callback runs.
+    global _original_save_sampler_output
+
     from modules.modelSampler.BaseModelSampler import BaseModelSampler
     from modules.util.enum.FileType import FileType
 
     original = BaseModelSampler.__dict__["save_sampler_output"].__func__
+    _original_save_sampler_output = original
 
     def patched(
         sampler_output,
