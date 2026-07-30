@@ -149,3 +149,25 @@ def test_file_permissions_are_owner_only(tmp_path):
     SettingsStore(path).set_password("pw")
     mode = stat.S_IMODE(path.stat().st_mode)
     assert mode == 0o600
+
+
+def test_app_state_exposes_settings_store(tmp_path):
+    from modules.webui.app import create_app
+    from modules.webui.state import WebUISettings
+
+    from fastapi.testclient import TestClient
+
+    settings = WebUISettings(
+        root_dir=tmp_path,
+        config_path=tmp_path / "config.json",
+        secrets_path=tmp_path / "secrets.json",
+        presets_dir=tmp_path / "presets",
+        static_dir=tmp_path / "static",
+        dev=True,
+    )
+    app = create_app(settings)
+    with TestClient(app):
+        store = app.state.webui.settings_store
+        assert isinstance(store, SettingsStore)
+        store.set_datasets_dir("/from/app")
+        assert (tmp_path / "webui.json").exists()

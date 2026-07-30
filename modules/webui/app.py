@@ -41,6 +41,7 @@ from modules.webui.routers.secrets import router as secrets_router
 from modules.webui.routers.training import router as training_router
 from modules.webui.sampling_coordinator import SamplingCoordinator
 from modules.webui.schema import SchemaRegistry
+from modules.webui.settings_store import SettingsStore
 from modules.webui.state import AppState, WebUISettings
 from modules.webui.training import TrainingService
 
@@ -136,6 +137,7 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
         sampling_svc.recover_pending()
         training_svc = TrainingService(event_bus=event_hub, sampling_coordinator=sampling_svc)
         media_svc = MediaService(root_dir=settings.root_dir)
+        settings_store = SettingsStore(settings.root_dir / "webui.json")
 
         version = "unknown"
         try:
@@ -186,6 +188,7 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
             sampling=sampling_svc,
             media=media_svc,
             media_service=media_svc,
+            settings_store=settings_store,
         )
 
         try:

@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from modules.webui.presets import PresetService
     from modules.webui.sampling_coordinator import SamplingCoordinator
     from modules.webui.schema import SchemaRegistry
+    from modules.webui.settings_store import SettingsStore
     from modules.webui.training import TrainingService
 
 
@@ -41,6 +42,7 @@ class AppState:
     sampling: "SamplingCoordinator | None" = None
     media: "MediaService | None" = None
     media_service: "MediaService | None" = None
+    settings_store: "SettingsStore | None" = None
 
     def __post_init__(self) -> None:
         if self.media_service is None and self.media is not None:
