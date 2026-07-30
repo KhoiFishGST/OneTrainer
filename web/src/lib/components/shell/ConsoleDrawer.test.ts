@@ -22,15 +22,15 @@ describe('ConsoleDrawer component', () => {
   it('resizes on ArrowUp and ArrowDown key events within limits and persists height', async () => {
     render(ConsoleDrawer, { open: true });
     const slider = screen.getByRole('slider', { name: 'Resize Console Drawer' });
-    expect(slider).toHaveAttribute('aria-valuenow', '200');
+    expect(slider).toHaveAttribute('aria-valuenow', '400');
 
     await fireEvent.keyDown(slider, { key: 'ArrowUp' });
-    expect(slider).toHaveAttribute('aria-valuenow', '210');
-    expect(localStorage.getItem('console_drawer_height')).toBe('210');
+    expect(slider).toHaveAttribute('aria-valuenow', '410');
+    expect(localStorage.getItem('console_drawer_height')).toBe('410');
 
     await fireEvent.keyDown(slider, { key: 'ArrowDown' });
-    expect(slider).toHaveAttribute('aria-valuenow', '200');
-    expect(localStorage.getItem('console_drawer_height')).toBe('200');
+    expect(slider).toHaveAttribute('aria-valuenow', '400');
+    expect(localStorage.getItem('console_drawer_height')).toBe('400');
   });
 
   it('enforces 100px minimum and 80vh maximum height limits on keyboard resize', async () => {

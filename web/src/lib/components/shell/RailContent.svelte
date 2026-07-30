@@ -48,7 +48,7 @@
 
   const sidebar = useSidebar();
 
-  const navItems = [
+  const navItems = $derived([
     { name: 'Live', path: '/live', icon: Tv, disabled: false },
     { name: 'Gallery', path: '/gallery', icon: Images, disabled: false },
     { name: 'General', path: '/general', icon: SlidersHorizontal, disabled: false },
@@ -62,7 +62,8 @@
     { name: 'LoRA', path: '/lora', icon: Cpu, disabled: false },
     { name: 'Embeddings', path: '/embeddings', icon: Layers, disabled: false },
     { name: 'Secrets', path: '/secrets', icon: Key, disabled: false },
-  ];
+    ...(mobile ? [{ name: 'Console', path: '/console', icon: Terminal, disabled: false }] : []),
+  ]);
 </script>
 
 <Sidebar
@@ -145,30 +146,6 @@
               </SidebarMenuButton>
             </SidebarMenuItem>
           {/each}
-          {#if mobile && onToggleConsole}
-            <SidebarMenuItem class={mobile ? 'flex-1 min-h-[44px]' : undefined}>
-              <SidebarMenuButton isActive={isConsoleOpen}>
-                {#snippet child({ props })}
-                  <Button
-                    {...props}
-                    variant="ghost"
-                    class={cn(
-                      props.class as string,
-                      'relative flex w-full items-center justify-start gap-3 px-2.5 py-2 text-muted-foreground rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors font-normal h-auto min-h-0 hover:bg-muted hover:text-foreground max-md:h-full max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2 max-md:overflow-visible',
-                      isConsoleOpen && 'bg-accent text-accent-foreground font-medium'
-                    )}
-                    onclick={() => {
-                      onToggleConsole();
-                      sidebar.setOpenMobile(false);
-                    }}
-                  >
-                    <Terminal size={20} class="shrink-0 w-5 h-5 max-md:w-4 max-md:h-4" />
-                    <span class="nav-label">Console</span>
-                  </Button>
-                {/snippet}
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          {/if}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

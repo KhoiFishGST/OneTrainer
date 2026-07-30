@@ -18,10 +18,10 @@
     children?: Snippet;
   } = $props();
 
-  let drawerHeight = $state(200);
+  let drawerHeight = $state(400);
   let isDragging = $state(false);
   let startY = $state(0);
-  let startHeight = $state(200);
+  let startHeight = $state(400);
 
   function getMinMaxHeight(): [number, number] {
     const minH = 100;
