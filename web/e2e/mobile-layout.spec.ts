@@ -274,5 +274,83 @@ test.describe("Phone layout", () => {
       expect(clipped, `Clipped at ${width}px:\n${clipped.join("\n")}`).toEqual([]);
     });
   }
+
+  test("the file dialog slides up from the bottom", async ({ page }) => {
+    await page.goto("/general");
+
+    // Arm the observer BEFORE the click, so the panel is caught the instant it
+    // mounts and the animation can still be sampled from its first frame.
+    await page.evaluate(() => {
+      (window as any).__panel = new Promise<HTMLElement>((resolve) => {
+        const obs = new MutationObserver(() => {
+          const el = document.querySelector("[data-slot='drawer-content']") as HTMLElement | null;
+          if (el) {
+            obs.disconnect();
+            resolve(el);
+          }
+        });
+        obs.observe(document.body, { childList: true, subtree: true });
+      });
+    });
+
+    await page.getByRole("button", { name: "Browse directory" }).first().click();
+
+    const travel = await page.evaluate(async () => {
+      const el = (await (window as any).__panel) as HTMLElement;
+
+      const anims = el.getAnimations();
+      if (anims.length === 0) {
+        return { animated: false, startY: 0, startHeight: 0, endY: 0, viewportH: 0 };
+      }
+      const a = anims[0];
+      a.pause();
+      const duration = Number(a.effect?.getComputedTiming().activeDuration ?? 0);
+      a.currentTime = 0;
+      const startRect = el.getBoundingClientRect();
+      a.currentTime = duration;
+      const endY = el.getBoundingClientRect().y;
+      a.play();
+      return {
+        animated: true,
+        startY: startRect.y,
+        startHeight: startRect.height,
+        endY,
+        viewportH: window.innerHeight,
+      };
+    });
+
+    expect(travel.animated, "the file dialog has no running animation").toBe(true);
+    // The floating-card bottom drawer sits inset 12px (bottom-3) from the true
+    // edge (see the LOCAL MODIFICATION note in drawer-content.svelte), so its
+    // closed transform (100% of its own height) lands its top edge 12px short
+    // of the viewport height rather than exactly at it. Assert the invariant
+    // that actually matters -- fully hidden below the fold -- rather than the
+    // top edge landing exactly at viewportH.
+    expect(
+      travel.startY + travel.startHeight,
+      "the file dialog is visible before it starts sliding"
+    ).toBeGreaterThanOrEqual(travel.viewportH);
+    expect(travel.endY).toBeLessThan(travel.startY);
+  });
+
+  test("the file dialog is a wide inset card, not a side panel", async ({ page }) => {
+    await page.goto("/general");
+    await page.getByRole("button", { name: "Browse directory" }).first().click();
+
+    const dialog = page.getByRole("dialog", { name: "Select Directory" });
+    await expect(dialog).toBeVisible();
+    await page.evaluate(async () => {
+      await Promise.all(document.getAnimations().map((a) => a.finished.catch(() => {})));
+    });
+
+    const box = (await dialog.boundingBox())!;
+    const viewport = page.viewportSize()!;
+
+    // 12px inset each side -- not the 293px (w-3/4) side panel it used to be.
+    expect(box.width).toBeGreaterThanOrEqual(viewport.width - 25);
+    expect(box.width).toBeLessThanOrEqual(viewport.width - 23);
+    expect(box.height).toBeLessThanOrEqual(viewport.height * 0.9 + 1);
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 1);
+  });
 });
 

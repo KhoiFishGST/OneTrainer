@@ -25,7 +25,7 @@ test.describe("Phone Mobile Editing Flows", () => {
     await expect(drawer).not.toBeVisible();
   });
 
-  test("full-screen directory picker focus trap, wrap, Escape, and focus restoration", async ({ page }) => {
+  test("directory picker focus trap, wrap, Escape, and focus restoration", async ({ page }) => {
     await page.goto("/general");
 
     const browseBtn = page.getByRole("button", { name: "Browse directory" }).first();

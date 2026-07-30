@@ -90,8 +90,8 @@ test.describe("Responsive Workflows & Accessibility Controls", () => {
 
       const sheet = page.getByRole("dialog", { name: "Select Directory" });
       await expect(sheet).toBeVisible();
-      // On mobile viewport (width 390), sheet has full-screen / sheet styling class
-      await expect(sheet).toHaveClass(/full-screen/);
+      // On mobile viewport (width 390), the picker renders as the bottom drawer.
+      await expect(sheet).toHaveAttribute("data-slot", "drawer-content");
 
       await page.keyboard.press("Escape");
       await expect(sheet).not.toBeVisible();

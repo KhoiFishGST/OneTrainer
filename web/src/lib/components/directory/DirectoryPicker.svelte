@@ -8,7 +8,7 @@
   import { ScrollArea } from '$lib/components/ui/scroll-area';
   import { Skeleton } from '$lib/components/ui/skeleton';
   import { Empty, EmptyTitle } from '$lib/components/ui/empty';
-  import ResponsiveDialogSheet from '$lib/components/overlays/ResponsiveDialogSheet.svelte';
+  import ResponsiveDialogDrawer from '$lib/components/overlays/ResponsiveDialogDrawer.svelte';
 
   interface DirectoryItem {
     name: string;
@@ -205,14 +205,14 @@
   }
 </script>
 
-<ResponsiveDialogSheet
+<ResponsiveDialogDrawer
   bind:open
   onOpenChange={handleOpenChange}
   title={modalTitle}
-  class="sm:max-w-[650px]"
+  class="sm:max-w-[650px] max-h-[90dvh]"
 >
   {#snippet children()}
-    <div class="picker-container flex flex-col gap-3 p-1">
+    <div class="picker-container flex flex-col gap-3">
       <div class="picker-path-bar flex gap-2">
         <TextInput
           bind:this={pathInputControl}
@@ -351,4 +351,4 @@
       </Button>
     </div>
   {/snippet}
-</ResponsiveDialogSheet>
+</ResponsiveDialogDrawer>

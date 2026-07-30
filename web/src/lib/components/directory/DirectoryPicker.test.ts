@@ -73,14 +73,11 @@ describe("DirectoryPicker", () => {
     const dialog = await screen.findByRole("dialog");
     expect(dialog).toBeInTheDocument();
 
-    const targetEl = document.body.querySelector('[data-slot="sheet-content"]') || dialog;
-    expect(
-      targetEl.classList.contains("full-screen") ||
-      targetEl.classList.contains("inset-0") ||
-      targetEl.classList.contains("h-dvh") ||
-      targetEl.classList.contains("w-full") ||
-      document.body.querySelector(".full-screen") !== null
-    ).toBe(true);
+    const targetEl = document.body.querySelector('[data-slot="drawer-content"]');
+    expect(targetEl, 'the picker should render as a bottom drawer').not.toBeNull();
+    // The old sheet claimed `full-screen` while rendering 293px wide, because
+    // sheet-content's `data-[side=right]:w-3/4` outranked its `w-full`.
+    expect(document.body.querySelector('.full-screen')).toBeNull();
   });
 
   it("navigates server directories and selects the current path, calling onSelect before onClose", async () => {
