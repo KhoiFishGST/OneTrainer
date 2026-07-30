@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { expectNoSaveProblem, expectSaved, pickDifferentDevice } from "./helpers/config-state";
 
 test.describe("Responsive Workflows & Accessibility Controls", () => {
   test.describe("Desktop Navigation & Sidebar Persistence", () => {
@@ -111,7 +112,7 @@ test.describe("Responsive Workflows & Accessibility Controls", () => {
   });
 
   test.describe("Core Workflow Controls & Modals", () => {
-    test("schema editing updates saved badge", async ({ page }) => {
+    test("schema editing persists to the server", async ({ page }) => {
       await page.goto("/general");
       const isMobile = page.viewportSize() && page.viewportSize()!.width <= 767;
       if (isMobile) {
@@ -120,8 +121,10 @@ test.describe("Responsive Workflows & Accessibility Controls", () => {
         await page.getByRole("tab", { name: "Hardware" }).click();
       }
       const trainDeviceInput = page.locator("#field-train-device");
-      await trainDeviceInput.fill("cuda:0");
-      await expect(page.getByTestId("saved-icon-badge")).toBeVisible();
+      const device = await pickDifferentDevice(page);
+      await trainDeviceInput.fill(device);
+      await expectSaved(page, "train_device", device);
+      await expectNoSaveProblem(page);
     });
 
     test("a dataset created on this page survives a reload", async ({ page }) => {

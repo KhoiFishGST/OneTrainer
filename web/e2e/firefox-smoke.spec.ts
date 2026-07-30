@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { expectNoSaveProblem, expectSaved, pickDifferentDevice } from "./helpers/config-state";
 
 test.describe("Firefox Smoke Flows", () => {
   test("boot, General/Datasets/Backup navigation, saved edit, console visibility, and focus order", async ({ page }) => {
@@ -14,8 +15,10 @@ test.describe("Firefox Smoke Flows", () => {
     await page.goto("/general");
     await page.getByRole("tab", { name: "Hardware" }).click();
     const trainDeviceInput = page.locator("#field-train-device");
-    await trainDeviceInput.fill("cuda:0");
-    await expect(page.getByTestId("saved-icon-badge")).toBeVisible();
+    const device = await pickDifferentDevice(page);
+    await trainDeviceInput.fill(device);
+    await expectSaved(page, "train_device", device);
+    await expectNoSaveProblem(page);
 
     const consoleToggle = page.getByTitle("Toggle Console Drawer");
     await consoleToggle.click();

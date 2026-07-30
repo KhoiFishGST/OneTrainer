@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { expectNoSaveProblem, expectSaved, pickDifferentValue } from "./helpers/config-state";
 
 test.describe("Phase B Configuration Surface", () => {
   test("navigates through Model, Training, Sampling, LoRA, and Concepts tabs", async ({ page }) => {
@@ -60,14 +61,16 @@ test.describe("Phase B Configuration Surface", () => {
 
     // Fill beta1 input inside modal
     const beta1Input = dialog.locator('#param-beta1');
-    await beta1Input.fill("0.8");
+    const beta1 = await pickDifferentValue(page, "optimizer.beta1", [0.8, 0.85]);
+    await beta1Input.fill(String(beta1));
 
     // Click Apply Parameters inside modal
     await dialog.getByRole("button", { name: "Apply Parameters" }).click();
     await expect(dialog).not.toBeVisible();
 
-    // Workspace should reflect saved/unsaved status
-    await expect(page.getByTestId("saved-icon-badge")).toBeVisible();
+    // The applied modal value must reach the workspace and persist
+    await expectSaved(page, "optimizer.beta1", beta1);
+    await expectNoSaveProblem(page);
   });
 
   test("Concepts editor supports adding and configuring dataset concepts", async ({ page }) => {

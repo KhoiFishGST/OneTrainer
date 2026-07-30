@@ -1,4 +1,11 @@
 import { test, expect } from "@playwright/test";
+import {
+  expectNoSaveProblem,
+  expectNotSaved,
+  expectSaved,
+  getServerValue,
+  pickDifferentDevice,
+} from "./helpers/config-state";
 
 test.describe("Phase A Desktop Flows", () => {
   test("root redirects to Live and loads shell", async ({ page }) => {
@@ -26,21 +33,25 @@ test.describe("Phase A Desktop Flows", () => {
     await page.goto("/general");
     await page.getByRole("tab", { name: "Hardware" }).click();
     const trainDeviceInput = page.locator("#field-train-device");
-    await trainDeviceInput.fill("cuda:0");
-    await expect(page.getByTestId("saved-icon-badge")).toBeVisible();
+    const device = await pickDifferentDevice(page);
+    await trainDeviceInput.fill(device);
+    await expectSaved(page, "train_device", device);
+    await expectNoSaveProblem(page);
 
     await page.reload();
     await page.getByRole("tab", { name: "Hardware" }).click();
-    await expect(trainDeviceInput).toHaveValue("cuda:0");
+    await expect(trainDeviceInput).toHaveValue(device);
   });
 
   test("invalid numeric text remains visible and Unsaved", async ({ page }) => {
     await page.goto("/general");
     await page.getByRole("tab", { name: "Hardware" }).click();
     const numberInput = page.locator("#field-dataloader-threads");
+    const threadsBefore = await getServerValue(page, "dataloader_threads");
     await numberInput.fill("invalid-num");
     await expect(numberInput).toHaveValue("invalid-num");
-    await expect(page.getByTestId("saved-icon-badge")).not.toBeVisible();
+    // Unsaved: the invalid draft must never reach the server.
+    await expectNotSaved(page, "dataloader_threads", threadsBefore);
   });
 
   test("conflict handling between two browser contexts", async ({ browser }) => {
@@ -59,35 +70,42 @@ test.describe("Phase A Desktop Flows", () => {
     const numInputB = pageB.locator("#field-dataloader-threads");
     const inputB = pageB.locator("#field-train-device");
 
+    const threadsBefore = await getServerValue(pageB, "dataloader_threads");
+    const deviceA1 = await pickDifferentDevice(pageA);
+    const deviceA2 = await pickDifferentDevice(pageA, deviceA1);
+
     // Page B makes local dirty edit (invalid text prevents autosave from firing automatically)
     await numInputB.fill("invalid-num");
-    await expect(pageB.getByTestId("saved-icon-badge")).not.toBeVisible();
+    await expectNotSaved(pageB, "dataloader_threads", threadsBefore);
 
     // Page A saves a valid edit, advancing server revision
-    await inputA.fill("cuda:0");
-    await expect(pageA.getByTestId("saved-icon-badge")).toBeVisible();
+    await inputA.fill(deviceA1);
+    await expectSaved(pageA, "train_device", deviceA1);
 
     // Page B receives remote change while dirty and enters Conflict state
     await expect(pageB.getByText("Conflict")).toBeVisible();
 
-    // Reload syncs pageB to server state
+    // Reload syncs pageB to server state: conflict clears and B shows A's value
     await pageB.getByRole("button", { name: "Reload" }).click();
-    await expect(pageB.getByTestId("saved-icon-badge")).toBeVisible();
-    await expect(inputB).toHaveValue("cuda:0");
+    await expectNoSaveProblem(pageB);
+    await expect(inputB).toHaveValue(deviceA1);
 
     // Cause a second conflict
     await numInputB.fill("invalid-num-2");
-    await expect(pageB.getByTestId("saved-icon-badge")).not.toBeVisible();
+    await expectNotSaved(pageB, "dataloader_threads", threadsBefore);
 
-    await inputA.fill("cuda:1");
-    await expect(pageA.getByTestId("saved-icon-badge")).toBeVisible();
+    await inputA.fill(deviceA2);
+    await expectSaved(pageA, "train_device", deviceA2);
 
     await expect(pageB.getByText("Conflict")).toBeVisible();
 
     // Context B fixes invalid input and explicitly overwrites
     await numInputB.fill("2");
     await pageB.getByRole("button", { name: "Overwrite" }).click();
-    await expect(pageB.getByTestId("saved-icon-badge")).toBeVisible();
+    // Overwrite pushes B's whole draft, so B's stale train_device (deviceA1)
+    // deliberately replaces A's newer deviceA2 on the server.
+    await expectSaved(pageB, "train_device", deviceA1);
+    await expectNoSaveProblem(pageB);
 
     await contextA.close();
     await contextB.close();
@@ -97,7 +115,8 @@ test.describe("Phase A Desktop Flows", () => {
     await page.goto("/general");
     await page.getByRole("tab", { name: "Hardware" }).click();
     const deviceInput = page.locator("#field-train-device");
-    await deviceInput.fill("cuda:2");
+    const device = await pickDifferentDevice(page);
+    await deviceInput.fill(device);
 
     await page.locator(".header-left").getByRole("button", { name: "Save" }).click();
     const presetName = `E2E Test Preset ${Date.now()}`;
@@ -105,7 +124,9 @@ test.describe("Phase A Desktop Flows", () => {
     await page.getByRole("dialog", { name: "Save Configuration" }).getByRole("button", { name: "Save" }).click();
 
     await expect(page.getByRole("dialog", { name: "Save Configuration" })).not.toBeVisible();
-    await expect(page.getByTestId("saved-icon-badge")).toBeVisible();
+    // The pending autosave must have been flushed by the preset save.
+    await expectSaved(page, "train_device", device);
+    await expectNoSaveProblem(page);
   });
 
   test("deep-linking and browser navigation between tabs", async ({ page }) => {
