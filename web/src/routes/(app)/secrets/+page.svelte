@@ -199,7 +199,7 @@
 
         <div class="card-actions">
           <Button variant="default" class="flex items-center gap-2 font-medium" onclick={handleSaveHfToken}>
-            <Save size={16} /> Save Token
+            <Save size={16} /> Save
           </Button>
         </div>
       </div>
@@ -252,11 +252,11 @@
 
         <div class="card-actions">
           <Button variant="default" class="flex items-center gap-2 font-medium" onclick={handleSavePassword}>
-            <Save size={16} /> Update Password
+            <Save size={16} /> Update
           </Button>
           {#if webuiPasswordSet}
             <Button variant="destructive" class="flex items-center gap-2 font-medium" onclick={() => { isConfirmClearOpen = true; clearPasswordError = null; }}>
-              Clear Password
+              Clear
             </Button>
           {/if}
         </div>

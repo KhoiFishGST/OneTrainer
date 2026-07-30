@@ -20,7 +20,6 @@
   const captionMutation = createUpdateCaptionMutation();
 
   let items = $derived($filesQuery.data?.items || []);
-  let datasetPath = $derived($filesQuery.data?.path || '');
   let loading = $derived($filesQuery.isLoading);
   let fileInput = $state<{ open: () => void } | null>(null);
   let isDragging = $state(false);
@@ -84,9 +83,6 @@
     <div class="flex items-start justify-between gap-4">
       <div class="flex flex-col gap-1">
         <h1 class="text-2xl font-bold text-primary m-0">{datasetName}</h1>
-        {#if datasetPath}
-          <span class="text-xs text-muted-foreground">{datasetPath}</span>
-        {/if}
         <a href="/datasets" class="inline-flex items-center gap-1.5 text-muted-foreground text-sm mt-1 transition-colors hover:text-foreground no-underline">
           <ArrowLeft size={16} />
           <span>Back to Datasets</span>

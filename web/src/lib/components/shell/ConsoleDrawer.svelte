@@ -222,4 +222,16 @@
     overflow: hidden;
     position: relative;
   }
+
+  @media (max-width: 768px) {
+    .resize-handle {
+      display: none;
+    }
+
+    .console-drawer {
+      height: 75dvh !important;
+      max-height: 80dvh;
+      flex: 1;
+    }
+  }
 </style>

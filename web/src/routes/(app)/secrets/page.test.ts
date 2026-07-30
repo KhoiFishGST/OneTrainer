@@ -24,11 +24,11 @@ describe('Secrets Page', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Show token' }));
     expect(screen.getByLabelText('API Token')).toHaveAttribute('type', 'text');
     await fireEvent.input(screen.getByLabelText('API Token'), { target: { value: 'hf_new_token' } });
-    await fireEvent.click(screen.getByRole('button', { name: 'Save Token' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(fetch).toHaveBeenLastCalledWith('/api/secrets', expect.objectContaining({ method: 'POST', body: JSON.stringify({ huggingface_token: 'hf_new_token' }) }));
 
     await fireEvent.input(screen.getByLabelText('New Web Portal Password'), { target: { value: 'secretpass' } });
-    await fireEvent.click(screen.getByRole('button', { name: 'Update Password' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Update' }));
     expect(fetch).toHaveBeenLastCalledWith('/api/secrets', expect.objectContaining({ method: 'POST', body: JSON.stringify({ webui_password: 'secretpass' }) }));
   });
 
@@ -38,7 +38,7 @@ describe('Secrets Page', () => {
     vi.useFakeTimers();
 
     try {
-      await fireEvent.click(screen.getByRole('button', { name: 'Save Token' }));
+      await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
       await Promise.resolve();
       await tick();
 
@@ -80,7 +80,7 @@ describe('Secrets Page', () => {
     render(Page);
     await screen.findByLabelText('New Web Portal Password');
 
-    const clearBtn = screen.getByRole('button', { name: 'Clear Password' });
+    const clearBtn = screen.getByRole('button', { name: 'Clear' });
     await fireEvent.click(clearBtn);
 
     // Should open confirmation Alert Dialog
