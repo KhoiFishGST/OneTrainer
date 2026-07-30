@@ -223,6 +223,15 @@ export function createApi(base = '') {
 
     getDatasets: () => request<{ base_dir: string; datasets: any[] }>(`${base}/api/datasets`),
 
+    setDatasetsBaseDir: (path: string) =>
+      request<{ status: string; base_dir: string; resolved_base_dir: string }>(
+        `${base}/api/datasets/base-dir`,
+        {
+          method: 'PUT',
+          body: JSON.stringify({ path }),
+        }
+      ),
+
     createDataset: (name: string) =>
       request<{ status: string; name: string; path: string }>(`${base}/api/datasets`, {
         method: 'POST',

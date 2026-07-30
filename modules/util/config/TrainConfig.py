@@ -372,7 +372,6 @@ class TrainConfig(BaseConfig):
     debug_mode: bool
     debug_dir: str
     workspace_dir: str
-    datasets_dir: str
     cache_dir: str
     tensorboard: bool
     tensorboard_expose: bool
@@ -1015,7 +1014,6 @@ class TrainConfig(BaseConfig):
         data.append(("debug_mode", False, bool, False))
         data.append(("debug_dir", "debug", str, False))
         data.append(("workspace_dir", "workspace/run", str, False))
-        data.append(("datasets_dir", "training_datasets", str, False))
         data.append(("cache_dir", "workspace-cache/run", str, False))
         data.append(("tensorboard", True, bool, False))
         data.append(("tensorboard_expose", False, bool, False))

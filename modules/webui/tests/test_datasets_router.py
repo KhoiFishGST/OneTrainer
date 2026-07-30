@@ -178,17 +178,43 @@ def test_get_dataset_image_and_thumbnail(client):
     assert len(res_304.content) == 0
 
 
-def test_decode_config_with_missing_datasets_dir():
+def test_decode_config_ignores_legacy_datasets_dir_key():
     from modules.util.config.SecretsConfig import SecretsConfig
     from modules.util.config.TrainConfig import TrainConfig
     from modules.webui.config_codec import decode_settings_document
 
     cfg = TrainConfig.default_values()
     doc = cfg.to_settings_dict(secrets=False)
-    # Simulate legacy config dict missing datasets_dir
-    doc_missing = {k: v for k, v in doc.items() if k != "datasets_dir"}
-    assert "datasets_dir" not in doc_missing
+    # Configs saved by earlier web UI builds carry a datasets_dir key that
+    # TrainConfig no longer declares. Loading them must not fail.
+    doc["datasets_dir"] = "training_datasets"
 
-    decoded = decode_settings_document(doc_missing, SecretsConfig.default_values())
-    assert getattr(decoded, "datasets_dir", None) == "training_datasets"
+    decoded = decode_settings_document(doc, SecretsConfig.default_values())
+    assert decoded is not None
 
+
+
+def test_base_dir_comes_from_settings_store(tmp_path):
+    from modules.webui.app import create_app
+    from modules.webui.state import WebUISettings
+
+    from fastapi.testclient import TestClient
+
+    settings = WebUISettings(
+        root_dir=tmp_path,
+        config_path=tmp_path / "config.json",
+        secrets_path=tmp_path / "secrets.json",
+        presets_dir=tmp_path / "presets",
+        static_dir=tmp_path / "static",
+        dev=True,
+    )
+    app = create_app(settings)
+    with TestClient(app) as client:
+        assert client.get("/api/datasets").json()["base_dir"] == "training_datasets"
+
+        resp = client.put("/api/datasets/base-dir", json={"path": "my_sets"})
+        assert resp.status_code == 200
+        assert resp.json()["base_dir"] == "my_sets"
+
+        assert client.get("/api/datasets").json()["base_dir"] == "my_sets"
+        assert (tmp_path / "my_sets").is_dir()

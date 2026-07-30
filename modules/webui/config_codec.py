@@ -152,11 +152,16 @@ def _validate_config(
         _validate_value(value, expected, nullable, field_path, issues, template_instance=current)
 
 
+# Keys written by earlier web UI builds that TrainConfig never declared. They are
+# dropped on load so existing config.json files keep decoding.
+LEGACY_KEYS = ("datasets_dir",)
+
+
 def decode_settings_document(document: object, secrets: SecretsConfig) -> TrainConfig:
     issues: list[FieldIssue] = []
     template = TrainConfig.default_values()
-    if isinstance(document, dict) and "datasets_dir" not in document:
-        document["datasets_dir"] = getattr(template, "datasets_dir", "training_datasets")
+    if isinstance(document, dict) and any(key in document for key in LEGACY_KEYS):
+        document = {k: v for k, v in document.items() if k not in LEGACY_KEYS}
     _validate_config(document, template, "", issues, include_secrets=False)
     if issues:
         raise SettingsDocumentError(issues)

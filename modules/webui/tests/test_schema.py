@@ -226,13 +226,6 @@ def test_meta_serializes_model_method_and_enum_values():
     assert "MUON" in meta["optimizer_sub_schemas"]
 
 
-def test_train_config_has_default_datasets_dir():
-    from modules.util.config.TrainConfig import TrainConfig
-    config = TrainConfig.default_values()
-    assert hasattr(config, "datasets_dir")
-    assert config.datasets_dir == "training_datasets"
-
-
 def test_meta_json_dump_without_nan_or_inf_error():
     import json
     meta = SchemaRegistry().meta()

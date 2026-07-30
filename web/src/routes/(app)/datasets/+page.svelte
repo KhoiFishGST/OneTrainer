@@ -11,11 +11,10 @@
   import { Alert } from '$lib/components/ui/alert';
   import DatasetCollection from '$lib/components/datasets/DatasetCollection.svelte';
   import {
-    queryKeys,
-    getSafeQueryClient,
     createDatasetsQuery,
     createCreateDatasetMutation,
     createDeleteDatasetMutation,
+    createSetDatasetsBaseDirMutation,
   } from '$lib/api/queries';
 
   interface DatasetItem {
@@ -34,26 +33,34 @@
     }
   })();
 
-  const queryClient = getSafeQueryClient();
   const datasetsQuery = createDatasetsQuery();
   const createMutation = createCreateDatasetMutation();
   const deleteMutation = createDeleteDatasetMutation();
 
   let datasets = $derived($datasetsQuery.data?.datasets || []);
-  let baseDir = $derived(
-    ctx?.workspace?.draft?.datasets_dir ?? $datasetsQuery.data?.base_dir ?? 'training_datasets'
-  );
   let showCreateModal = $state(false);
   let newDatasetName = $state('');
   let createError = $state<string | null>(null);
   let isDeleting = $derived($deleteMutation.isPending);
 
-  async function handleBaseDirChange(newPath: string) {
-    if (ctx?.workspace) {
-      ctx.workspace.setRaw('datasets_dir', newPath);
-      await ctx.workspace.flush();
-      queryClient.invalidateQueries({ queryKey: queryKeys.datasets() });
-    }
+  const setBaseDirMutation = createSetDatasetsBaseDirMutation();
+
+  let baseDirDraft = $state<string | null>(null);
+  let baseDir = $derived(
+    baseDirDraft ?? $datasetsQuery.data?.base_dir ?? 'training_datasets'
+  );
+  let commitTimer: ReturnType<typeof setTimeout> | undefined;
+
+  function handleBaseDirChange(newPath: string) {
+    baseDirDraft = newPath;
+    if (commitTimer) clearTimeout(commitTimer);
+    commitTimer = setTimeout(() => {
+      $setBaseDirMutation.mutate(newPath, {
+        onSettled: () => {
+          baseDirDraft = null;
+        },
+      });
+    }, 600);
   }
 
   function openCreateModal() {
@@ -108,7 +115,6 @@
           id="base-datasets-dir"
           value={baseDir}
           mode="dir"
-          onInput={handleBaseDirChange}
           onChange={handleBaseDirChange}
         />
       </div>

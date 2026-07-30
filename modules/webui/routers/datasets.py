@@ -8,6 +8,7 @@ from modules.util import path_util
 from modules.webui.state import AppState
 
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -16,8 +17,7 @@ SAFE_NAME_REGEX = re.compile(r"^[a-zA-Z0-9 _-]+$")
 
 
 def get_base_datasets_dir(app_state: AppState) -> Path:
-    config = app_state.config_service.get_config()
-    raw_dir = getattr(config, "datasets_dir", "training_datasets") or "training_datasets"
+    raw_dir = app_state.settings_store.get_datasets_dir()
     p = Path(raw_dir)
     if not p.is_absolute():
         p = (app_state.settings.root_dir / p).resolve()
@@ -25,11 +25,24 @@ def get_base_datasets_dir(app_state: AppState) -> Path:
     return p
 
 
+class BaseDirUpdate(BaseModel):
+    path: str
+
+
+@router.put("/datasets/base-dir")
+async def set_datasets_base_dir(req: BaseDirUpdate, request: Request):
+    app_state: AppState = request.app.state.webui
+    app_state.settings_store.set_datasets_dir(req.path.strip())
+    return {
+        "status": "ok",
+        "base_dir": app_state.settings_store.get_datasets_dir(),
+        "resolved_base_dir": str(get_base_datasets_dir(app_state)),
+    }
+
+
 @router.get("/datasets")
 async def list_datasets(request: Request):
     app_state: AppState = request.app.state.webui
-    config = app_state.config_service.get_config()
-    raw_dir = getattr(config, "datasets_dir", "training_datasets") or "training_datasets"
     base_dir = get_base_datasets_dir(app_state)
     result = []
     if base_dir.exists() and base_dir.is_dir():
@@ -51,7 +64,11 @@ async def list_datasets(request: Request):
                     "caption_count": cap_count,
                     "thumbnail_url": f"/api/datasets/image?dataset={encoded_name}&thumb=true",
                 })
-    return {"datasets": result, "base_dir": raw_dir, "resolved_base_dir": str(base_dir)}
+    return {
+        "datasets": result,
+        "base_dir": app_state.settings_store.get_datasets_dir(),
+        "resolved_base_dir": str(base_dir),
+    }
 
 
 @router.post("/datasets")

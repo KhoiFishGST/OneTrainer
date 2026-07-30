@@ -281,6 +281,19 @@ export function createCreateDatasetMutation() {
   );
 }
 
+export function createSetDatasetsBaseDirMutation() {
+  const client = getSafeQueryClient();
+  return createMutation(
+    {
+      mutationFn: (path: string) => api.setDatasetsBaseDir(path),
+      onSuccess: () => {
+        client.invalidateQueries({ queryKey: queryKeys.datasets() });
+      },
+    },
+    client
+  );
+}
+
 export function createDeleteDatasetMutation() {
   const client = getSafeQueryClient();
   return createMutation(
