@@ -425,6 +425,7 @@ test.describe("Phone layout", () => {
 
       const m = await page.evaluate(() => {
         const card = document.querySelector("[data-slot='drawer-content']") as HTMLElement;
+        const body = document.querySelector(".picker-body") as HTMLElement;
         const footer = document.querySelector(".picker-footer") as HTMLElement;
         const select = document.querySelector(".select-btn") as HTMLElement;
         const view = document.querySelector(
@@ -433,6 +434,7 @@ test.describe("Phone layout", () => {
         const r = (el: HTMLElement) => el.getBoundingClientRect();
         return {
           cardBottom: r(card).bottom,
+          listBottom: r(body).bottom,
           footerBottom: r(footer).bottom,
           selectBottom: r(select).bottom,
           viewportH: window.innerHeight,
@@ -448,6 +450,18 @@ test.describe("Phone layout", () => {
         problems.push(
           `${at} footer bottom ${Math.round(m.footerBottom)} is ` +
             `${Math.round(m.footerBottom - m.cardBottom)}px below the card bottom ` +
+            `${Math.round(m.cardBottom)}`
+        );
+      }
+      // The footer is pulled back inside the card by the shared wrapper's
+      // `min-h-0` alone, so asserting only the footer leaves the rest of the
+      // fix unguarded -- deleting `bodyClass` from DirectoryPicker keeps this
+      // test green while listing rows spill out of the rounded card and paint
+      // behind the footer. Measure the listing's own bottom edge too.
+      if (m.listBottom > m.cardBottom + 1) {
+        problems.push(
+          `${at} listing bottom ${Math.round(m.listBottom)} is ` +
+            `${Math.round(m.listBottom - m.cardBottom)}px below the card bottom ` +
             `${Math.round(m.cardBottom)}`
         );
       }
