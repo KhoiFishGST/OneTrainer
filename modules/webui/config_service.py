@@ -8,10 +8,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from modules.util.config.config_io import load_secrets, load_train_config, save_settings
 from modules.util.config.TrainConfig import TrainConfig
 from modules.util.path_util import write_json_atomic
 from modules.webui.config_codec import decode_settings_document
+from modules.webui.config_io import load_secrets, load_train_config, save_settings
 from modules.webui.state import WebUISettings
 
 logger = logging.getLogger(__name__)

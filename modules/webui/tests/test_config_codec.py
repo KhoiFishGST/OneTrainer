@@ -1,10 +1,10 @@
 from copy import deepcopy
 from pathlib import Path
 
-from modules.util.config.config_io import load_train_config
 from modules.util.config.SecretsConfig import SecretsConfig
 from modules.util.config.TrainConfig import TrainConfig
 from modules.webui.config_codec import SettingsDocumentError, decode_settings_document
+from modules.webui.config_io import load_train_config
 
 import pytest
 

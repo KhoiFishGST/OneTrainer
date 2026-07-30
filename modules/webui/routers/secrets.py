@@ -1,6 +1,6 @@
 from typing import Any
 
-from modules.util.config.config_io import save_secrets
+from modules.webui.config_io import save_secrets
 from modules.webui.state import AppState
 
 from fastapi import APIRouter, Request

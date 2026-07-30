@@ -8,9 +8,9 @@ repo_root = Path(__file__).resolve().parents[3]
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
 
-from modules.util.config.config_io import save_settings
 from modules.util.config.TrainConfig import TrainConfig
 from modules.webui.app import create_app
+from modules.webui.config_io import save_settings
 from modules.webui.console import ConsoleCapture
 from modules.webui.state import WebUISettings
 

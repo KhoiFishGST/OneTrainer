@@ -1,5 +1,5 @@
-from modules.util.config.config_io import load_train_config, save_settings
 from modules.webui.config_codec import SettingsDocumentError, decode_settings_document
+from modules.webui.config_io import load_train_config, save_settings
 from modules.webui.config_service import ConfigPersistenceError, RevisionConflict
 from modules.webui.state import AppState
 
