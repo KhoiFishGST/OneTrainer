@@ -126,13 +126,16 @@ test.describe("Visual Regression Baselines", () => {
       await expect(drawer).toHaveScreenshot("ordinary-editor-drawer-phone.png", screenshotOpts);
     });
 
-    test("directory picker Sheet phone", async ({ page }) => {
+    test("directory picker Drawer phone", async ({ page }) => {
       await page.goto("/general");
       const browseBtn = page.getByRole("button", { name: "Browse directory" }).first();
       await browseBtn.click();
-      const sheet = page.getByRole("dialog", { name: "Select Directory" });
-      await expect(sheet).toBeVisible();
-      await expect(sheet).toHaveScreenshot("directory-picker-sheet-phone.png", screenshotOpts);
+      const drawer = page.getByRole("dialog", { name: "Select Directory" });
+      await expect(drawer).toBeVisible();
+      await page.evaluate(async () => {
+        await Promise.all(document.getAnimations().map((a) => a.finished.catch(() => {})));
+      });
+      await expect(drawer).toHaveScreenshot("directory-picker-drawer-phone.png", screenshotOpts);
     });
   });
 
