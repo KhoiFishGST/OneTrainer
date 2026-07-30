@@ -96,12 +96,14 @@ For a technically focused quick start, see the [Quick Start Guide](docs/QuickSta
 
 ### Web UI Mode
 
-OneTrainer includes an optional browser-based Web UI (Phase A implementation).
+OneTrainer also includes an optional browser-based interface, usable from
+desktop and mobile browsers.
 
 -   **Windows**: Run `start-web-ui.bat`
 -   **Linux / Mac**: Run `./start-web-ui.sh`
 
-By default, the Web UI listens at `http://127.0.0.1:7801`. See [LAUNCH-SCRIPTS.md](LAUNCH-SCRIPTS.md) for launch options, port overrides, and system setup details.
+By default the Web UI listens at `http://127.0.0.1:7801`. See [Web UI](docs/WebUi.md)
+for requirements, launch options and development setup.
 
 ### CLI Mode
 

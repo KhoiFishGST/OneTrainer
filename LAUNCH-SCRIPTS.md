@@ -73,27 +73,11 @@
 
 ## Web UI
 
-### Launching the Web UI
-
 - Linux/Mac: `./start-web-ui.sh`
 - Windows: `start-web-ui.bat`
-- On first launch (or whenever frontend source files change), the launcher automatically verifies frontend dependencies and builds the production static bundle into `web/build`.
 
-### Requirements & Optional Dependencies
-
-- **Python dependencies:** Web UI API dependencies are specified in `requirements-webui.txt` and can be installed via:
-  `python -m pip install -r requirements-webui.txt`
-- **Bun runtime:** [Bun](https://bun.sh) is required on your system PATH to install frontend dependencies and generate production builds.
-
-### Usage & Command Line Options
-
-- **Default URL:** `http://127.0.0.1:7801`
-- **Custom Port:** `./start-web-ui.sh --port 8080`
-- **Network Exposure:** `./start-web-ui.sh --host 0.0.0.0`
-  *Warning:* The Web UI has no built-in authentication. Binding to non-loopback interfaces (`0.0.0.0`) exposes all features and file-system operations to your local network.
-
-### Two-Terminal Development Mode
-
-For active frontend development with hot module reloading (HMR):
-- **Terminal 1 (Backend API):** `./start-web-ui.sh --dev`
-- **Terminal 2 (Vite Dev Server):** `cd web && bun run dev`
+For requirements, launch options, port/host overrides, and development setup,
+see [docs/WebUi.md](docs/WebUi.md). The environment variables documented
+above (in particular `OT_CONDA_CMD`, `OT_PYTHON_VENV` and `OT_PREFER_VENV`)
+also apply to `start-web-ui.sh`/`start-web-ui.bat`, since they share the same
+launch machinery as the other scripts.
