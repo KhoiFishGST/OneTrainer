@@ -7,21 +7,10 @@ from modules.util import path_util
 from modules.util.config.ConceptConfig import ConceptConfig
 from modules.util.image_util import load_image
 
-try:
-    from mgds.pipelineModules.AspectBucketing import AspectBucketing
-    ALL_ASPECTS = AspectBucketing.all_possible_input_aspects
-except ImportError:
-    ALL_ASPECTS = [(1, 1), (4, 3), (3, 4), (16, 9), (9, 16), (2, 1), (1, 2), (3, 2), (2, 3), (5, 4), (4, 5)]
+from mgds.pipelineModules.AspectBucketing import AspectBucketing
 
-try:
-    import cv2
-except ImportError:
-    cv2 = None
-
-try:
-    import imagesize
-except ImportError:
-    imagesize = None
+import cv2
+import imagesize
 
 
 def init_concept_stats(advanced_checks : bool):
@@ -82,7 +71,7 @@ def init_concept_stats(advanced_checks : bool):
         stats_dict["avg_caption_length"] = [0,0]                #avg char count, avg word count
 
         aspect_ratio_list = []
-        for aspect in ALL_ASPECTS:   #input parameters don't matter but can't be blank
+        for aspect in AspectBucketing.all_possible_input_aspects:   #input parameters don't matter but can't be blank
             aspect_ratio_list.append(round(aspect[0]/aspect[1], 6))     #get both wide and tall ratios
             aspect_ratio_list.append(round(aspect[1]/aspect[0], 6))
         aspect_ratio_list = list(set(aspect_ratio_list))
@@ -140,8 +129,6 @@ def folder_scan(dir, stats_dict : dict, advanced_checks : bool, conceptconfig : 
 
                 #get image resolution info
                 try:    #use imagesize if possible due to better speed
-                    if imagesize is None:
-                        raise ValueError
                     width, height = imagesize.get(path.path)
                     if width == -1:     #if imagesize doesn't recognize format it returns (-1, -1)
                         raise ValueError
@@ -163,7 +150,7 @@ def folder_scan(dir, stats_dict : dict, advanced_checks : bool, conceptconfig : 
         elif extension.lower() in vid_extensions_list:
             stats_dict["video_count"] += 1
             stats_dict["file_size"] += path.stat().st_size
-            if advanced_checks and cv2 is not None:
+            if advanced_checks:
                 #check if video has a corresponding mask/caption in the same directory
                 # if (basename + "-masklabel.png") in file_list_str:
                 #     stats_dict["paired_masks"] += 1
@@ -185,7 +172,7 @@ def folder_scan(dir, stats_dict : dict, advanced_checks : bool, conceptconfig : 
                             stats_dict["avg_caption_length"][0] += (char_count - stats_dict["avg_caption_length"][0])/(stats_dict["image_count"] + stats_dict["video_count"])
                             stats_dict["avg_caption_length"][1] += (word_count - stats_dict["avg_caption_length"][1])/(stats_dict["image_count"] + stats_dict["video_count"])
 
-                vid = cv2.VideoCapture(path.path if hasattr(path, "path") else path)
+                vid = cv2.VideoCapture(path)
                 width = vid.get(cv2.CAP_PROP_FRAME_WIDTH)
                 height = vid.get(cv2.CAP_PROP_FRAME_HEIGHT)
                 length = vid.get(cv2.CAP_PROP_FRAME_COUNT)
