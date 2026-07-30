@@ -5,6 +5,13 @@ import threading
 #   1. the on-disk path of each written sample, for the gallery
 #   2. real-time loss/lr metrics, for the training chart
 # Both are installed here as runtime patches so no core file is modified.
+#
+# The patches are process-lifetime: they are installed exactly once, on the
+# first call, and are never removed. Installation happens only from
+# create_app(), so the desktop UI -- which imports the same modules -- runs
+# unpatched. There is intentionally no uninstall_runtime_patches(): unwinding a
+# monkeypatch mid-process would race with in-flight training threads, and the
+# web UI server has no lifecycle stage at which reverting would be correct.
 
 _installed = False
 _install_lock = threading.Lock()
@@ -69,9 +76,15 @@ def _patch_summary_writer() -> None:
 
     original = SummaryWriter.add_scalar
 
-    def patched(writer_self, tag, scalar_value, global_step=None, walltime=None):
+    def patched(writer_self, tag, scalar_value, *args, **kwargs):
+        # *args/**kwargs passthrough so the wrapper never narrows torch's real
+        # signature (which also takes new_style / double_precision).
         with contextlib.suppress(Exception):
-            original(writer_self, tag, scalar_value, global_step, walltime)
+            original(writer_self, tag, scalar_value, *args, **kwargs)
+
+        # global_step is the first optional parameter, so it may arrive
+        # positionally or by keyword.
+        global_step = args[0] if args else kwargs.get("global_step")
 
         from modules.webui import training as training_module
 

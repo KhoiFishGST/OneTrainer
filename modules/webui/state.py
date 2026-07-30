@@ -42,7 +42,7 @@ class AppState:
     sampling: "SamplingCoordinator | None" = None
     media: "MediaService | None" = None
     media_service: "MediaService | None" = None
-    settings_store: "SettingsStore | None" = None
+    store: "SettingsStore | None" = None
 
     def __post_init__(self) -> None:
         if self.media_service is None and self.media is not None:
@@ -71,4 +71,10 @@ class AppState:
         if self.sampling is None:
             raise RuntimeError("SamplingCoordinator is not initialized on AppState")
         return self.sampling
+
+    @property
+    def settings_store(self) -> "SettingsStore":
+        if self.store is None:
+            raise RuntimeError("SettingsStore is not initialized on AppState")
+        return self.store
 

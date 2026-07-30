@@ -191,7 +191,7 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
             sampling=sampling_svc,
             media=media_svc,
             media_service=media_svc,
-            settings_store=settings_store,
+            store=settings_store,
         )
 
         try:

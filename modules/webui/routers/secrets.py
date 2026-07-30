@@ -33,11 +33,14 @@ async def update_secrets(
     state: AppState = request.app.state.webui
     secrets = state.config._config.secrets
 
-    if req.huggingface_token is not None:
-        secrets.huggingface_token = req.huggingface_token.strip()
-
+    # The store write goes first: if webui.json is unreadable it raises here,
+    # before any in-memory state is touched, so a 500 cannot leave the
+    # in-memory token diverged from secrets.json on disk.
     if req.webui_password is not None:
         state.settings_store.set_password(req.webui_password)
+
+    if req.huggingface_token is not None:
+        secrets.huggingface_token = req.huggingface_token.strip()
 
     save_secrets(state.config._config, state.settings.secrets_path)
 

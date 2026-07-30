@@ -191,6 +191,11 @@ def test_decode_config_ignores_legacy_datasets_dir_key():
 
     decoded = decode_settings_document(doc, SecretsConfig.default_values())
     assert decoded is not None
+    # The key must be dropped, not absorbed onto the config object.
+    assert not hasattr(decoded, "datasets_dir")
+    # ...and stripping it must not disturb neighbouring fields.
+    assert decoded.epochs == cfg.epochs == 100
+    assert decoded.learning_rate == cfg.learning_rate == 3e-06
 
 
 
