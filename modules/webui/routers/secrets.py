@@ -21,7 +21,7 @@ async def get_secrets(request: Request) -> dict[str, Any]:
     return {
         "huggingface_token": secrets.huggingface_token,
         "huggingface_token_set": bool(secrets.huggingface_token),
-        "webui_password_set": bool(secrets.webui_password),
+        "webui_password_set": state.settings_store.has_password(),
     }
 
 
@@ -37,12 +37,12 @@ async def update_secrets(
         secrets.huggingface_token = req.huggingface_token.strip()
 
     if req.webui_password is not None:
-        secrets.webui_password = req.webui_password
+        state.settings_store.set_password(req.webui_password)
 
     save_secrets(state.config._config, state.settings.secrets_path)
 
     return {
         "status": "ok",
         "huggingface_token_set": bool(secrets.huggingface_token),
-        "webui_password_set": bool(secrets.webui_password),
+        "webui_password_set": state.settings_store.has_password(),
     }

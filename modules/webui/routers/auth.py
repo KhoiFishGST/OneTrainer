@@ -17,8 +17,7 @@ class LoginRequest(BaseModel):
 
 
 def is_authenticated(request_or_ws: Any, state: AppState) -> bool:
-    password_required = bool(state.config._config.secrets.webui_password)
-    if not password_required:
+    if not state.settings_store.has_password():
         return True
 
     headers = getattr(request_or_ws, "headers", {})
@@ -36,7 +35,7 @@ def is_authenticated(request_or_ws: Any, state: AppState) -> bool:
 @router.get("/auth/status")
 async def get_auth_status(request: Request) -> dict[str, Any]:
     state: AppState = request.app.state.webui
-    password_required = bool(state.config._config.secrets.webui_password)
+    password_required = state.settings_store.has_password()
     authenticated = is_authenticated(request, state)
     return {
         "password_required": password_required,
@@ -51,12 +50,10 @@ async def login(
     response: Response,
 ) -> dict[str, Any]:
     state: AppState = request.app.state.webui
-    password_required = bool(state.config._config.secrets.webui_password)
-    if not password_required:
+    if not state.settings_store.has_password():
         return {"status": "ok", "authenticated": True, "token": None}
 
-    expected_password = state.config._config.secrets.webui_password
-    if req.password != expected_password:
+    if not state.settings_store.verify_password(req.password):
         raise HTTPException(status_code=401, detail="Invalid password")
 
     token = secrets.token_hex(32)

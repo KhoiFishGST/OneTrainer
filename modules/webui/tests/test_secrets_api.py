@@ -51,11 +51,17 @@ def test_secrets_api_get_and_update(test_app_fixture):
         assert get_resp.status_code == 200
         assert get_resp.json()["huggingface_token"] == "hf_test_token_123"
 
-        # Verify secrets.json was saved on disk
+        # Verify secrets.json holds the HF token, and that the web UI password
+        # is stored hashed in webui.json rather than in core secrets.
         assert secrets_path.exists()
         saved = json.loads(secrets_path.read_text(encoding="utf-8"))
         assert saved["huggingface_token"] == "hf_test_token_123"
-        assert saved["webui_password"] == "secret_password"
+        assert "webui_password" not in saved
+
+        webui_path = secrets_path.parent / "webui.json"
+        webui_doc = json.loads(webui_path.read_text(encoding="utf-8"))
+        assert "secret_password" not in webui_path.read_text(encoding="utf-8")
+        assert set(webui_doc["password"]) == {"salt", "hash"}
 
 
 def test_auth_api_flow(test_app_fixture):
