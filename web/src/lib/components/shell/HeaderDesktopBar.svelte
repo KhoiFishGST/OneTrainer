@@ -74,7 +74,7 @@
   }
 
   .header-select-wrapper {
-    min-width: 140px;
+    min-width: 0;
   }
 
   .label-text {
