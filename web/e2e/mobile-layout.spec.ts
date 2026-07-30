@@ -323,12 +323,17 @@ test.describe("Phone layout", () => {
     // The floating-card bottom drawer sits inset 12px (bottom-3) from the true
     // edge (see the LOCAL MODIFICATION note in drawer-content.svelte), so its
     // closed transform (100% of its own height) lands its top edge 12px short
-    // of the viewport height rather than exactly at it. Assert the invariant
-    // that actually matters -- fully hidden below the fold -- rather than the
-    // top edge landing exactly at viewportH.
+    // of the viewport height rather than exactly at it. This line alone only
+    // proves the closed panel's bottom edge reaches (or passes) the viewport
+    // floor -- a full-height side panel (x=0, height=viewportH) would satisfy
+    // it too, so it does NOT by itself distinguish "off the bottom" from "off
+    // the side". What rules out the side-panel case is the rest of the test:
+    // the selector gate above times out unless the element is the bottom
+    // drawer (`[data-slot='drawer-content']`), and the `endY < startY` check
+    // below confirms the observed motion is vertical, not horizontal.
     expect(
       travel.startY + travel.startHeight,
-      "the file dialog is visible before it starts sliding"
+      "the closed file dialog does not reach the bottom of the viewport"
     ).toBeGreaterThanOrEqual(travel.viewportH);
     expect(travel.endY).toBeLessThan(travel.startY);
   });
@@ -351,6 +356,26 @@ test.describe("Phone layout", () => {
     expect(box.width).toBeLessThanOrEqual(viewport.width - 23);
     expect(box.height).toBeLessThanOrEqual(viewport.height * 0.9 + 1);
     expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 1);
+
+    // The directory listing at the default 844px-tall viewport doesn't have
+    // enough entries to reach either an 80dvh or a 90dvh cap, so the check
+    // above alone cannot tell 80 from 90 apart -- it is satisfied by both.
+    // Shrink the viewport so the listing overflows and the max-height cap
+    // actually engages, then assert the rendered height lands at 90% of the
+    // (now short) viewport, not 80%. `data-[vaul-drawer-direction=bottom]:`
+    // must be on the height override for this to hold -- a plain
+    // `max-h-[90dvh]` loses to drawer-content's own
+    // `data-[vaul-drawer-direction=bottom]:max-h-[80dvh]` on specificity, and
+    // this assertion is what would have caught that.
+    await page.setViewportSize({ width: 390, height: 500 });
+    await expect(dialog).toBeVisible();
+    await page.evaluate(async () => {
+      await Promise.all(document.getAnimations().map((a) => a.finished.catch(() => {})));
+    });
+    const shortBox = (await dialog.boundingBox())!;
+    // 90% of 500 = 450; 80% of 500 = 400 -- comfortably outside this window.
+    expect(shortBox.height).toBeGreaterThanOrEqual(448);
+    expect(shortBox.height).toBeLessThanOrEqual(451);
   });
 });
 

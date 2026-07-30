@@ -58,7 +58,7 @@ describe("DirectoryPicker", () => {
     expect(document.body.querySelector(".full-screen")).not.toBeInTheDocument();
   });
 
-  it("renders full-screen Sheet at 390px (mobile)", async () => {
+  it("renders as a bottom drawer at 390px (mobile)", async () => {
     const list = vi.fn().mockResolvedValue({
       path: "/",
       parent: null,

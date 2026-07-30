@@ -205,11 +205,19 @@
   }
 </script>
 
+<!--
+  The `data-[vaul-drawer-direction=bottom]:` variant on the height override is
+  load-bearing. A plain `max-h-[90dvh]` loses to drawer-content's
+  `data-[vaul-drawer-direction=bottom]:max-h-[80dvh]` on specificity -- the
+  same trap that shipped the deleted sheet at 293px wide. Matching the variant
+  ties the specificity so ours (later in the stylesheet) wins. Drop the
+  variant and the picker silently reverts to 80dvh.
+-->
 <ResponsiveDialogDrawer
   bind:open
   onOpenChange={handleOpenChange}
   title={modalTitle}
-  class="sm:max-w-[650px] max-h-[90dvh]"
+  class="sm:max-w-[650px] data-[vaul-drawer-direction=bottom]:max-h-[90dvh]"
 >
   {#snippet children()}
     <div class="picker-container flex flex-col gap-3">
