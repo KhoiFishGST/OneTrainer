@@ -274,10 +274,10 @@ async def get_dataset_image(
     else:
         if ds_dir.exists() and ds_dir.is_dir():
             for f in sorted(ds_dir.glob("*.*")):
-                if path_util.is_supported_image_extension(f.suffix.lower()):
+                if classify_media(f.suffix) in ("image", "video"):
                     img_path = f
                     break
 
-    return await app_state.media_service.serve_image(
+    return await app_state.media_service.serve_media(
         request, img_path or Path(""), thumb=thumb
     )

@@ -8,7 +8,63 @@ import pytest
 from PIL import Image
 from starlette.requests import Request
 from starlette.responses import FileResponse
+import av
+import numpy as np
 
+def _make_test_video(path, frames=30, width=64, height=64):
+    """Encode a short clip whose colour changes over time."""
+    container = av.open(str(path), mode="w")
+    stream = container.add_stream("libx264", rate=10)
+    stream.width = width
+    stream.height = height
+    stream.pix_fmt = "yuv420p"
+    for i in range(frames):
+        arr = np.full((height, width, 3), fill_value=(i * 8) % 256, dtype=np.uint8)
+        frame = av.VideoFrame.from_ndarray(arr, format="rgb24")
+        for packet in stream.encode(frame):
+            container.mux(packet)
+    for packet in stream.encode():
+        container.mux(packet)
+    container.close()
+    return path
+
+
+def test_get_video_poster_file_returns_jpeg(tmp_path):
+    service = MediaService(tmp_path)
+    video = _make_test_video(tmp_path / "clip.mp4")
+
+    poster_path, mime, etag = service.get_video_poster_file(video)
+
+    assert poster_path.exists()
+    assert mime == "image/jpeg"
+    assert etag
+    with Image.open(poster_path) as img:
+        assert img.size == (150, 150)
+
+
+def test_get_video_poster_file_is_cached(tmp_path):
+    service = MediaService(tmp_path)
+    video = _make_test_video(tmp_path / "clip.mp4")
+
+    first_path, _, first_etag = service.get_video_poster_file(video)
+    first_mtime = first_path.stat().st_mtime_ns
+
+    second_path, _, second_etag = service.get_video_poster_file(video)
+
+    assert second_path == first_path
+    assert second_etag == first_etag
+    assert second_path.stat().st_mtime_ns == first_mtime
+
+
+def test_get_video_poster_file_falls_back_on_undecodable_input(tmp_path):
+    service = MediaService(tmp_path)
+    broken = tmp_path / "broken.mp4"
+    broken.write_bytes(b"not a video")
+
+    poster_path, mime, _ = service.get_video_poster_file(broken)
+
+    assert poster_path.exists()
+    assert mime == "image/png"
 
 def test_media_service_init_creates_cache_dir(tmp_path: Path):
     service = MediaService(root_dir=tmp_path)
