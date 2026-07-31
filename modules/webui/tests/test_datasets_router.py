@@ -268,3 +268,67 @@ def test_dataset_files_keeps_image_name_alias(client):
 
     item = c.get("/api/datasets/alias/files").json()["items"][0]
     assert item["image_name"] == "a.png"
+
+
+def test_upload_rejects_unsupported_extension(client):
+    c, tmp_path = client
+    c.post("/api/datasets", json={"name": "guard"})
+    resp = c.post(
+        "/api/datasets/guard/upload",
+        files=[("files", ("evil.exe", b"MZ", "application/octet-stream"))],
+    )
+    assert resp.status_code == 415
+    assert "evil.exe" in str(resp.json()["detail"])
+
+
+def test_upload_leaves_no_part_files(client):
+    c, tmp_path = client
+    c.post("/api/datasets", json={"name": "parts"})
+    buf = io.BytesIO()
+    Image.new("RGB", (8, 8)).save(buf, format="PNG")
+    resp = c.post(
+        "/api/datasets/parts/upload",
+        files=[("files", ("a.png", buf.getvalue(), "image/png"))],
+    )
+    assert resp.status_code == 200
+    ds_dir = tmp_path / "training_datasets" / "parts"
+    assert list(ds_dir.glob("*.part")) == []
+    assert (ds_dir / "a.png").exists()
+
+
+def test_upload_streams_large_file_without_full_read(client, monkeypatch):
+    """A 12 MB upload must be copied in chunks, never read whole into memory."""
+    import shutil as _shutil
+
+    c, tmp_path = client
+    c.post("/api/datasets", json={"name": "big"})
+
+    calls = {"copyfileobj": 0}
+    real_copyfileobj = _shutil.copyfileobj
+
+    def counting_copyfileobj(src, dst, length=0):
+        calls["copyfileobj"] += 1
+        return real_copyfileobj(src, dst, length or 1024 * 1024)
+
+    monkeypatch.setattr(
+        "modules.webui.routers.datasets.shutil.copyfileobj", counting_copyfileobj
+    )
+
+    payload = b"\x00" * (12 * 1024 * 1024)
+    resp = c.post(
+        "/api/datasets/big/upload",
+        files=[("files", ("big.mp4", payload, "video/mp4"))],
+    )
+    assert resp.status_code == 200
+    assert calls["copyfileobj"] == 1
+    assert (tmp_path / "training_datasets" / "big" / "big.mp4").stat().st_size == len(payload)
+
+
+def test_dataset_files_ignores_part_files(client):
+    c, tmp_path = client
+    c.post("/api/datasets", json={"name": "leftover"})
+    ds_dir = tmp_path / "training_datasets" / "leftover"
+    (ds_dir / "half.png.part").write_bytes(b"partial")
+
+    assert c.get("/api/datasets/leftover/files").json()["items"] == []
+

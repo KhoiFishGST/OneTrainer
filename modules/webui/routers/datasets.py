@@ -9,6 +9,7 @@ from modules.webui.state import AppState
 
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile
 from pydantic import BaseModel
+from starlette.concurrency import run_in_threadpool
 
 router = APIRouter()
 
@@ -144,7 +145,7 @@ async def get_dataset_files(name: str, request: Request):
 
     items_map = {}
     for p in sorted(ds_dir.glob("*.*")):
-        if p.name.startswith("."):
+        if p.name.startswith(".") or p.suffix.lower() == ".part":
             continue
         kind = classify_media(p.suffix)
         if kind is None:
@@ -178,6 +179,9 @@ async def get_dataset_files(name: str, request: Request):
     return {"name": name, "path": str(ds_dir), "items": items}
 
 
+UPLOAD_CHUNK_BYTES = 1024 * 1024
+
+
 @router.post("/datasets/{name}/upload")
 async def upload_dataset_files(
     name: str, request: Request, files: list[UploadFile] = File(...)  # noqa: B008
@@ -192,13 +196,31 @@ async def upload_dataset_files(
     for f in files:
         filename = os.path.basename(f.filename or "")
         if not filename or ".." in filename:
-            continue
+            raise HTTPException(status_code=400, detail=f"Invalid filename: {f.filename!r}")
+
+        ext = Path(filename).suffix.lower()
+        if ext not in ALLOWED_UPLOAD_EXTENSIONS:
+            raise HTTPException(
+                status_code=415,
+                detail=f"Unsupported file type: {filename}",
+            )
+
         dest = ds_dir / filename
-        content = await f.read()
-        dest.write_bytes(content)
+        part = ds_dir / f"{filename}.part"
+        try:
+            with part.open("wb") as out:
+                await run_in_threadpool(
+                    shutil.copyfileobj, f.file, out, UPLOAD_CHUNK_BYTES
+                )
+            os.replace(part, dest)
+        except Exception:
+            part.unlink(missing_ok=True)
+            raise
+        finally:
+            await f.close()
+
         saved.append(filename)
 
-        # Auto-create blank caption file for images if not present
         if classify_media(dest.suffix) in ("image", "video"):
             txt_dest = ds_dir / f"{dest.stem}.txt"
             if not txt_dest.exists():
