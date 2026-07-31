@@ -154,3 +154,49 @@ test('entriesFor filters by dataset', async () => {
   expect(queue.entriesFor('alpha')).toHaveLength(1);
   expect(queue.entriesFor('beta')).toHaveLength(2);
 });
+
+test('a confirmation arriving before the HTTP response still completes the entry', async () => {
+  const { uploader, pending } = fakeUploader();
+  const queue = new UploadQueue(uploader);
+
+  queue.enqueue('ds', makeFiles(1));
+  await flush();
+
+  // The server publishes dataset.file.added before returning the HTTP
+  // response, so the WebSocket frame routinely wins the race on localhost.
+  queue.markProcessed('ds', 'f0.png');
+  pending[0].resolve({ saved: ['f0.png'] });
+  await flush();
+
+  expect(queue.entries[0].status).toBe('done');
+});
+
+test('a stale confirmation does not complete a later re-upload', async () => {
+  const { uploader, pending } = fakeUploader();
+  const queue = new UploadQueue(uploader);
+
+  queue.markProcessed('ds', 'f0.png');
+  queue.enqueue('ds', makeFiles(1));
+  await flush();
+
+  expect(queue.entries[0].status).toBe('uploading');
+
+  pending[0].resolve({ saved: ['f0.png'] });
+  await flush();
+
+  expect(queue.entries[0].status).toBe('processing');
+});
+
+test('canceled entries are excluded from the aggregate totals', async () => {
+  const { uploader } = fakeUploader();
+  const queue = new UploadQueue(uploader);
+
+  queue.enqueue('ds', makeFiles(3, 100));
+  await flush();
+
+  queue.cancel(queue.entries[0].id);
+  await flush();
+
+  expect(queue.entries[0].status).toBe('canceled');
+  expect(queue.totals).toMatchObject({ files: 2, total: 200 });
+});

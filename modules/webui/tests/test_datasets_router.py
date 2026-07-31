@@ -384,3 +384,50 @@ def test_video_endpoint_rejects_traversal_and_non_video(client):
     assert c.get("/api/datasets/video?dataset=stream2&filename=a.png").status_code == 400
     assert c.get("/api/datasets/video?dataset=stream2&filename=gone.mp4").status_code == 404
 
+
+
+def test_serving_endpoints_reject_absolute_dataset(client, tmp_path):
+    """An absolute `dataset` value must not escape the datasets base dir.
+
+    Path('/base') / '/etc' resolves to '/etc', so a `..` check alone is not
+    enough — containment has to be verified after resolution.
+    """
+    c, root = client
+    outside = tmp_path.parent / "outside_of_base"
+    outside.mkdir(exist_ok=True)
+    (outside / "secret.mp4").write_bytes(b"SENSITIVE")
+    Image.new("RGB", (8, 8)).save(outside / "secret.png")
+
+    assert (
+        c.get(f"/api/datasets/video?dataset={outside}&filename=secret.mp4").status_code
+        == 400
+    )
+
+    img = c.get(f"/api/datasets/image?dataset={outside}&filename=secret.png&thumb=false")
+    assert img.status_code == 400
+
+
+def test_caption_update_rejects_paths_outside_the_dataset(client, tmp_path):
+    c, root = client
+    c.post("/api/datasets", json={"name": "capguard"})
+    outside = tmp_path.parent / "outside_caption"
+    outside.mkdir(exist_ok=True)
+    target = outside / "pwned.txt"
+
+    resp = c.put(
+        "/api/datasets/capguard/caption",
+        json={"filename": str(target), "content": "written"},
+    )
+    assert resp.status_code == 400
+    assert not target.exists()
+
+
+def test_caption_update_still_works_for_normal_filenames(client, tmp_path):
+    c, root = client
+    c.post("/api/datasets", json={"name": "capok"})
+    resp = c.put(
+        "/api/datasets/capok/caption",
+        json={"filename": "a.txt", "content": "hello"},
+    )
+    assert resp.status_code == 200
+    assert (tmp_path / "training_datasets" / "capok" / "a.txt").read_text() == "hello"

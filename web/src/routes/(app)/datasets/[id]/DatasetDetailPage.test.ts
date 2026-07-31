@@ -166,3 +166,30 @@ test('a failed entry offers retry and shows the server error', async () => {
 
   vi.mocked(uploadQueue.entriesFor).mockRestore();
 });
+
+test('a canceled upload leaves no lingering card', async () => {
+  vi.spyOn(queries, 'createDatasetFilesQuery').mockReturnValue(
+    readable({ data: { name: 'ds4', path: '/ds4', items: [] }, isLoading: false }) as any
+  );
+  vi.spyOn(queries, 'createUpdateCaptionMutation').mockReturnValue(
+    readable({ mutateAsync: vi.fn() }) as any
+  );
+
+  vi.spyOn(uploadQueue, 'entriesFor').mockReturnValue([
+    {
+      id: 'upload-9',
+      datasetName: 'ds4',
+      filename: 'abandoned.mp4',
+      sent: 12,
+      total: 400,
+      status: 'canceled',
+    },
+  ]);
+
+  render(DatasetDetailPage, { props: { data: { id: 'ds4' } } });
+
+  expect(screen.queryByText('abandoned.mp4')).toBeNull();
+  expect(screen.queryByRole('progressbar')).toBeNull();
+
+  vi.mocked(uploadQueue.entriesFor).mockRestore();
+});

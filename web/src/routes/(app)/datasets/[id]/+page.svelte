@@ -27,8 +27,13 @@
   let isDragging = $state(false);
   let activeLightboxItem = $state<{ url: string; kind: string; filename: string } | null>(null);
 
+  // 'done' files are already in the grid as real cards, and a canceled
+  // transfer has nothing left to show or act on — neither should leave a
+  // card behind, and the queue outlives this page.
   let pendingUploads = $derived(
-    uploadQueue.entriesFor(datasetName).filter((e) => e.status !== 'done')
+    uploadQueue
+      .entriesFor(datasetName)
+      .filter((e) => e.status !== 'done' && e.status !== 'canceled')
   );
   let totals = $derived(uploadQueue.totals);
 

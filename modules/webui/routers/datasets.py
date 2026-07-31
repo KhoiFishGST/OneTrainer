@@ -38,6 +38,26 @@ def classify_media(ext: str) -> str | None:
         return "text"
     return None
 
+def resolve_inside_base(base_dir: Path, *parts: str) -> Path:
+    """Join `parts` onto `base_dir` and reject anything that escapes it.
+
+    A `".." in value` check is not sufficient on its own: an absolute part
+    discards everything to its left, so `Path("/base") / "/etc"` is `/etc`.
+    Resolving and then verifying containment covers absolute paths, traversal,
+    and symlinks alike.
+    """
+    candidate = base_dir.joinpath(*parts)
+    try:
+        resolved = candidate.resolve()
+        base_resolved = base_dir.resolve()
+    except OSError:
+        raise HTTPException(status_code=400, detail="Invalid path") from None
+
+    if resolved != base_resolved and base_resolved not in resolved.parents:
+        raise HTTPException(status_code=400, detail="Invalid path")
+    return resolved
+
+
 def get_base_datasets_dir(app_state: AppState) -> Path:
     raw_dir = app_state.settings_store.get_datasets_dir()
     p = Path(raw_dir)
@@ -248,9 +268,9 @@ async def update_dataset_caption(name: str, request: Request):
     body = await request.json()
     filename = body.get("filename")
     content = body.get("content", "")
-    if not filename or ".." in filename:
+    if not filename:
         raise HTTPException(status_code=400, detail="Invalid filename")
-    txt_file = ds_dir / filename
+    txt_file = resolve_inside_base(base_dir, name, filename)
     txt_file.write_text(content, encoding="utf-8")
     return {"status": "ok"}
 
@@ -260,14 +280,12 @@ async def get_dataset_image(
     dataset: str, filename: str = "", thumb: bool = False, request: Request = None
 ):
     app_state: AppState = request.app.state.webui
-    if ".." in dataset or ".." in filename:
-        raise HTTPException(status_code=400, detail="Invalid path")
     base_dir = get_base_datasets_dir(app_state)
-    ds_dir = base_dir / dataset
+    ds_dir = resolve_inside_base(base_dir, dataset)
 
     img_path = None
     if filename:
-        p = ds_dir / filename
+        p = resolve_inside_base(base_dir, dataset, filename)
         if p.exists() and p.is_file():
             img_path = p
     else:
@@ -291,7 +309,7 @@ async def get_dataset_video(dataset: str, filename: str, request: Request):
         raise HTTPException(status_code=400, detail="Not a supported video file")
 
     base_dir = get_base_datasets_dir(app_state)
-    video_path = base_dir / dataset / os.path.basename(filename)
+    video_path = resolve_inside_base(base_dir, dataset, os.path.basename(filename))
     if not video_path.exists() or not video_path.is_file():
         raise HTTPException(status_code=404, detail="Video not found")
 
