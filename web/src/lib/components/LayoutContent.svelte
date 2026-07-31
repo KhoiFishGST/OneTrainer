@@ -23,6 +23,7 @@
   import { EventClient } from '$lib/events/client';
   import { api } from '$lib/api/client';
   import { uploadQueue } from '$lib/upload/upload-queue.svelte';
+  import { coalesceByKey } from '$lib/upload/coalesce';
 
   let { children }: { children?: Snippet } = $props();
 
@@ -149,10 +150,19 @@
     },
   });
 
+  const refreshDataset = coalesceByKey((dataset: string) => {
+    queryClient.invalidateQueries({ queryKey: ['datasets'] });
+    queryClient.invalidateQueries({ queryKey: ['datasets', dataset, 'files'] });
+  });
+
   onMount(() => {
     if (typeof localStorage !== 'undefined') {
       drawerOpen = localStorage.getItem('console_drawer_open') === 'true';
     }
+
+    // The uploading tab refreshes off its own completions rather than the
+    // event stream, so a shed event cannot leave it showing a stale grid.
+    uploadQueue.onFileSettled = refreshDataset;
 
     eventClient = new EventClient({
       store: consoleStore,
@@ -173,13 +183,10 @@
       onGalleryWarning: (event) => {
         toast.warning(event.message);
       },
-      onDatasetFileAdded: (event) => {
-        uploadQueue.markProcessed(event.dataset, event.filename);
-        queryClient.invalidateQueries({ queryKey: ['datasets'] });
-        queryClient.invalidateQueries({
-          queryKey: ['datasets', event.dataset, 'files'],
-        });
-      },
+      // Only refreshes the view. Upload completion is driven by each
+      // upload's own HTTP response, because this channel sheds messages
+      // under a burst and never replays them.
+      onDatasetFileAdded: (event) => refreshDataset(event.dataset),
     });
     eventClient.start();
 

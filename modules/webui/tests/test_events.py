@@ -133,32 +133,66 @@ async def test_publish_envelope_overrides_payload_user_keys():
 
 
 @pytest.mark.anyio
-async def test_offer_resets_consecutive_drop_failures_on_successful_enqueue():
+async def test_offer_sheds_oldest_event_rather_than_closing():
+    """A burst of non-console events must not kill the subscription.
+
+    Previously `offer` could only evict 'console' and 'config_changed'
+    entries; three consecutive overflows of any other type closed the
+    subscription outright, taking the client's whole event stream with it.
+    """
     hub = EventHub(ConsoleBuffer())
     sub = hub.subscribe()
-    sub._maxsize = 1
+    sub._maxsize = 2
 
-    # First event fills queue (queue size = 1)
-    sub.offer({"type": "custom", "val": 1})
-    assert len(sub._queue) == 1
+    for i in range(10):
+        sub.offer({"type": "custom", "val": i})
 
-    # Second event cannot drop 'custom' type -> drop failure 1
-    sub.offer({"type": "custom", "val": 2})
-    assert sub._consecutive_drop_failures == 1
-
-    # Third event cannot drop -> drop failure 2
-    sub.offer({"type": "custom", "val": 3})
-    assert sub._consecutive_drop_failures == 2
-
-    # Now consume an event from queue so queue length is 0 (< maxsize)
-    sub._queue.popleft()
-
-    # Offer event when queue has space -> successful enqueue -> reset drop failures
-    sub.offer({"type": "custom", "val": 4})
-    assert sub._consecutive_drop_failures == 0
     assert not sub._closed
+    assert len(sub._queue) == 2
+    # The newest events survive; the loss is flagged as a gap.
+    assert [e["val"] for e in sub._queue] == [8, 9]
+    assert sub._has_gap
 
     sub.close()
+
+
+@pytest.mark.anyio
+async def test_offer_still_prefers_dropping_console_events():
+    """Console lines stay the first thing sacrificed under pressure."""
+    hub = EventHub(ConsoleBuffer())
+    sub = hub.subscribe()
+    sub._maxsize = 2
+
+    sub.offer({"type": "console", "lines": []})
+    sub.offer({"type": "dataset.file.added", "filename": "a.png"})
+    sub.offer({"type": "dataset.file.added", "filename": "b.png"})
+
+    assert not sub._closed
+    types = [e["type"] for e in sub._queue]
+    assert types == ["dataset.file.added", "dataset.file.added"]
+    assert sub._has_gap
+
+    sub.close()
+
+
+@pytest.mark.anyio
+async def test_burst_of_upload_events_survives_a_slow_client():
+    """330 uploads must not cost the client its event stream."""
+    hub = EventHub(ConsoleBuffer())
+    await hub.start()
+    sub = hub.subscribe()
+
+    for i in range(330):
+        await hub.publish(
+            "dataset.file.added",
+            {"dataset": "ds", "filename": f"f{i}.png", "item_id": f"f{i}"},
+        )
+
+    assert not sub._closed
+    assert len(sub._queue) == sub._maxsize
+
+    sub.close()
+    await hub.close()
 
 
 @pytest.mark.anyio

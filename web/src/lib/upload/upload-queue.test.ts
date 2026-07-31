@@ -57,7 +57,10 @@ test('runs at most three uploads concurrently', async () => {
   expect(pending).toHaveLength(4);
 });
 
-test('a completed upload waits in processing until the event arrives', async () => {
+test('the upload response completes the entry on its own', async () => {
+  // The server writes the file, renames it into place and creates the
+  // caption before responding, so the 200 is the completion signal. Nothing
+  // may depend on the (lossy, best-effort) event channel to finish an entry.
   const { uploader, pending } = fakeUploader();
   const queue = new UploadQueue(uploader);
 
@@ -66,10 +69,22 @@ test('a completed upload waits in processing until the event arrives', async () 
   pending[0].resolve({ saved: ['f0.png'] });
   await flush();
 
-  expect(queue.entries[0].status).toBe('processing');
-
-  queue.markProcessed('ds', 'f0.png');
   expect(queue.entries[0].status).toBe('done');
+});
+
+test('completion notifies a listener once per finished file', async () => {
+  const { uploader, pending } = fakeUploader();
+  const queue = new UploadQueue(uploader);
+  const settled: string[] = [];
+  queue.onFileSettled = (name) => settled.push(name);
+
+  queue.enqueue('ds', makeFiles(2));
+  await flush();
+  pending[0].resolve({ saved: ['f0.png'] });
+  pending[1].resolve({ saved: ['f1.png'] });
+  await flush();
+
+  expect(settled).toEqual(['ds', 'ds']);
 });
 
 test('progress updates the entry byte count', async () => {
@@ -129,7 +144,6 @@ test('totals aggregate across mixed statuses', async () => {
 
   pending[0].resolve({ saved: ['f0.png'] });
   await flush();
-  queue.markProcessed('ds', 'f0.png');
   pending[1].onProgress(50, 100);
   pending[2].reject(new Error('boom'));
   await flush();
@@ -153,38 +167,6 @@ test('entriesFor filters by dataset', async () => {
 
   expect(queue.entriesFor('alpha')).toHaveLength(1);
   expect(queue.entriesFor('beta')).toHaveLength(2);
-});
-
-test('a confirmation arriving before the HTTP response still completes the entry', async () => {
-  const { uploader, pending } = fakeUploader();
-  const queue = new UploadQueue(uploader);
-
-  queue.enqueue('ds', makeFiles(1));
-  await flush();
-
-  // The server publishes dataset.file.added before returning the HTTP
-  // response, so the WebSocket frame routinely wins the race on localhost.
-  queue.markProcessed('ds', 'f0.png');
-  pending[0].resolve({ saved: ['f0.png'] });
-  await flush();
-
-  expect(queue.entries[0].status).toBe('done');
-});
-
-test('a stale confirmation does not complete a later re-upload', async () => {
-  const { uploader, pending } = fakeUploader();
-  const queue = new UploadQueue(uploader);
-
-  queue.markProcessed('ds', 'f0.png');
-  queue.enqueue('ds', makeFiles(1));
-  await flush();
-
-  expect(queue.entries[0].status).toBe('uploading');
-
-  pending[0].resolve({ saved: ['f0.png'] });
-  await flush();
-
-  expect(queue.entries[0].status).toBe('processing');
 });
 
 test('canceled entries are excluded from the aggregate totals', async () => {

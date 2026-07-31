@@ -51,7 +51,6 @@ class EventSubscription:
         self._has_gap = False
         self._closed = False
         self._event = asyncio.Event()
-        self._consecutive_drop_failures = 0
 
     def offer(self, event: dict[str, Any]) -> None:
         if self._closed:
@@ -60,9 +59,12 @@ class EventSubscription:
         if len(self._queue) < self._maxsize:
             self._queue.append(event)
             self._event.set()
-            self._consecutive_drop_failures = 0
             return
 
+        # Shed in preference order: console lines first (they are replayed
+        # from the backlog on reconnect), then a superseded config_changed,
+        # then the oldest event of any type. Room is always made — a burst of
+        # one event type must never cost the client its whole stream.
         dropped = False
         for idx, item in enumerate(self._queue):
             if item.get("type") == "console":
@@ -71,23 +73,20 @@ class EventSubscription:
                 dropped = True
                 break
 
-        if not dropped:
-            if event.get("type") == "config_changed":
-                for idx, item in enumerate(self._queue):
-                    if item.get("type") == "config_changed":
-                        del self._queue[idx]
-                        self._has_gap = True
-                        dropped = True
-                        break
+        if not dropped and event.get("type") == "config_changed":
+            for idx, item in enumerate(self._queue):
+                if item.get("type") == "config_changed":
+                    del self._queue[idx]
+                    self._has_gap = True
+                    dropped = True
+                    break
 
-        if dropped:
-            self._queue.append(event)
-            self._event.set()
-            self._consecutive_drop_failures = 0
-        else:
-            self._consecutive_drop_failures += 1
-            if self._consecutive_drop_failures >= 3:
-                self.close()
+        if not dropped:
+            self._queue.popleft()
+            self._has_gap = True
+
+        self._queue.append(event)
+        self._event.set()
 
     def __aiter__(self) -> "EventSubscription":
         return self

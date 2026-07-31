@@ -38,5 +38,7 @@ test('dropping a file shows progress, then the file appears', async ({ page }) =
 
   releaseUpload();
 
-  await expect(page.getByText('Processing…')).toBeVisible();
+  // The response is the completion signal, so the card clears without any
+  // event from the server.
+  await expect(page.getByRole('button', { name: /cancel upload/i })).toBeHidden();
 });

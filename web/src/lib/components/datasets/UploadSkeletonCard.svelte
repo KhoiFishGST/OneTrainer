@@ -36,9 +36,6 @@
         <RotateCw size={14} />
         Retry
       </Button>
-    {:else if entry.status === 'processing'}
-      <div class="size-8 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
-      <span class="text-xs text-muted-foreground">Processing…</span>
     {:else}
       <div
         role="progressbar"
