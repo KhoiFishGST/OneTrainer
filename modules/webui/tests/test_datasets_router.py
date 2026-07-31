@@ -332,3 +332,33 @@ def test_dataset_files_ignores_part_files(client):
 
     assert c.get("/api/datasets/leftover/files").json()["items"] == []
 
+
+def test_upload_publishes_file_added_event(client):
+    c, tmp_path = client
+    c.post("/api/datasets", json={"name": "evented"})
+
+    published = []
+    app_state = c.app.state.webui
+    original_publish = app_state.events.publish
+
+    async def spy_publish(event_type, data=None):
+        published.append((event_type, data or {}))
+        return await original_publish(event_type, data)
+
+    app_state.events.publish = spy_publish
+    try:
+        buf = io.BytesIO()
+        Image.new("RGB", (8, 8)).save(buf, format="PNG")
+        resp = c.post(
+            "/api/datasets/evented/upload",
+            files=[("files", ("a.png", buf.getvalue(), "image/png"))],
+        )
+    finally:
+        app_state.events.publish = original_publish
+
+    assert resp.status_code == 200
+    added = [payload for etype, payload in published if etype == "dataset.file.added"]
+    assert added == [
+        {"dataset": "evented", "filename": "a.png", "item_id": "a", "kind": "image"}
+    ]
+

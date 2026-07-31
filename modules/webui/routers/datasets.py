@@ -226,6 +226,16 @@ async def upload_dataset_files(
             if not txt_dest.exists():
                 txt_dest.write_text("", encoding="utf-8")
 
+        await app_state.events.publish(
+            "dataset.file.added",
+            {
+                "dataset": name,
+                "filename": filename,
+                "item_id": dest.stem,
+                "kind": classify_media(dest.suffix) or "text",
+            },
+        )
+
     return {"saved": saved}
 
 
