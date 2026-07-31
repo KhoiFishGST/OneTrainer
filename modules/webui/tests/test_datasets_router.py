@@ -98,12 +98,12 @@ def test_upload_and_get_dataset_files(client):
     assert len(items) == 2  # image1 and image2
 
     item1 = next(it for it in items if it["id"] == "image1")
-    assert item1["image_name"] == "image1.png"
+    assert item1["media_name"] == "image1.png"
     assert item1["caption_name"] == "image1.txt"  # Auto-created blank caption
     assert item1["caption_content"] == ""
 
     item2 = next(it for it in items if it["id"] == "image2")
-    assert item2["image_name"] == "image2.jpg"
+    assert item2["media_name"] == "image2.jpg"
     assert item2["caption_name"] == "image2.txt"
     assert item2["caption_content"] == "custom caption"
 
@@ -259,15 +259,6 @@ def test_dataset_files_reports_kind_and_media_name(client):
     assert items["c"]["kind"] == "text"
     assert items["c"]["media_name"] is None
     assert items["c"]["caption_content"] == "caption only"
-
-
-def test_dataset_files_keeps_image_name_alias(client):
-    c, tmp_path = client
-    c.post("/api/datasets", json={"name": "alias"})
-    Image.new("RGB", (8, 8)).save(tmp_path / "training_datasets" / "alias" / "a.png")
-
-    item = c.get("/api/datasets/alias/files").json()["items"][0]
-    assert item["image_name"] == "a.png"
 
 
 def test_upload_rejects_unsupported_extension(client):

@@ -15,7 +15,8 @@ test('renders dataset detail header and upload button', async () => {
         items: [
           {
             id: 'sample_01',
-            image_name: 'sample_01.png',
+            media_name: 'sample_01.png',
+            kind: 'image',
             caption_name: 'sample_01.txt',
             caption_content: 'a beautiful cat',
           },
@@ -49,7 +50,8 @@ test('file upload enqueues files and caption saves on blur event', async () => {
         items: [
           {
             id: 'sample_01',
-            image_name: 'sample_01.png',
+            media_name: 'sample_01.png',
+            kind: 'image',
             caption_name: 'sample_01.txt',
             caption_content: 'a beautiful cat',
           },

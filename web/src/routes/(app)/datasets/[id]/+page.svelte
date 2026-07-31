@@ -8,7 +8,7 @@
   import UploadSummaryBar from '$lib/components/datasets/UploadSummaryBar.svelte';
   import RoutePage from '$lib/components/layout/RoutePage.svelte';
   import { uploadQueue } from '$lib/upload/upload-queue.svelte';
-  import { UPLOAD_ACCEPT } from '$lib/upload/media-kind';
+  import { UPLOAD_ACCEPT, isPlayableInBrowser } from '$lib/upload/media-kind';
   import {
     createDatasetFilesQuery,
     createUpdateCaptionMutation,
@@ -134,9 +134,44 @@
 </RoutePage>
 
 {#if activeLightboxItem}
-  <div class="fixed inset-0 bg-black/85 z-[1000] flex items-center justify-center" onclick={() => (activeLightboxItem = null)} role="presentation">
-    <img src={activeLightboxItem.url} alt="Preview" class="max-w-[90vw] max-h-[90dvh] object-contain rounded-lg" />
-    <Button variant="ghost" size="icon" class="absolute top-4 right-4 bg-transparent border-none text-white cursor-pointer w-auto h-auto" onclick={() => (activeLightboxItem = null)}>
+  <div
+    class="fixed inset-0 bg-black/85 z-[1000] flex items-center justify-center"
+    onclick={() => (activeLightboxItem = null)}
+    role="presentation"
+  >
+    {#if activeLightboxItem.kind === 'video'}
+      {#if isPlayableInBrowser(activeLightboxItem.filename)}
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+        <video
+          src={activeLightboxItem.url}
+          controls
+          autoplay
+          class="max-w-[90vw] max-h-[90dvh] rounded-lg"
+          onclick={(e) => e.stopPropagation()}
+        >
+          <track kind="captions" />
+        </video>
+      {:else}
+        <div class="flex max-w-md flex-col items-center gap-3 rounded-lg bg-card p-8 text-center">
+          <span class="text-lg font-semibold text-foreground">{activeLightboxItem.filename}</span>
+          <span class="text-sm text-muted-foreground">
+            Preview not available in browser — this format is supported for training.
+          </span>
+        </div>
+      {/if}
+    {:else}
+      <img
+        src={activeLightboxItem.url}
+        alt={activeLightboxItem.filename}
+        class="max-w-[90vw] max-h-[90dvh] object-contain rounded-lg"
+      />
+    {/if}
+    <Button
+      variant="ghost"
+      size="icon"
+      class="absolute top-4 right-4 bg-transparent border-none text-white cursor-pointer w-auto h-auto"
+      onclick={() => (activeLightboxItem = null)}
+    >
       <X size={24} />
     </Button>
   </div>

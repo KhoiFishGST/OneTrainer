@@ -158,8 +158,6 @@ async def get_dataset_files(name: str, request: Request):
                 "id": stem,
                 "kind": "text",
                 "media_name": None,
-                # Deprecated alias, removed in Task 11.
-                "image_name": None,
                 "caption_name": None,
                 "caption_content": "",
             }
@@ -168,8 +166,7 @@ async def get_dataset_files(name: str, request: Request):
         if kind in ("image", "video"):
             item["kind"] = kind
             item["media_name"] = p.name
-            if kind == "image":
-                item["image_name"] = p.name
+
         else:
             item["caption_name"] = p.name
             try:
