@@ -19,8 +19,14 @@ add-on: it modifies no core OneTrainer file.
 ## Endpoints
 
 - `GET /api/datasets/video?dataset=&filename=` — Range-capable video streaming.
-- `POST /api/datasets/{name}/upload` — now streams to disk and returns 415 for unsupported extensions. Publishes `dataset.file.added { dataset, filename, item_id, kind }` per saved file.
-- `GET /api/datasets/{name}/files` — items now carry `kind` (`image`/`video`/`text`) and `media_name`. The former `image_name` field is removed.
+
+All dataset paths built from request input go through `resolve_inside_base()`,
+which resolves the candidate and verifies it is contained by the datasets base
+directory. A `".." in value` check alone is not enough: an absolute segment
+discards everything to its left, so `Path("/base") / "/etc"` is `/etc`.
+
+- `POST /api/datasets/{name}/upload` — streams to disk via a per-request `.part` file. The whole batch is validated before anything is written, so a 400 (bad filename) or 415 (unsupported extension) leaves no partial results. Publishes `dataset.file.added { dataset, filename, item_id, kind }` per saved file, *before* the HTTP response — clients must tolerate either arrival order.
+- `GET /api/datasets/{name}/files` — items carry `kind` (`image`/`video`/`text`) and `media_name`. The former `image_name` field is removed. One item per media file: `id` is the filename stem, except when several media files share a stem (`a.png` beside `a.mp4`), where each gets `id` = its full filename and they share the stem's caption.
 - `GET /api/datasets` — dataset entries now carry `video_count`.
 
 ## Why `settings_store.py` exists

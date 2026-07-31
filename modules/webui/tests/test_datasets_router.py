@@ -431,3 +431,58 @@ def test_caption_update_still_works_for_normal_filenames(client, tmp_path):
     )
     assert resp.status_code == 200
     assert (tmp_path / "training_datasets" / "capok" / "a.txt").read_text() == "hello"
+
+
+def test_same_stem_image_and_video_both_appear(client, tmp_path):
+    """An image and a video sharing a stem must not hide each other."""
+    c, root = client
+    c.post("/api/datasets", json={"name": "collide"})
+    ds_dir = tmp_path / "training_datasets" / "collide"
+    Image.new("RGB", (8, 8)).save(ds_dir / "a.png")
+    _write_fake_video(ds_dir / "a.mp4")
+    (ds_dir / "a.txt").write_text("shared caption", encoding="utf-8")
+
+    items = c.get("/api/datasets/collide/files").json()["items"]
+    media = sorted(i["media_name"] for i in items)
+    assert media == ["a.mp4", "a.png"]
+
+    # Both pair with the same caption file, which is what the trainer does.
+    assert {i["caption_name"] for i in items} == {"a.txt"}
+    assert {i["caption_content"] for i in items} == {"shared caption"}
+
+    # The listing counts and the item list must agree.
+    entry = next(d for d in c.get("/api/datasets").json()["datasets"] if d["name"] == "collide")
+    assert entry["image_count"] + entry["video_count"] == len(items)
+
+
+def test_part_paths_are_unique_per_upload(tmp_path):
+    """Concurrent uploads of one filename must not share a scratch file."""
+    from modules.webui.routers.datasets import part_path_for
+
+    first = part_path_for(tmp_path, "clip.mp4")
+    second = part_path_for(tmp_path, "clip.mp4")
+
+    assert first != second
+    assert first.suffix == ".part"
+    assert second.suffix == ".part"
+
+
+def test_upload_validates_whole_batch_before_writing(client, tmp_path):
+    """A rejected file must not leave earlier files in the batch written."""
+    c, root = client
+    c.post("/api/datasets", json={"name": "batch"})
+    buf = io.BytesIO()
+    Image.new("RGB", (8, 8)).save(buf, format="PNG")
+
+    resp = c.post(
+        "/api/datasets/batch/upload",
+        files=[
+            ("files", ("good.png", buf.getvalue(), "image/png")),
+            ("files", ("evil.exe", b"MZ", "application/octet-stream")),
+        ],
+    )
+
+    assert resp.status_code == 415
+    ds_dir = tmp_path / "training_datasets" / "batch"
+    assert not (ds_dir / "good.png").exists()
+    assert list(ds_dir.glob("*.part")) == []

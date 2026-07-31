@@ -35,7 +35,7 @@
       .entriesFor(datasetName)
       .filter((e) => e.status !== 'done' && e.status !== 'canceled')
   );
-  let totals = $derived(uploadQueue.totals);
+  let totals = $derived(uploadQueue.totalsFor(datasetName));
 
   function handleFileUpload(files: FileList | File[]) {
     if (!files || files.length === 0) return;

@@ -248,7 +248,16 @@ export function createApi(base = '') {
         `${base}/api/datasets/${encodeURIComponent(name)}/files`
       ),
 
-
+    uploadDatasetFile: (
+      name: string,
+      file: File,
+      onProgress: (sent: number, total: number) => void
+    ): UploadHandle =>
+      xhrUpload(
+        `${base}/api/datasets/${encodeURIComponent(name)}/upload`,
+        file,
+        onProgress
+      ),
 
     updateCaption: (name: string, caption_name: string, content: string) =>
       request<{ status: string }>(`${base}/api/datasets/${encodeURIComponent(name)}/caption`, {
@@ -298,13 +307,14 @@ export interface UploadHandle {
 }
 
 /**
- * Upload one file with progress reporting.
+ * Upload one file to `url` with progress reporting.
  *
  * Uses XMLHttpRequest rather than fetch because fetch exposes no upload
- * progress in any shipping browser.
+ * progress in any shipping browser. Prefer `api.uploadDatasetFile`, which
+ * applies the api base prefix.
  */
 export function xhrUpload(
-  name: string,
+  url: string,
   file: File,
   onProgress: (sent: number, total: number) => void
 ): UploadHandle {
@@ -343,7 +353,7 @@ export function xhrUpload(
       reject(err);
     };
 
-    xhr.open('POST', `/api/datasets/${encodeURIComponent(name)}/upload`);
+    xhr.open('POST', url);
     xhr.withCredentials = true;
     xhr.send(formData);
   });

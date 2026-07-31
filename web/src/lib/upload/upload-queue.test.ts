@@ -134,7 +134,7 @@ test('totals aggregate across mixed statuses', async () => {
   pending[2].reject(new Error('boom'));
   await flush();
 
-  expect(queue.totals).toMatchObject({
+  expect(queue.totalsFor('ds')).toMatchObject({
     files: 3,
     done: 1,
     failed: 1,
@@ -198,5 +198,21 @@ test('canceled entries are excluded from the aggregate totals', async () => {
   await flush();
 
   expect(queue.entries[0].status).toBe('canceled');
-  expect(queue.totals).toMatchObject({ files: 2, total: 200 });
+  expect(queue.totalsFor('ds')).toMatchObject({ files: 2, total: 200 });
+});
+
+test('totals are scoped to one dataset', async () => {
+  const { uploader, pending } = fakeUploader();
+  const queue = new UploadQueue(uploader);
+
+  queue.enqueue('alpha', makeFiles(1, 100));
+  queue.enqueue('beta', makeFiles(2, 100));
+  await flush();
+
+  expect(queue.totalsFor('alpha')).toMatchObject({ files: 1, total: 100 });
+  expect(queue.totalsFor('beta')).toMatchObject({ files: 2, total: 200 });
+
+  pending[0].onProgress(40, 100);
+  expect(queue.totalsFor('alpha').sent).toBe(40);
+  expect(queue.totalsFor('beta').sent).toBe(0);
 });

@@ -2,6 +2,7 @@ import mimetypes
 import os
 import re
 import shutil
+import uuid
 import urllib.parse
 from pathlib import Path
 
@@ -165,40 +166,82 @@ async def get_dataset_files(name: str, request: Request):
     if not ds_dir.exists() or not ds_dir.is_dir():
         raise HTTPException(status_code=404, detail="Dataset not found")
 
-    items_map = {}
+    media_by_stem: dict[str, list[Path]] = {}
+    captions_by_stem: dict[str, Path] = {}
+
     for p in sorted(ds_dir.glob("*.*")):
         if p.name.startswith(".") or p.suffix.lower() == ".part":
             continue
         kind = classify_media(p.suffix)
         if kind is None:
             continue
-        stem = p.stem
-        if stem not in items_map:
-            items_map[stem] = {
+        if kind == "text":
+            captions_by_stem[p.stem] = p
+        else:
+            media_by_stem.setdefault(p.stem, []).append(p)
+
+    def read_caption(stem: str) -> tuple[str | None, str]:
+        caption = captions_by_stem.get(stem)
+        if caption is None:
+            return None, ""
+        try:
+            return caption.name, caption.read_text(encoding="utf-8")
+        except OSError:
+            return caption.name, ""
+
+    items = []
+    for stem in sorted(media_by_stem.keys() | captions_by_stem.keys()):
+        caption_name, caption_content = read_caption(stem)
+        media_files = media_by_stem.get(stem, [])
+
+        if not media_files:
+            items.append({
                 "id": stem,
                 "kind": "text",
                 "media_name": None,
-                "caption_name": None,
-                "caption_content": "",
-            }
-        item = items_map[stem]
+                "caption_name": caption_name,
+                "caption_content": caption_content,
+            })
+            continue
 
-        if kind in ("image", "video"):
-            item["kind"] = kind
-            item["media_name"] = p.name
+        # A stem usually maps to exactly one media file. When it does not
+        # (say a.png beside a.mp4), every file gets its own item rather than
+        # one silently shadowing the other. They share the stem's caption,
+        # which is how the trainer pairs them too.
+        for media in media_files:
+            items.append({
+                "id": stem if len(media_files) == 1 else media.name,
+                "kind": classify_media(media.suffix),
+                "media_name": media.name,
+                "caption_name": caption_name,
+                "caption_content": caption_content,
+            })
 
-        else:
-            item["caption_name"] = p.name
-            try:
-                item["caption_content"] = p.read_text(encoding="utf-8")
-            except OSError:
-                item["caption_content"] = ""
-
-    items = list(items_map.values())
     return {"name": name, "path": str(ds_dir), "items": items}
 
 
 UPLOAD_CHUNK_BYTES = 1024 * 1024
+
+
+def part_path_for(ds_dir: Path, filename: str) -> Path:
+    """Scratch path for an in-flight upload.
+
+    The token keeps two concurrent uploads of the same filename from writing
+    into each other's scratch file and producing a corrupt result.
+    """
+    return ds_dir / f"{filename}.{uuid.uuid4().hex}.part"
+
+
+def validated_upload_name(raw_name: str | None) -> str:
+    """Reject a filename outright rather than skipping it silently."""
+    filename = os.path.basename(raw_name or "")
+    if not filename or ".." in filename:
+        raise HTTPException(status_code=400, detail=f"Invalid filename: {raw_name!r}")
+    if Path(filename).suffix.lower() not in ALLOWED_UPLOAD_EXTENSIONS:
+        raise HTTPException(
+            status_code=415, detail=f"Unsupported file type: {filename}"
+        )
+    return filename
 
 
 @router.post("/datasets/{name}/upload")
@@ -211,21 +254,14 @@ async def upload_dataset_files(
     if not ds_dir.exists() or not ds_dir.is_dir():
         raise HTTPException(status_code=404, detail="Dataset not found")
 
+    # Validate the whole batch first so a rejected file at the end does not
+    # leave the files before it already written.
+    filenames = [validated_upload_name(f.filename) for f in files]
+
     saved = []
-    for f in files:
-        filename = os.path.basename(f.filename or "")
-        if not filename or ".." in filename:
-            raise HTTPException(status_code=400, detail=f"Invalid filename: {f.filename!r}")
-
-        ext = Path(filename).suffix.lower()
-        if ext not in ALLOWED_UPLOAD_EXTENSIONS:
-            raise HTTPException(
-                status_code=415,
-                detail=f"Unsupported file type: {filename}",
-            )
-
+    for f, filename in zip(files, filenames, strict=True):
         dest = ds_dir / filename
-        part = ds_dir / f"{filename}.part"
+        part = part_path_for(ds_dir, filename)
         try:
             with part.open("wb") as out:
                 await run_in_threadpool(

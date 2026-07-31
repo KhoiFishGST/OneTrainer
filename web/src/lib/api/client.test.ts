@@ -109,7 +109,9 @@ describe('xhrUpload', () => {
     withFakeXhr(async () => {
       const seen: Array<[number, number]> = [];
       const file = new File(['abc'], 'a.png', { type: 'image/png' });
-      const handle = xhrUpload('My Set', file, (sent, total) => seen.push([sent, total]));
+      const handle = createApi('').uploadDatasetFile('My Set', file, (sent, total) =>
+        seen.push([sent, total])
+      );
 
       const xhr = FakeXhr.last;
       expect(xhr.openArgs).toEqual(['POST', '/api/datasets/My%20Set/upload']);
@@ -127,10 +129,18 @@ describe('xhrUpload', () => {
       ]);
     }));
 
+  it('uploadDatasetFile applies the api base prefix', async () =>
+    withFakeXhr(async () => {
+      const file = new File(['abc'], 'a.png', { type: 'image/png' });
+      createApi('/root').uploadDatasetFile('set', file, () => {});
+
+      expect(FakeXhr.last.openArgs).toEqual(['POST', '/root/api/datasets/set/upload']);
+    }));
+
   it('xhrUpload rejects with ApiError on a failure status', async () =>
     withFakeXhr(async () => {
       const file = new File(['abc'], 'evil.exe');
-      const handle = xhrUpload('set', file, () => {});
+      const handle = xhrUpload('/api/datasets/set/upload', file, () => {});
 
       const xhr = FakeXhr.last;
       xhr.status = 415;
@@ -143,7 +153,7 @@ describe('xhrUpload', () => {
   it('xhrUpload abort rejects with an AbortError', async () =>
     withFakeXhr(async () => {
       const file = new File(['abc'], 'a.png');
-      const handle = xhrUpload('set', file, () => {});
+      const handle = xhrUpload('/api/datasets/set/upload', file, () => {});
 
       handle.abort();
 
