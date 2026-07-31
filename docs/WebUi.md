@@ -23,6 +23,13 @@ On first launch, and whenever frontend sources change, the launcher automaticall
 verifies frontend dependencies and builds the production static bundle into
 `web/build`.
 
+## Datasets
+
+- Files upload one at a time with a visible per-file progress bar, three at once.
+- Individual files can be canceled while uploading and retried after a failure; one failed file no longer discards the batch.
+- Uploads continue in the background when you navigate to another page.
+- Datasets accept video: `.webm .mkv .flv .avi .mov .wmv .mp4 .mpeg .m4v`. Videos show an extracted poster frame in the grid and play in the lightbox. `.mkv`, `.avi`, `.wmv`, `.flv`, and `.mpeg` are supported for training but cannot be previewed in a browser, so the lightbox shows a notice instead of a player.
+
 ## Options
 
 | Option | Effect |

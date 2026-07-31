@@ -16,6 +16,13 @@ add-on: it modifies no core OneTrainer file.
 | `runtime_patches.py` | Startup monkey-patches, see below |
 | `gallery.py`, `media.py`, `training.py` | Sample gallery, media serving, training lifecycle |
 
+## Endpoints
+
+- `GET /api/datasets/video?dataset=&filename=` — Range-capable video streaming.
+- `POST /api/datasets/{name}/upload` — now streams to disk and returns 415 for unsupported extensions. Publishes `dataset.file.added { dataset, filename, item_id, kind }` per saved file.
+- `GET /api/datasets/{name}/files` — items now carry `kind` (`image`/`video`/`text`) and `media_name`. The former `image_name` field is removed.
+- `GET /api/datasets` — dataset entries now carry `video_count`.
+
 ## Why `settings_store.py` exists
 
 `datasets_dir` and the Web UI password are needed only by this add-on. Rather
