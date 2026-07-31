@@ -41,7 +41,6 @@ train.bat
 debug_report.log
 config_diff.txt
 CLAUDE.md
-.superpowers
 
 /web/build/
 /web/.svelte-kit/
@@ -52,4 +51,3 @@ CLAUDE.md
 /.e2e/
 /web/test-results/
 /web/playwright-report/
-
