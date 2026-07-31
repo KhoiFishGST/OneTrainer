@@ -1,3 +1,4 @@
+import mimetypes
 import os
 import re
 import shutil
@@ -10,6 +11,7 @@ from modules.webui.state import AppState
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
+from starlette.responses import FileResponse
 
 router = APIRouter()
 
@@ -280,4 +282,25 @@ async def get_dataset_image(
 
     return await app_state.media_service.serve_media(
         request, img_path or Path(""), thumb=thumb
+    )
+
+
+@router.get("/datasets/video")
+async def get_dataset_video(dataset: str, filename: str, request: Request):
+    app_state: AppState = request.app.state.webui
+    if ".." in dataset or ".." in filename:
+        raise HTTPException(status_code=400, detail="Invalid path")
+    if not path_util.is_supported_video_extension(Path(filename).suffix):
+        raise HTTPException(status_code=400, detail="Not a supported video file")
+
+    base_dir = get_base_datasets_dir(app_state)
+    video_path = base_dir / dataset / os.path.basename(filename)
+    if not video_path.exists() or not video_path.is_file():
+        raise HTTPException(status_code=404, detail="Video not found")
+
+    mime_type, _ = mimetypes.guess_type(video_path)
+    return FileResponse(
+        video_path,
+        media_type=mime_type or "application/octet-stream",
+        headers={"Accept-Ranges": "bytes", "Cache-Control": "private, max-age=3600"},
     )

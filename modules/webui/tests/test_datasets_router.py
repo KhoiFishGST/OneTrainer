@@ -362,3 +362,34 @@ def test_upload_publishes_file_added_event(client):
         {"dataset": "evented", "filename": "a.png", "item_id": "a", "kind": "image"}
     ]
 
+
+def test_video_endpoint_serves_full_and_partial(client):
+    c, tmp_path = client
+    c.post("/api/datasets", json={"name": "stream"})
+    ds_dir = tmp_path / "training_datasets" / "stream"
+    payload = bytes(range(256)) * 40  # 10240 bytes
+    (ds_dir / "clip.mp4").write_bytes(payload)
+
+    full = c.get("/api/datasets/video?dataset=stream&filename=clip.mp4")
+    assert full.status_code == 200
+    assert full.content == payload
+
+    partial = c.get(
+        "/api/datasets/video?dataset=stream&filename=clip.mp4",
+        headers={"Range": "bytes=0-99"},
+    )
+    assert partial.status_code == 206
+    assert partial.headers["content-range"] == f"bytes 0-99/{len(payload)}"
+    assert partial.content == payload[:100]
+
+
+def test_video_endpoint_rejects_traversal_and_non_video(client):
+    c, tmp_path = client
+    c.post("/api/datasets", json={"name": "stream2"})
+    ds_dir = tmp_path / "training_datasets" / "stream2"
+    Image.new("RGB", (8, 8)).save(ds_dir / "a.png")
+
+    assert c.get("/api/datasets/video?dataset=stream2&filename=../x.mp4").status_code == 400
+    assert c.get("/api/datasets/video?dataset=stream2&filename=a.png").status_code == 400
+    assert c.get("/api/datasets/video?dataset=stream2&filename=gone.mp4").status_code == 404
+
