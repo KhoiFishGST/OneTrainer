@@ -1,7 +1,7 @@
 <script lang="ts">
   import { consoleStore, type ConsoleStore } from '$lib/events/console-store.svelte';
   import { onMount, tick } from 'svelte';
-  import { Download, ArrowDown, Pause, Play, Trash2 } from '@lucide/svelte';
+  import { Download, ArrowDown, Pause, Play, Trash2, Copy, Check } from '@lucide/svelte';
   import { Button } from '$lib/components/ui/button';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
   import { Badge } from '$lib/components/ui/badge';
@@ -94,6 +94,65 @@
       jumpToLatest();
     }
   }
+
+  let copyState = $state<'idle' | 'copied' | 'failed'>('idle');
+  let copyResetTimer: ReturnType<typeof setTimeout> | undefined;
+
+  /**
+   * The viewport only ever holds the rows around the scroll position, so a
+   * manual selection can never reach the rest of the log. This reads the
+   * filtered set straight from the store instead.
+   */
+  function selectedLogText(): string {
+    return filteredRows
+      .map((row) => row.spans.map((span) => span.text).join(''))
+      .join('\n');
+  }
+
+  /**
+   * navigator.clipboard is undefined outside a secure context, which is the
+   * normal case when the Web UI is reached over plain http on a LAN address.
+   */
+  function copyViaExecCommand(text: string): boolean {
+    if (typeof document.execCommand !== 'function') return false;
+
+    const scratch = document.createElement('textarea');
+    scratch.value = text;
+    scratch.setAttribute('readonly', '');
+    scratch.style.position = 'fixed';
+    scratch.style.opacity = '0';
+    document.body.appendChild(scratch);
+    scratch.select();
+    try {
+      return document.execCommand('copy');
+    } catch {
+      return false;
+    } finally {
+      scratch.remove();
+    }
+  }
+
+  async function handleCopy() {
+    const text = selectedLogText();
+    let ok = false;
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        ok = true;
+      } else {
+        ok = copyViaExecCommand(text);
+      }
+    } catch {
+      ok = copyViaExecCommand(text);
+    }
+
+    copyState = ok ? 'copied' : 'failed';
+    clearTimeout(copyResetTimer);
+    copyResetTimer = setTimeout(() => (copyState = 'idle'), 2000);
+  }
+
+  $effect(() => () => clearTimeout(copyResetTimer));
 
   function filterClasses(classes: string[]): string {
     if (!classes || !classes.length) return '';
@@ -219,6 +278,28 @@
           <span>Latest</span>
         </Button>
       {/if}
+
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        class="inline-flex items-center gap-1 h-6 px-2 text-xs rounded bg-muted border border-border text-foreground hover:bg-border disabled:opacity-40"
+        onclick={handleCopy}
+        disabled={filteredRows.length === 0}
+        title="Copy the lines currently shown, including those scrolled out of view"
+        aria-label="Copy to clipboard"
+      >
+        {#if copyState === 'copied'}
+          <Check size={14} />
+          <span>Copied</span>
+        {:else if copyState === 'failed'}
+          <Copy size={14} />
+          <span>Copy failed</span>
+        {:else}
+          <Copy size={14} />
+          <span>Copy To Clipboard</span>
+        {/if}
+      </Button>
 
       <a
         href="/api/console/log"

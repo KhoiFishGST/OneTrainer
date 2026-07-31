@@ -68,4 +68,32 @@ describe('ConsoleDrawer component', () => {
 
     expect(slider).toHaveAttribute('aria-valuenow', '400');
   });
+
+  it('leaves the log selectable while keeping the chrome undraggable-safe', () => {
+    render(ConsoleDrawer, { open: true });
+
+    // user-select: none on the drawer root blocked selecting log text, which
+    // is the whole point of having a console. It belongs on the parts you
+    // drag, not the part you read.
+    const drawer = screen.getByRole('region', { name: 'Console Output' });
+    expect(drawer.className).not.toContain('no-select');
+
+    expect(
+      screen.getByRole('slider', { name: 'Resize Console Drawer' }).className
+    ).toContain('no-select');
+  });
+
+  it('suppresses selection only while the drawer is being resized', async () => {
+    render(ConsoleDrawer, { open: true });
+    const drawer = screen.getByRole('region', { name: 'Console Output' });
+    const slider = screen.getByRole('slider', { name: 'Resize Console Drawer' });
+
+    expect(drawer.className).not.toContain('resizing');
+
+    await fireEvent.mouseDown(slider, { clientY: 300 });
+    expect(drawer.className).toContain('resizing');
+
+    await fireEvent.mouseUp(window);
+    expect(drawer.className).not.toContain('resizing');
+  });
 });

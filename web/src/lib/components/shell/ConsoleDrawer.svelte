@@ -113,13 +113,13 @@
 
 {#if open}
   <section
-    class="console-drawer"
+    class="console-drawer {isDragging ? 'resizing' : ''}"
     aria-label="Console Output"
     style="height: {drawerHeight}px;"
   >
     <!-- Touch-safe drag handle for resize -->
     <div
-      class="resize-handle"
+      class="resize-handle no-select"
       role="slider"
       aria-label="Resize Console Drawer"
       aria-valuenow={drawerHeight}
@@ -131,7 +131,7 @@
       <div class="handle-bar"></div>
     </div>
 
-    <div class="drawer-header">
+    <div class="drawer-header no-select">
       <div class="header-left">
         <span class="drawer-title">Console</span>
         <a href="/console" class="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded inline-flex items-center justify-center" title="Open Fullpage Console">
@@ -169,6 +169,21 @@
     flex-direction: column;
     overflow: hidden;
     position: relative;
+  }
+
+  /*
+   * Selection is suppressed on the chrome you drag and click, never on the
+   * log itself: reading the console usually ends in copying out of it.
+   */
+  .no-select {
+    user-select: none;
+  }
+
+  /*
+   * A resize drag starts on the handle but the pointer travels across the
+   * log, which would otherwise sweep a selection through it.
+   */
+  .console-drawer.resizing {
     user-select: none;
   }
 
