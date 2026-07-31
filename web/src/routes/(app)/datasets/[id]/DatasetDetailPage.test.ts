@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import { expect, test, vi } from 'vitest';
 import { readable } from 'svelte/store';
+import { tick } from 'svelte';
 import DatasetDetailPage from './+page.svelte';
 import * as queries from '$lib/api/queries';
 import { uploadQueue } from '$lib/upload/upload-queue.svelte';
@@ -193,3 +194,40 @@ test('a canceled upload leaves no lingering card', async () => {
 
   vi.mocked(uploadQueue.entriesFor).mockRestore();
 });
+
+test('drag enter onto child elements inside container does not unmount drag overlay', async () => {
+  vi.spyOn(queries, 'createDatasetFilesQuery').mockReturnValue(
+    readable({ data: { name: 'ds_drag', path: '/ds_drag', items: [] }, isLoading: false }) as any
+  );
+
+  const { container } = render(DatasetDetailPage, { props: { data: { id: 'ds_drag' } } });
+  const region = container.querySelector('[aria-label="Dataset Detail"]')!;
+
+  // Drag enter root container
+  await fireEvent.dragEnter(region, { dataTransfer: { types: ['Files'] } });
+  await fireEvent.dragOver(region, { dataTransfer: { types: ['Files'] } });
+  await tick();
+
+  expect(screen.getByText('Drop images or caption files here to upload')).toBeInTheDocument();
+
+  // Overlay has pointer-events-none class
+  const overlay = screen.getByText('Drop images or caption files here to upload').closest('div')!;
+  expect(overlay.className).toContain('pointer-events-none');
+
+  // Drag leave to a child element inside container (e.g. child element in relatedTarget)
+  const childElem = container.querySelector('h1')!;
+  await fireEvent.dragEnter(childElem, { dataTransfer: { types: ['Files'] } });
+  await fireEvent.dragLeave(region, { relatedTarget: childElem });
+  await tick();
+
+  // Overlay remains visible!
+  expect(screen.getByText('Drop images or caption files here to upload')).toBeInTheDocument();
+
+  // Drag leave completely outside container
+  await fireEvent.dragLeave(region, { relatedTarget: document.body });
+  await tick();
+
+  // Overlay unmounts
+  expect(screen.queryByText('Drop images or caption files here to upload')).toBeNull();
+});
+

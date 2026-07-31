@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { ArrowLeft, Upload, Image as ImageIcon, X } from '@lucide/svelte';
   import { Button } from '$lib/components/ui/button';
   import { FileInput } from '$lib/components/ui/file-input/index.js';
@@ -26,6 +27,19 @@
   let fileInput = $state<{ open: () => void } | null>(null);
   let isDragging = $state(false);
   let activeLightboxItem = $state<{ url: string; kind: string; filename: string } | null>(null);
+  let dragCounter = 0;
+
+  onMount(() => {
+    const preventWindowDrop = (e: DragEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener('dragover', preventWindowDrop);
+    window.addEventListener('drop', preventWindowDrop);
+    return () => {
+      window.removeEventListener('dragover', preventWindowDrop);
+      window.removeEventListener('drop', preventWindowDrop);
+    };
+  });
 
   // 'done' files are already in the grid as real cards, and a canceled
   // transfer has nothing left to show or act on — neither should leave a
@@ -55,8 +69,26 @@
     }
   }
 
+  function handleDragEnter(e: DragEvent) {
+    e.preventDefault();
+    dragCounter += 1;
+    if (dragCounter === 1) {
+      isDragging = true;
+    }
+  }
+
+  function handleDragLeave(e: DragEvent) {
+    e.preventDefault();
+    dragCounter -= 1;
+    if (dragCounter <= 0) {
+      dragCounter = 0;
+      isDragging = false;
+    }
+  }
+
   function handleDrop(e: DragEvent) {
     e.preventDefault();
+    dragCounter = 0;
     isDragging = false;
     if (e.dataTransfer?.files) {
       handleFileUpload(e.dataTransfer.files);
@@ -69,12 +101,13 @@
     class="flex flex-col gap-6 relative"
     role="region"
     aria-label="Dataset Detail"
-    ondragover={(e) => { e.preventDefault(); isDragging = true; }}
-    ondragleave={() => (isDragging = false)}
+    ondragenter={handleDragEnter}
+    ondragover={(e) => e.preventDefault()}
+    ondragleave={handleDragLeave}
     ondrop={handleDrop}
   >
     {#if isDragging}
-      <div class="absolute inset-0 bg-slate-900/90 border-3 border-dashed border-primary z-[500] flex flex-col items-center justify-center gap-4 text-primary">
+      <div class="absolute inset-0 bg-slate-900/90 border-3 border-dashed border-primary z-[500] flex flex-col items-center justify-center gap-4 text-primary pointer-events-none">
         <Upload size={48} />
         <span>Drop images or caption files here to upload</span>
       </div>
