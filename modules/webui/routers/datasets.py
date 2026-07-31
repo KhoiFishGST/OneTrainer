@@ -28,6 +28,29 @@ ALLOWED_UPLOAD_EXTENSIONS = (
 )
 
 
+# The native UI excludes these from concept previews; they are training
+# annotations, not pictures anyone wants to see as a dataset's cover.
+THUMBNAIL_EXCLUDED_SUFFIXES = ("-masklabel.png", "-condlabel.png")
+
+
+def pick_dataset_thumbnail(ds_dir: Path) -> Path | None:
+    """Choose a dataset's cover image: the alphabetically first media file.
+
+    The native UI (BaseConceptTabView._get_preview_image) takes whichever
+    file the filesystem yields first, which varies between machines. Sorting
+    makes the choice stable; the exclusions match the native behaviour.
+    """
+    if not ds_dir.exists() or not ds_dir.is_dir():
+        return None
+
+    for f in sorted(ds_dir.glob("*.*")):
+        if f.name.startswith(".") or f.name.endswith(THUMBNAIL_EXCLUDED_SUFFIXES):
+            continue
+        if classify_media(f.suffix) in ("image", "video"):
+            return f
+    return None
+
+
 def classify_media(ext: str) -> str | None:
     """Return 'image', 'video', 'text', or None for an unsupported extension."""
     ext = ext.lower()
@@ -334,14 +357,16 @@ async def get_dataset_image(
         if p.exists() and p.is_file():
             img_path = p
     else:
-        if ds_dir.exists() and ds_dir.is_dir():
-            for f in sorted(ds_dir.glob("*.*")):
-                if classify_media(f.suffix) in ("image", "video"):
-                    img_path = f
-                    break
+        img_path = pick_dataset_thumbnail(ds_dir)
 
     return await app_state.media_service.serve_media(
-        request, img_path or Path(""), thumb=thumb
+        request,
+        img_path or Path(""),
+        thumb=thumb,
+        # Which file this resolves to changes as the dataset is edited, and
+        # the URL carries no version token, so the client must revalidate
+        # instead of trusting a cached copy. Matching ETags still 304.
+        revalidate=not filename,
     )
 
 

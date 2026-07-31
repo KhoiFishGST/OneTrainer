@@ -27,7 +27,7 @@ discards everything to its left, so `Path("/base") / "/etc"` is `/etc`.
 
 - `POST /api/datasets/{name}/upload` — streams to disk via a per-request `.part` file. The whole batch is validated before anything is written, so a 400 (bad filename) or 415 (unsupported extension) leaves no partial results. Publishes `dataset.file.added { dataset, filename, item_id, kind }` per saved file. That event is a view-refresh hint only — never a completion signal. The response itself means the file is fully written and its caption created; the event stream sheds messages under a burst and never replays them. After responding, a background task pre-builds each image's webp thumbnail, bounded by `MediaService.WARM_CONCURRENCY`.
 - `GET /api/datasets/{name}/files` — items carry `kind` (`image`/`video`/`text`) and `media_name`. The former `image_name` field is removed. One item per media file: `id` is the filename stem, except when several media files share a stem (`a.png` beside `a.mp4`), where each gets `id` = its full filename and they share the stem's caption.
-- `GET /api/datasets` — dataset entries now carry `video_count`.
+- `GET /api/datasets` — dataset entries now carry `video_count`. `thumbnail_url` points at the filename-less form of `/api/datasets/image`, which resolves to `pick_dataset_thumbnail()`: the alphabetically first image or video, skipping dotfiles and `-masklabel.png` / `-condlabel.png`. Because that URL carries no version token and its target changes as the dataset is edited, it answers `Cache-Control: no-cache` and relies on the ETag for cheap 304s. Requests naming an explicit `filename` keep the long max-age.
 
 ## Why `settings_store.py` exists
 

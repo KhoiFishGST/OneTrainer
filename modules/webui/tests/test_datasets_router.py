@@ -517,3 +517,47 @@ def test_upload_prewarm_failure_does_not_fail_the_upload(client, tmp_path):
 
     assert resp.status_code == 200
     assert (tmp_path / "training_datasets" / "warmfail" / "broken.png").exists()
+
+
+def test_dataset_thumbnail_is_revalidated_not_frozen(client, tmp_path):
+    """The auto-picked dataset thumbnail must not be cached as a placeholder.
+
+    /api/datasets/image without a filename resolves to whichever file is
+    first in the dataset, so the same URL means different bytes over time.
+    An empty dataset answers with the placeholder; caching that for a day
+    left the datasets grid showing a blank tile after the first upload.
+    """
+    c, root = client
+    c.post("/api/datasets", json={"name": "thumb"})
+
+    empty = c.get("/api/datasets/image?dataset=thumb&thumb=true")
+    assert empty.status_code == 200
+    assert "no-cache" in empty.headers.get("cache-control", "")
+
+    buf = io.BytesIO()
+    Image.new("RGB", (64, 64), (200, 30, 40)).save(buf, format="PNG")
+    c.post(
+        "/api/datasets/thumb/upload",
+        files=[("files", ("a.png", buf.getvalue(), "image/png"))],
+    )
+
+    filled = c.get("/api/datasets/image?dataset=thumb&thumb=true")
+    assert filled.status_code == 200
+    assert filled.content != empty.content
+    assert filled.headers["etag"] != empty.headers["etag"]
+
+
+def test_dataset_thumbnail_skips_mask_and_cond_labels(client, tmp_path):
+    """Match the native UI, which never previews a mask or cond label."""
+    c, root = client
+    c.post("/api/datasets", json={"name": "masks"})
+    ds_dir = tmp_path / "training_datasets" / "masks"
+
+    # Sorts before "b.png", so a naive first-match picks it.
+    Image.new("RGB", (32, 32), (0, 0, 0)).save(ds_dir / "a-masklabel.png")
+    Image.new("RGB", (32, 32), (1, 1, 1)).save(ds_dir / "a-condlabel.png")
+    Image.new("RGB", (32, 32), (2, 2, 2)).save(ds_dir / "b.png")
+
+    from modules.webui.routers.datasets import pick_dataset_thumbnail
+
+    assert pick_dataset_thumbnail(ds_dir).name == "b.png"

@@ -16,6 +16,16 @@ from starlette.requests import Request
 from starlette.responses import FileResponse, Response
 
 
+def _cache_control(revalidate: bool) -> str:
+    """Caching policy for a media response.
+
+    `no-cache` still lets the client store the bytes; it just has to ask
+    before reusing them, which an ETag answers with a cheap 304. Use it
+    whenever the same URL can resolve to different content over time.
+    """
+    return "no-cache" if revalidate else "public, max-age=86400"
+
+
 class MediaService:
     POSTER_SEEK_FRACTION = 0.1
 
@@ -212,6 +222,7 @@ class MediaService:
         source_path: Path,
         thumb: bool = False,
         target_size: int = 150,
+        revalidate: bool = False,
     ) -> Response:
         if thumb:
             file_path, mime_type, etag = await run_in_threadpool(
@@ -233,7 +244,7 @@ class MediaService:
 
         headers = {
             "ETag": f'"{etag}"',
-            "Cache-Control": "public, max-age=86400",
+            "Cache-Control": _cache_control(revalidate),
         }
         return FileResponse(file_path, media_type=mime_type, headers=headers)
 
@@ -243,11 +254,16 @@ class MediaService:
         source_path: Path,
         thumb: bool = False,
         target_size: int = 150,
+        revalidate: bool = False,
     ) -> Response:
         """Serve an image, or a poster frame when the source is a video."""
         if not path_util.is_supported_video_extension(source_path.suffix):
             return await self.serve_image(
-                request, source_path, thumb=thumb, target_size=target_size
+                request,
+                source_path,
+                thumb=thumb,
+                target_size=target_size,
+                revalidate=revalidate,
             )
 
         file_path, mime_type, etag = await run_in_threadpool(
@@ -261,5 +277,5 @@ class MediaService:
         return FileResponse(
             file_path,
             media_type=mime_type,
-            headers={"ETag": f'"{etag}"', "Cache-Control": "public, max-age=86400"},
+            headers={"ETag": f'"{etag}"', "Cache-Control": _cache_control(revalidate)},
         )
