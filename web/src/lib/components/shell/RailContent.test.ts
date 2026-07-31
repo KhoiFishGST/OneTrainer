@@ -40,4 +40,26 @@ describe('RailContent component', () => {
     // e2e asserts the rendered width; this only pins the class.
     expect(panel?.className).toContain('data-[side=left]:w-[var(--sidebar-width)]');
   });
+
+  it('anchors the desktop collapse toggle to the left and labels it', async () => {
+    render(RailContentTestWrapper, { mobile: false, expanded: true });
+
+    const toggle = screen.getByRole('button', { name: 'Collapse navigation' });
+    expect(toggle.className).toContain('justify-start');
+    expect(toggle).toHaveTextContent('Collapse');
+
+    // SidebarHeader applies `flex flex-col` of its own. tailwind-merge only
+    // drops it if the incoming class names a direction, and in a column
+    // `items-center` centres the toggle horizontally instead of aligning it.
+    const header = toggle.parentElement;
+    expect(header?.className).toContain('flex-row');
+    expect(header?.className).not.toContain('flex-col');
+  });
+
+  it('names the desktop toggle for the action it performs', async () => {
+    render(RailContentTestWrapper, { mobile: false, expanded: false });
+
+    expect(screen.getByRole('button', { name: 'Expand navigation' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Collapse navigation' })).toBeNull();
+  });
 });

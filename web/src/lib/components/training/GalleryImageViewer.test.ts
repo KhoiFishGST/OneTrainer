@@ -159,6 +159,65 @@ describe('GalleryImageViewer', () => {
     expect(screen.getByRole('button', { name: 'Next checkpoint' })).toBeDisabled();
   });
 
+  it('navigates when focus sits outside the dialog content', async () => {
+    // Opening the viewer autofocuses a nav button. Stepping to either end
+    // disables that button, the browser blurs it, and focus falls to <body>
+    // -- so a handler bound to the dialog element stops receiving keys after
+    // a single press. Arrow keys must work wherever focus happens to be.
+    render(GalleryImageViewer, {
+      props: {
+        open: true,
+        gallery: mockGallery,
+        selection: { batchId: 1, promptId: 'prompt_a', variant: 'ema' },
+        onClose: vi.fn(),
+      },
+    });
+
+    document.body.focus();
+    await fireEvent.keyDown(document.body, { key: 'ArrowRight' });
+    expect(screen.getByText('Epoch 2 \u00b7 Step 200')).toBeInTheDocument();
+
+    await fireEvent.keyDown(document.body, { key: 'ArrowRight' });
+    expect(screen.getByText('Epoch 3 \u00b7 Step 300')).toBeInTheDocument();
+
+    await fireEvent.keyDown(document.body, { key: 'ArrowLeft' });
+    expect(screen.getByText('Epoch 2 \u00b7 Step 200')).toBeInTheDocument();
+  });
+
+  it('ignores arrow keys while closed', async () => {
+    render(GalleryImageViewer, {
+      props: {
+        open: false,
+        gallery: mockGallery,
+        selection: { batchId: 1, promptId: 'prompt_a', variant: 'ema' },
+        onClose: vi.fn(),
+      },
+    });
+
+    await fireEvent.keyDown(document.body, { key: 'ArrowRight' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('leaves arrow keys to a focused text field', async () => {
+    render(GalleryImageViewer, {
+      props: {
+        open: true,
+        gallery: mockGallery,
+        selection: { batchId: 1, promptId: 'prompt_a', variant: 'ema' },
+        onClose: vi.fn(),
+      },
+    });
+
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+
+    await fireEvent.keyDown(input, { key: 'ArrowRight' });
+    expect(screen.getByText('Epoch 1 \u00b7 Step 100')).toBeInTheDocument();
+
+    input.remove();
+  });
+
   it('navigates with a horizontal swipe but ignores vertical movement', async () => {
     renderViewerAtMiddleCheckpoint();
     const imageStage = document.querySelector('.viewer-image-stage') as HTMLElement;

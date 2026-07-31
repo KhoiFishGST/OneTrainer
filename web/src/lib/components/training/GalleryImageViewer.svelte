@@ -120,15 +120,32 @@
     }
   }
 
-  function handleViewerKeyDown(event: KeyboardEvent): void {
-    if (event.key === 'ArrowLeft') {
-      event.preventDefault();
-      navigate(-1);
-    } else if (event.key === 'ArrowRight') {
-      event.preventDefault();
-      navigate(1);
-    }
+  function isTypingTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false;
+    return (
+      target.isContentEditable ||
+      ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
+    );
   }
+
+  function handleViewerKeyDown(event: KeyboardEvent): void {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    // Arrow keys belong to a focused field before they belong to us.
+    if (isTypingTarget(event.target)) return;
+
+    event.preventDefault();
+    navigate(event.key === 'ArrowLeft' ? -1 : 1);
+  }
+
+  // Bound to the window rather than the dialog element. Stepping to either
+  // end of the timeline disables the nav button that has focus, at which
+  // point the browser blurs it and focus falls out of the dialog -- a
+  // handler on the dialog would then go silent after a single keypress.
+  $effect(() => {
+    if (!open) return;
+    window.addEventListener('keydown', handleViewerKeyDown);
+    return () => window.removeEventListener('keydown', handleViewerKeyDown);
+  });
 
   let touchStartX = 0;
   let touchStartY = 0;
@@ -179,7 +196,6 @@
   onOpenChange={(v) => { if (!v) onClose(); }}
   title="Sample Image Viewer"
   class="max-w-4xl"
-  onkeydown={handleViewerKeyDown}
   data-batch-id={selection?.batchId}
   data-prompt-id={selection?.promptId}
   data-variant={selection?.variant}

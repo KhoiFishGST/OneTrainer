@@ -9,11 +9,15 @@ test.describe("Responsive Workflows & Accessibility Controls", () => {
 
     test("desktop sidebar collapses, expands, and persists across reload", async ({ page }) => {
       await page.goto("/general");
-      const railToggle = page.getByRole("button", { name: "Expand navigation" });
-      await expect(railToggle).toBeVisible();
+      // The toggle renames itself to match the action it will perform, so
+      // each direction needs its own locator.
+      const expandToggle = page.getByRole("button", { name: "Expand navigation" });
+      const collapseToggle = page.getByRole("button", { name: "Collapse navigation" });
+      await expect(expandToggle).toBeVisible();
 
-      await railToggle.click();
+      await expandToggle.click();
       await expect(page.locator(".rail")).toHaveClass(/expanded/);
+      await expect(collapseToggle).toBeVisible();
 
       let isExpanded = await page.evaluate(() => localStorage.getItem("webui.railExpanded"));
       expect(isExpanded).toBe("true");
@@ -22,7 +26,7 @@ test.describe("Responsive Workflows & Accessibility Controls", () => {
       await expect(page.locator(".rail")).toHaveClass(/expanded/);
 
       // Collapse sidebar back
-      await railToggle.click();
+      await collapseToggle.click();
       await expect(page.locator(".rail")).not.toHaveClass(/expanded/);
       isExpanded = await page.evaluate(() => localStorage.getItem("webui.railExpanded"));
       expect(isExpanded).toBe("false");

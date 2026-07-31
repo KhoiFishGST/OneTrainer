@@ -86,15 +86,21 @@
 >
 
   {#if !mobile}
-    <SidebarHeader class="h-12 flex items-center justify-start px-2 border-b border-border">
+    <!--
+      flex-row is load-bearing. SidebarHeader's own `flex flex-col` survives
+      tailwind-merge unless the incoming class names a direction, and in a
+      column `items-center` centres the toggle horizontally, which is what
+      pushed it to the middle of the expanded rail.
+    -->
+    <SidebarHeader class="h-12 flex flex-row items-center justify-start p-2 border-b border-border">
       <Button
         variant="ghost"
-        size="icon"
-        class="text-muted-foreground hover:text-foreground hover:bg-muted"
-        aria-label="Expand navigation"
+        class="flex w-full items-center justify-start gap-3 px-2.5 py-2 text-muted-foreground rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors font-normal h-auto min-h-0 hover:bg-muted hover:text-foreground"
+        aria-label={expanded ? 'Collapse navigation' : 'Expand navigation'}
         onclick={onToggleExpand}
       >
-        <PanelLeft size={20} />
+        <PanelLeft size={20} class="shrink-0 w-5 h-5" />
+        <span class={cn('nav-label', !expanded && 'opacity-0 w-0 pointer-events-none')}>Collapse</span>
       </Button>
     </SidebarHeader>
   {/if}
