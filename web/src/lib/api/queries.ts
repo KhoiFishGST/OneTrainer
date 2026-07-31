@@ -308,20 +308,6 @@ export function createDeleteDatasetMutation() {
   );
 }
 
-export function createUploadDatasetFilesMutation() {
-  const client = getSafeQueryClient();
-  return createMutation(
-    {
-      mutationFn: ({ name, formData }: { name: string; formData: FormData }) =>
-        api.uploadDatasetFiles(name, formData),
-      onSuccess: (_, variables) => {
-        client.invalidateQueries({ queryKey: queryKeys.datasets() });
-        client.invalidateQueries({ queryKey: queryKeys.datasetFiles(variables.name) });
-      },
-    },
-    client
-  );
-}
 
 export function createUpdateCaptionMutation() {
   const client = getSafeQueryClient();

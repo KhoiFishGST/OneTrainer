@@ -248,15 +248,7 @@ export function createApi(base = '') {
         `${base}/api/datasets/${encodeURIComponent(name)}/files`
       ),
 
-    uploadDatasetFiles: (name: string, formData: FormData) =>
-      fetch(`${base}/api/datasets/${encodeURIComponent(name)}/upload`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'same-origin',
-      }).then((res) => {
-        if (!res.ok) throw new ApiError(res.status, 'Upload failed');
-        return res.json();
-      }),
+
 
     updateCaption: (name: string, caption_name: string, content: string) =>
       request<{ status: string }>(`${base}/api/datasets/${encodeURIComponent(name)}/caption`, {

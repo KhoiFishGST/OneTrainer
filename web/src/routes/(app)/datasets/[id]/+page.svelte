@@ -4,10 +4,13 @@
   import { FileInput } from '$lib/components/ui/file-input/index.js';
   import * as Empty from '$lib/components/ui/empty/index.js';
   import DatasetFileCard from '$lib/components/datasets/DatasetFileCard.svelte';
+  import UploadSkeletonCard from '$lib/components/datasets/UploadSkeletonCard.svelte';
+  import UploadSummaryBar from '$lib/components/datasets/UploadSummaryBar.svelte';
   import RoutePage from '$lib/components/layout/RoutePage.svelte';
+  import { uploadQueue } from '$lib/upload/upload-queue.svelte';
+  import { UPLOAD_ACCEPT } from '$lib/upload/media-kind';
   import {
     createDatasetFilesQuery,
-    createUploadDatasetFilesMutation,
     createUpdateCaptionMutation,
   } from '$lib/api/queries';
 
@@ -16,26 +19,22 @@
 
   // svelte-ignore state_referenced_locally
   const filesQuery = createDatasetFilesQuery(data.id);
-  const uploadMutation = createUploadDatasetFilesMutation();
   const captionMutation = createUpdateCaptionMutation();
 
   let items = $derived($filesQuery.data?.items || []);
   let loading = $derived($filesQuery.isLoading);
   let fileInput = $state<{ open: () => void } | null>(null);
   let isDragging = $state(false);
-  let activeLightboxImage = $state<string | null>(null);
+  let activeLightboxItem = $state<{ url: string; kind: string; filename: string } | null>(null);
 
-  async function handleFileUpload(files: FileList | File[]) {
+  let pendingUploads = $derived(
+    uploadQueue.entriesFor(datasetName).filter((e) => e.status !== 'done')
+  );
+  let totals = $derived(uploadQueue.totals);
+
+  function handleFileUpload(files: FileList | File[]) {
     if (!files || files.length === 0) return;
-    const formData = new FormData();
-    for (let i = 0; i < files.length; i++) {
-      formData.append('files', files[i]);
-    }
-    try {
-      await $uploadMutation.mutateAsync({ name: datasetName, formData });
-    } catch (err) {
-      console.error('Upload failed', err);
-    }
+    uploadQueue.enqueue(datasetName, files);
   }
 
   async function handleCaptionSave(captionName: string, content: string) {
@@ -57,10 +56,6 @@
     if (e.dataTransfer?.files) {
       handleFileUpload(e.dataTransfer.files);
     }
-  }
-
-  function handleImageClick(imageUrl: string) {
-    activeLightboxImage = imageUrl;
   }
 </script>
 
@@ -96,30 +91,41 @@
       <FileInput
         bind:this={fileInput}
         multiple
-        accept="image/*,.jpg,.jpeg,.png,.webp,.bmp,.gif,.tiff,.txt,.caption"
+        accept={UPLOAD_ACCEPT}
         class="hidden"
         onChange={(files) => files && handleFileUpload(files)}
       />
     </div>
 
-    {#if items.length === 0 && !loading}
+    {#if pendingUploads.length > 0}
+      <UploadSummaryBar {totals} onCancelAll={() => uploadQueue.cancelAll()} />
+    {/if}
+
+    {#if items.length === 0 && pendingUploads.length === 0 && !loading}
       <Empty.Root class="flex flex-col items-center justify-center p-16 text-muted-foreground gap-3">
         <Empty.Media>
           <ImageIcon size={48} />
         </Empty.Media>
         <Empty.Header>
-          <Empty.Title class="text-lg font-semibold text-foreground">No images or captions in this dataset yet</Empty.Title>
+          <Empty.Title class="text-lg font-semibold text-foreground">No images, videos, or captions in this dataset yet</Empty.Title>
           <Empty.Description class="text-sm">Click "Add Files" or drag & drop files anywhere onto this page</Empty.Description>
         </Empty.Header>
       </Empty.Root>
     {:else}
       <div class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-5">
+        {#each pendingUploads as entry (entry.id)}
+          <UploadSkeletonCard
+            {entry}
+            onCancel={(id) => uploadQueue.cancel(id)}
+            onRetry={(id) => uploadQueue.retry(id)}
+          />
+        {/each}
         {#each items as item (item.id)}
           <DatasetFileCard
             {item}
             {datasetName}
             onCaptionSave={handleCaptionSave}
-            onImageClick={handleImageClick}
+            onMediaClick={(payload) => (activeLightboxItem = payload)}
           />
         {/each}
       </div>
@@ -127,10 +133,10 @@
   </div>
 </RoutePage>
 
-{#if activeLightboxImage}
-  <div class="fixed inset-0 bg-black/85 z-[1000] flex items-center justify-center" onclick={() => (activeLightboxImage = null)} role="presentation">
-    <img src={activeLightboxImage} alt="Preview" class="max-w-[90vw] max-h-[90dvh] object-contain rounded-lg" />
-    <Button variant="ghost" size="icon" class="absolute top-4 right-4 bg-transparent border-none text-white cursor-pointer w-auto h-auto" onclick={() => (activeLightboxImage = null)}>
+{#if activeLightboxItem}
+  <div class="fixed inset-0 bg-black/85 z-[1000] flex items-center justify-center" onclick={() => (activeLightboxItem = null)} role="presentation">
+    <img src={activeLightboxItem.url} alt="Preview" class="max-w-[90vw] max-h-[90dvh] object-contain rounded-lg" />
+    <Button variant="ghost" size="icon" class="absolute top-4 right-4 bg-transparent border-none text-white cursor-pointer w-auto h-auto" onclick={() => (activeLightboxItem = null)}>
       <X size={24} />
     </Button>
   </div>
