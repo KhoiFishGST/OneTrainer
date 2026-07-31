@@ -9,7 +9,7 @@ from pathlib import Path
 from modules.util import path_util
 from modules.webui.state import AppState
 
-from fastapi import APIRouter, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, BackgroundTasks, File, HTTPException, Request, UploadFile
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import FileResponse
@@ -246,7 +246,10 @@ def validated_upload_name(raw_name: str | None) -> str:
 
 @router.post("/datasets/{name}/upload")
 async def upload_dataset_files(
-    name: str, request: Request, files: list[UploadFile] = File(...)  # noqa: B008
+    name: str,
+    request: Request,
+    background: BackgroundTasks,
+    files: list[UploadFile] = File(...),  # noqa: B008
 ):
     app_state: AppState = request.app.state.webui
     base_dir = get_base_datasets_dir(app_state)
@@ -280,6 +283,12 @@ async def upload_dataset_files(
             txt_dest = ds_dir / f"{dest.stem}.txt"
             if not txt_dest.exists():
                 txt_dest.write_text("", encoding="utf-8")
+
+        # Build the grid thumbnail after the response goes out, so a large
+        # drop paints immediately instead of decoding every original on
+        # demand. Bounded inside the media service; failures are ignored
+        # because the on-demand path regenerates through the same cache key.
+        background.add_task(app_state.media_service.warm_thumbnail, dest)
 
         await app_state.events.publish(
             "dataset.file.added",

@@ -486,3 +486,34 @@ def test_upload_validates_whole_batch_before_writing(client, tmp_path):
     ds_dir = tmp_path / "training_datasets" / "batch"
     assert not (ds_dir / "good.png").exists()
     assert list(ds_dir.glob("*.part")) == []
+
+
+def test_upload_prewarms_image_thumbnails(client, tmp_path):
+    """Uploaded images get their webp thumbnail built without a client request."""
+    c, root = client
+    c.post("/api/datasets", json={"name": "warm"})
+
+    buf = io.BytesIO()
+    Image.new("RGB", (300, 200), (5, 6, 7)).save(buf, format="PNG")
+    resp = c.post(
+        "/api/datasets/warm/upload",
+        files=[("files", ("a.png", buf.getvalue(), "image/png"))],
+    )
+    assert resp.status_code == 200
+
+    cache_dir = root / "workspace-cache" / "thumbnails"
+    assert len(list(cache_dir.glob("*.webp"))) == 1
+
+
+def test_upload_prewarm_failure_does_not_fail_the_upload(client, tmp_path):
+    """A broken image still uploads; only its thumbnail is missing."""
+    c, root = client
+    c.post("/api/datasets", json={"name": "warmfail"})
+
+    resp = c.post(
+        "/api/datasets/warmfail/upload",
+        files=[("files", ("broken.png", b"not really a png", "image/png"))],
+    )
+
+    assert resp.status_code == 200
+    assert (tmp_path / "training_datasets" / "warmfail" / "broken.png").exists()

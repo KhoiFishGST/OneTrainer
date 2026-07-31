@@ -1,8 +1,9 @@
+import asyncio
+import contextlib
 import hashlib
 import io
 import mimetypes
 from pathlib import Path
-import contextlib
 
 import av
 from modules.util import path_util
@@ -18,10 +19,39 @@ from starlette.responses import FileResponse, Response
 class MediaService:
     POSTER_SEEK_FRACTION = 0.1
 
+    # Thumbnail encoding is CPU-bound. Left unbounded, a 330-file upload
+    # would saturate the request threadpool and stall ordinary requests.
+    WARM_CONCURRENCY = 4
+
     def __init__(self, root_dir: Path) -> None:
         self.root_dir = root_dir
         self.cache_dir = root_dir / "workspace-cache" / "thumbnails"
         self._ensure_cache_dir()
+        self._warm_semaphore: asyncio.Semaphore | None = None
+
+    def _get_warm_semaphore(self) -> asyncio.Semaphore:
+        # Created lazily so the service can be constructed outside a loop.
+        if self._warm_semaphore is None:
+            self._warm_semaphore = asyncio.Semaphore(self.WARM_CONCURRENCY)
+        return self._warm_semaphore
+
+    async def warm_thumbnail(
+        self, source_path: Path, width: int = 150, height: int = 150
+    ) -> None:
+        """Pre-build the webp thumbnail for a freshly uploaded image.
+
+        Best effort: the grid's own request regenerates the thumbnail through
+        the identical cache-keyed path if this has not finished, so nothing
+        depends on it having run.
+        """
+        if not path_util.is_supported_image_extension(source_path.suffix):
+            return
+
+        async with self._get_warm_semaphore():
+            with contextlib.suppress(Exception):
+                await run_in_threadpool(
+                    self.get_thumbnail_file, source_path, width, height, True
+                )
 
     def _ensure_cache_dir(self) -> None:
         self.cache_dir.mkdir(parents=True, exist_ok=True)

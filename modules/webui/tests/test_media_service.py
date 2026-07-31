@@ -1,3 +1,4 @@
+import asyncio
 import os
 from pathlib import Path
 
@@ -10,6 +11,11 @@ from starlette.requests import Request
 from starlette.responses import FileResponse
 import av
 import numpy as np
+
+
+@pytest.fixture
+def anyio_backend():
+    return "asyncio"
 
 def _make_test_video(path, frames=30, width=64, height=64):
     """Encode a short clip whose colour changes over time."""
@@ -234,3 +240,61 @@ async def test_serve_image_full_image_handles_unreadable_file(tmp_path: Path, mo
 
 
 
+
+
+@pytest.mark.anyio
+async def test_warm_thumbnail_precomputes_the_cache(tmp_path):
+    service = MediaService(tmp_path)
+    source = tmp_path / "a.png"
+    Image.new("RGB", (400, 300), (10, 20, 30)).save(source)
+
+    assert list(service.cache_dir.glob("*.webp")) == []
+
+    await service.warm_thumbnail(source)
+
+    cached = list(service.cache_dir.glob("*.webp"))
+    assert len(cached) == 1
+
+
+@pytest.mark.anyio
+async def test_warm_thumbnail_ignores_unsupported_and_missing_files(tmp_path):
+    service = MediaService(tmp_path)
+
+    caption = tmp_path / "a.txt"
+    caption.write_text("not an image", encoding="utf-8")
+
+    # Neither of these may raise, and neither may write a cache entry.
+    await service.warm_thumbnail(caption)
+    await service.warm_thumbnail(tmp_path / "missing.png")
+
+    assert list(service.cache_dir.glob("*.webp")) == []
+
+
+@pytest.mark.anyio
+async def test_warm_thumbnail_bounds_its_concurrency(tmp_path):
+    service = MediaService(tmp_path)
+    sources = []
+    for i in range(12):
+        p = tmp_path / f"img{i}.png"
+        Image.new("RGB", (200, 200), (i, i, i)).save(p)
+        sources.append(p)
+
+    peak = 0
+    live = 0
+    real_get = service.get_thumbnail_file
+
+    def tracking_get(*args, **kwargs):
+        nonlocal peak, live
+        live += 1
+        peak = max(peak, live)
+        try:
+            return real_get(*args, **kwargs)
+        finally:
+            live -= 1
+
+    service.get_thumbnail_file = tracking_get
+
+    await asyncio.gather(*(service.warm_thumbnail(p) for p in sources))
+
+    assert len(list(service.cache_dir.glob("*.webp"))) == 12
+    assert peak <= MediaService.WARM_CONCURRENCY
