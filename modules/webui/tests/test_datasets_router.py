@@ -223,3 +223,48 @@ def test_base_dir_comes_from_settings_store(tmp_path):
 
         assert client.get("/api/datasets").json()["base_dir"] == "my_sets"
         assert (tmp_path / "my_sets").is_dir()
+
+
+def _write_fake_video(path):
+    # Not a decodable video; sufficient for extension-based classification.
+    path.write_bytes(b"\x00\x00\x00\x18ftypmp42fake")
+
+
+def test_list_datasets_counts_videos(client):
+    c, tmp_path = client
+    c.post("/api/datasets", json={"name": "vids"})
+    ds_dir = tmp_path / "training_datasets" / "vids"
+    _write_fake_video(ds_dir / "clip.mp4")
+    _write_fake_video(ds_dir / "clip2.mkv")
+    Image.new("RGB", (8, 8)).save(ds_dir / "pic.png")
+
+    entry = next(d for d in c.get("/api/datasets").json()["datasets"] if d["name"] == "vids")
+    assert entry["video_count"] == 2
+    assert entry["image_count"] == 1
+
+
+def test_dataset_files_reports_kind_and_media_name(client):
+    c, tmp_path = client
+    c.post("/api/datasets", json={"name": "mixed"})
+    ds_dir = tmp_path / "training_datasets" / "mixed"
+    Image.new("RGB", (8, 8)).save(ds_dir / "a.png")
+    _write_fake_video(ds_dir / "b.mp4")
+    (ds_dir / "c.txt").write_text("caption only", encoding="utf-8")
+
+    items = {i["id"]: i for i in c.get("/api/datasets/mixed/files").json()["items"]}
+    assert items["a"]["kind"] == "image"
+    assert items["a"]["media_name"] == "a.png"
+    assert items["b"]["kind"] == "video"
+    assert items["b"]["media_name"] == "b.mp4"
+    assert items["c"]["kind"] == "text"
+    assert items["c"]["media_name"] is None
+    assert items["c"]["caption_content"] == "caption only"
+
+
+def test_dataset_files_keeps_image_name_alias(client):
+    c, tmp_path = client
+    c.post("/api/datasets", json={"name": "alias"})
+    Image.new("RGB", (8, 8)).save(tmp_path / "training_datasets" / "alias" / "a.png")
+
+    item = c.get("/api/datasets/alias/files").json()["items"][0]
+    assert item["image_name"] == "a.png"

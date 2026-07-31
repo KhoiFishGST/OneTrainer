@@ -15,6 +15,25 @@ router = APIRouter()
 SAFE_NAME_REGEX = re.compile(r"^[a-zA-Z0-9 _-]+$")
 
 
+CAPTION_EXTENSIONS = {".txt", ".caption"}
+
+ALLOWED_UPLOAD_EXTENSIONS = (
+    path_util.supported_image_extensions()
+    | path_util.supported_video_extensions()
+    | CAPTION_EXTENSIONS
+)
+
+
+def classify_media(ext: str) -> str | None:
+    """Return 'image', 'video', 'text', or None for an unsupported extension."""
+    ext = ext.lower()
+    if path_util.is_supported_image_extension(ext):
+        return "image"
+    if path_util.is_supported_video_extension(ext):
+        return "video"
+    if ext in CAPTION_EXTENSIONS:
+        return "text"
+    return None
 
 def get_base_datasets_dir(app_state: AppState) -> Path:
     raw_dir = app_state.settings_store.get_datasets_dir()
@@ -49,18 +68,22 @@ async def list_datasets(request: Request):
         for entry in sorted(base_dir.iterdir()):
             if entry.is_dir() and not entry.name.startswith("."):
                 img_count = 0
+                vid_count = 0
                 cap_count = 0
                 for f in entry.glob("*.*"):
-                    ext = f.suffix.lower()
-                    if path_util.is_supported_image_extension(ext):
+                    kind = classify_media(f.suffix)
+                    if kind == "image":
                         img_count += 1
-                    elif ext in (".txt", ".caption"):
+                    elif kind == "video":
+                        vid_count += 1
+                    elif kind == "text":
                         cap_count += 1
                 encoded_name = urllib.parse.quote(entry.name)
                 result.append({
                     "name": entry.name,
                     "path": str(entry),
                     "image_count": img_count,
+                    "video_count": vid_count,
                     "caption_count": cap_count,
                     "thumbnail_url": f"/api/datasets/image?dataset={encoded_name}&thumb=true",
                 })
@@ -123,19 +146,33 @@ async def get_dataset_files(name: str, request: Request):
     for p in sorted(ds_dir.glob("*.*")):
         if p.name.startswith("."):
             continue
-        ext = p.suffix.lower()
+        kind = classify_media(p.suffix)
+        if kind is None:
+            continue
         stem = p.stem
         if stem not in items_map:
-            items_map[stem] = {"id": stem, "image_name": None, "caption_name": None, "caption_content": ""}
+            items_map[stem] = {
+                "id": stem,
+                "kind": "text",
+                "media_name": None,
+                # Deprecated alias, removed in Task 11.
+                "image_name": None,
+                "caption_name": None,
+                "caption_content": "",
+            }
+        item = items_map[stem]
 
-        if path_util.is_supported_image_extension(ext):
-            items_map[stem]["image_name"] = p.name
-        elif ext in (".txt", ".caption"):
-            items_map[stem]["caption_name"] = p.name
+        if kind in ("image", "video"):
+            item["kind"] = kind
+            item["media_name"] = p.name
+            if kind == "image":
+                item["image_name"] = p.name
+        else:
+            item["caption_name"] = p.name
             try:
-                items_map[stem]["caption_content"] = p.read_text(encoding="utf-8")
-            except Exception:
-                items_map[stem]["caption_content"] = ""
+                item["caption_content"] = p.read_text(encoding="utf-8")
+            except OSError:
+                item["caption_content"] = ""
 
     items = list(items_map.values())
     return {"name": name, "path": str(ds_dir), "items": items}
@@ -162,8 +199,7 @@ async def upload_dataset_files(
         saved.append(filename)
 
         # Auto-create blank caption file for images if not present
-        ext = dest.suffix.lower()
-        if path_util.is_supported_image_extension(ext):
+        if classify_media(dest.suffix) in ("image", "video"):
             txt_dest = ds_dir / f"{dest.stem}.txt"
             if not txt_dest.exists():
                 txt_dest.write_text("", encoding="utf-8")
