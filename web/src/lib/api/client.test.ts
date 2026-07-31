@@ -69,3 +69,86 @@ describe("api client", () => {
   });
 });
 
+import { xhrUpload } from './client';
+
+class FakeXhr {
+  static last: FakeXhr;
+  upload = { onprogress: null as ((e: any) => void) | null };
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  onabort: (() => void) | null = null;
+  status = 0;
+  responseText = '';
+  aborted = false;
+  openArgs: [string, string] | null = null;
+  withCredentials = false;
+
+  constructor() {
+    FakeXhr.last = this;
+  }
+  open(method: string, url: string) {
+    this.openArgs = [method, url];
+  }
+  send(_body: any) {}
+  abort() {
+    this.aborted = true;
+    this.onabort?.();
+  }
+}
+
+function withFakeXhr(fn: () => void | Promise<void>) {
+  const original = globalThis.XMLHttpRequest;
+  (globalThis as any).XMLHttpRequest = FakeXhr as any;
+  return Promise.resolve(fn()).finally(() => {
+    (globalThis as any).XMLHttpRequest = original;
+  });
+}
+
+describe('xhrUpload', () => {
+  it('xhrUpload reports progress and resolves with the parsed body', async () =>
+    withFakeXhr(async () => {
+      const seen: Array<[number, number]> = [];
+      const file = new File(['abc'], 'a.png', { type: 'image/png' });
+      const handle = xhrUpload('My Set', file, (sent, total) => seen.push([sent, total]));
+
+      const xhr = FakeXhr.last;
+      expect(xhr.openArgs).toEqual(['POST', '/api/datasets/My%20Set/upload']);
+
+      xhr.upload.onprogress?.({ lengthComputable: true, loaded: 1, total: 3 });
+      xhr.upload.onprogress?.({ lengthComputable: true, loaded: 3, total: 3 });
+      xhr.status = 200;
+      xhr.responseText = JSON.stringify({ saved: ['a.png'] });
+      xhr.onload?.();
+
+      await expect(handle.promise).resolves.toEqual({ saved: ['a.png'] });
+      expect(seen).toEqual([
+        [1, 3],
+        [3, 3],
+      ]);
+    }));
+
+  it('xhrUpload rejects with ApiError on a failure status', async () =>
+    withFakeXhr(async () => {
+      const file = new File(['abc'], 'evil.exe');
+      const handle = xhrUpload('set', file, () => {});
+
+      const xhr = FakeXhr.last;
+      xhr.status = 415;
+      xhr.responseText = JSON.stringify({ detail: 'Unsupported file type: evil.exe' });
+      xhr.onload?.();
+
+      await expect(handle.promise).rejects.toBeInstanceOf(ApiError);
+    }));
+
+  it('xhrUpload abort rejects with an AbortError', async () =>
+    withFakeXhr(async () => {
+      const file = new File(['abc'], 'a.png');
+      const handle = xhrUpload('set', file, () => {});
+
+      handle.abort();
+
+      await expect(handle.promise).rejects.toMatchObject({ name: 'AbortError' });
+      expect(FakeXhr.last.aborted).toBe(true);
+    }));
+});
+

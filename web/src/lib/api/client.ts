@@ -300,3 +300,62 @@ export function galleryImageUrl(runKey: string, filename: string, base = ''): st
 
 export const api = createApi();
 
+export interface UploadHandle {
+  promise: Promise<{ saved: string[] }>;
+  abort: () => void;
+}
+
+/**
+ * Upload one file with progress reporting.
+ *
+ * Uses XMLHttpRequest rather than fetch because fetch exposes no upload
+ * progress in any shipping browser.
+ */
+export function xhrUpload(
+  name: string,
+  file: File,
+  onProgress: (sent: number, total: number) => void
+): UploadHandle {
+  const xhr = new XMLHttpRequest();
+  const formData = new FormData();
+  formData.append('files', file);
+
+  const promise = new Promise<{ saved: string[] }>((resolve, reject) => {
+    xhr.upload.onprogress = (event: ProgressEvent) => {
+      if (event.lengthComputable) {
+        onProgress(event.loaded, event.total);
+      }
+    };
+
+    xhr.onload = () => {
+      let body: any;
+      try {
+        body = JSON.parse(xhr.responseText);
+      } catch {
+        body = xhr.responseText;
+      }
+
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(body);
+        return;
+      }
+      const detail = body?.detail !== undefined ? body.detail : body;
+      reject(new ApiError(xhr.status, detail));
+    };
+
+    xhr.onerror = () => reject(new ApiError(0, 'Network error during upload'));
+
+    xhr.onabort = () => {
+      const err = new Error('Upload canceled');
+      err.name = 'AbortError';
+      reject(err);
+    };
+
+    xhr.open('POST', `/api/datasets/${encodeURIComponent(name)}/upload`);
+    xhr.withCredentials = true;
+    xhr.send(formData);
+  });
+
+  return { promise, abort: () => xhr.abort() };
+}
+
