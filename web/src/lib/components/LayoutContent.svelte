@@ -22,6 +22,7 @@
   import { consoleStore } from '$lib/events/console-store.svelte';
   import { EventClient } from '$lib/events/client';
   import { api } from '$lib/api/client';
+  import { uploadQueue } from '$lib/upload/upload-queue.svelte';
 
   let { children }: { children?: Snippet } = $props();
 
@@ -171,6 +172,13 @@
       },
       onGalleryWarning: (event) => {
         toast.warning(event.message);
+      },
+      onDatasetFileAdded: (event) => {
+        uploadQueue.markProcessed(event.dataset, event.filename);
+        queryClient.invalidateQueries({ queryKey: ['datasets'] });
+        queryClient.invalidateQueries({
+          queryKey: ['datasets', event.dataset, 'files'],
+        });
       },
     });
     eventClient.start();

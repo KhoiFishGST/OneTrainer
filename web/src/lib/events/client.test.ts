@@ -155,3 +155,37 @@ it("notifies training sample and gallery warning callbacks", async () => {
   client.stop();
 });
 
+it('dataset.file.added is routed to onDatasetFileAdded', async () => {
+  const received: any[] = [];
+  let socketInstance: FakeWebSocket | null = null;
+  const store = new ConsoleStore();
+
+  const client = new EventClient({
+    store,
+    getBacklog: async () => ({ stream_id: 's', cursor: 0, revision: 'v1', lines: [], transient: null }),
+    onDatasetFileAdded: (event) => received.push(event),
+    createSocket: (url) => {
+      socketInstance = new FakeWebSocket(url);
+      return socketInstance as any;
+    },
+  });
+
+  client.start();
+  socketInstance!.triggerOpen();
+  await new Promise((r) => setTimeout(r, 0));
+
+  socketInstance!.triggerMessage({
+    type: 'dataset.file.added',
+    dataset: 'ds',
+    filename: 'a.png',
+    item_id: 'a',
+    kind: 'image',
+    seq: 1,
+  });
+
+  expect(received).toEqual([
+    { dataset: 'ds', filename: 'a.png', item_id: 'a', kind: 'image' },
+  ]);
+  client.stop();
+});
+

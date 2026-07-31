@@ -27,6 +27,13 @@ export interface GalleryWarningEvent {
   [key: string]: unknown;
 }
 
+export interface DatasetFileAddedEvent {
+  dataset: string;
+  filename: string;
+  item_id: string;
+  kind: 'image' | 'video' | 'text';
+}
+
 export interface EventClientOptions {
   store: ConsoleStore;
   getBacklog: () => Promise<BacklogData>;
@@ -34,6 +41,7 @@ export interface EventClientOptions {
   onRestart?: () => void;
   onTrainingSample?: (event: GalleryTrainingSampleEvent) => void;
   onGalleryWarning?: (event: GalleryWarningEvent) => void;
+  onDatasetFileAdded?: (event: DatasetFileAddedEvent) => void;
   wsUrl?: string;
   createSocket?: (url: string) => WebSocketLike;
   setTimeout?: (fn: (...args: any[]) => void, ms?: number, ...args: any[]) => any;
@@ -49,6 +57,7 @@ export class EventClient {
   private onRestart?: () => void;
   private onTrainingSample?: (event: GalleryTrainingSampleEvent) => void;
   private onGalleryWarning?: (event: GalleryWarningEvent) => void;
+  private onDatasetFileAdded?: (event: DatasetFileAddedEvent) => void;
   private wsUrl: string;
 
   private createSocket: (url: string) => WebSocketLike;
@@ -69,6 +78,7 @@ export class EventClient {
     this.onRestart = options.onRestart;
     this.onTrainingSample = options.onTrainingSample;
     this.onGalleryWarning = options.onGalleryWarning;
+    this.onDatasetFileAdded = options.onDatasetFileAdded;
 
     let defaultWsUrl = '/api/events';
     if (typeof window !== 'undefined') {
@@ -197,6 +207,16 @@ export class EventClient {
 
     if (event.type === 'gallery_warning') {
       this.onGalleryWarning?.(event);
+    }
+
+    if (event.type === 'dataset.file.added') {
+      this.onDatasetFileAdded?.({
+        dataset: event.dataset,
+        filename: event.filename,
+        item_id: event.item_id,
+        kind: event.kind,
+      });
+      return;
     }
 
     if (event.type === 'console') {
