@@ -5,15 +5,21 @@
   import type { TrainingMetric } from '../../api/types';
   import { Button } from '$lib/components/ui/button';
   import { Slider } from '../ui/slider/index.js';
+  import { formatMetricValue } from './format';
+
+  export interface ChartSeries {
+    key: string;
+    label: string;
+  }
 
   let {
     metrics = [],
-    metricKey = 'loss',
+    series = [],
     title = 'Metrics',
     height = 300,
   } = $props<{
     metrics?: TrainingMetric[];
-    metricKey?: string;
+    series?: ChartSeries[];
     title?: string;
     height?: number;
   }>();
@@ -25,35 +31,93 @@
   let uplotInstance: uPlot | null = null;
   let lastLogScale: boolean | null = null;
 
-  // Filter metrics containing the requested key
-  const validMetrics = $derived(
-    metrics.filter((m: TrainingMetric) => m && typeof m[metricKey] === 'number' && !isNaN(m[metricKey]!))
-  );
+  const SERIES_COLORS = [
+    'rgb(59, 130, 246)',
+    'rgb(245, 158, 11)',
+    'rgb(16, 185, 129)',
+    'rgb(239, 68, 68)',
+    'rgb(168, 85, 247)',
+    'rgb(14, 165, 233)',
+  ];
 
-  function computeEMA(data: number[], alpha: number): number[] {
-    if (data.length === 0) return [];
-    if (alpha <= 0) return [...data];
-    const result = new Array(data.length);
-    let last = data[0];
-    result[0] = last;
-    for (let i = 1; i < data.length; i++) {
-      last = alpha * last + (1 - alpha) * data[i];
+  // EMA over a null-gapped column: gaps stay gaps, and the average carries
+  // across them rather than restarting.
+  function computeEMA(data: (number | null)[], alpha: number): (number | null)[] {
+    const result: (number | null)[] = new Array(data.length).fill(null);
+    let last: number | null = null;
+    for (let i = 0; i < data.length; i++) {
+      const v = data[i];
+      if (v === null) continue;
+      last = last === null || alpha <= 0 ? v : alpha * last + (1 - alpha) * v;
       result[i] = last;
     }
     return result;
   }
 
+  // Each scalar is recorded as its own row, so two series are never in the same
+  // row. uPlot needs one shared x array, so build the sorted union of steps and
+  // null-fill each column; uPlot renders nulls as gaps.
   const chartData = $derived.by(() => {
-    if (validMetrics.length === 0) return null;
-    const xVals = validMetrics.map((m: TrainingMetric, idx: number) => m.step ?? idx);
-    const rawY = validMetrics.map((m: TrainingMetric) => Number(m[metricKey]));
+    if (series.length === 0) return null;
 
-    if (emaFactor > 0) {
-      const smoothedY = computeEMA(rawY, emaFactor);
-      return [xVals, rawY, smoothedY];
+    const perKey = new Map<string, Map<number, number>>();
+    for (const s of series) perKey.set(s.key, new Map());
+    const stepSet = new Set<number>();
+
+    for (let i = 0; i < metrics.length; i++) {
+      const m = metrics[i];
+      if (!m) continue;
+      const step = typeof m.step === 'number' ? m.step : i;
+      let touched = false;
+      for (const s of series) {
+        const v = m[s.key];
+        if (typeof v !== 'number' || Number.isNaN(v)) continue;
+        perKey.get(s.key)!.set(step, v);
+        touched = true;
+      }
+      if (touched) stepSet.add(step);
     }
-    return [xVals, rawY];
+
+    if (stepSet.size === 0) return null;
+
+    const xVals = [...stepSet].sort((a, b) => a - b);
+    const columns: (number | null)[][] = [];
+    for (const s of series) {
+      const map = perKey.get(s.key)!;
+      const column = xVals.map((x) => (map.has(x) ? map.get(x)! : null));
+      columns.push(column);
+      if (emaFactor > 0) columns.push(computeEMA(column, emaFactor));
+    }
+
+    return [xVals, ...columns];
   });
+
+  function buildSeries(): uPlot.Series[] {
+    const built: uPlot.Series[] = [{ label: 'Step' }];
+    const single = series.length === 1 && emaFactor === 0;
+
+    series.forEach((s: ChartSeries, i: number) => {
+      const color = SERIES_COLORS[i % SERIES_COLORS.length];
+      built.push({
+        label: s.label,
+        stroke: color,
+        width: emaFactor > 0 ? 1 : 2,
+        alpha: emaFactor > 0 ? 0.4 : 1,
+        fill: single ? 'rgba(59, 130, 246, 0.08)' : undefined,
+        value: (_u: uPlot, v: number | null) => formatMetricValue(v),
+      });
+      if (emaFactor > 0) {
+        built.push({
+          label: `${s.label} (EMA)`,
+          stroke: color,
+          width: 2.5,
+          value: (_u: uPlot, v: number | null) => formatMetricValue(v),
+        });
+      }
+    });
+
+    return built;
+  }
 
   function initOrUpdateChart() {
     if (!containerEl || !chartData) {
@@ -65,30 +129,13 @@
     }
 
     const width = containerEl.clientWidth || 600;
-
-    const series: uPlot.Series[] = [
-      { label: 'Step' },
-      {
-        label: title,
-        stroke: emaFactor > 0 ? 'rgba(59, 130, 246, 0.4)' : 'rgb(59, 130, 246)',
-        width: emaFactor > 0 ? 1 : 2,
-        fill: emaFactor > 0 ? undefined : 'rgba(59, 130, 246, 0.08)',
-      },
-    ];
-
-    if (emaFactor > 0) {
-      series.push({
-        label: `${title} (EMA)`,
-        stroke: 'rgb(245, 158, 11)',
-        width: 2.5,
-      });
-    }
+    const builtSeries = buildSeries();
 
     const opts: uPlot.Options = {
       title: '',
       width,
       height,
-      series,
+      series: builtSeries,
       scales: {
         x: { time: false },
         y: {
@@ -104,13 +151,16 @@
         {
           stroke: 'rgb(148, 163, 184)',
           grid: { stroke: 'rgba(148, 163, 184, 0.15)' },
+          // Without this uPlot uses Intl.NumberFormat's 3-fraction-digit
+          // default and every learning rate tick renders as "0".
+          values: (_u: uPlot, splits: (number | null)[]) => splits.map(formatMetricValue),
         },
       ],
     };
 
     try {
       if (uplotInstance) {
-        if (lastLogScale === isLogScale && uplotInstance.series.length === series.length) {
+        if (lastLogScale === isLogScale && uplotInstance.series.length === builtSeries.length) {
           try {
             uplotInstance.setData(chartData as uPlot.AlignedData);
             return;
@@ -131,7 +181,6 @@
   }
 
   $effect(() => {
-    // Re-render when chartData, isLogScale, or containerEl changes
     if (chartData && containerEl) {
       initOrUpdateChart();
     }
@@ -220,7 +269,7 @@
   </div>
 
   <div class="relative w-full min-h-[200px]">
-    {#if validMetrics.length === 0}
+    {#if chartData === null}
       <div class="flex items-center justify-center h-[200px] text-muted-foreground text-sm border border-dashed border-border rounded-md">No metric data available</div>
     {:else}
       <div
