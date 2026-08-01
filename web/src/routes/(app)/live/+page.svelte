@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { Sparkles, Archive, Save } from '@lucide/svelte';
   import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
   import { trainingStore } from '$lib/events/training-store';
   import { viewingRunStore } from '$lib/events/viewing-run-store';
   import { api } from '$lib/api/client';
@@ -54,23 +55,51 @@
 
   // Series are discovered from the rows rather than hardcoded, so new parameter
   // groups or new trainer scalars appear on the charts automatically.
-  function discoverSeries(rows: TrainingMetric[], matches: (key: string) => boolean): ChartSeries[] {
-    const keys = new Set<string>();
-    for (const row of rows) {
+  //
+  // The scan is incremental because it runs on every metric event: the store
+  // hands us a fresh array each time, so a full rescan would be O(rows x keys)
+  // per training step, twice over. Scalar keys are stable within a run, so we
+  // only look at rows we have not seen -- plus the newest row, which is the one
+  // that can introduce a key once the store's ring buffer stops growing.
+  let seenKeys = new Set<string>();
+  let seenCount = 0;
+  let seenToken = '';
+
+  function numericKeysOf(rows: TrainingMetric[], token: string): string[] {
+    if (token !== seenToken) {
+      seenToken = token;
+      seenKeys = new Set();
+      seenCount = 0;
+    }
+
+    const start = Math.max(0, Math.min(seenCount, rows.length - 1));
+    for (let i = start; i < rows.length; i++) {
+      const row = rows[i];
       if (!row) continue;
-      for (const key of Object.keys(row)) {
-        if (typeof row[key] === 'number' && matches(key)) keys.add(key);
+      for (const key in row) {
+        if (typeof row[key] === 'number') seenKeys.add(key);
       }
     }
-    return [...keys]
-      .sort()
-      .map((key) => ({ key, label: humanizeMetricKey(key) }));
+    seenCount = rows.length;
+
+    // A fresh sorted array, not the mutable Set: returning the same object
+    // identity every time would let Svelte treat an added key as "unchanged"
+    // and never propagate it to the charts.
+    return [...seenKeys].sort();
   }
 
-  const lossSeries = $derived(
-    discoverSeries(chartMetrics, (k) => k.startsWith('loss_') || k.startsWith('smooth_loss_'))
+  function toSeries(keys: string[], matches: (key: string) => boolean): ChartSeries[] {
+    return keys.filter(matches).map((key) => ({ key, label: humanizeMetricKey(key) }));
+  }
+
+  const metricKeys = $derived(
+    numericKeysOf(chartMetrics, `${viewing.mode}:${viewing.runKey ?? ''}`)
   );
-  const lrSeries = $derived(discoverSeries(chartMetrics, (k) => k.startsWith('lr_')));
+
+  const lossSeries = $derived(
+    toSeries(metricKeys, (k) => k.startsWith('loss_') || k.startsWith('smooth_loss_'))
+  );
+  const lrSeries = $derived(toSeries(metricKeys, (k) => k.startsWith('lr_')));
 
   onMount(async () => {
     try {
@@ -96,6 +125,11 @@
     const requestedRun = $page.url.searchParams.get('run');
     if (requestedRun) {
       await viewingRunStore.showRun(requestedRun);
+    } else {
+      // The store is a module singleton, so without this a run selected before
+      // navigating away would still be showing -- with no ?run= in the URL to
+      // explain it -- when the page remounts.
+      viewingRunStore.showLive();
     }
   });
 
@@ -111,9 +145,14 @@
     announcedTrainingStart = true;
     sonnerToast('Training started', {
       description: 'You are viewing a past run.',
-      action: { label: 'Switch to live', onClick: () => viewingRunStore.showLive() },
+      action: { label: 'Switch to live', onClick: () => backToLive() },
     });
   });
+
+  function backToLive() {
+    viewingRunStore.showLive();
+    syncRunParam('');
+  }
 
   function onSelectRun(event: Event) {
     const value = (event.currentTarget as HTMLSelectElement).value;
@@ -121,6 +160,18 @@
       viewingRunStore.showLive();
     } else {
       viewingRunStore.showRun(value);
+    }
+    syncRunParam(value);
+  }
+
+  // Keep ?run= in step with the selector, so reloading or sharing the URL shows
+  // the run actually on screen rather than whichever one it was opened with.
+  function syncRunParam(runKey: string) {
+    const target = runKey ? `/live?run=${encodeURIComponent(runKey)}` : '/live';
+    try {
+      goto(target, { replaceState: true, keepFocus: true, noScroll: true });
+    } catch (e) {
+      // Navigation is a convenience here; the store is already updated.
     }
   }
 
@@ -264,7 +315,7 @@
             variant="secondary"
             size="sm"
             class="ml-2"
-            onclick={() => viewingRunStore.showLive()}
+            onclick={backToLive}
           >
             Back to live
           </Button>

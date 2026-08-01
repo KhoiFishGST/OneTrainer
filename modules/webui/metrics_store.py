@@ -11,6 +11,13 @@ logger = logging.getLogger(__name__)
 
 METRICS_FILENAME = "metrics.jsonl"
 
+# Sentinel for "no previous step seen yet", so that a genuine None step still
+# compares as a change on the first row.
+_UNSET = object()
+
+# Default ceiling for a historical read, matching the live buffer's cap.
+DEFAULT_READ_LIMIT = 10000
+
 # Sized to cover a run that first samples ~50k steps in while logging several
 # scalars per step. Independent of TrainingService's 10000-row live deque,
 # which would otherwise evict early history before the flush ever happened.
@@ -19,29 +26,75 @@ DEFAULT_FLUSH_ROWS = 200
 DEFAULT_FLUSH_SECONDS = 5.0
 
 
-def read_rows(path: Path) -> list[dict[str, Any]]:
-    """Parse a run's metrics.jsonl.
+def _iter_parsed(path: Path):
+    """Yield the well-formed JSON objects in a metrics file, one per line.
 
     Appends are not atomic, so the final line may be torn. Lines that fail to
     parse -- or that parse to something other than an object -- are skipped
     rather than failing the whole file.
     """
+    with path.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+            except ValueError:
+                continue
+            if isinstance(row, dict):
+                yield row
+
+
+def read_rows(path: Path, limit: int | None = None) -> list[dict[str, Any]]:
+    """Parse a run's metrics.jsonl, optionally downsampled to about `limit` rows.
+
+    A run can log hundreds of thousands of rows -- far more than a chart can
+    draw or a browser should hold. When `limit` is set and the file is longer,
+    the whole curve is returned at lower resolution rather than truncated to a
+    prefix.
+
+    Sampling is by *step*, not by row. Each scalar is recorded as its own row,
+    so a row stride that happened to match the number of scalars per step would
+    keep one series and drop every other one -- blanking a whole chart. Keeping
+    or dropping every row of a step together preserves all series evenly.
+
+    Two passes: the first counts distinct steps and retains nothing, the second
+    keeps only the sampled ones, so peak memory scales with `limit` rather than
+    with file size.
+    """
     path = Path(path)
     if not path.is_file():
         return []
 
-    rows: list[dict[str, Any]] = []
     try:
-        with path.open("r", encoding="utf-8") as handle:
-            for line in handle:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    row = json.loads(line)
-                except ValueError:
-                    continue
-                if isinstance(row, dict):
+        stride = 1
+        if limit is not None and limit > 0:
+            total_steps = 0
+            previous: Any = _UNSET
+            for row in _iter_parsed(path):
+                step = row.get("step")
+                if step != previous:
+                    total_steps += 1
+                    previous = step
+            # Rows per step is unknown, so compare step count against the row
+            # budget; a run with several scalars per step downsamples further,
+            # which is the intent.
+            if total_steps > limit:
+                stride = -(-total_steps // limit)  # ceil, so we never exceed `limit` steps
+
+        rows: list[dict[str, Any]] = []
+        if stride == 1:
+            rows = list(_iter_parsed(path))
+        else:
+            step_index = -1
+            previous = _UNSET
+            for row in _iter_parsed(path):
+                step = row.get("step")
+                if step != previous:
+                    step_index += 1
+                    previous = step
+                if step_index % stride == 0:
                     rows.append(row)
     except OSError:
         logger.exception("Could not read metrics file %s", path)

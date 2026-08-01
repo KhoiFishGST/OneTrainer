@@ -153,3 +153,62 @@ def test_rows_are_written_as_one_compact_json_object_per_line(run_dir):
     text = (run_dir / METRICS_FILENAME).read_text(encoding="utf-8")
     assert text == '{"step":1,"loss_train_step":0.5}\n'
     assert json.loads(text.strip())["step"] == 1
+
+
+def _write_run(run_dir, steps, scalars_per_step=1):
+    """Write a metrics file the way the store does: one row per scalar."""
+    lines = []
+    for step in range(steps):
+        for scalar in range(scalars_per_step):
+            lines.append(json.dumps({"step": step, f"metric_{scalar}": float(step)}))
+    (run_dir / METRICS_FILENAME).write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def test_read_rows_returns_everything_when_under_the_limit(run_dir):
+    _write_run(run_dir, steps=10)
+
+    rows = read_rows(run_dir / METRICS_FILENAME, limit=100)
+
+    assert [r["step"] for r in rows] == list(range(10))
+
+
+def test_read_rows_downsamples_instead_of_truncating(run_dir):
+    # The whole curve at lower resolution beats a truncated prefix: the last
+    # step must survive, or the chart would appear to stop early.
+    _write_run(run_dir, steps=1000)
+
+    rows = read_rows(run_dir / METRICS_FILENAME, limit=100)
+
+    assert len(rows) <= 100
+    assert rows[0]["step"] == 0
+    assert rows[-1]["step"] >= 990
+
+
+def test_read_rows_downsampling_keeps_every_series(run_dir):
+    # Regression: sampling by row rather than by step meant a stride that
+    # matched the number of scalars per step kept one series and dropped the
+    # rest, blanking a whole chart.
+    _write_run(run_dir, steps=400, scalars_per_step=4)
+
+    rows = read_rows(run_dir / METRICS_FILENAME, limit=100)
+
+    present = {key for row in rows for key in row if key != "step"}
+    assert present == {"metric_0", "metric_1", "metric_2", "metric_3"}
+
+
+def test_read_rows_without_a_limit_returns_every_row(run_dir):
+    _write_run(run_dir, steps=50, scalars_per_step=2)
+
+    rows = read_rows(run_dir / METRICS_FILENAME)
+
+    assert len(rows) == 100
+
+
+def test_read_rows_skips_a_torn_final_line_when_downsampling(run_dir):
+    _write_run(run_dir, steps=200)
+    with (run_dir / METRICS_FILENAME).open("a", encoding="utf-8") as handle:
+        handle.write('{"step": 999, "loss')
+
+    rows = read_rows(run_dir / METRICS_FILENAME, limit=20)
+
+    assert all(r["step"] < 200 for r in rows)

@@ -1,7 +1,7 @@
 from modules.webui.config_io import load_train_config
 from modules.webui.config_service import RevisionConflict
 from modules.webui.gallery import GalleryImage, GalleryNotFound
-from modules.webui.metrics_store import read_rows
+from modules.webui.metrics_store import DEFAULT_READ_LIMIT, read_rows
 from modules.webui.state import AppState
 
 from fastapi import APIRouter, HTTPException, Request
@@ -37,14 +37,20 @@ def get_gallery_run(run_key: str, request: Request):
 
 
 @router.get("/gallery/runs/{run_key}/metrics")
-def get_gallery_run_metrics(run_key: str, request: Request):
+def get_gallery_run_metrics(run_key: str, request: Request, limit: int = DEFAULT_READ_LIMIT):
+    """Return a past run's metrics, downsampled to roughly `limit` rows.
+
+    A long run's file can hold hundreds of thousands of rows, so the response is
+    bounded by default rather than streaming the lot to the browser. Pass
+    `limit=0` for the full file.
+    """
     app_state: AppState = request.app.state.webui
     try:
         path = app_state.gallery_service.get_run_metrics_path(run_key)
     except GalleryNotFound as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
 
-    return {"metrics": read_rows(path)}
+    return {"metrics": read_rows(path, limit=limit if limit > 0 else None)}
 
 
 @router.get("/gallery/runs/{run_key}/images/{filename}")

@@ -18,9 +18,7 @@ const MOCK_METRICS = [
 ];
 
 test.describe("metrics replay", () => {
-  test.beforeEach(async ({ page }, testInfo) => {
-    if (!testInfo.project.name.includes("desktop")) test.skip();
-
+  test.beforeEach(async ({ page }) => {
     await page.route("**/api/gallery/runs", (route) =>
       route.fulfill({
         status: 200,
@@ -46,7 +44,7 @@ test.describe("metrics replay", () => {
     await page.route(`**/api/gallery/runs/${RUN_KEY}/load`, (route) =>
       route.fulfill({
         status: 200,
-        json: { revision: "rev-2", draft: {} },
+        json: { config: { workspace_dir: "workspace" }, revision: "rev-2" },
       })
     );
     await page.route(`**/api/gallery/runs/${RUN_KEY}/metrics`, (route) =>
@@ -115,7 +113,11 @@ test.describe("metrics replay", () => {
     await expect(banner).not.toBeVisible();
   });
 
-  test("learning rate axis labels are not all zeros", async ({ page }) => {
+  test("learning rate values are not rendered as zero", async ({ page }) => {
+    // The y-axis ticks are drawn onto the canvas with fillText, so they are not
+    // reachable from the DOM. The legend is real DOM and runs through the same
+    // formatMetricValue, so it is the assertable end of the same wiring: before
+    // the fix, uPlot's default Intl.NumberFormat rendered 1e-4 here as "0".
     await page.goto(`/live?run=${RUN_KEY}`);
     await page.waitForLoadState("networkidle");
 
@@ -125,13 +127,23 @@ test.describe("metrics replay", () => {
     const container = lrCard.locator('[data-testid="metrics-chart-canvas-container"]');
     await expect(container).toBeVisible();
 
-    await expect(container.locator(".u-axis")).not.toHaveCount(0);
+    // The live legend reads "--" until the cursor is over the plot.
+    const over = container.locator(".u-over");
+    await expect(over).toBeVisible();
+    await over.hover();
 
-    const axisText = await container.locator(".u-axis").allInnerTexts();
-    const textCombined = axisText.join(" ");
+    const values = container.locator(".u-legend .u-value");
+    await expect(values).not.toHaveCount(0);
 
-    const tokens = textCombined.split(/\s+/).filter(Boolean);
-    const hasNonZero = tokens.some((token) => token !== "0" && token !== "0.00" && token !== "0.000");
-    expect(hasNonZero).toBe(true);
+    await expect
+      .poll(async () => {
+        const texts = await values.allInnerTexts();
+        // Drop the x-axis (Step) cell; we care about the learning rate series.
+        return texts.slice(1).some((t) => {
+          const token = t.trim();
+          return token !== "" && token !== "--" && Number(token) !== 0;
+        });
+      })
+      .toBe(true);
   });
 });

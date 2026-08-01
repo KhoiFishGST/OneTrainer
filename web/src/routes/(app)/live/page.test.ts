@@ -5,10 +5,15 @@ import LivePage from './+page.svelte';
 import { trainingStore } from '$lib/events/training-store';
 import { viewingRunStore } from '$lib/events/viewing-run-store';
 import { api } from '$lib/api/client';
+import { goto } from '$app/navigation';
 
 const mockPage = writable({ url: new URL('http://localhost/live') });
 vi.mock('$app/stores', () => ({
   page: { subscribe: (fn: any) => mockPage.subscribe(fn) },
+}));
+
+vi.mock('$app/navigation', () => ({
+  goto: vi.fn(),
 }));
 
 describe('Live Dashboard Page', () => {
@@ -17,6 +22,7 @@ describe('Live Dashboard Page', () => {
     viewingRunStore.showLive();
     mockPage.set({ url: new URL('http://localhost/live') });
     vi.restoreAllMocks();
+    vi.mocked(goto).mockClear();
     vi.spyOn(api, 'getGalleryRuns').mockResolvedValue({ runs: [] } as any);
     vi.spyOn(api, 'getCurrentGallery').mockResolvedValue({} as any);
   });
@@ -105,6 +111,51 @@ describe('Live Dashboard Page', () => {
     await fireEvent.change(select, { target: { value: '' } });
 
     expect(screen.queryByTestId('historical-run-banner')).not.toBeInTheDocument();
+  });
+
+  it('keeps the run query param in step with the selector', async () => {
+    vi.spyOn(api, 'getGalleryRuns').mockResolvedValue({
+      runs: [{ key: 'run-a' }, { key: 'run-b' }],
+    } as any);
+    vi.spyOn(api, 'getGalleryRunMetrics').mockResolvedValue({
+      metrics: [{ step: 10, loss_train_step: 0.5 }],
+    } as any);
+
+    mockPage.set({ url: new URL('http://localhost/live?run=run-a') });
+    render(LivePage);
+
+    await screen.findByTestId('historical-run-banner');
+
+    // Selecting a different run must not leave ?run=run-a behind, or a reload
+    // would show the run the user just navigated away from.
+    const select = screen.getByRole('combobox', { name: 'Viewing run' });
+    await fireEvent.change(select, { target: { value: 'run-b' } });
+
+    expect(goto).toHaveBeenCalledWith('/live?run=run-b', expect.objectContaining({ replaceState: true }));
+
+    await fireEvent.change(select, { target: { value: '' } });
+    expect(goto).toHaveBeenLastCalledWith('/live', expect.objectContaining({ replaceState: true }));
+  });
+
+  it('returns to live on remount when the url carries no run param', async () => {
+    vi.spyOn(api, 'getGalleryRuns').mockResolvedValue({ runs: [{ key: 'run-a' }] } as any);
+    vi.spyOn(api, 'getGalleryRunMetrics').mockResolvedValue({
+      metrics: [{ step: 10, loss_train_step: 0.5 }],
+    } as any);
+
+    mockPage.set({ url: new URL('http://localhost/live?run=run-a') });
+    const first = render(LivePage);
+    await screen.findByTestId('historical-run-banner');
+    first.unmount();
+
+    // The store is a module singleton, so a plain /live mount must not inherit
+    // the previously-viewed run with no ?run= in the URL to explain it.
+    mockPage.set({ url: new URL('http://localhost/live') });
+    render(LivePage);
+
+    await vi.waitFor(() => {
+      expect(screen.queryByTestId('historical-run-banner')).not.toBeInTheDocument();
+    });
   });
 });
 

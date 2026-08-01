@@ -1,5 +1,9 @@
 import '@testing-library/jest-dom/vitest';
-import { afterEach } from 'vitest';
+import { afterAll, afterEach } from 'vitest';
+
+// Captured before any test can install fake timers, so the teardown wait below
+// always uses a real one.
+const realSetTimeout = globalThis.setTimeout;
 
 if (typeof window !== 'undefined') {
   if (!window.matchMedia) {
@@ -118,5 +122,16 @@ afterEach(() => {
   if (typeof localStorage !== 'undefined' && localStorage?.clear) {
     localStorage.clear();
   }
+});
+
+// bits-ui's body-scroll-lock restores the body style on a ~24ms timer after the
+// last lock is released. When a file's final test unmounts a dialog, that timer
+// can outlive the jsdom environment and throw "document is not defined" into the
+// run -- failing the whole suite even though every test passed. Which file loses
+// that race varies between runs, so the wait belongs here rather than in any one
+// test file. One short real-timer wait per file lets the timer land while the
+// document still exists.
+afterAll(async () => {
+  await new Promise((resolve) => realSetTimeout(resolve, 40));
 });
 

@@ -86,6 +86,7 @@
     if (!key || !ws) return;
 
     isLoadingRun = true;
+    let loaded = false;
     try {
       let resp;
       try {
@@ -105,8 +106,7 @@
       }
       ws.acceptRemote(resp);
       toast.success(`Loaded config from run ${key}`);
-      // Take the user to that run's curves; the live page reads ?run= on mount.
-      await goto(`/live?run=${encodeURIComponent(key)}`);
+      loaded = true;
     } catch (err: any) {
       const detail = err?.detail;
       if (err?.status === 409) {
@@ -120,6 +120,13 @@
       }
     } finally {
       isLoadingRun = false;
+    }
+
+    // Outside the try: the config is already loaded and the success toast shown,
+    // so a navigation failure must not be reported as "could not load the config".
+    if (loaded) {
+      // Take the user to that run's curves; the live page reads ?run= on mount.
+      await goto(`/live?run=${encodeURIComponent(key)}`);
     }
   }
 
