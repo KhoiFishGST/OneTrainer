@@ -20,6 +20,25 @@ _SCRYPT_DKLEN = 32
 _SALT_BYTES = 16
 
 
+def _coerce_appearance(stored: Any) -> dict[str, Any]:
+    """Validated appearance preferences from a raw stored value.
+
+    Each key is validated independently, so one junk value does not discard
+    the other, and a non-dict (or absent) value falls back entirely.
+    """
+    if not isinstance(stored, dict):
+        stored = {}
+
+    theme = stored.get("theme")
+    animations = stored.get("animations")
+    return {
+        "theme": theme if theme in VALID_THEMES else DEFAULT_APPEARANCE["theme"],
+        "animations": animations
+        if isinstance(animations, bool)
+        else DEFAULT_APPEARANCE["animations"],
+    }
+
+
 def _derive(plaintext: str, salt: bytes) -> bytes:
     return hashlib.scrypt(
         plaintext.encode("utf-8"),
@@ -107,18 +126,7 @@ class SettingsStore:
         independently, so one junk value does not discard the other.
         """
         document = self._read()
-        stored = document.get("appearance") if document is not None else None
-        if not isinstance(stored, dict):
-            stored = {}
-
-        theme = stored.get("theme")
-        animations = stored.get("animations")
-        return {
-            "theme": theme if theme in VALID_THEMES else DEFAULT_APPEARANCE["theme"],
-            "animations": animations
-            if isinstance(animations, bool)
-            else DEFAULT_APPEARANCE["animations"],
-        }
+        return _coerce_appearance(document.get("appearance") if document is not None else None)
 
     def set_appearance(
         self,
@@ -135,7 +143,7 @@ class SettingsStore:
             raise ValueError(f"unknown theme: {theme!r}")
 
         document = self._read_for_update()
-        current = self.get_appearance()
+        current = _coerce_appearance(document.get("appearance"))
         if theme is not None:
             current["theme"] = theme
         if animations is not None:

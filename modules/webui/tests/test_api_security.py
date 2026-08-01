@@ -1,5 +1,6 @@
 from modules.webui.app import create_app
 from modules.webui.console import ConsoleCapture
+from modules.webui.settings_store import SettingsStore
 from modules.webui.state import WebUISettings
 
 from fastapi.testclient import TestClient
@@ -15,6 +16,29 @@ def make_client(tmp_path):
         dev=True,
     )
     return TestClient(create_app(settings))
+
+
+def test_appearance_requires_authentication_when_a_password_is_set(tmp_path):
+    (tmp_path / "webui.json").write_text("{}", encoding="utf-8")
+    SettingsStore(tmp_path / "webui.json").set_password("hunter2")
+
+    with make_client(tmp_path) as client:
+        assert client.get("/api/appearance").status_code == 401
+        assert client.put("/api/appearance", json={"theme": "light"}).status_code == 401
+
+        # /api/health is public by design. Asserting it here means this test
+        # fails loudly if someone widens the public set to cover everything,
+        # rather than passing vacuously against a client that cannot reach
+        # any route at all.
+        assert client.get("/api/health").status_code == 200
+
+        token = client.post("/api/auth/login", json={"password": "hunter2"}).json()["token"]
+        authed = client.get(
+            "/api/appearance", headers={"Authorization": f"Bearer {token}"}
+        )
+        assert authed.status_code == 200
+        # The rejected PUT must not have been applied on its way out.
+        assert authed.json() == {"theme": "system", "animations": True}
 
 
 def test_health_reports_build_and_startup_warnings(tmp_path):
