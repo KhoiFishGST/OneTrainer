@@ -92,11 +92,13 @@ class GalleryService:
         root_dir: Path,
         workspace_provider: Callable[[], str | Path],
         warning_sink: Callable[[str, dict[str, Any]], None] | None = None,
+        run_resolved_sink: Callable[[Path], None] | None = None,
         thumbnail_max_size: tuple[int, int] = (512, 512),
     ) -> None:
         self._root_dir = root_dir.resolve()
         self._workspace_provider = workspace_provider
         self._warning_sink = warning_sink
+        self._run_resolved_sink = run_resolved_sink
         self._thumbnail_max_size = thumbnail_max_size
         self._lock = threading.RLock()
 
@@ -229,6 +231,12 @@ class GalleryService:
         self._active_run_key = run_key
         self._active_run_dir = target_dir
         self._resolved_config_filename = candidate.name
+
+        # Metrics start at step 1 but this only runs on the first sample batch,
+        # so this is the signal that buffered rows finally have somewhere to go.
+        if self._run_resolved_sink is not None:
+            with contextlib.suppress(Exception):
+                self._run_resolved_sink(target_dir)
 
     def begin_batch(
         self,

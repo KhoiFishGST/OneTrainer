@@ -33,10 +33,12 @@ class TrainingService:
         self,
         event_bus: Any | None = None,
         sampling_coordinator: Any | None = None,
+        metrics_store: Any | None = None,
     ):
         self._lock = RLock()
         self._event_bus = event_bus
         self._sampling_coordinator = sampling_coordinator
+        self._metrics_store = metrics_store
         self._state = TrainingState.IDLE
         self._step = 0
         self._max_steps = 0
@@ -160,6 +162,13 @@ class TrainingService:
 
         with self._lock:
             self._metrics.append(data)
+
+        if self._metrics_store is not None:
+            # Persistence is best-effort; it must never break the training loop.
+            try:
+                self._metrics_store.record(data)
+            except Exception:
+                logger.exception("Failed to persist training metric")
 
         self._emit_event(EventType.TRAINING_METRIC, data)
         return data
@@ -327,6 +336,12 @@ class TrainingService:
                 except Exception as e:
                     logging.exception(f"TrainingService: Error in sampling_coordinator.begin_training: {e}")
 
+            if self._metrics_store is not None:
+                try:
+                    self._metrics_store.begin_training()
+                except Exception as e:
+                    logging.exception(f"TrainingService: Error in metrics_store.begin_training: {e}")
+
             try:
                 import json
                 import os
@@ -438,6 +453,12 @@ class TrainingService:
                         self._sampling_coordinator.finish_training()
                     except Exception as e:
                         logging.exception(f"TrainingService: Error in sampling_coordinator.finish_training: {e}")
+
+                if self._metrics_store is not None:
+                    try:
+                        self._metrics_store.end_training()
+                    except Exception as e:
+                        logging.exception(f"TrainingService: Error in metrics_store.end_training: {e}")
 
         except Exception as e:
             import logging

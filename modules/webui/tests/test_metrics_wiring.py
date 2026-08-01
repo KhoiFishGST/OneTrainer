@@ -1,0 +1,95 @@
+from pathlib import Path
+
+from modules.webui.metrics_store import METRICS_FILENAME, read_rows
+from modules.webui.training import TrainingService
+
+
+class RecordingStore:
+    def __init__(self):
+        self.rows = []
+        self.began = 0
+        self.ended = 0
+
+    def begin_training(self):
+        self.began += 1
+
+    def record(self, row):
+        self.rows.append(row)
+
+    def end_training(self):
+        self.ended += 1
+
+
+def test_record_metric_forwards_to_the_store():
+    store = RecordingStore()
+    service = TrainingService(metrics_store=store)
+
+    service.record_metric({"step": 1, "loss_train_step": 0.5})
+
+    assert len(store.rows) == 1
+    assert store.rows[0]["loss_train_step"] == 0.5
+    # The live deque still receives it too.
+    assert len(service.get_metrics()) == 1
+
+
+def test_record_metric_survives_a_broken_store():
+    class Exploding:
+        def record(self, row):
+            raise RuntimeError("disk on fire")
+
+    service = TrainingService(metrics_store=Exploding())
+
+    service.record_metric({"step": 1})  # must not raise
+
+    assert len(service.get_metrics()) == 1
+
+
+def test_record_metric_works_without_a_store():
+    service = TrainingService()
+    service.record_metric({"step": 1})
+    assert len(service.get_metrics()) == 1
+
+
+def test_gallery_notifies_the_sink_when_a_run_resolves(tmp_path):
+    from modules.util.config.TrainConfig import TrainConfig
+    from modules.webui.gallery import GalleryService, TrainingProgressSnapshot
+
+    workspace = tmp_path / "ws"
+    (workspace / "config").mkdir(parents=True)
+
+    resolved: list[Path] = []
+    service = GalleryService(
+        root_dir=tmp_path,
+        workspace_provider=lambda: workspace,
+        run_resolved_sink=resolved.append,
+    )
+
+    config = TrainConfig.default_values()
+    config.save_filename_prefix = ""
+    service.begin_training(config)
+
+    # The config file must appear after begin_training so it registers as a new
+    # candidate -- this mirrors what GenericTrainer does at run start.
+    (workspace / "config" / "run-20260801.json").write_text("{}", encoding="utf-8")
+
+    progress = TrainingProgressSnapshot(epoch=0, epoch_step=0, global_step=1)
+    service.begin_batch([], config, progress)
+
+    assert resolved == [workspace / "web" / "samples" / "run-20260801"]
+
+
+def test_buffered_rows_land_on_disk_once_the_gallery_resolves(tmp_path):
+    from modules.webui.metrics_store import MetricsStore
+
+    store = MetricsStore()
+    service = TrainingService(metrics_store=store)
+
+    store.begin_training()
+    service.record_metric({"step": 1, "loss_train_step": 0.5})
+    service.record_metric({"step": 2, "loss_train_step": 0.4})
+
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    store.bind_run_dir(run_dir)
+
+    assert [r["step"] for r in read_rows(run_dir / METRICS_FILENAME)] == [1, 2]

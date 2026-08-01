@@ -24,6 +24,7 @@ from modules.webui.directories import DirectoryService
 from modules.webui.events import EventHub, EventType
 from modules.webui.gallery import GalleryService
 from modules.webui.media import MediaService
+from modules.webui.metrics_store import MetricsStore
 from modules.webui.presets import PresetService
 from modules.webui.routers.appearance import router as appearance_router
 from modules.webui.routers.auth import router as auth_router
@@ -125,6 +126,7 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
 
         await event_hub.start()
 
+        metrics_store = MetricsStore()
         gallery_svc = GalleryService(
             root_dir=settings.root_dir,
             workspace_provider=lambda: config_svc.current_workspace,
@@ -132,6 +134,7 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
                 EventType.GALLERY_WARNING.value,
                 {"message": message, **payload},
             ),
+            run_resolved_sink=metrics_store.bind_run_dir,
         )
         sampling_svc = SamplingCoordinator(
             root_dir=settings.root_dir,
@@ -139,7 +142,11 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
             gallery=gallery_svc,
         )
         sampling_svc.recover_pending()
-        training_svc = TrainingService(event_bus=event_hub, sampling_coordinator=sampling_svc)
+        training_svc = TrainingService(
+            event_bus=event_hub,
+            sampling_coordinator=sampling_svc,
+            metrics_store=metrics_store,
+        )
         media_svc = MediaService(root_dir=settings.root_dir)
         settings_store = SettingsStore(settings.root_dir / "webui.json")
 
