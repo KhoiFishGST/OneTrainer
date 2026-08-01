@@ -79,6 +79,28 @@ test.describe("Overlay motion", () => {
     await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 
+  test("a toast transitions at the token duration", async ({ page }) => {
+    // svelte-sonner ships its own durations, so the only thing that proves the
+    // app.css rule wins is a real toast in a real cascade. Failing the
+    // appearance save is the cheapest deterministic trigger: it raises the
+    // error toast and rolls itself back, leaving no server state behind.
+    await page.route("**/api/appearance", async (route) => {
+      if (route.request().method() === "PUT") {
+        await route.abort();
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.goto("/model");
+    await page.getByRole("button", { name: /Switch to (light|dark) theme/ }).click();
+
+    const toastEl = page.locator("[data-sonner-toast]").first();
+    await expect(toastEl).toBeVisible();
+    const duration = await toastEl.evaluate((el) => getComputedStyle(el).transitionDuration);
+    expect(duration).toBe("0.2s");
+  });
+
   test("the rail transitions its width at the layout duration", async ({ page }) => {
     await page.goto("/model");
     const rail = page.locator(".rail").first();

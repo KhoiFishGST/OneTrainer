@@ -230,7 +230,7 @@
     max-width: 320px;
     width: max-content;
     white-space: normal;
-    animation: fadeIn 0.15s ease-out;
+    animation: fadeIn var(--motion-duration-enter) var(--motion-ease-enter);
   }
 
   .field-tooltip::after {

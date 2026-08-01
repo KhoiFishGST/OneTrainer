@@ -39,7 +39,7 @@
       aria-label="Overall upload progress"
       class="h-1.5 w-full overflow-hidden rounded-full bg-muted"
     >
-      <div class="h-full bg-primary transition-[width] duration-200" style="width: {percent}%"></div>
+      <div class="h-full bg-primary transition-[width] duration-[var(--motion-duration-enter)] ease-[var(--motion-ease-enter)]" style="width: {percent}%"></div>
     </div>
   </div>
   <Button variant="ghost" size="sm" onclick={onCancelAll}>Cancel All</Button>

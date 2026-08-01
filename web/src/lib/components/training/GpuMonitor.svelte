@@ -253,7 +253,7 @@
   .progress-bar-fill {
     height: 100%;
     border-radius: 4px;
-    transition: width 0.3s ease;
+    transition: width var(--motion-duration-layout) var(--motion-ease-enter);
   }
 
   .progress-bar-fill.vram {

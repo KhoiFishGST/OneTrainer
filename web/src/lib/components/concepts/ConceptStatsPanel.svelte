@@ -515,7 +515,7 @@
     width: 100%;
     background: var(--primary);
     border-radius: 3px;
-    transition: height 0.2s ease;
+    transition: height var(--motion-duration-enter) var(--motion-ease-enter);
   }
 
   .bar-ratio-lbl {

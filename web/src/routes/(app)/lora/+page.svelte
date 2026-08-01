@@ -116,7 +116,9 @@
     padding: 0;
     margin: 0;
     min-width: 0;
-    transition: opacity 0.2s ease, filter 0.2s ease;
+    transition:
+      opacity var(--motion-duration-enter) var(--motion-ease-enter),
+      filter var(--motion-duration-enter) var(--motion-ease-enter);
   }
 
   .lora-fieldset:disabled {

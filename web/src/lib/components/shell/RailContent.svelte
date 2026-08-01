@@ -189,6 +189,9 @@
   .nav-label {
     white-space: nowrap;
     overflow: hidden;
-    transition: opacity 0.15s ease 0.05s;
+    /* Matches the rail's own width transition: the label is part of the
+       same gesture, and both must collapse together when the Animations
+       setting is off. */
+    transition: opacity var(--motion-duration-layout) var(--motion-ease-enter);
   }
 </style>

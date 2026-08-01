@@ -167,6 +167,25 @@ html[data-motion='off'] {
   --motion-scale: 1;
 }
 
+/*
+  Zeroing the tokens only reaches motion that reads them. Anything with a
+  hardcoded duration -- most of it vendored, where we cannot edit the source --
+  would keep animating with animations turned off, which makes the setting a
+  lie. The prefers-reduced-motion block below already carries a blanket clamp
+  for exactly this reason; the app's own switch needs the same backstop.
+
+  Durations are collapsed, never removed: `animation: none` would strand a
+  closing bits-ui overlay in the DOM, because it stays mounted until
+  animationend fires.
+*/
+html[data-motion='off'] *,
+html[data-motion='off'] *::before,
+html[data-motion='off'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
 .dark {
   color-scheme: dark;
 
@@ -258,11 +277,18 @@ body {
 /* Reduced motion overrides */
 @media (prefers-reduced-motion: reduce) {
   /*
-    Kill switch two of two, and the one that wins. Overriding the tokens (rather
-    than only clamping via the blanket rule below) means every token-driven
-    transition collapses too, including the JS-side motionEnabled() checks that
-    read the same signal. The app's Animations setting can turn motion off but
-    can never turn it back on against this.
+    Kill switch two of two. Overriding the tokens (rather than only clamping via
+    the blanket rule below) means every token-driven transition collapses too,
+    including the JS-side motionEnabled() checks that read the same signal.
+
+    The composition is one-way -- the app's Animations setting can turn motion
+    off but can never turn it back on against the OS -- and NOT because this
+    block outranks the other. It does not: `html[data-motion='off']` is (0,1,1)
+    against this `:root`'s (0,1,0), so the app's kill switch would win a
+    head-to-head. It holds only because the app's ON state is expressed as the
+    ABSENCE of the attribute, so there is no rule here for the OS veto to lose
+    to. Adding an `html[data-motion='on'] { ... }` block would silently defeat
+    the veto; keep ON meaning "no attribute".
   */
   :root {
     --motion-duration-enter: 0.01ms;
@@ -531,6 +557,17 @@ body {
   200ms reads as a snap.
 */
 .rail {
+  transition-duration: var(--motion-duration-layout);
+  transition-timing-function: var(--motion-ease-enter);
+}
+
+/*
+  Same vendored-source problem as the rail above, in the same file: the
+  sidebar gap element carries a hardcoded `duration-200`, which no token
+  reaches. `src/lib/components/ui/**` is vendored and not edited, so it is
+  retargeted from here. Unlayered, so it beats the layered Tailwind utility.
+*/
+[data-slot='sidebar-gap'] {
   transition-duration: var(--motion-duration-layout);
   transition-timing-function: var(--motion-ease-enter);
 }

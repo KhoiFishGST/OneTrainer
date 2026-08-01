@@ -45,7 +45,7 @@
         aria-label="Upload progress for {entry.filename}"
         class="w-full h-2 rounded-full bg-muted overflow-hidden"
       >
-        <div class="h-full bg-primary transition-[width] duration-200" style="width: {percent}%"></div>
+        <div class="h-full bg-primary transition-[width] duration-[var(--motion-duration-enter)] ease-[var(--motion-ease-enter)]" style="width: {percent}%"></div>
       </div>
       <span class="text-xs text-muted-foreground">
         {formatBytes(entry.sent)} / {formatBytes(entry.total)}

@@ -286,7 +286,7 @@
     height: 100%;
     background: linear-gradient(90deg, rgb(59, 130, 246), rgb(99, 102, 241));
     border-radius: 6px;
-    transition: width 0.3s ease;
+    transition: width var(--motion-duration-layout) var(--motion-ease-enter);
   }
 
   .metrics-summary-grid {
