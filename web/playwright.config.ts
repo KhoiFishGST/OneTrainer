@@ -29,7 +29,7 @@ export default defineConfig({
     {
       name: "chromium-desktop",
       testMatch:
-        /phase-a|phase-b|phase-c|console|theme|responsive-workflows|accessibility|paint-states|dialog-width|gallery-viewer|perf-budget|hover-states|motion/,
+        /phase-a|phase-b|phase-c|console|theme|responsive-workflows|accessibility|paint-states|dialog-width|gallery-viewer|perf-budget|hover-states|motion|metrics-replay/,
       use: Object.assign({}, devices["Desktop Chrome"], {
         viewport: { width: 1280, height: 720 },
       }),
