@@ -1,6 +1,6 @@
 <script lang="ts">
   import { consoleStore, type ConsoleStore } from '$lib/events/console-store.svelte';
-  import { onMount, tick } from 'svelte';
+  import { tick } from 'svelte';
   import { Download, ArrowDown, Pause, Play, Trash2, Copy, Check } from '@lucide/svelte';
   import { Button } from '$lib/components/ui/button';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
@@ -181,10 +181,35 @@
     return classes.filter((c) => ALLOWED_CLASSES.has(c)).join(' ');
   }
 
-  onMount(() => {
-    if (containerRef) {
-      containerHeight = containerRef.clientHeight;
+  /*
+   * The viewport's height drives how many rows are virtualised, so a wrong
+   * measurement shows a nearly empty console. Measuring once at mount is not
+   * enough: LayoutContent preloads the drawer on every route and the drawer
+   * keeps this mounted while closed at `height: 0`, so a mount-time read is
+   * 0, and nothing else recomputes it (the open-gated effect only syncs rows,
+   * and handleScroll needs a scroll event a short backlog never fires).
+   *
+   * A ResizeObserver measures whenever the element actually has a size --
+   * when the drawer expands (after the height transition has run, not
+   * mid-flight) and on window resize, which nothing handled before.
+   *
+   * A zero height is never a useful answer, so it is ignored and the last
+   * good measurement (or the 300 default) is kept instead.
+   */
+  $effect(() => {
+    const el = containerRef;
+    if (!el) return;
+
+    if (typeof ResizeObserver === 'undefined') {
+      if (el.clientHeight > 0) containerHeight = el.clientHeight;
+      return;
     }
+
+    const observer = new ResizeObserver(() => {
+      if (el.clientHeight > 0) containerHeight = el.clientHeight;
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
   });
 </script>
 

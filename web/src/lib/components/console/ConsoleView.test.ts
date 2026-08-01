@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import { afterEach, expect, it, vi } from 'vitest';
+import { tick } from 'svelte';
 import ConsoleView from './ConsoleView.svelte';
 import { ConsoleStore } from '$lib/events/console-store.svelte';
 
@@ -160,4 +161,72 @@ it('disables the copy button when there is nothing to copy', async () => {
   render(ConsoleView, { store });
 
   expect(screen.getByRole('button', { name: /copy to clipboard/i })).toBeDisabled();
+});
+
+it('fills the viewport with rows once the drawer that mounted it closed expands', async () => {
+  // LayoutContent preloads the console drawer on every route, so this
+  // component mounts inside a collapsed (height: 0) drawer. A mount-time
+  // clientHeight read therefore measures 0 and virtualisation collapses to a
+  // handful of rows that never recover, because nothing else recomputes the
+  // height. Reproduce that exact sequence: mount closed, then give the
+  // element a real size and let the ResizeObserver report it.
+  const store = new ConsoleStore();
+  store.installBacklog({
+    stream_id: 's1',
+    cursor: 100,
+    revision: 'v1',
+    lines: Array.from({ length: 100 }, (_, i) => ({
+      id: i + 1,
+      spans: [{ text: `line ${i + 1}`, classes: [] }],
+      overwrite: false,
+      channel: 'console' as const,
+    })),
+    transient: null,
+  });
+
+  // jsdom reports clientHeight: 0 for every element, so the expanded size has
+  // to be faked. Only the scrolling viewport is given one.
+  let viewportHeight = 0;
+  const originalClientHeight = Object.getOwnPropertyDescriptor(
+    Element.prototype,
+    'clientHeight'
+  );
+  Object.defineProperty(Element.prototype, 'clientHeight', {
+    get(this: Element) {
+      return this.classList.contains('terminal-viewport') ? viewportHeight : 0;
+    },
+    configurable: true,
+  });
+
+  const observers: Array<() => void> = [];
+  const originalResizeObserver = window.ResizeObserver;
+  window.ResizeObserver = class {
+    constructor(private callback: () => void) {}
+    observe() {
+      observers.push(() => this.callback());
+    }
+    unobserve() {}
+    disconnect() {}
+  } as any;
+  (globalThis as any).ResizeObserver = window.ResizeObserver;
+
+  try {
+    const { rerender } = render(ConsoleView, { store, open: false });
+
+    viewportHeight = 400;
+    await rerender({ store, open: true });
+    for (const fire of observers) fire();
+    await tick();
+
+    // 400px of viewport at 20px per row is 20 rows, plus the 5-row buffer.
+    expect(document.querySelectorAll('.console-row').length).toBe(25);
+  } finally {
+    window.ResizeObserver = originalResizeObserver;
+    (globalThis as any).ResizeObserver = originalResizeObserver;
+    if (originalClientHeight) {
+      Object.defineProperty(Element.prototype, 'clientHeight', originalClientHeight);
+    } else {
+      delete (Element.prototype as any).clientHeight;
+    }
+  }
 });
