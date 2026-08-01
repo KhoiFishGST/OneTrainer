@@ -58,27 +58,27 @@ selection, Python version, low-memory mode, etc.), see
 
 Theme and animation preferences live under **General → Web UI**.
 
-The app's motion feel ("Crisp") is a single set of `--motion-*` custom
-properties in `web/src/app.css`, inside the `/* motion-tokens:start */` …
-`/* motion-tokens:end */` markers. Everything that animates references these
-tokens and nothing else, so retuning the whole app is an edit to that one
-block:
+The app's motion feel (Material-aligned/Standard) is a single set of
+`--motion-*` custom properties in `web/src/app.css`, inside the
+`/* motion-tokens:start */` … `/* motion-tokens:end */` markers. Everything
+that animates references these tokens and nothing else, so retuning the whole
+app is an edit to that one block:
 
 | Token | Value |
 | --- | --- |
-| `--motion-duration-enter` | 90ms |
-| `--motion-duration-exit` | 70ms |
-| `--motion-duration-layout` | 120ms |
+| `--motion-duration-enter` | 200ms |
+| `--motion-duration-exit` | 150ms |
+| `--motion-duration-layout` | 300ms |
 | `--motion-ease-enter` | `cubic-bezier(0, 0, 0.2, 1)` |
 | `--motion-ease-exit` | `cubic-bezier(0.4, 0, 1, 1)` |
-| `--motion-travel` | 2px |
-| `--motion-scale` | 0.99 |
+| `--motion-travel` | 8px |
+| `--motion-scale` | 0.98 |
 
 Two relationships are deliberate and should not be "normalised" away: exits
 are faster than entrances (an entrance is information, an exit is an
 obstacle), and `--motion-duration-layout` is longer than the enter/exit
 durations because the rail travels 112px and the console drawer travels its
-full height, versus 2px for overlays -- 112px crammed into 90ms would read as
+full height, versus 8px for overlays -- 112px crammed into 200ms would read as
 a snap.
 
 There are two kill switches, and they compose one-way:

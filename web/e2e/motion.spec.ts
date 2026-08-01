@@ -5,13 +5,13 @@ test.describe("Overlay motion", () => {
     if (!testInfo.project.name.includes("desktop")) test.skip();
   });
 
-  test("a dialog animates in at the Crisp enter duration", async ({ page }) => {
+  test("a dialog animates in at the Material-aligned enter duration", async ({ page }) => {
     await page.goto("/concepts");
     await page.getByRole("button", { name: /Add (First )?Concept/i }).first().click();
     const dlg = page.getByRole("dialog").first();
     await expect(dlg).toBeVisible();
     const duration = await dlg.evaluate((el) => getComputedStyle(el).animationDuration);
-    expect(duration).toBe("0.09s");
+    expect(duration).toBe("0.2s");
   });
 
   test("the dialog scrim animates too", async ({ page }) => {
@@ -20,7 +20,7 @@ test.describe("Overlay motion", () => {
     await expect(page.getByRole("dialog").first()).toBeVisible();
     const scrim = page.locator("[data-dialog-overlay]").first();
     const duration = await scrim.evaluate((el) => getComputedStyle(el).animationDuration);
-    expect(duration).toBe("0.09s");
+    expect(duration).toBe("0.2s");
   });
 
   test("data-motion=off collapses the duration instead of removing the animation", async ({ page }) => {
@@ -51,6 +51,6 @@ test.describe("Overlay motion", () => {
     const rail = page.locator(".rail").first();
     await expect(rail).toBeAttached();
     const duration = await rail.evaluate((el) => getComputedStyle(el).transitionDuration);
-    expect(duration).toBe("0.12s");
+    expect(duration).toBe("0.3s");
   });
 });

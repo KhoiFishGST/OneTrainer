@@ -6,10 +6,10 @@
  * two ever disagree — do not change one without the other.
  */
 export const MOTION = {
-  enterMs: 90,
-  exitMs: 70,
-  layoutMs: 120,
-  travelPx: 2,
+  enterMs: 200,
+  exitMs: 150,
+  layoutMs: 300,
+  travelPx: 8,
 } as const;
 
 /**

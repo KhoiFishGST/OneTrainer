@@ -126,26 +126,26 @@
 
 /* motion-tokens:start */
 /*
-  The single definition of the app's motion scale ("Crisp").
+  The single definition of the app's motion scale (Material-aligned).
 
   Everything that animates references these and nothing else, so the whole feel
   is retunable here. Two properties are load-bearing and must not be
   "normalised": exits are deliberately faster than entrances (an entrance is
   information, an exit is an obstacle), and travel is coupled to duration
-  (2px over 280ms looks broken; 14px over 90ms looks like a jump cut).
+  (8px over 600ms looks broken; 40px over 200ms looks like a jump cut).
 
   --motion-duration-layout is longer because the rail travels 112px
   (48px -> 160px) and the console drawer travels its full height, while
-  overlays travel 2px. 112px crammed into 90ms reads as a snap.
+  overlays travel 8px. 112px crammed into 200ms reads as a snap.
 */
 :root {
-  --motion-duration-enter: 90ms;
-  --motion-duration-exit: 70ms;
-  --motion-duration-layout: 120ms;
+  --motion-duration-enter: 200ms;
+  --motion-duration-exit: 150ms;
+  --motion-duration-layout: 300ms;
   --motion-ease-enter: cubic-bezier(0, 0, 0.2, 1);
   --motion-ease-exit: cubic-bezier(0.4, 0, 1, 1);
-  --motion-travel: 2px;
-  --motion-scale: 0.99;
+  --motion-travel: 8px;
+  --motion-scale: 0.98;
 }
 /* motion-tokens:end */
 
@@ -290,7 +290,7 @@ body {
   `@import "tailwindcss"` with no such plugin, so every one of those utilities
   compiled to nothing and the sheet popped in and out with no transition at
   all. The plugin is still not installed because its durations and travel are
-  hardcoded per-component, so the Crisp scale would have to be edited into
+  hardcoded per-component, so the motion scale would have to be edited into
   nine vendored files instead of living in one token block -- the sheet's
   slide is hand-written here instead.
 
@@ -528,7 +528,7 @@ body {
 
   The rail uses the layout duration, not the enter duration -- it travels
   112px (--rail-compact 48px to --rail-expanded 160px), and that distance in
-  90ms reads as a snap.
+  200ms reads as a snap.
 */
 .rail {
   transition-duration: var(--motion-duration-layout);

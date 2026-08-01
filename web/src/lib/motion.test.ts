@@ -16,14 +16,14 @@ function token(name: string): string {
 }
 
 describe('motion tokens', () => {
-  it('defines the Crisp scale in app.css', () => {
-    expect(token('motion-duration-enter')).toBe('90ms');
-    expect(token('motion-duration-exit')).toBe('70ms');
-    expect(token('motion-duration-layout')).toBe('120ms');
+  it('defines the Material-aligned scale in app.css', () => {
+    expect(token('motion-duration-enter')).toBe('200ms');
+    expect(token('motion-duration-exit')).toBe('150ms');
+    expect(token('motion-duration-layout')).toBe('300ms');
     expect(token('motion-ease-enter')).toBe('cubic-bezier(0, 0, 0.2, 1)');
     expect(token('motion-ease-exit')).toBe('cubic-bezier(0.4, 0, 1, 1)');
-    expect(token('motion-travel')).toBe('2px');
-    expect(token('motion-scale')).toBe('0.99');
+    expect(token('motion-travel')).toBe('8px');
+    expect(token('motion-scale')).toBe('0.98');
   });
 
   it('keeps motion.ts in sync with app.css', () => {

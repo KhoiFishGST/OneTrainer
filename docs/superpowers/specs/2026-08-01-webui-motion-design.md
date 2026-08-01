@@ -39,32 +39,34 @@ scale, and give users one place to turn motion off.
 - No motion on progress indicators.
 - No changes to `TrainConfig` or the training config schema.
 
-## Motion scale: Crisp
+## Motion scale: Crisp, retuned to Material-aligned
 
 Chosen from a live three-way comparison (Crisp / Standard / Soft) rendered in
-the app's own dark tokens.
+the app's own dark tokens. Crisp shipped first; after live review the user
+found it too fast to perceive and the values below were retuned to the
+Material-aligned numbers that actually shipped.
 
 | Property | Value |
 | --- | --- |
-| Enter duration | 90ms |
-| Exit duration | 70ms |
+| Enter duration | 200ms |
+| Exit duration | 150ms |
 | Enter easing | `cubic-bezier(0, 0, 0.2, 1)` (decelerate) |
 | Exit easing | `cubic-bezier(0.4, 0, 1, 1)` (accelerate) |
-| Travel | 2px |
-| Scale | 0.99 |
-| Layout-move duration | 120ms |
+| Travel | 8px |
+| Scale | 0.98 |
+| Layout-move duration | 300ms |
 
 Two properties of this scale are load-bearing and must not be "cleaned up"
 during implementation:
 
 - **Exits are faster than entrances.** An entrance is information — it shows you
   where a thing came from. An exit is an obstacle. They are not symmetric.
-- **Travel is coupled to duration.** 2px over 280ms looks broken; 14px over 90ms
+- **Travel is coupled to duration.** 8px over 600ms looks broken; 40px over 200ms
   looks like a jump cut. Changing one without the other degrades the result.
 
-`--motion-duration-layout` (120ms) exists for a single reason: the rail moves
+`--motion-duration-layout` (300ms) exists for a single reason: the rail moves
 112px (48px → 160px) and the console drawer moves its full height, while
-overlays move 2px. Forcing 112px into 90ms reads as a snap. It is still well
+overlays move 8px. Forcing 112px into 200ms reads as a snap. It is still well
 below the threshold where a user perceives waiting.
 
 ## Architecture
