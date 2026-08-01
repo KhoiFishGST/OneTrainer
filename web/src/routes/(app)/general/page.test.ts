@@ -108,7 +108,7 @@ vi.mock("$lib/config/context", () => ({
 }));
 
 describe("General page subnav tabs", () => {
-  it("renders 4 text-only tabs and switches between combined panels", async () => {
+  it("renders 5 text-only tabs and switches between combined panels", async () => {
     render(GeneralPage);
 
     const tabs = screen.getAllByRole("tab");
@@ -117,6 +117,7 @@ describe("General page subnav tabs", () => {
       "Debug",
       "Tensors",
       "Hardware",
+      "Web UI",
     ]);
 
     // Workspace tab active by default
@@ -137,5 +138,10 @@ describe("General page subnav tabs", () => {
     await fireEvent.click(screen.getByRole("tab", { name: "Hardware" }));
     expect(screen.getByLabelText("Dataloader Threads")).toBeInTheDocument();
     expect(screen.getByLabelText("Multi-GPU")).toBeInTheDocument();
+  });
+
+  it('offers a Web UI sub-tab', async () => {
+    render(GeneralPage);
+    expect(await screen.findByRole('tab', { name: 'Web UI' })).toBeInTheDocument();
   });
 });

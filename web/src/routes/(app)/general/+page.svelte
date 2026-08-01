@@ -5,6 +5,7 @@
   import RoutePage from '$lib/components/layout/RoutePage.svelte';
   import FormPageSkeleton from '$lib/components/loading/FormPageSkeleton.svelte';
   import SubNav from '$lib/components/layout/SubNav.svelte';
+  import WebUiSettingsPanel from '$lib/components/settings/WebUiSettingsPanel.svelte';
 
   const ctx = getRouteContext();
 
@@ -16,13 +17,14 @@
     }
   );
 
-  type GeneralSubTab = 'workspace' | 'debug' | 'tensors' | 'hardware';
+  type GeneralSubTab = 'workspace' | 'debug' | 'tensors' | 'hardware' | 'webui';
 
   const subnavTabs: Array<{ id: GeneralSubTab; label: string }> = [
     { id: 'workspace', label: 'Workspace' },
     { id: 'debug', label: 'Debug' },
     { id: 'tensors', label: 'Tensors' },
     { id: 'hardware', label: 'Hardware' },
+    { id: 'webui', label: 'Web UI' },
   ];
 
   let activeSubTab = $state<GeneralSubTab>('workspace');
@@ -44,15 +46,19 @@
       />
 
       <div class="tab-panel-body">
-        <SchemaForm
-          {tab}
-          {activeSubTab}
-          hideGroupTitle={true}
-          values={ctx.workspace.draft}
-          issues={ctx.workspace.errors}
-          setRaw={(path: string, val: any) => ctx.workspace?.setRaw(path, val)}
-          openDirectory={ctx.openDirectory}
-        />
+        {#if activeSubTab === 'webui'}
+          <WebUiSettingsPanel />
+        {:else}
+          <SchemaForm
+            {tab}
+            {activeSubTab}
+            hideGroupTitle={true}
+            values={ctx.workspace.draft}
+            issues={ctx.workspace.errors}
+            setRaw={(path: string, val: any) => ctx.workspace?.setRaw(path, val)}
+            openDirectory={ctx.openDirectory}
+          />
+        {/if}
       </div>
     </div>
   </RoutePage>
