@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import GalleryPage from './+page.svelte';
 import { api } from '$lib/api/client';
@@ -220,5 +220,54 @@ describe('Gallery Route Page', () => {
 
     const button = await screen.findByRole('button', { name: 'Load Run' });
     await waitFor(() => expect(button).toBeDisabled());
+  });
+
+  it('confirms before discarding unsaved edits, and loads on confirm', async () => {
+    mockGalleryRuns(['2026-07-26_12-00-00']);
+    mockCurrentGallery(activeGallery('2026-07-26_12-00-00'));
+    const loadSpy = vi
+      .spyOn(api, 'loadGalleryRunConfig')
+      .mockResolvedValue({ config: { a: 1 }, revision: 'rev-2' } as any);
+    const workspace = fakeWorkspace({ dirty: true });
+
+    render(GalleryHarness, { props: { workspace } });
+
+    const button = await screen.findByRole('button', { name: 'Load Run' });
+    await waitFor(() => expect(button).not.toBeDisabled());
+    await fireEvent.click(button);
+
+    await screen.findByText('Discard unsaved changes?');
+    expect(loadSpy).not.toHaveBeenCalled();
+
+    const dialog = await screen.findByRole('alertdialog');
+    const confirm = await within(dialog).findByRole('button', { name: 'Load Run', hidden: true });
+    await fireEvent.click(confirm);
+
+    await waitFor(() => {
+      expect(workspace.reloadServer).toHaveBeenCalledWith(true);
+      expect(loadSpy).toHaveBeenCalledWith('2026-07-26_12-00-00', 'rev-1');
+    });
+  });
+
+  it('sends nothing when the discard confirmation is cancelled', async () => {
+    mockGalleryRuns(['2026-07-26_12-00-00']);
+    mockCurrentGallery(activeGallery('2026-07-26_12-00-00'));
+    const loadSpy = vi.spyOn(api, 'loadGalleryRunConfig').mockResolvedValue({} as any);
+    const workspace = fakeWorkspace({ dirty: true });
+
+    render(GalleryHarness, { props: { workspace } });
+
+    const button = await screen.findByRole('button', { name: 'Load Run' });
+    await waitFor(() => expect(button).not.toBeDisabled());
+    await fireEvent.click(button);
+
+    await screen.findByText('Discard unsaved changes?');
+    await fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('Discard unsaved changes?')).not.toBeInTheDocument();
+    });
+    expect(loadSpy).not.toHaveBeenCalled();
+    expect(workspace.reloadServer).not.toHaveBeenCalled();
   });
 });

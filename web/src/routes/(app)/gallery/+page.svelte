@@ -13,6 +13,10 @@
   import { tryGetRouteContext } from '$lib/config/context';
   import { api } from '$lib/api/client';
   import { toast } from 'svelte-sonner';
+  import { tick } from 'svelte';
+
+  let showDiscardDialog = $state(false);
+  let AlertDialog = $state<typeof import('$lib/components/ui/alert-dialog/index.js') | null>(null);
 
   const runsQuery = createGalleryRunsQuery();
 
@@ -94,6 +98,24 @@
 
   async function handleLoadRun() {
     if (!canLoadRun) return;
+
+    if (workspace?.dirty) {
+      if (!AlertDialog) {
+        AlertDialog = await import('$lib/components/ui/alert-dialog/index.js');
+        await tick();
+      }
+      showDiscardDialog = true;
+      return;
+    }
+
+    await performLoadRun();
+  }
+
+  async function handleConfirmDiscard() {
+    showDiscardDialog = false;
+    // acceptRemote() refuses to rebase a dirty draft and flips the workspace into
+    // 'conflict'. The user just chose to discard, so drop the draft first.
+    workspace?.reloadServer(true);
     await performLoadRun();
   }
 
@@ -169,4 +191,27 @@
     </section>
   </div>
 </RoutePage>
+
+{#if showDiscardDialog && AlertDialog}
+  <AlertDialog.Root
+    open={showDiscardDialog}
+    onOpenChange={(v) => {
+      if (!v) showDiscardDialog = false;
+    }}
+  >
+    <AlertDialog.Content>
+      <AlertDialog.Header>
+        <AlertDialog.Title>Discard unsaved changes?</AlertDialog.Title>
+        <AlertDialog.Description>
+          Loading the config from run <strong>{selectedRunKey}</strong> will discard your
+          unsaved changes.
+        </AlertDialog.Description>
+      </AlertDialog.Header>
+      <AlertDialog.Footer>
+        <AlertDialog.Cancel onclick={() => (showDiscardDialog = false)}>Cancel</AlertDialog.Cancel>
+        <AlertDialog.Action onclick={handleConfirmDiscard}>Load Run</AlertDialog.Action>
+      </AlertDialog.Footer>
+    </AlertDialog.Content>
+  </AlertDialog.Root>
+{/if}
 
