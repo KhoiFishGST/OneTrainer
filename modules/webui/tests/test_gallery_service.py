@@ -447,6 +447,12 @@ def test_get_run_config_path_rejects_unreadable_manifest(gallery: GalleryService
         gallery.get_run_config_path("run1")
 
 
+def test_get_run_config_path_coerces_non_string_filename(gallery: GalleryService, workspace: Path):
+    write_run_manifest(workspace, "run1", {"key": "run1", "config_filename": 123})
+
+    assert gallery.get_run_config_path("run1") == workspace / "config" / "123"
+
+
 def test_get_run_config_path_confines_poisoned_filename_to_config_dir(
     gallery: GalleryService, workspace: Path
 ):

@@ -56,7 +56,11 @@ async def load_gallery_run_config(run_key: str, body: GalleryRunLoadRequest, req
     except GalleryNotFound as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
 
-    loaded = load_train_config(config_path, secrets_path=app_state.settings.secrets_path)
+    try:
+        loaded = load_train_config(config_path, secrets_path=app_state.settings.secrets_path)
+    except Exception as error:
+        raise HTTPException(status_code=400, detail="Could not read the config for this run") from error
+
     if loaded is None:
         raise HTTPException(status_code=404, detail="Config file for this run no longer exists")
 

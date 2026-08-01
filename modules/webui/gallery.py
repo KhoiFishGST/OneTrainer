@@ -625,7 +625,7 @@ class GalleryService:
             except Exception as e:
                 raise GalleryNotFound("Run not found") from e
 
-            config_filename = (manifest_doc.get("run") or {}).get("config_filename") or ""
+            config_filename = str((manifest_doc.get("run") or {}).get("config_filename") or "")
             if not config_filename:
                 raise GalleryNotFound("Run has no recorded config file")
 

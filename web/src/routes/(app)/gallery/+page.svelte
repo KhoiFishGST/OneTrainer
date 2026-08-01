@@ -81,16 +81,35 @@
 
     isLoadingRun = true;
     try {
-      const resp = await api.loadGalleryRunConfig(key, workspace.revision);
+      let resp;
+      try {
+        resp = await api.loadGalleryRunConfig(key, workspace.revision);
+      } catch (err: any) {
+        const detail = err?.detail;
+        const currentRevision =
+          typeof detail === 'object' && detail !== null ? detail.current_revision : undefined;
+        if (err?.status === 409 && currentRevision) {
+          // The user already asked to load this run's config; a stale revision means
+          // the config changed elsewhere, not that the user's intent changed. Retry
+          // once with the current revision before giving up.
+          resp = await api.loadGalleryRunConfig(key, currentRevision);
+        } else {
+          throw err;
+        }
+      }
       workspace.acceptRemote(resp);
       toast.success(`Loaded config from run ${key}`);
     } catch (err: any) {
       const detail = err?.detail;
-      const message =
-        typeof detail === 'string'
-          ? detail
-          : detail?.message || 'Could not load the config for this run';
-      toast.error(message);
+      if (err?.status === 409) {
+        toast.error('The config changed elsewhere. Reload the page and try again.');
+      } else {
+        const message =
+          typeof detail === 'string'
+            ? detail
+            : detail?.message || 'Could not load the config for this run';
+        toast.error(message);
+      }
     } finally {
       isLoadingRun = false;
     }
@@ -113,6 +132,12 @@
 
   async function handleConfirmDiscard() {
     showDiscardDialog = false;
+    // An in-flight save would resolve after the load and clobber it with the
+    // old draft. Wait it out first; flush() returns the active promise here
+    // rather than starting a new save.
+    if (workspace?.state === 'saving') {
+      await workspace.flush();
+    }
     // acceptRemote() refuses to rebase a dirty draft and flips the workspace into
     // 'conflict'. The user just chose to discard, so drop the draft first.
     workspace?.reloadServer(true);

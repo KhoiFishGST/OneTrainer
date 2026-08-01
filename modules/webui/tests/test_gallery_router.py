@@ -144,6 +144,21 @@ def test_load_run_config_404s_when_config_file_is_gone(client, gallery_service, 
     assert response.json()["detail"] == "Config file for this run no longer exists"
 
 
+def test_load_run_config_400s_on_malformed_config(client, gallery_service, tmp_path):
+    config_path = tmp_path / "config" / "run1.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text("{not valid json", encoding="utf-8")
+    gallery_service.get_run_config_path.return_value = config_path
+
+    base_revision = client.get("/api/config").json()["revision"]
+    response = client.post(
+        "/api/gallery/runs/run1/load", json={"base_revision": base_revision}
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Could not read the config for this run"
+
+
 def test_load_run_config_409s_on_stale_revision(client, gallery_service, tmp_path):
     config_path = tmp_path / "config" / "run1.json"
     config_path.parent.mkdir(parents=True, exist_ok=True)

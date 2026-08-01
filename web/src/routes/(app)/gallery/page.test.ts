@@ -15,8 +15,10 @@ function fakeWorkspace(overrides: Record<string, any> = {}) {
   return {
     revision: 'rev-1',
     dirty: false,
+    state: 'saved',
     acceptRemote: vi.fn(),
     reloadServer: vi.fn(),
+    flush: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }
@@ -251,6 +253,97 @@ describe('Gallery Route Page', () => {
     expect(workspace.reloadServer.mock.invocationCallOrder[0]).toBeLessThan(
       loadSpy.mock.invocationCallOrder[0]
     );
+  });
+
+  it('waits out an in-flight save before loading, to avoid the save clobbering the load', async () => {
+    mockGalleryRuns(['2026-07-26_12-00-00']);
+    mockCurrentGallery(activeGallery('2026-07-26_12-00-00'));
+    const loadSpy = vi
+      .spyOn(api, 'loadGalleryRunConfig')
+      .mockResolvedValue({ config: { a: 1 }, revision: 'rev-2' } as any);
+
+    let resolveFlush: () => void;
+    const flushPromise = new Promise<void>((resolve) => {
+      resolveFlush = resolve;
+    });
+    const flush = vi.fn().mockReturnValue(flushPromise);
+    const workspace = fakeWorkspace({ dirty: true, state: 'saving', flush });
+
+    render(GalleryHarness, { props: { workspace } });
+
+    const button = await screen.findByRole('button', { name: 'Load Run' });
+    await waitFor(() => expect(button).not.toBeDisabled());
+    await fireEvent.click(button);
+
+    await screen.findByText('Discard unsaved changes?');
+    const dialog = await screen.findByRole('alertdialog');
+    const confirm = await within(dialog).findByRole('button', { name: 'Load Run', hidden: true });
+    await fireEvent.click(confirm);
+
+    await waitFor(() => expect(flush).toHaveBeenCalled());
+    expect(loadSpy).not.toHaveBeenCalled();
+
+    resolveFlush!();
+
+    await waitFor(() => {
+      expect(loadSpy).toHaveBeenCalledWith('2026-07-26_12-00-00', 'rev-1');
+    });
+    expect(flush.mock.invocationCallOrder[0]).toBeLessThan(loadSpy.mock.invocationCallOrder[0]);
+  });
+
+  it('retries once on a stale revision and succeeds with the current revision', async () => {
+    mockGalleryRuns(['2026-07-26_12-00-00']);
+    mockCurrentGallery(activeGallery('2026-07-26_12-00-00'));
+    const loadSpy = vi
+      .spyOn(api, 'loadGalleryRunConfig')
+      .mockRejectedValueOnce(
+        Object.assign(new Error('stale'), {
+          status: 409,
+          detail: { message: 'Config revision is stale', current_revision: 'rev-current' },
+        })
+      )
+      .mockResolvedValueOnce({ config: { a: 1 }, revision: 'rev-3' } as any);
+    const workspace = fakeWorkspace();
+
+    render(GalleryHarness, { props: { workspace } });
+
+    const button = await screen.findByRole('button', { name: 'Load Run' });
+    await waitFor(() => expect(button).not.toBeDisabled());
+    await fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(loadSpy).toHaveBeenNthCalledWith(1, '2026-07-26_12-00-00', 'rev-1');
+      expect(loadSpy).toHaveBeenNthCalledWith(2, '2026-07-26_12-00-00', 'rev-current');
+    });
+    expect(loadSpy).toHaveBeenCalledTimes(2);
+    expect(workspace.acceptRemote).toHaveBeenCalledWith({ config: { a: 1 }, revision: 'rev-3' });
+    expect(toast.success).toHaveBeenCalledWith('Loaded config from run 2026-07-26_12-00-00');
+  });
+
+  it('shows an actionable error when the retried load also hits a stale revision', async () => {
+    mockGalleryRuns(['2026-07-26_12-00-00']);
+    mockCurrentGallery(activeGallery('2026-07-26_12-00-00'));
+    const loadSpy = vi.spyOn(api, 'loadGalleryRunConfig').mockRejectedValue(
+      Object.assign(new Error('stale'), {
+        status: 409,
+        detail: { message: 'Config revision is stale', current_revision: 'rev-current' },
+      })
+    );
+    const workspace = fakeWorkspace();
+
+    render(GalleryHarness, { props: { workspace } });
+
+    const button = await screen.findByRole('button', { name: 'Load Run' });
+    await waitFor(() => expect(button).not.toBeDisabled());
+    await fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(loadSpy).toHaveBeenCalledTimes(2);
+    });
+    expect(toast.error).toHaveBeenCalledWith(
+      'The config changed elsewhere. Reload the page and try again.'
+    );
+    expect(workspace.acceptRemote).not.toHaveBeenCalled();
   });
 
   it('sends nothing when the discard confirmation is cancelled', async () => {
