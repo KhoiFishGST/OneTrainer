@@ -47,10 +47,14 @@
     border-width: 1px;
     border-style: solid;
     white-space: nowrap;
-    /* Colour only. The pill sits in the header and must not move; a status
-       change is a change of state, not of place. */
+    /* Colour only from the motion tokens; transform/box-shadow are the
+       pre-existing hover/press affordance, retimed onto the same enter
+       token rather than left at a literal duration. The pill sits in the
+       header and must not move on a status change -- only these two.
+       transform and box-shadow are unaffected in behaviour, only timing. */
     transition: background-color var(--motion-duration-enter) var(--motion-ease-enter),
       color var(--motion-duration-enter) var(--motion-ease-enter),
-      transform 0.2s ease, box-shadow 0.2s ease;
+      transform var(--motion-duration-enter) var(--motion-ease-enter),
+      box-shadow var(--motion-duration-enter) var(--motion-ease-enter);
   }
 </style>
