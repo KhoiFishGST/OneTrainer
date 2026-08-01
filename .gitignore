@@ -51,3 +51,6 @@ CLAUDE.md
 /.e2e/
 /web/test-results/
 /web/playwright-report/
+
+# superpowers brainstorming session artifacts
+.superpowers/
