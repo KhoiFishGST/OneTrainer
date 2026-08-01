@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { get } from 'svelte/store';
-import { createUpdateAppearanceMutation, queryKeys, getSafeQueryClient } from './queries';
+import {
+  createAppearanceQuery,
+  createUpdateAppearanceMutation,
+  queryKeys,
+  getSafeQueryClient,
+} from './queries';
 import { appearance } from '$lib/stores/appearance.svelte';
 import { api } from './client';
 import { toast } from 'svelte-sonner';
@@ -43,6 +48,7 @@ describe('createUpdateAppearanceMutation', () => {
   beforeEach(() => {
     client.clear();
     vi.mocked(api.putAppearance).mockReset();
+    vi.mocked(api.getAppearance).mockReset();
     vi.mocked(toast.error).mockReset();
     localStorage.clear();
     document.documentElement.className = '';
@@ -126,5 +132,110 @@ describe('createUpdateAppearanceMutation', () => {
     await refetchPromise.catch(() => {});
 
     expect(client.getQueryData(queryKeys.appearance())).toEqual({ theme: 'dark', animations: false });
+  });
+
+  it('discards a refetch that starts after the save, while the save is still open', async () => {
+    // The ordering cancelQueries cannot help with: the refetch begins after
+    // onMutate has already run, so there is nothing in flight to cancel. This
+    // is what a previous save's onSettled invalidate produces in practice.
+    vi.mocked(api.getAppearance).mockResolvedValue({ theme: 'dark', animations: true });
+
+    // A real subscriber, so the query's own queryFn is what runs on refetch.
+    const query = createAppearanceQuery();
+    const unsubscribe = query.subscribe(() => {});
+    await vi.waitFor(() => {
+      expect(client.getQueryData(queryKeys.appearance())).toEqual({ theme: 'dark', animations: true });
+    });
+
+    let resolvePut: (value: AppearanceSettings) => void = () => {};
+    vi.mocked(api.putAppearance).mockImplementation(
+      () => new Promise((resolve) => { resolvePut = resolve; })
+    );
+
+    const mutation = createUpdateAppearanceMutation();
+    get(mutation).mutate({ animations: false });
+    await vi.waitFor(() => {
+      expect(client.getQueryData(queryKeys.appearance())).toEqual({ theme: 'dark', animations: false });
+    });
+
+    // Only now does the GET start, and it returns the pre-save server state.
+    let resolveRefetch: (value: AppearanceSettings) => void = () => {};
+    vi.mocked(api.getAppearance).mockImplementation(
+      () => new Promise((resolve) => { resolveRefetch = resolve; })
+    );
+    const refetchPromise = client.refetchQueries({ queryKey: queryKeys.appearance() });
+    resolveRefetch({ theme: 'dark', animations: true });
+    await refetchPromise.catch(() => {});
+
+    // The stale read must not have overwritten what the user already sees,
+    // even though the PUT has not come back yet.
+    expect(client.getQueryData(queryKeys.appearance())).toEqual({ theme: 'dark', animations: false });
+
+    resolvePut({ theme: 'dark', animations: false });
+    unsubscribe();
+  });
+
+  it('serializes overlapping saves so the last click wins', async () => {
+    client.setQueryData(queryKeys.appearance(), { theme: 'dark', animations: true });
+
+    const pending: Array<{ resolve: (value: AppearanceSettings) => void }> = [];
+    vi.mocked(api.putAppearance).mockImplementation(
+      () => new Promise((resolve) => { pending.push({ resolve }); })
+    );
+
+    const mutation = createUpdateAppearanceMutation();
+    get(mutation).mutate({ theme: 'light' });
+    await vi.waitFor(() => expect(pending).toHaveLength(1));
+
+    // Second click, faster than the first round-trip.
+    get(mutation).mutate({ theme: 'dark' });
+    // Long enough for onMutate's awaited cancelQueries to have settled and
+    // the PUT to have gone out, if nothing were holding it back.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    // The shared scope must hold it back: if both PUTs were open at once the
+    // first response could land after the second's optimistic write and flip
+    // the theme back to a value the user has already moved past.
+    expect(pending).toHaveLength(1);
+
+    pending[0].resolve({ theme: 'light', animations: true });
+    await vi.waitFor(() => expect(pending).toHaveLength(2));
+    pending[1].resolve({ theme: 'dark', animations: true });
+
+    await vi.waitFor(() => {
+      expect(client.getQueryData(queryKeys.appearance())).toEqual({ theme: 'dark', animations: true });
+    });
+  });
+
+  it('writes an optimistic value even when nothing is cached yet', async () => {
+    // The user changes a setting before the initial GET has resolved.
+    let resolvePut: (value: AppearanceSettings) => void = () => {};
+    vi.mocked(api.putAppearance).mockImplementation(
+      () => new Promise((resolve) => { resolvePut = resolve; })
+    );
+
+    const mutation = createUpdateAppearanceMutation();
+    get(mutation).mutate({ animations: false });
+
+    await vi.waitFor(() => {
+      expect(client.getQueryData(queryKeys.appearance())).toEqual({ theme: 'dark', animations: false });
+    });
+
+    resolvePut({ theme: 'dark', animations: false });
+  });
+
+  it('drops the failed value from the cache when there was no snapshot', async () => {
+    vi.mocked(api.putAppearance).mockRejectedValue(new Error('boom'));
+
+    const mutation = createUpdateAppearanceMutation();
+    get(mutation).mutate({ animations: false });
+
+    await vi.waitFor(() => {
+      expect(toast.error).toHaveBeenCalled();
+    });
+
+    // Leaving the optimistic entry would keep the UI reporting a setting the
+    // server refused; with it gone, onSettled's refetch supplies the truth.
+    expect(client.getQueryData(queryKeys.appearance())).toBeUndefined();
   });
 });

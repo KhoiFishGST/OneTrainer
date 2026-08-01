@@ -41,9 +41,17 @@
   // The store performs no I/O of its own; this is where a local change becomes
   // a write. Applying to the DOM already happened inside the setter, so a slow
   // or failed request never delays the user's own click.
-  appearance.onChange = (update) => {
-    $updateAppearanceMutation.mutate(update);
-  };
+  // Cleared on destroy: the store is a module singleton, so a live closure
+  // left behind here would keep firing mutations against a torn-down
+  // component (and, in tests, against the previous test's query client).
+  $effect(() => {
+    appearance.onChange = (update) => {
+      $updateAppearanceMutation.mutate(update);
+    };
+    return () => {
+      appearance.onChange = null;
+    };
+  });
 
   // Mirror the appearance query's cache into the DOM/localStorage cache.
   // The mutation now writes to this cache optimistically (see
@@ -265,6 +273,9 @@
   );
 
   const currentPath = $derived($page?.url?.pathname ?? '/live');
+  // Trailing slashes are equivalent routes, and an exact compare against
+  // '/console' would leave the drawer's console live alongside the page's.
+  const isConsolePage = $derived(currentPath.replace(/\/+$/, '') === '/console');
 </script>
 
 <SidebarProvider class="app-shell flex flex-col h-[100dvh] w-screen overflow-hidden bg-background text-foreground">
@@ -288,7 +299,7 @@
       </main>
 
       {#if ConsoleDrawer}
-        <ConsoleDrawer open={drawerOpen && currentPath !== '/console'} onClose={closeDrawer} store={consoleStore} />
+        <ConsoleDrawer open={drawerOpen && !isConsolePage} onClose={closeDrawer} store={consoleStore} />
       {/if}
       <StatusBar />
     </div>

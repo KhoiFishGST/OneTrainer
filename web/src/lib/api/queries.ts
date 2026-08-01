@@ -430,12 +430,39 @@ export function createCreateSampleFileMutation() {
   );
 }
 
+/*
+ * Appearance saves and reads race each other, so both sides are guarded here.
+ *
+ * `appearanceWriteSeq` increments on every local save. A GET that was in
+ * flight while a save started or finished is describing a state older than
+ * what the user has already applied, so its response must not be written to
+ * the cache -- cancelQueries in onMutate only catches refetches already in
+ * flight at that instant, not one that starts a moment later (which is
+ * exactly what a previous save's onSettled invalidate produces).
+ *
+ * `appearanceWritesInFlight` covers the overlapping case where the save is
+ * still open when the GET returns.
+ */
+let appearanceWriteSeq = 0;
+let appearanceWritesInFlight = 0;
+
 export function createAppearanceQuery() {
   const client = getSafeQueryClient();
   return createQuery(
     {
       queryKey: queryKeys.appearance(),
-      queryFn: () => api.getAppearance(),
+      queryFn: async () => {
+        const seqAtStart = appearanceWriteSeq;
+        const result = await api.getAppearance();
+        if (appearanceWriteSeq !== seqAtStart || appearanceWritesInFlight > 0) {
+          // Keep whatever the local save put there. The save's own onSettled
+          // invalidate refetches once nothing is pending, so the server still
+          // gets the last word -- just not a word from before the user acted.
+          const current = client.getQueryData<AppearanceSettings>(queryKeys.appearance());
+          if (current) return current;
+        }
+        return result;
+      },
     },
     client
   );
@@ -446,20 +473,37 @@ export function createUpdateAppearanceMutation() {
   return createMutation(
     {
       mutationFn: (data: AppearanceUpdateRequest) => api.putAppearance(data),
+      // Saves are serialized against each other. Without this, double-clicking
+      // the theme toggle puts two PUTs in flight and the first one's response
+      // -- a now-superseded server value -- lands after the second one's
+      // optimistic write, flipping the visible theme back to a value the user
+      // has already moved past. A shared scope makes TanStack hold the second
+      // mutation until the first has fully settled, so the last click is
+      // always the last writer, rather than merely usually.
+      mutationKey: queryKeys.appearance(),
+      scope: { id: 'appearance' },
       // Optimistic write: the store already applied the change to the DOM and
       // localStorage before this mutation was even called, so this exists to
       // keep the query cache (and therefore anyone else reading it) in sync
       // with what the user is already seeing, and to give us a snapshot to
       // roll back to if the server rejects the write.
       onMutate: async (update) => {
+        appearanceWriteSeq += 1;
+        appearanceWritesInFlight += 1;
         await client.cancelQueries({ queryKey: queryKeys.appearance() });
         const previous = client.getQueryData<AppearanceSettings>(queryKeys.appearance());
-        if (previous) {
-          client.setQueryData<AppearanceSettings>(queryKeys.appearance(), {
-            ...previous,
-            ...update,
-          });
-        }
+        // With no cached value yet (the user changed a setting before the
+        // initial GET resolved) the store is the best picture of what they
+        // are already looking at -- the setter applied the change before
+        // calling us -- so the optimistic entry is still written.
+        const base: AppearanceSettings = previous ?? {
+          theme: appearance.theme,
+          animations: appearance.animations,
+        };
+        client.setQueryData<AppearanceSettings>(queryKeys.appearance(), {
+          ...base,
+          ...update,
+        });
         return { previous };
       },
       onError: (_err, _update, context) => {
@@ -470,6 +514,12 @@ export function createUpdateAppearanceMutation() {
           // visible theme/animation state to snap back synchronously rather
           // than waiting on that to schedule.
           appearance.acceptRemote(context.previous);
+        } else {
+          // Nothing to roll back to, but the optimistic entry we wrote is a
+          // value the server rejected, so leaving it in place would keep the
+          // UI showing a setting that did not save. Drop it and let onSettled
+          // refetch the persisted truth, which the reconcile effect applies.
+          client.removeQueries({ queryKey: queryKeys.appearance() });
         }
         toast.error("Couldn't save appearance settings");
       },
@@ -477,8 +527,11 @@ export function createUpdateAppearanceMutation() {
         client.setQueryData(queryKeys.appearance(), result);
       },
       // Re-read the server regardless of outcome so any real divergence
-      // (e.g. another browser tab's change) converges.
+      // (e.g. another browser tab's change) converges. The in-flight count
+      // drops first, so this refetch is the one allowed to land -- and if a
+      // further save starts while it is open, the sequence bump discards it.
       onSettled: () => {
+        appearanceWritesInFlight -= 1;
         client.invalidateQueries({ queryKey: queryKeys.appearance() });
       },
     },
