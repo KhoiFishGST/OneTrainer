@@ -111,11 +111,12 @@
   }
 </script>
 
-{#if open}
   <section
     class="console-drawer {isDragging ? 'resizing' : ''}"
     aria-label="Console Output"
-    style="height: {drawerHeight}px;"
+    data-open={open ? 'true' : 'false'}
+    inert={!open}
+    style="height: {open ? drawerHeight : 0}px;"
   >
     <!-- Touch-safe drag handle for resize -->
     <div
@@ -155,11 +156,10 @@
       {#if children}
         {@render children()}
       {:else}
-        <ConsoleView {store} />
+        <ConsoleView {store} {open} />
       {/if}
     </div>
   </section>
-{/if}
 
 <style>
   .console-drawer {
@@ -169,6 +169,14 @@
     flex-direction: column;
     overflow: hidden;
     position: relative;
+    /*
+      The drawer is a flex child, so animating height reflows the main content
+      above it. That is correct: the drawer pushes content rather than covering
+      it, and a transform would leave main content sitting underneath.
+
+      Layout duration, not enter duration -- it travels its full height.
+    */
+    transition: height var(--motion-duration-layout) var(--motion-ease-enter);
   }
 
   /*
@@ -181,10 +189,13 @@
 
   /*
    * A resize drag starts on the handle but the pointer travels across the
-   * log, which would otherwise sweep a selection through it.
+   * log, which would otherwise sweep a selection through it. The resize
+   * handle also writes inline height on every mousemove; a transition there
+   * makes the drawer lag the pointer, so the drag suppresses it too.
    */
   .console-drawer.resizing {
     user-select: none;
+    transition: none;
   }
 
   .resize-handle {
@@ -243,10 +254,20 @@
       display: none;
     }
 
-    .console-drawer {
+    /*
+      `!important` is needed to beat the inline height, which means the closed
+      state cannot be inherited from the desktop rule and has to be declared
+      here too.
+    */
+    .console-drawer[data-open='true'] {
       height: 75dvh !important;
       max-height: 80dvh;
       flex: 1;
+    }
+
+    .console-drawer[data-open='false'] {
+      height: 0 !important;
+      flex: none;
     }
   }
 </style>

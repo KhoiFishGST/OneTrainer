@@ -43,6 +43,25 @@ if (typeof window !== 'undefined') {
     (globalThis as any).Path2D = MockPath2D;
   }
 
+  if (typeof HTMLElement !== 'undefined' && !('inert' in HTMLElement.prototype)) {
+    // jsdom doesn't implement the `inert` IDL attribute, so Svelte's
+    // property-setter path (`element.inert = value`) never reaches the DOM
+    // as a real attribute. Reflect it the way browsers do.
+    Object.defineProperty(HTMLElement.prototype, 'inert', {
+      get(this: HTMLElement) {
+        return this.hasAttribute('inert');
+      },
+      set(this: HTMLElement, value: boolean) {
+        if (value) {
+          this.setAttribute('inert', '');
+        } else {
+          this.removeAttribute('inert');
+        }
+      },
+      configurable: true,
+    });
+  }
+
   if (typeof HTMLCanvasElement !== 'undefined') {
     const mockCtx = {
       fillRect: () => {},

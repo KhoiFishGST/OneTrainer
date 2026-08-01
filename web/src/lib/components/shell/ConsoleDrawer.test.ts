@@ -97,3 +97,30 @@ describe('ConsoleDrawer component', () => {
     expect(drawer.className).not.toContain('resizing');
   });
 });
+
+describe('console drawer motion', () => {
+  it('stays in the DOM when closed', () => {
+    const { container } = render(ConsoleDrawer, { props: { open: false } });
+    expect(container.querySelector('.console-drawer')).not.toBeNull();
+  });
+
+  it('marks the closed drawer inert so its controls leave the tab order', () => {
+    const { container } = render(ConsoleDrawer, { props: { open: false } });
+    const section = container.querySelector('.console-drawer')!;
+    expect(section.hasAttribute('inert')).toBe(true);
+    expect(section.getAttribute('data-open')).toBe('false');
+  });
+
+  it('is not inert when open', () => {
+    const { container } = render(ConsoleDrawer, { props: { open: true } });
+    const section = container.querySelector('.console-drawer')!;
+    expect(section.hasAttribute('inert')).toBe(false);
+    expect(section.getAttribute('data-open')).toBe('true');
+  });
+
+  it('collapses to zero height when closed', () => {
+    const { container } = render(ConsoleDrawer, { props: { open: false } });
+    const section = container.querySelector('.console-drawer') as HTMLElement;
+    expect(section.style.height).toBe('0px');
+  });
+});
