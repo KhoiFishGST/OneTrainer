@@ -24,8 +24,30 @@
   let containerHeight = $state(300);
   let autoScroll = $state(true);
 
+  /*
+   * The drawer keeps this component mounted while closed so its close
+   * animation has real content to slide out (see ConsoleDrawer.svelte). But
+   * with no `{#if}` gate, `store.rows` still ticks on every incoming log
+   * line even off-screen, and during training the console is a high-rate
+   * stream -- left alone, that means re-filtering and re-virtualising rows
+   * forever on every route (LayoutContent preloads the drawer everywhere).
+   *
+   * Freeze the row source itself while closed: `sourceRows` only tracks
+   * `store.rows` when `open`, so every derived value below it (filtering,
+   * virtualisation, the rendered rows) stops changing the instant the
+   * drawer closes, and jumps straight to the live backlog the instant it
+   * reopens.
+   */
+  let sourceRows = $state<typeof store.rows>([]);
+
+  $effect(() => {
+    if (open) {
+      sourceRows = store.rows;
+    }
+  });
+
   const filteredRows = $derived(
-    store.rows.filter((row) => {
+    sourceRows.filter((row) => {
       const rowChannel = row.channel || 'console';
       if (activeChannel === 'console' && rowChannel !== 'console') return false;
       if (activeChannel === 'webui' && rowChannel !== 'webui') return false;
