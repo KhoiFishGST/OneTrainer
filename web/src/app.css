@@ -457,15 +457,15 @@ body {
   animation: sheet-slide-out-bottom var(--motion-duration-exit) var(--motion-ease-exit);
 }
 
-/* The blanket reduced-motion block above already clamps every animation to
-   0.01ms. Naming the sheet explicitly keeps that guarantee if the blanket rule
-   is ever narrowed, and skips the closing animation outright rather than
-   running an imperceptible one. */
-@media (prefers-reduced-motion: reduce) {
-  [data-dialog-content][data-side] {
-    animation: none !important;
-  }
-}
+/* No `animation: none` here on purpose: bits-ui holds a closing sheet mounted
+   until its `animationend` fires, so removing the animation instead of
+   shortening it would strand a closed sheet in the DOM under
+   prefers-reduced-motion. The blanket reduced-motion block above already
+   clamps every animation-duration to 0.01ms, which still fires
+   `animationend` and lets bits-ui unmount normally -- see the matching
+   explanation on the data-motion='off' kill switch near the top of this
+   file. Nothing further is needed here; do not reinstate `animation: none`.
+*/
 
 /* Form grid layout: two-column above 768px, one-column below */
 .form-grid {
