@@ -171,3 +171,60 @@ def test_app_state_exposes_settings_store(tmp_path):
         assert isinstance(store, SettingsStore)
         store.set_datasets_dir("/from/app")
         assert (tmp_path / "webui.json").exists()
+
+
+def test_appearance_defaults_when_file_missing(tmp_path):
+    store = SettingsStore(tmp_path / "webui.json")
+    assert store.get_appearance() == {"theme": "system", "animations": True}
+
+
+def test_appearance_falls_back_on_malformed_file(tmp_path):
+    path = tmp_path / "webui.json"
+    path.write_text("{not valid json", encoding="utf-8")
+    store = SettingsStore(path)
+    # A broken settings file must not take down the UI.
+    assert store.get_appearance() == {"theme": "system", "animations": True}
+
+
+def test_appearance_round_trips(tmp_path):
+    path = tmp_path / "webui.json"
+    store = SettingsStore(path)
+    assert store.set_appearance(theme="light") == {"theme": "light", "animations": True}
+    assert store.get_appearance() == {"theme": "light", "animations": True}
+    assert store.set_appearance(animations=False) == {"theme": "light", "animations": False}
+    assert store.get_appearance() == {"theme": "light", "animations": False}
+
+
+def test_appearance_rejects_an_unknown_theme(tmp_path):
+    store = SettingsStore(tmp_path / "webui.json")
+    with pytest.raises(ValueError):
+        store.set_appearance(theme="solarized")
+
+
+def test_appearance_ignores_junk_stored_values(tmp_path):
+    path = tmp_path / "webui.json"
+    path.write_text(
+        json.dumps({"appearance": {"theme": "solarized", "animations": "yes"}}),
+        encoding="utf-8",
+    )
+    store = SettingsStore(path)
+    assert store.get_appearance() == {"theme": "system", "animations": True}
+
+
+def test_appearance_setter_does_not_clobber_malformed_file(tmp_path):
+    path = tmp_path / "webui.json"
+    original = b"{not valid json"
+    path.write_bytes(original)
+    store = SettingsStore(path)
+    with pytest.raises(SettingsStoreUnreadableError):
+        store.set_appearance(theme="dark")
+    assert path.read_bytes() == original
+
+
+def test_appearance_setter_preserves_the_password(tmp_path):
+    path = tmp_path / "webui.json"
+    store = SettingsStore(path)
+    store.set_password("hunter2")
+    store.set_appearance(theme="dark")
+    assert store.verify_password("hunter2") is True
+    assert store.get_appearance()["theme"] == "dark"

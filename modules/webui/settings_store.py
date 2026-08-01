@@ -10,6 +10,9 @@ from modules.webui.atomic_io import write_json_atomic
 
 DEFAULT_DATASETS_DIR = "training_datasets"
 
+VALID_THEMES = ("light", "dark", "system")
+DEFAULT_APPEARANCE: dict[str, Any] = {"theme": "system", "animations": True}
+
 _SCRYPT_N = 2 ** 14
 _SCRYPT_R = 8
 _SCRYPT_P = 1
@@ -95,6 +98,52 @@ class SettingsStore:
         document = self._read_for_update()
         document["datasets_dir"] = path
         self._write(document)
+
+    def get_appearance(self) -> dict[str, Any]:
+        """Theme and animation preferences for the web UI.
+
+        Deliberately falls back rather than raising, like get_datasets_dir: a
+        broken settings file should not take down the UI. Each key is validated
+        independently, so one junk value does not discard the other.
+        """
+        document = self._read()
+        stored = document.get("appearance") if document is not None else None
+        if not isinstance(stored, dict):
+            stored = {}
+
+        theme = stored.get("theme")
+        animations = stored.get("animations")
+        return {
+            "theme": theme if theme in VALID_THEMES else DEFAULT_APPEARANCE["theme"],
+            "animations": animations
+            if isinstance(animations, bool)
+            else DEFAULT_APPEARANCE["animations"],
+        }
+
+    def set_appearance(
+        self,
+        theme: str | None = None,
+        animations: bool | None = None,
+    ) -> dict[str, Any]:
+        """Partially update the appearance preferences and return the result.
+
+        Raises ValueError for an unknown theme, and SettingsStoreUnreadableError
+        if the existing file exists but cannot be parsed -- that file holds the
+        password hash, so it must never be clobbered.
+        """
+        if theme is not None and theme not in VALID_THEMES:
+            raise ValueError(f"unknown theme: {theme!r}")
+
+        document = self._read_for_update()
+        current = self.get_appearance()
+        if theme is not None:
+            current["theme"] = theme
+        if animations is not None:
+            current["animations"] = bool(animations)
+
+        document["appearance"] = current
+        self._write(document)
+        return current
 
     def has_password(self) -> bool:
         """Whether a password is required to use the web UI.
