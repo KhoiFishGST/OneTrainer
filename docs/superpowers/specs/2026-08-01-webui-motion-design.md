@@ -233,17 +233,25 @@ boundary-test style (`style-boundary.test.ts`,
 
 ### Storage
 
-Two preferences persist server-side in `webui.json` under a new `ui` key,
-alongside the existing `password` and `datasets_dir`:
+Two preferences persist server-side in `webui.json` under a new `appearance`
+key, alongside the existing `password` and `datasets_dir`:
 
 ```json
-{ "ui": { "theme": "system", "animations": true } }
+{ "appearance": { "theme": "system", "animations": true } }
 ```
+
+The name `appearance` is used consistently across all three layers — the
+`webui.json` key, the `/api/appearance` endpoint, and the
+`lib/stores/appearance.svelte.ts` store. It deliberately avoids "ui
+preferences": `lib/stores/ui-preferences.ts` already exists as an unrelated
+localStorage-only store for gallery sort order, and two similarly named stores
+in one directory would be a standing source of confusion.
 
 Defaults: `theme: "system"`, `animations: true`.
 
-`SettingsStore` (`modules/webui/settings_store.py`) gains getters and setters
-following the `get_datasets_dir` / `set_datasets_dir` precedent exactly:
+`SettingsStore` (`modules/webui/settings_store.py`) gains `get_appearance()` /
+`set_appearance()` following
+the `get_datasets_dir` / `set_datasets_dir` precedent exactly:
 
 - **Getters fall back to defaults** on a missing, unreadable or malformed file,
   and never raise. A corrupt settings file must not take down the UI.
@@ -253,31 +261,46 @@ following the `get_datasets_dir` / `set_datasets_dir` precedent exactly:
 
 ### API
 
-New `modules/webui/routers/ui_settings.py`, mounted at the `/api` prefix like
+New `modules/webui/routers/appearance.py`, mounted at the `/api` prefix like
 every other router in `app.py`:
 
-- `GET /api/ui-settings` → `{ "theme": "light|dark|system", "animations": bool }`
-- `PUT /api/ui-settings` → partial update, returns the full resulting document.
+- `GET /api/appearance` → `{ "theme": "light|dark|system", "animations": bool }`
+- `PUT /api/appearance` → partial update, returns the full resulting document.
 
 ### Frontend store lifecycle
 
-`theme.svelte.ts` becomes `ui-preferences.svelte.ts`, covering both settings.
+`theme.svelte.ts` becomes `appearance.svelte.ts`, covering both settings.
 
 The server is the source of truth; localStorage is a synchronous cache. This
-matters because the current theme store applies `.dark` synchronously at module
-load, so there is no flash — a purely server-sourced preference would resolve
-only after first paint and reintroduce one. Three steps:
+matters because a purely server-sourced preference resolves only after first
+paint, which would reintroduce a flash of the wrong theme.
 
-1. **At module load**, synchronously read the localStorage cache and apply
-   `.dark` and `data-motion` to `<html>`, before first paint. Unchanged
-   behavior from today.
-2. **When the settings query resolves**, reconcile: if the server value differs,
-   apply it and rewrite the cache.
-3. **On user change**, apply to the DOM and cache immediately, then `PUT`. The
+**The pre-paint hook is the blocking inline script already in `app.html`**, not
+module load. `routes/+layout.ts` sets `ssr = false`, so that script is the only
+code that runs before first paint. It currently reads `webui.theme` from
+localStorage and toggles `.dark`. It is extended to:
+
+- accept `system` as a valid stored value and resolve it through
+  `matchMedia('(prefers-color-scheme: dark)')`,
+- read the cached animations value and set `data-motion` on
+  `document.documentElement`.
+
+It must remain dependency-free, synchronous, and wrapped in try/catch — a
+throw there blocks the whole page.
+
+The store then handles the remaining two steps:
+
+1. **When the appearance query resolves**, reconcile: if the server value
+   differs from the cache, apply it and rewrite the cache.
+2. **On user change**, apply to the DOM and cache immediately, then `PUT`. The
    UI never waits on the network to reflect the user's own click.
 
-`theme: "system"` resolves via `matchMedia('(prefers-color-scheme: dark)')` with
-a live listener, so it tracks OS changes rather than only reading at load.
+`theme: "system"` keeps a live `matchMedia` listener, so it tracks OS changes
+rather than only reading at load.
+
+Note that `theme.test.ts` currently asserts `'system'` is an invalid stored
+value that falls back to dark. That assertion inverts under this design and
+must be updated, not deleted.
 
 ### Header toggle
 
