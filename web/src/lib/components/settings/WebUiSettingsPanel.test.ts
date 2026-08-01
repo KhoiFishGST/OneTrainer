@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/svelte';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/svelte';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import WebUiSettingsPanel from './WebUiSettingsPanel.svelte';
 import { appearance } from '$lib/stores/appearance.svelte';
 
@@ -56,5 +56,53 @@ describe('WebUiSettingsPanel', () => {
     setReducedMotion(true);
     render(WebUiSettingsPanel);
     expect(screen.getByLabelText(/animations/i)).not.toBeDisabled();
+  });
+
+  describe('wiring to the appearance store', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    // `appearance` is an object literal whose setters read `this`, so the
+    // spy must stay a method on that same object rather than a standalone
+    // mock -- vi.spyOn does exactly that, wrapping the real implementation
+    // in place instead of replacing the object.
+    it.each([
+      ['0', 'light'],
+      ['1', 'dark'],
+      ['2', 'system'],
+    ] as const)(
+      'calls appearance.setTheme with %s selected -> %s',
+      async (optionValue, expected) => {
+        const setTheme = vi.spyOn(appearance, 'setTheme');
+        render(WebUiSettingsPanel);
+        const select = screen.getByLabelText(/theme/i) as HTMLSelectElement;
+
+        await fireEvent.change(select, { target: { value: optionValue } });
+
+        expect(setTheme).toHaveBeenCalledWith(expected);
+      }
+    );
+
+    it('calls appearance.setAnimations(false) when the switch is turned off', async () => {
+      const setAnimations = vi.spyOn(appearance, 'setAnimations');
+      render(WebUiSettingsPanel);
+      const toggle = screen.getByLabelText(/animations/i);
+
+      await fireEvent.click(toggle);
+
+      expect(setAnimations).toHaveBeenCalledWith(false);
+    });
+
+    it('calls appearance.setAnimations(true) when the switch is turned back on', async () => {
+      appearance.setAnimations(false);
+      const setAnimations = vi.spyOn(appearance, 'setAnimations');
+      render(WebUiSettingsPanel);
+      const toggle = screen.getByLabelText(/animations/i);
+
+      await fireEvent.click(toggle);
+
+      expect(setAnimations).toHaveBeenCalledWith(true);
+    });
   });
 });
