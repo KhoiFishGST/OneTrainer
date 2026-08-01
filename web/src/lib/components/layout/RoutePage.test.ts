@@ -22,3 +22,26 @@ describe('RoutePage', () => {
     expect(container.querySelector('.route-page')?.children.length).toBe(0);
   });
 });
+
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+describe('route transition', () => {
+  const source = readFileSync(
+    resolve(process.cwd(), 'src/lib/components/layout/RoutePage.svelte'),
+    'utf-8'
+  );
+
+  it('animates on mount using the motion tokens', () => {
+    expect(source).toContain('animation: route-page-in var(--motion-duration-enter)');
+    expect(source).toContain('var(--motion-ease-enter)');
+  });
+
+  it('has no exit animation, which would delay navigation', () => {
+    expect(source).not.toContain('--motion-duration-exit');
+  });
+
+  it('moves by the travel token rather than a literal distance', () => {
+    expect(source).toContain('translateY(var(--motion-travel))');
+  });
+});

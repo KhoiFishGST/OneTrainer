@@ -18,5 +18,13 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    animation: route-page-in var(--motion-duration-enter) var(--motion-ease-enter);
+  }
+
+  @keyframes route-page-in {
+    from {
+      opacity: 0;
+      transform: translateY(var(--motion-travel));
+    }
   }
 </style>
