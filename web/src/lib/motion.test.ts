@@ -79,9 +79,15 @@ describe('motionEnabled', () => {
 });
 
 describe('toast motion', () => {
-  it('brings sonner durations under the token block', () => {
+  // Source text only, so this proves the rule was typed, not that it wins the
+  // cascade -- sonner's own rule is injected later at the same specificity, so
+  // that distinction is the whole point. e2e/motion.spec.ts reads a real
+  // toast's computed transition-duration; this keeps the selector honest.
+  it('brings sonner durations under the token block, scoped to beat sonner', () => {
     const cssText = readFileSync(resolve(process.cwd(), 'src/app.css'), 'utf-8');
-    expect(cssText).toContain('[data-sonner-toast]');
-    expect(cssText).toMatch(/\[data-sonner-toast\][\s\S]{0,200}--motion-duration-enter/);
+    expect(cssText).toContain('[data-sonner-toaster] [data-sonner-toast]');
+    expect(cssText).toMatch(
+      /\[data-sonner-toaster\] \[data-sonner-toast\][\s\S]{0,200}--motion-duration-enter/
+    );
   });
 });

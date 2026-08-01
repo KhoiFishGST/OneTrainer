@@ -578,8 +578,16 @@ body {
   pulled onto the tokens so the kill switches reach them. A toast that keeps
   sliding after the user has turned animations off is the most visible way for
   the setting to look broken.
+
+  The descendant selector is load-bearing, not decoration. sonner's own rule is
+  a bare `[data-sonner-toast]`, the same specificity as this one, and it is a
+  Svelte component style injected at runtime -- so it comes later in the
+  cascade and a bare selector here loses. Scoping to the toaster container
+  raises this to (0,2,0) and wins. e2e/motion.spec.ts reads a real toast's
+  computed transition-duration, because a source-text check cannot tell an
+  applied rule from an inert one.
 */
-[data-sonner-toast] {
+[data-sonner-toaster] [data-sonner-toast] {
   transition-duration: var(--motion-duration-enter);
   transition-timing-function: var(--motion-ease-enter);
 }

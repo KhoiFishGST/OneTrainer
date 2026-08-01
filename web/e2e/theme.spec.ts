@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Theme Switching and Persistence", () => {
-  test("starts in dark theme by default", async ({ page }) => {
+  test("follows the OS preference by default, which this project pins to dark", async ({
+    page,
+  }) => {
     await page.goto("/general");
     await expect(page.locator("html")).toHaveClass(/dark/);
 
@@ -46,5 +48,22 @@ test.describe("Theme Switching and Persistence", () => {
     await expect(page.locator("html")).toHaveClass(/dark/);
     storedTheme = await page.evaluate(() => localStorage.getItem("webui.theme"));
     expect(storedTheme).toBe("dark");
+  });
+});
+
+test.describe("First load on a light-preference machine", () => {
+  test.use({ colorScheme: "light" });
+
+  test("paints light and stays light, with no flash through dark", async ({ page }) => {
+    // The client's fallback and the server's default are both 'system', so
+    // nothing paints dark first and then corrects itself once the appearance
+    // query resolves.
+    await page.goto("/general");
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
+
+    // Let the appearance query resolve and reconcile, then confirm nothing
+    // moved: a divergent default would show up here as a flip to dark.
+    await expect(page.getByRole("button", { name: /switch to dark theme/i })).toBeVisible();
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
   });
 });

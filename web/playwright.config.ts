@@ -10,6 +10,12 @@ export default defineConfig({
   use: {
     baseURL: "http://127.0.0.1:7801",
     trace: "on-first-retry",
+    // The default theme is 'system' on both the client and the server, so the
+    // browser's colour scheme -- not the app -- decides what a fresh profile
+    // paints. Pinning it here makes the suite's "starts dark" assumption
+    // explicit instead of leaving it to Playwright's default. Tests that care
+    // about the light path override this with test.use().
+    colorScheme: "dark",
   },
   webServer: {
     // Build first: e2e_server.py serves the static `build/` directory, so
