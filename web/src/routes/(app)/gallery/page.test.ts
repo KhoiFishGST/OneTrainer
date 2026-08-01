@@ -247,6 +247,10 @@ describe('Gallery Route Page', () => {
       expect(workspace.reloadServer).toHaveBeenCalledWith(true);
       expect(loadSpy).toHaveBeenCalledWith('2026-07-26_12-00-00', 'rev-1');
     });
+
+    expect(workspace.reloadServer.mock.invocationCallOrder[0]).toBeLessThan(
+      loadSpy.mock.invocationCallOrder[0]
+    );
   });
 
   it('sends nothing when the discard confirmation is cancelled', async () => {
