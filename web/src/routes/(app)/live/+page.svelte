@@ -225,6 +225,26 @@
           {$trainingStore.status?.state || 'IDLE'}
         </span>
       {/snippet}
+
+      {#snippet actions()}
+        {#if viewing.loading}
+          <span class="text-sm text-muted-foreground">Loading run…</span>
+        {/if}
+        <label class="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>Viewing</span>
+          <NativeSelect
+            class="bg-muted text-foreground border border-border rounded px-2 py-1 text-sm"
+            aria-label="Viewing run"
+            value={viewing.mode === 'historical' ? (viewing.runKey ?? '') : ''}
+            onchange={onSelectRun}
+          >
+            <NativeSelectOption value="">Live</NativeSelectOption>
+            {#each availableRuns as run (run.key)}
+              <NativeSelectOption value={run.key}>{run.key}</NativeSelectOption>
+            {/each}
+          </NativeSelect>
+        </label>
+      {/snippet}
     </PageHeader>
 
     {#if status.error_message}
@@ -284,27 +304,6 @@
 
     <!-- Metrics Charts -->
     <section class="charts-section">
-      <div class="flex items-center justify-between flex-wrap gap-3 mb-2">
-        <label class="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>Viewing</span>
-          <NativeSelect
-            class="bg-muted text-foreground border border-border rounded px-2 py-1 text-sm"
-            aria-label="Viewing run"
-            value={viewing.mode === 'historical' ? (viewing.runKey ?? '') : ''}
-            onchange={onSelectRun}
-          >
-            <NativeSelectOption value="">Live</NativeSelectOption>
-            {#each availableRuns as run (run.key)}
-              <NativeSelectOption value={run.key}>{run.key}</NativeSelectOption>
-            {/each}
-          </NativeSelect>
-        </label>
-
-        {#if viewing.loading}
-          <span class="text-sm text-muted-foreground">Loading run…</span>
-        {/if}
-      </div>
-
       {#if viewing.error}
         <Alert variant="destructive" class="mb-2">{viewing.error}</Alert>
       {:else if viewing.mode === 'historical'}
