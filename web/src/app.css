@@ -289,9 +289,10 @@ body {
   that need an animation plugin (`tw-animate-css`). This project imports plain
   `@import "tailwindcss"` with no such plugin, so every one of those utilities
   compiled to nothing and the sheet popped in and out with no transition at
-  all. Adding the plugin would switch animation on for nine vendored overlay
-  components at once, which is a bigger visual change than the nav drawer
-  needs, so the sheet's slide is hand-written here instead.
+  all. The plugin is still not installed because its durations and travel are
+  hardcoded per-component, so the Crisp scale would have to be edited into
+  nine vendored files instead of living in one token block -- the sheet's
+  slide is hand-written here instead.
 
   The selector is `[data-dialog-content][data-side]`: bits-ui sets
   `data-dialog-content` and `data-state` on the content element, and
@@ -299,9 +300,83 @@ body {
   nothing else -- plain dialogs have no `data-side`, and menus and tooltips
   carry `data-side` but are not dialog content.
 
-  Duration and easing match the desktop rail's `transition-[width]
-  duration-200 ease-in-out`, so the two navigation surfaces move alike.
+  Duration and easing come from `--motion-duration-layout`, the same token
+  the desktop rail's width transition uses, so the two navigation surfaces
+  move alike.
 */
+/*
+  Overlay motion.
+
+  bits-ui sets data-state="open"|"closed" on every overlay it portals, and
+  shadcn's wrappers set a data-slot / data-*-content attribute identifying the
+  kind. Together they cover dialogs, alert dialogs, dropdowns, selects,
+  popovers and tooltips from one place, with no edits to the vendored
+  components and no animation plugin.
+
+  Those components still carry upstream's animate-in / zoom-in-95 classes,
+  which compile to nothing without tw-animate-css. These rules are unlayered
+  and Tailwind's utilities are layered, so these win even if that plugin is
+  ever added -- the same specificity property the phone min-height rule below
+  relies on.
+*/
+@keyframes overlay-scrim-in {
+  from { opacity: 0; }
+}
+
+@keyframes overlay-scrim-out {
+  to { opacity: 0; }
+}
+
+@keyframes overlay-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--motion-travel)) scale(var(--motion-scale));
+  }
+}
+
+@keyframes overlay-content-out {
+  to {
+    opacity: 0;
+    transform: translateY(var(--motion-travel)) scale(var(--motion-scale));
+  }
+}
+
+[data-dialog-overlay][data-state='open'],
+[data-alert-dialog-overlay][data-state='open'] {
+  animation: overlay-scrim-in var(--motion-duration-enter) var(--motion-ease-enter);
+}
+
+[data-dialog-overlay][data-state='closed'],
+[data-alert-dialog-overlay][data-state='closed'] {
+  animation: overlay-scrim-out var(--motion-duration-exit) var(--motion-ease-exit);
+}
+
+/*
+  Sheets are excluded here: they slide from an edge and have their own
+  keyframes above. `:not([data-side])` is what distinguishes a plain dialog
+  from a sheet, exactly as the sheet rules use [data-side] to select one.
+*/
+[data-dialog-content]:not([data-side])[data-state='open'],
+[data-alert-dialog-content][data-state='open'],
+[data-dropdown-menu-content][data-state='open'],
+[data-dropdown-menu-sub-content][data-state='open'],
+[data-select-content][data-state='open'],
+[data-popover-content][data-state='open'],
+[data-tooltip-content][data-state='open'],
+[data-tooltip-content][data-state='delayed-open'] {
+  animation: overlay-content-in var(--motion-duration-enter) var(--motion-ease-enter);
+}
+
+[data-dialog-content]:not([data-side])[data-state='closed'],
+[data-alert-dialog-content][data-state='closed'],
+[data-dropdown-menu-content][data-state='closed'],
+[data-dropdown-menu-sub-content][data-state='closed'],
+[data-select-content][data-state='closed'],
+[data-popover-content][data-state='closed'],
+[data-tooltip-content][data-state='closed'] {
+  animation: overlay-content-out var(--motion-duration-exit) var(--motion-ease-exit);
+}
+
 @keyframes sheet-slide-in-left {
   from {
     transform: translateX(-100%);
@@ -358,28 +433,28 @@ body {
 }
 
 [data-dialog-content][data-side='left'][data-state='open'] {
-  animation: sheet-slide-in-left 200ms ease-in-out;
+  animation: sheet-slide-in-left var(--motion-duration-layout) var(--motion-ease-enter);
 }
 [data-dialog-content][data-side='left'][data-state='closed'] {
-  animation: sheet-slide-out-left 200ms ease-in-out;
+  animation: sheet-slide-out-left var(--motion-duration-exit) var(--motion-ease-exit);
 }
 [data-dialog-content][data-side='right'][data-state='open'] {
-  animation: sheet-slide-in-right 200ms ease-in-out;
+  animation: sheet-slide-in-right var(--motion-duration-layout) var(--motion-ease-enter);
 }
 [data-dialog-content][data-side='right'][data-state='closed'] {
-  animation: sheet-slide-out-right 200ms ease-in-out;
+  animation: sheet-slide-out-right var(--motion-duration-exit) var(--motion-ease-exit);
 }
 [data-dialog-content][data-side='top'][data-state='open'] {
-  animation: sheet-slide-in-top 200ms ease-in-out;
+  animation: sheet-slide-in-top var(--motion-duration-layout) var(--motion-ease-enter);
 }
 [data-dialog-content][data-side='top'][data-state='closed'] {
-  animation: sheet-slide-out-top 200ms ease-in-out;
+  animation: sheet-slide-out-top var(--motion-duration-exit) var(--motion-ease-exit);
 }
 [data-dialog-content][data-side='bottom'][data-state='open'] {
-  animation: sheet-slide-in-bottom 200ms ease-in-out;
+  animation: sheet-slide-in-bottom var(--motion-duration-layout) var(--motion-ease-enter);
 }
 [data-dialog-content][data-side='bottom'][data-state='closed'] {
-  animation: sheet-slide-out-bottom 200ms ease-in-out;
+  animation: sheet-slide-out-bottom var(--motion-duration-exit) var(--motion-ease-exit);
 }
 
 /* The blanket reduced-motion block above already clamps every animation to
