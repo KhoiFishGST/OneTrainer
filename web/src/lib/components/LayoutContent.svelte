@@ -45,7 +45,15 @@
     $updateAppearanceMutation.mutate(update);
   };
 
-  // Reconcile the localStorage cache against the server once it answers.
+  // Mirror the appearance query's cache into the DOM/localStorage cache.
+  // The mutation now writes to this cache optimistically (see
+  // createUpdateAppearanceMutation), so this effect also fires on the
+  // in-flight optimistic value -- that's fine, since acceptRemote is
+  // idempotent and the optimistic value already matches what the setter
+  // applied to the DOM directly. On a failed save the mutation's onError
+  // restores the previous value into the cache (firing this effect again)
+  // and also calls acceptRemote synchronously itself, so the rollback is
+  // visible immediately rather than waiting on this effect to reschedule.
   $effect(() => {
     if ($appearanceQuery.data) {
       appearance.acceptRemote($appearanceQuery.data);

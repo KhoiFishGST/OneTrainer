@@ -1,6 +1,8 @@
 import { createQuery, createMutation, useQueryClient, QueryClient, type CreateQueryOptions, type CreateQueryResult } from '@tanstack/svelte-query';
 import { api } from './client';
-import type { AppearanceUpdateRequest, Concept, ConfigUpdateRequest, PresetLoadRequest, PresetSaveRequest, SampleDefinition, SamplesResponse, GalleryRunModel } from './types';
+import type { AppearanceSettings, AppearanceUpdateRequest, Concept, ConfigUpdateRequest, PresetLoadRequest, PresetSaveRequest, SampleDefinition, SamplesResponse, GalleryRunModel } from './types';
+import { appearance } from '$lib/stores/appearance.svelte';
+import { toast } from 'svelte-sonner';
 
 const defaultQueryClient = new QueryClient({
   defaultOptions: {
@@ -444,8 +446,40 @@ export function createUpdateAppearanceMutation() {
   return createMutation(
     {
       mutationFn: (data: AppearanceUpdateRequest) => api.putAppearance(data),
+      // Optimistic write: the store already applied the change to the DOM and
+      // localStorage before this mutation was even called, so this exists to
+      // keep the query cache (and therefore anyone else reading it) in sync
+      // with what the user is already seeing, and to give us a snapshot to
+      // roll back to if the server rejects the write.
+      onMutate: async (update) => {
+        await client.cancelQueries({ queryKey: queryKeys.appearance() });
+        const previous = client.getQueryData<AppearanceSettings>(queryKeys.appearance());
+        if (previous) {
+          client.setQueryData<AppearanceSettings>(queryKeys.appearance(), {
+            ...previous,
+            ...update,
+          });
+        }
+        return { previous };
+      },
+      onError: (_err, _update, context) => {
+        if (context?.previous) {
+          client.setQueryData(queryKeys.appearance(), context.previous);
+          // The cache alone isn't enough here: LayoutContent's reconcile
+          // effect only reacts to a changed query result, and we want the
+          // visible theme/animation state to snap back synchronously rather
+          // than waiting on that to schedule.
+          appearance.acceptRemote(context.previous);
+        }
+        toast.error("Couldn't save appearance settings");
+      },
       onSuccess: (result) => {
         client.setQueryData(queryKeys.appearance(), result);
+      },
+      // Re-read the server regardless of outcome so any real divergence
+      // (e.g. another browser tab's change) converges.
+      onSettled: () => {
+        client.invalidateQueries({ queryKey: queryKeys.appearance() });
       },
     },
     client
