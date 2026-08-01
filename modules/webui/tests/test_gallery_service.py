@@ -462,3 +462,12 @@ def test_get_run_config_path_confines_poisoned_filename_to_config_dir(
 
     assert gallery.get_run_config_path("run1") == workspace / "config" / "evil.json"
 
+
+def test_get_run_metrics_path_rejects_path_traversal(tmp_path):
+    from modules.webui.gallery import GalleryNotFound, GalleryService
+
+    service = GalleryService(root_dir=tmp_path, workspace_provider=lambda: tmp_path)
+
+    for bad_key in ["../escape", "a/b", "..\\escape", ".."]:
+        with pytest.raises(GalleryNotFound):
+            service.get_run_metrics_path(bad_key)

@@ -171,3 +171,46 @@ def test_load_run_config_409s_on_stale_revision(client, gallery_service, tmp_pat
 
     assert response.status_code == 409
     assert "current_revision" in response.json()["detail"]
+
+
+def test_run_metrics_returns_rows_from_the_jsonl_file(client, gallery_service, tmp_path):
+    from modules.webui.metrics_store import METRICS_FILENAME
+
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    (run_dir / METRICS_FILENAME).write_text(
+        '{"step":1,"loss_train_step":0.5}\n{"step":1,"lr_unet":0.0001}\n',
+        encoding="utf-8",
+    )
+    gallery_service.get_run_metrics_path.return_value = run_dir / METRICS_FILENAME
+
+    response = client.get("/api/gallery/runs/run/metrics")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "metrics": [
+            {"step": 1, "loss_train_step": 0.5},
+            {"step": 1, "lr_unet": 0.0001},
+        ]
+    }
+
+
+def test_run_metrics_returns_empty_list_when_the_file_is_absent(client, gallery_service, tmp_path):
+    from modules.webui.metrics_store import METRICS_FILENAME
+
+    # A run that predates this feature is not an error.
+    gallery_service.get_run_metrics_path.return_value = tmp_path / "run" / METRICS_FILENAME
+
+    response = client.get("/api/gallery/runs/run/metrics")
+
+    assert response.status_code == 200
+    assert response.json() == {"metrics": []}
+
+
+def test_run_metrics_404s_for_an_unknown_run(client, gallery_service):
+    gallery_service.get_run_metrics_path.side_effect = GalleryNotFound("Run not found")
+
+    response = client.get("/api/gallery/runs/nope/metrics")
+
+    assert response.status_code == 404
+

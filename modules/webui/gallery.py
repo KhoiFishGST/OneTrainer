@@ -16,6 +16,7 @@ from modules.util.config.TrainConfig import TrainConfig
 from modules.util.enum.EMAMode import EMAMode
 from modules.util.enum.FileType import FileType
 from modules.webui.atomic_io import copy_file_atomic, save_pil_atomic, write_json_atomic
+from modules.webui.metrics_store import METRICS_FILENAME
 
 from PIL import Image
 
@@ -638,6 +639,25 @@ class GalleryService:
                 raise GalleryNotFound("Run has no recorded config file")
 
             return ws / "config" / Path(config_filename).name
+
+    def get_run_metrics_path(self, run_key: str) -> Path:
+        """Resolve a run's metrics.jsonl.
+
+        Mirrors get_run_config_path: the run key is forced through the same
+        containment check so a crafted key cannot read outside web/samples. The
+        returned path is not checked for existence -- a run that predates
+        metrics persistence simply has no file, which callers report as empty.
+        """
+        with self._lock:
+            if self._is_unsafe_run_key(run_key):
+                raise GalleryNotFound("Run not found")
+
+            ws = self._get_workspace_dir()
+            run_dir = ws / "web" / "samples" / run_key
+            if not (run_dir / "manifest.json").exists():
+                raise GalleryNotFound("Run not found")
+
+            return run_dir / METRICS_FILENAME
 
     def get_run_model(self, run_key: str) -> dict[str, Any]:
         with self._lock:
