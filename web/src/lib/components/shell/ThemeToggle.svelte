@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { theme } from '$lib/stores/theme.svelte';
+  import { appearance } from '$lib/stores/appearance.svelte';
   import { Sun, Moon } from '@lucide/svelte';
   import { Button } from '$lib/components/ui/button';
 
-  const isDark = $derived(theme.value === 'dark');
+  const isDark = $derived(appearance.resolvedTheme === 'dark');
   const ariaLabel = $derived(isDark ? 'Switch to light theme' : 'Switch to dark theme');
 
   function handleToggle() {
-    theme.toggle();
+    appearance.toggleTheme();
   }
 </script>
 

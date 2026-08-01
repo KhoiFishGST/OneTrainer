@@ -11,7 +11,10 @@
     createConfigQuery,
     createSchemaQuery,
     createUpdateConfigMutation,
+    createAppearanceQuery,
+    createUpdateAppearanceMutation,
   } from '../api/queries';
+  import { appearance } from '$lib/stores/appearance.svelte';
   import Header from './shell/Header.svelte';
   import Rail from './shell/Rail.svelte';
   import StatusBar from './shell/StatusBar.svelte';
@@ -32,6 +35,22 @@
   const metaQuery = createMetaQuery();
   const configQuery = createConfigQuery();
   const updateConfigMutation = createUpdateConfigMutation();
+  const appearanceQuery = createAppearanceQuery();
+  const updateAppearanceMutation = createUpdateAppearanceMutation();
+
+  // The store performs no I/O of its own; this is where a local change becomes
+  // a write. Applying to the DOM already happened inside the setter, so a slow
+  // or failed request never delays the user's own click.
+  appearance.onChange = (update) => {
+    $updateAppearanceMutation.mutate(update);
+  };
+
+  // Reconcile the localStorage cache against the server once it answers.
+  $effect(() => {
+    if ($appearanceQuery.data) {
+      appearance.acceptRemote($appearanceQuery.data);
+    }
+  });
 
   let workspace = $state<ConfigWorkspace | null>(null);
   let pickerOpen = $state(false);
