@@ -128,7 +128,7 @@ describe('Gallery Route Page', () => {
 
     expect(await screen.findByAltText('Active run prompt')).toBeInTheDocument();
 
-    const select = await screen.findByRole('combobox', { name: 'Gallery run' }) as HTMLSelectElement;
+    const select = await screen.findByRole('combobox', { name: 'Run' }) as HTMLSelectElement;
     await fireEvent.change(select, { target: { value: '1' } });
 
     await waitFor(async () => {

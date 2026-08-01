@@ -88,10 +88,10 @@
   <div class="contents" data-testid="gallery-page">
     <PageHeader title="Sample Gallery">
       {#snippet actions()}
-        <label for="gallery-run-select" class="text-sm font-medium text-muted-foreground">Gallery run</label>
+        <label for="gallery-run-select" class="text-sm font-medium text-muted-foreground">Run</label>
         <Select
           id="gallery-run-select"
-          ariaLabel="Gallery run"
+          ariaLabel="Run"
           bind:value={userSelectedKey}
           options={availableRuns.map((r) => ({
             value: r.key,
