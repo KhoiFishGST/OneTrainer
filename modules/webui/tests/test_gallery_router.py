@@ -88,3 +88,71 @@ def test_gallery_rejects_unknown_or_unsafe_resources(client, gallery_service, ur
     gallery_service.get_run_model.side_effect = GalleryNotFound("gallery run not found")
     gallery_service.get_image.side_effect = GalleryNotFound("gallery image not found")
     assert client.get(url).status_code == 404
+
+
+def test_load_run_config_replaces_live_config(client, gallery_service, tmp_path):
+    config_path = tmp_path / "config" / "run1.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    # __version pins this to the current TrainConfig format so from_dict() skips the
+    # legacy migration chain, which assumes every pre-migration document carries a
+    # "model_type" key (a pre-existing, unrelated bug: TrainConfig.py:801 KeyErrors
+    # on a truly bare "{}" with no __version, e.g. via TrainConfig.default_values().from_dict({})).
+    config_path.write_text('{"__version": 11}', encoding="utf-8")
+    gallery_service.get_run_config_path.return_value = config_path
+
+    base_revision = client.get("/api/config").json()["revision"]
+    response = client.post(
+        "/api/gallery/runs/run1/load", json={"base_revision": base_revision}
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert "config" in body
+    assert body["revision"] != base_revision
+    gallery_service.get_run_config_path.assert_called_once_with("run1")
+
+
+def test_load_run_config_404s_for_unknown_run(client, gallery_service):
+    gallery_service.get_run_config_path.side_effect = GalleryNotFound("Run not found")
+
+    response = client.post("/api/gallery/runs/nope/load", json={"base_revision": "x"})
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Run not found"
+
+
+def test_load_run_config_404s_when_run_has_no_recorded_config(client, gallery_service):
+    gallery_service.get_run_config_path.side_effect = GalleryNotFound(
+        "Run has no recorded config file"
+    )
+
+    response = client.post("/api/gallery/runs/run1/load", json={"base_revision": "x"})
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Run has no recorded config file"
+
+
+def test_load_run_config_404s_when_config_file_is_gone(client, gallery_service, tmp_path):
+    gallery_service.get_run_config_path.return_value = tmp_path / "config" / "deleted.json"
+
+    base_revision = client.get("/api/config").json()["revision"]
+    response = client.post(
+        "/api/gallery/runs/run1/load", json={"base_revision": base_revision}
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Config file for this run no longer exists"
+
+
+def test_load_run_config_409s_on_stale_revision(client, gallery_service, tmp_path):
+    config_path = tmp_path / "config" / "run1.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text('{"__version": 11}', encoding="utf-8")
+    gallery_service.get_run_config_path.return_value = config_path
+
+    response = client.post(
+        "/api/gallery/runs/run1/load", json={"base_revision": "definitely-stale"}
+    )
+
+    assert response.status_code == 409
+    assert "current_revision" in response.json()["detail"]
