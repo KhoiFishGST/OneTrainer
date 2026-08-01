@@ -23,3 +23,7 @@ export function getRouteContext(): RouteContext {
   }
   return ctx;
 }
+
+export function tryGetRouteContext(): RouteContext | null {
+  return getContext<RouteContext>(CONTEXT_KEY) ?? null;
+}

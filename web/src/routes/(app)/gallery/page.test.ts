@@ -4,6 +4,22 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import GalleryPage from './+page.svelte';
 import { api } from '$lib/api/client';
 import type { GalleryRunModel } from '$lib/api/types';
+import GalleryHarness from './GalleryTestHarness.svelte';
+import { toast } from 'svelte-sonner';
+
+vi.mock('svelte-sonner', () => ({
+  toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
+}));
+
+function fakeWorkspace(overrides: Record<string, any> = {}) {
+  return {
+    revision: 'rev-1',
+    dirty: false,
+    acceptRemote: vi.fn(),
+    reloadServer: vi.fn(),
+    ...overrides,
+  };
+}
 
 function activeGallery(key: string): GalleryRunModel {
   return {
@@ -134,5 +150,75 @@ describe('Gallery Route Page', () => {
     await waitFor(async () => {
       expect(await screen.findByAltText('Historical checkpoint')).toBeInTheDocument();
     });
+  });
+
+  it('loads the selected run config and toasts on success', async () => {
+    mockGalleryRuns(['2026-07-26_12-00-00']);
+    mockCurrentGallery(activeGallery('2026-07-26_12-00-00'));
+    const loadSpy = vi
+      .spyOn(api, 'loadGalleryRunConfig')
+      .mockResolvedValue({ config: { a: 1 }, revision: 'rev-2' } as any);
+    const workspace = fakeWorkspace();
+
+    render(GalleryHarness, { props: { workspace } });
+
+    const button = await screen.findByRole('button', { name: 'Load Run' });
+    await waitFor(() => expect(button).not.toBeDisabled());
+    await fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(loadSpy).toHaveBeenCalledWith('2026-07-26_12-00-00', 'rev-1');
+    });
+    expect(workspace.acceptRemote).toHaveBeenCalledWith({
+      config: { a: 1 },
+      revision: 'rev-2',
+    });
+    expect(toast.success).toHaveBeenCalledWith(
+      'Loaded config from run 2026-07-26_12-00-00'
+    );
+  });
+
+  it('toasts the server detail when loading a run fails', async () => {
+    mockGalleryRuns(['2026-07-26_12-00-00']);
+    mockCurrentGallery(activeGallery('2026-07-26_12-00-00'));
+    vi.spyOn(api, 'loadGalleryRunConfig').mockRejectedValue(
+      Object.assign(new Error('boom'), {
+        status: 404,
+        detail: 'Config file for this run no longer exists',
+      })
+    );
+    const workspace = fakeWorkspace();
+
+    render(GalleryHarness, { props: { workspace } });
+
+    const button = await screen.findByRole('button', { name: 'Load Run' });
+    await waitFor(() => expect(button).not.toBeDisabled());
+    await fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        'Config file for this run no longer exists'
+      );
+    });
+    expect(workspace.acceptRemote).not.toHaveBeenCalled();
+  });
+
+  it('disables Load Run when there is no config file recorded for the run', async () => {
+    vi.spyOn(api, 'getGalleryRuns').mockResolvedValue({
+      runs: [
+        {
+          key: '2026-07-26_12-00-00',
+          config_filename: '',
+          started_at: '2026-07-26_12-00-00',
+          batch_count: 1,
+        },
+      ],
+    } as any);
+    mockCurrentGallery(activeGallery('2026-07-26_12-00-00'));
+
+    render(GalleryHarness, { props: { workspace: fakeWorkspace() } });
+
+    const button = await screen.findByRole('button', { name: 'Load Run' });
+    await waitFor(() => expect(button).toBeDisabled());
   });
 });

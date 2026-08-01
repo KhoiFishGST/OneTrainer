@@ -9,6 +9,10 @@
   import Select from '$lib/components/form/ValueSelect.svelte';
   import PageHeader from '$lib/components/layout/PageHeader.svelte';
   import RoutePage from '$lib/components/layout/RoutePage.svelte';
+  import { Button } from '$lib/components/ui/button';
+  import { tryGetRouteContext } from '$lib/config/context';
+  import { api } from '$lib/api/client';
+  import { toast } from 'svelte-sonner';
 
   const runsQuery = createGalleryRunsQuery();
 
@@ -50,6 +54,48 @@
     if (availableRuns.length > 0) return availableRuns[0].key;
     return null;
   });
+
+  const routeCtx = tryGetRouteContext();
+  const workspace = $derived(routeCtx?.workspace ?? null);
+
+  let isLoadingRun = $state(false);
+
+  const selectedRunSummary = $derived(
+    availableRuns.find((r) => r.key === selectedRunKey) ?? null
+  );
+
+  const canLoadRun = $derived(
+    Boolean(workspace) &&
+      Boolean(selectedRunKey) &&
+      Boolean(selectedRunSummary?.config_filename) &&
+      !isLoadingRun
+  );
+
+  async function performLoadRun() {
+    const key = selectedRunKey;
+    if (!key || !workspace) return;
+
+    isLoadingRun = true;
+    try {
+      const resp = await api.loadGalleryRunConfig(key, workspace.revision);
+      workspace.acceptRemote(resp);
+      toast.success(`Loaded config from run ${key}`);
+    } catch (err: any) {
+      const detail = err?.detail;
+      const message =
+        typeof detail === 'string'
+          ? detail
+          : detail?.message || 'Could not load the config for this run';
+      toast.error(message);
+    } finally {
+      isLoadingRun = false;
+    }
+  }
+
+  async function handleLoadRun() {
+    if (!canLoadRun) return;
+    await performLoadRun();
+  }
 
   const runQuery = $derived(createGalleryRunQuery(selectedRunKey));
 
@@ -103,6 +149,13 @@
             userSelectedKey = val || null;
           }}
         />
+        <Button
+          variant="secondary"
+          disabled={!canLoadRun}
+          onclick={handleLoadRun}
+        >
+          {isLoadingRun ? 'Loading...' : 'Load Run'}
+        </Button>
       {/snippet}
     </PageHeader>
 
