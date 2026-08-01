@@ -400,4 +400,59 @@ def test_record_sample_converts_image_mode_for_webp_thumbnail(active_gallery, wo
     assert thumbnail.exists()
 
 
+def write_run_manifest(workspace: Path, run_key: str, run: dict[str, Any]) -> Path:
+    run_dir = workspace / "web" / "samples" / run_key
+    run_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path = run_dir / "manifest.json"
+    manifest_path.write_text(
+        json.dumps({"schema_version": 1, "run": run, "batches": []}),
+        encoding="utf-8",
+    )
+    return manifest_path
+
+
+def test_get_run_config_path_resolves_manifest_filename(gallery: GalleryService, workspace: Path):
+    write_run_manifest(workspace, "run1", {"key": "run1", "config_filename": "run1.json"})
+
+    assert gallery.get_run_config_path("run1") == workspace / "config" / "run1.json"
+
+
+def test_get_run_config_path_rejects_unknown_run(gallery: GalleryService, workspace: Path):
+    with pytest.raises(GalleryNotFound, match="Run not found"):
+        gallery.get_run_config_path("nope")
+
+
+@pytest.mark.parametrize("run_key", ["../outside", "a/b", "a\\b", ".."])
+def test_get_run_config_path_rejects_unsafe_run_key(gallery: GalleryService, run_key: str):
+    with pytest.raises(GalleryNotFound, match="Run not found"):
+        gallery.get_run_config_path(run_key)
+
+
+@pytest.mark.parametrize("run", [{"key": "run1"}, {"key": "run1", "config_filename": ""}])
+def test_get_run_config_path_requires_recorded_filename(
+    gallery: GalleryService, workspace: Path, run: dict[str, Any]
+):
+    write_run_manifest(workspace, "run1", run)
+
+    with pytest.raises(GalleryNotFound, match="Run has no recorded config file"):
+        gallery.get_run_config_path("run1")
+
+
+def test_get_run_config_path_rejects_unreadable_manifest(gallery: GalleryService, workspace: Path):
+    run_dir = workspace / "web" / "samples" / "run1"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    (run_dir / "manifest.json").write_text("{not json", encoding="utf-8")
+
+    with pytest.raises(GalleryNotFound, match="Run not found"):
+        gallery.get_run_config_path("run1")
+
+
+def test_get_run_config_path_confines_poisoned_filename_to_config_dir(
+    gallery: GalleryService, workspace: Path
+):
+    write_run_manifest(
+        workspace, "run1", {"key": "run1", "config_filename": "../../evil.json"}
+    )
+
+    assert gallery.get_run_config_path("run1") == workspace / "config" / "evil.json"
 

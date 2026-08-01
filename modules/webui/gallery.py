@@ -598,6 +598,34 @@ class GalleryService:
             runs.sort(key=lambda r: r.get("started_at") or "", reverse=True)
             return runs
 
+    def get_run_config_path(self, run_key: str) -> Path:
+        """Resolve the config file a completed run was trained from.
+
+        The manifest records only a bare filename; the file itself lives in the
+        workspace config directory. The name is forced through Path().name so a
+        hand-edited manifest cannot escape that directory. The returned path is
+        not checked for existence -- callers report that case separately.
+        """
+        with self._lock:
+            if Path(run_key).name != run_key or ".." in run_key or "/" in run_key or "\\" in run_key:
+                raise GalleryNotFound("Run not found")
+
+            ws = self._get_workspace_dir()
+            manifest_path = ws / "web" / "samples" / run_key / "manifest.json"
+            if not manifest_path.exists():
+                raise GalleryNotFound("Run not found")
+
+            try:
+                manifest_doc = json.loads(manifest_path.read_text(encoding="utf-8"))
+            except Exception as e:
+                raise GalleryNotFound("Run not found") from e
+
+            config_filename = (manifest_doc.get("run") or {}).get("config_filename") or ""
+            if not config_filename:
+                raise GalleryNotFound("Run has no recorded config file")
+
+            return ws / "config" / Path(config_filename).name
+
     def get_run_model(self, run_key: str) -> dict[str, Any]:
         with self._lock:
             if Path(run_key).name != run_key or ".." in run_key or "/" in run_key or "\\" in run_key:
