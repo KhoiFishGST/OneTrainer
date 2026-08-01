@@ -172,9 +172,10 @@ export interface TrainingStatus {
 export interface TrainingMetric {
   step?: number;
   epoch?: number;
-  loss?: number;
-  lr?: number;
   timestamp?: number;
+  // Scalar values arrive under namespaced keys derived from the TensorBoard
+  // tag: loss_train_step, smooth_loss_train_step, lr_unet, and so on. One row
+  // per scalar -- two keys are never present in the same row.
   [key: string]: any;
 }
 

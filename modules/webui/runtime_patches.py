@@ -93,17 +93,17 @@ def _patch_summary_writer() -> None:
             return
 
         try:
-            tag_lower = tag.lower()
-            value = float(scalar_value)
+            # Keep only the faithful, namespaced key. The old collapsed `loss`
+            # and `lr` aliases used substring matching, so every loss-family tag
+            # (loss/train_step, smooth_loss/train_step, loss/validation_step/*)
+            # and every lr/<param_group> overwrote a single key -- and since each
+            # scalar is recorded as its own row, the chart drew several unrelated
+            # series as one interleaved line. Consumers discover keys by prefix.
             payload = {
                 "step": global_step if global_step is not None else service._step,
                 "epoch": service._epoch,
-                tag.replace("/", "_"): value,
+                tag.replace("/", "_"): float(scalar_value),
             }
-            if "loss" in tag_lower:
-                payload["loss"] = value
-            if "lr" in tag_lower or "learning_rate" in tag_lower:
-                payload["lr"] = value
             service.record_metric(payload)
         except Exception:
             pass

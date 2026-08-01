@@ -45,5 +45,17 @@ describe('Live Dashboard Page', () => {
     expect(await screen.findByText('Latest Sample Set')).toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: 'Run' })).not.toBeInTheDocument();
   });
+
+  it('discovers namespaced metric series from metrics in store', () => {
+    trainingStore.setMetrics([
+      { step: 10, epoch: 1, loss_train_step: 0.5, lr_unet: 0.0001 },
+      { step: 10, epoch: 1, smooth_loss_train_step: 0.52, lr_text_encoder: 0.000003 }
+    ]);
+
+    render(LivePage);
+
+    expect(screen.getByText('Training Loss')).toBeInTheDocument();
+    expect(screen.getByText('Learning Rate')).toBeInTheDocument();
+  });
 });
 

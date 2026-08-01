@@ -61,9 +61,8 @@ def test_patch_is_idempotent(tmp_path):
     assert output.filepath == destination + ImageFormat.PNG.extension()
 
 
-def test_metrics_are_recorded_exactly_once_per_scalar():
-    # Regression test: training.py previously patched SummaryWriter.add_scalar
-    # twice (module level plus once per run), so run N recorded N+1 points.
+def _record_scalars(tags_and_values):
+    """Drive the patched add_scalar with a fake service and return the rows."""
     from modules.webui import training as training_module
 
     from torch.utils.tensorboard import SummaryWriter
@@ -82,11 +81,49 @@ def test_metrics_are_recorded_exactly_once_per_scalar():
     previous = training_module._active_training_service
     training_module._active_training_service = FakeService()
     try:
-        SummaryWriter.add_scalar(object(), "loss/train", 0.5, 7)
+        for tag, value, step in tags_and_values:
+            SummaryWriter.add_scalar(object(), tag, value, step)
     finally:
         training_module._active_training_service = previous
 
+    return recorded
+
+
+def test_metrics_are_recorded_exactly_once_per_scalar():
+    # Regression test: training.py previously patched SummaryWriter.add_scalar
+    # twice (module level plus once per run), so run N recorded N+1 points.
+    recorded = _record_scalars([("loss/train_step", 0.5, 7)])
+
     assert len(recorded) == 1
-    assert recorded[0]["loss"] == 0.5
+    assert recorded[0]["loss_train_step"] == 0.5
     assert recorded[0]["step"] == 7
     assert recorded[0]["epoch"] == 2
+
+
+def test_distinct_loss_tags_do_not_collapse_onto_one_key():
+    # Regression: `if "loss" in tag_lower` merged raw loss, the trainer's own
+    # smoothed loss, and validation loss into a single `loss` key, so the chart
+    # plotted three unrelated series as one zigzagging line.
+    recorded = _record_scalars([
+        ("loss/train_step", 0.5, 7),
+        ("smooth_loss/train_step", 0.52, 7),
+        ("loss/validation_step/total_average", 0.61, 7),
+    ])
+
+    assert recorded[0]["loss_train_step"] == 0.5
+    assert recorded[1]["smooth_loss_train_step"] == 0.52
+    assert recorded[2]["loss_validation_step_total_average"] == 0.61
+    assert all("loss" not in row for row in recorded)
+
+
+def test_distinct_lr_tags_do_not_collapse_onto_one_key():
+    # Regression: every `lr/<param_group>` wrote into a single `lr` key, so a
+    # run with a separately-tuned text encoder rendered as a zigzag.
+    recorded = _record_scalars([
+        ("lr/unet", 1e-4, 7),
+        ("lr/text_encoder", 3e-6, 7),
+    ])
+
+    assert recorded[0]["lr_unet"] == 1e-4
+    assert recorded[1]["lr_text_encoder"] == 3e-6
+    assert all("lr" not in row for row in recorded)

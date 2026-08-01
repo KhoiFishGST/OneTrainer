@@ -9,14 +9,15 @@
     createRequestSaveMutation,
     createGalleryCurrentQuery,
   } from '$lib/api/queries';
-  import MetricsChart from '$lib/components/charts/MetricsChart.svelte';
+  import MetricsChart, { type ChartSeries } from '$lib/components/charts/MetricsChart.svelte';
+  import { humanizeMetricKey } from '$lib/components/charts/format';
+  import type { TrainingMetric } from '$lib/api/types';
   import GpuMonitor from '$lib/components/training/GpuMonitor.svelte';
   import SampleGallery from '$lib/components/training/SampleGallery.svelte';
   import PageHeader from '$lib/components/layout/PageHeader.svelte';
   import RoutePage from '$lib/components/layout/RoutePage.svelte';
   import { Alert } from '$lib/components/ui/alert';
   import { toast as sonnerToast } from 'svelte-sonner';
-
 
   const sampleMutation = createRequestSampleMutation();
   const backupMutation = createRequestBackupMutation();
@@ -37,6 +38,26 @@
   const gallery = $derived($galleryQuery.data);
   const galleryLoading = $derived($galleryQuery.isLoading);
   const galleryError = $derived($galleryQuery.error);
+
+  // Series are discovered from the rows rather than hardcoded, so new parameter
+  // groups or new trainer scalars appear on the charts automatically.
+  function discoverSeries(rows: TrainingMetric[], matches: (key: string) => boolean): ChartSeries[] {
+    const keys = new Set<string>();
+    for (const row of rows) {
+      if (!row) continue;
+      for (const key of Object.keys(row)) {
+        if (typeof row[key] === 'number' && matches(key)) keys.add(key);
+      }
+    }
+    return [...keys]
+      .sort()
+      .map((key) => ({ key, label: humanizeMetricKey(key) }));
+  }
+
+  const lossSeries = $derived(
+    discoverSeries(metrics, (k) => k.startsWith('loss_') || k.startsWith('smooth_loss_'))
+  );
+  const lrSeries = $derived(discoverSeries(metrics, (k) => k.startsWith('lr_')));
 
   onMount(async () => {
     try {
@@ -163,8 +184,8 @@
     <!-- Metrics Charts -->
     <section class="charts-section">
       <div class="charts-grid">
-        <MetricsChart {metrics} metricKey="loss" title="Training Loss" height={280} />
-        <MetricsChart {metrics} metricKey="lr" title="Learning Rate" height={280} />
+        <MetricsChart {metrics} series={lossSeries} title="Training Loss" height={280} />
+        <MetricsChart {metrics} series={lrSeries} title="Learning Rate" height={280} />
       </div>
     </section>
 
