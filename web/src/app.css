@@ -124,6 +124,49 @@
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
 }
 
+/* motion-tokens:start */
+/*
+  The single definition of the app's motion scale ("Crisp").
+
+  Everything that animates references these and nothing else, so the whole feel
+  is retunable here. Two properties are load-bearing and must not be
+  "normalised": exits are deliberately faster than entrances (an entrance is
+  information, an exit is an obstacle), and travel is coupled to duration
+  (2px over 280ms looks broken; 14px over 90ms looks like a jump cut).
+
+  --motion-duration-layout is longer because the rail travels 112px
+  (48px -> 160px) and the console drawer travels its full height, while
+  overlays travel 2px. 112px crammed into 90ms reads as a snap.
+*/
+:root {
+  --motion-duration-enter: 90ms;
+  --motion-duration-exit: 70ms;
+  --motion-duration-layout: 120ms;
+  --motion-ease-enter: cubic-bezier(0, 0, 0.2, 1);
+  --motion-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --motion-travel: 2px;
+  --motion-scale: 0.99;
+}
+/* motion-tokens:end */
+
+/*
+  Kill switch one of two: the user's "Animations" setting, applied to <html> by
+  the blocking script in app.html and by the appearance store.
+
+  Durations are zeroed rather than the animations removed. bits-ui keeps a
+  closing overlay mounted until its animation ends, so `animation: none` can
+  strand a closed dialog in the DOM; a 0.01ms animation still fires
+  animationend, so the unmount always completes. 0.01ms is also the convention
+  the prefers-reduced-motion block below already uses.
+*/
+html[data-motion='off'] {
+  --motion-duration-enter: 0.01ms;
+  --motion-duration-exit: 0.01ms;
+  --motion-duration-layout: 0.01ms;
+  --motion-travel: 0px;
+  --motion-scale: 1;
+}
+
 .dark {
   color-scheme: dark;
 
@@ -214,6 +257,21 @@ body {
 
 /* Reduced motion overrides */
 @media (prefers-reduced-motion: reduce) {
+  /*
+    Kill switch two of two, and the one that wins. Overriding the tokens (rather
+    than only clamping via the blanket rule below) means every token-driven
+    transition collapses too, including the JS-side motionEnabled() checks that
+    read the same signal. The app's Animations setting can turn motion off but
+    can never turn it back on against this.
+  */
+  :root {
+    --motion-duration-enter: 0.01ms;
+    --motion-duration-exit: 0.01ms;
+    --motion-duration-layout: 0.01ms;
+    --motion-travel: 0px;
+    --motion-scale: 1;
+  }
+
   *,
   *::before,
   *::after {
