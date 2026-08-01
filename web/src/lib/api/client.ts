@@ -281,6 +281,11 @@ export function createApi(base = '') {
     getGalleryRun: (runKey: string) =>
       request<GalleryRunModel>(`${base}/api/gallery/runs/${encodeURIComponent(runKey)}`),
 
+    getGalleryRunMetrics: (runKey: string) =>
+      request<{ metrics: TrainingMetric[] }>(
+        `${base}/api/gallery/runs/${encodeURIComponent(runKey)}/metrics`
+      ),
+
     getCurrentGallery: () => request<GalleryRunModel>(`${base}/api/gallery/current`),
 
     getSamples: (file?: string) => {
