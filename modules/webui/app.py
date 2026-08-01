@@ -25,6 +25,7 @@ from modules.webui.events import EventHub, EventType
 from modules.webui.gallery import GalleryService
 from modules.webui.media import MediaService
 from modules.webui.presets import PresetService
+from modules.webui.routers.appearance import router as appearance_router
 from modules.webui.routers.auth import router as auth_router
 from modules.webui.routers.concepts import router as concepts_router
 from modules.webui.routers.config import router as config_router
@@ -252,6 +253,7 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
         )
 
     app.include_router(health_router, prefix="/api")
+    app.include_router(appearance_router, prefix="/api")
     app.include_router(config_router, prefix="/api")
     app.include_router(concepts_router, prefix="/api")
     app.include_router(datasets_router, prefix="/api")
