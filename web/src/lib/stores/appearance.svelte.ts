@@ -3,10 +3,14 @@ import type { AppearanceSettings, AppearanceUpdateRequest, ThemeChoice } from '$
 export const THEME_STORAGE_KEY = 'webui.theme';
 export const ANIMATIONS_STORAGE_KEY = 'webui.animations';
 
+// 'system' matches the server's DEFAULT_APPEARANCE. A divergence here would
+// mean a first visit on a light-OS machine paints dark and then flips to
+// light when the appearance query resolves -- precisely the flash the
+// pre-paint script in app.html exists to prevent.
 function readTheme(): ThemeChoice {
-  if (typeof localStorage === 'undefined') return 'dark';
+  if (typeof localStorage === 'undefined') return 'system';
   const stored = localStorage.getItem(THEME_STORAGE_KEY);
-  return stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'dark';
+  return stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
 }
 
 function readAnimations(): boolean {

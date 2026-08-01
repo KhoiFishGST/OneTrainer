@@ -33,10 +33,17 @@ describe('pre-paint appearance script', () => {
     setSystemDark(true);
   });
 
-  it('defaults to dark with motion on', () => {
+  it('defaults to the OS preference, matching the server default of system', () => {
+    // Anything else would paint one theme and then flip to the other when
+    // the appearance query resolves -- the flash this script prevents.
     runPrepaint();
     expect(document.documentElement.classList.contains('dark')).toBe(true);
     expect(document.documentElement.hasAttribute('data-motion')).toBe(false);
+
+    setSystemDark(false);
+    runPrepaint();
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
+    expect(document.documentElement.style.colorScheme).toBe('light');
   });
 
   it('applies an explicit light choice', () => {

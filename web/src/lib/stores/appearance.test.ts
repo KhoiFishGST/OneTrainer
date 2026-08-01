@@ -18,10 +18,17 @@ describe('appearance store', () => {
     vi.resetModules();
   });
 
-  it('defaults to dark with animations on', async () => {
+  it('defaults to system with animations on, matching the server default', async () => {
     const { appearance } = await import('./appearance.svelte');
-    expect(appearance.theme).toBe('dark');
+    expect(appearance.theme).toBe('system');
     expect(appearance.animations).toBe(true);
+  });
+
+  it('resolves the default through the OS rather than assuming dark', async () => {
+    setSystemDark(false);
+    const { appearance } = await import('./appearance.svelte');
+    expect(appearance.resolvedTheme).toBe('light');
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
   });
 
   it('applies a theme change to the document and the cache immediately', async () => {

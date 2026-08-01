@@ -23,8 +23,11 @@
       (() => {
         try {
           const stored = localStorage.getItem('webui.theme');
+          /* 'system' is also the server's default, so a first visit with
+             nothing cached resolves through the OS instead of guessing
+             dark and flipping once the appearance query answers. */
           const choice =
-            stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'dark';
+            stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
           const theme =
             choice === 'system'
               ? matchMedia('(prefers-color-scheme: dark)').matches
@@ -38,8 +41,9 @@
             document.documentElement.setAttribute('data-motion', 'off');
           }
         } catch {
-          /* Storage disabled or unavailable: fall through to the CSS defaults
-             (dark, motion on) rather than take the page down. */
+          /* Storage or matchMedia disabled or unavailable: fall through to
+             the CSS defaults (dark, motion on) rather than take the page
+             down. */
         }
       })();
     </script>
