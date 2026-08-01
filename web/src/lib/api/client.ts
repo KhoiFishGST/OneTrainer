@@ -123,6 +123,15 @@ export function createApi(base = '') {
         body: JSON.stringify({ path, base_revision }),
       }),
 
+    loadGalleryRunConfig: (runKey: string, base_revision: string) =>
+      request<ConfigResponse>(
+        `${base}/api/gallery/runs/${encodeURIComponent(runKey)}/load`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ base_revision }),
+        }
+      ),
+
     listDirectory: (
       path = '',
       mode: 'dir' | 'file' | 'both' = 'both',
