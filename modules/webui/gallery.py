@@ -598,6 +598,11 @@ class GalleryService:
             runs.sort(key=lambda r: r.get("started_at") or "", reverse=True)
             return runs
 
+    @staticmethod
+    def _is_unsafe_run_key(run_key: str) -> bool:
+        """Check if a run key contains path traversal attempts or unsafe characters."""
+        return Path(run_key).name != run_key or ".." in run_key or "/" in run_key or "\\" in run_key
+
     def get_run_config_path(self, run_key: str) -> Path:
         """Resolve the config file a completed run was trained from.
 
@@ -607,7 +612,7 @@ class GalleryService:
         not checked for existence -- callers report that case separately.
         """
         with self._lock:
-            if Path(run_key).name != run_key or ".." in run_key or "/" in run_key or "\\" in run_key:
+            if self._is_unsafe_run_key(run_key):
                 raise GalleryNotFound("Run not found")
 
             ws = self._get_workspace_dir()
@@ -628,7 +633,7 @@ class GalleryService:
 
     def get_run_model(self, run_key: str) -> dict[str, Any]:
         with self._lock:
-            if Path(run_key).name != run_key or ".." in run_key or "/" in run_key or "\\" in run_key:
+            if self._is_unsafe_run_key(run_key):
                 raise GalleryNotFound(f"Invalid run key '{run_key}'")
 
             ws = self._get_workspace_dir()
