@@ -18,8 +18,8 @@ debug*.py
 /external
 /update.var
 config.json
-secrets.json
 webui.json
+secrets.json
 .env*
 *.zip
 
@@ -41,16 +41,3 @@ train.bat
 debug_report.log
 config_diff.txt
 CLAUDE.md
-
-/web/build/
-/web/.svelte-kit/
-/web/node_modules/
-/web/.build-source
-/web/.e2e/
-# e2e_server.py --root .e2e creates this wherever it is invoked from
-/.e2e/
-/web/test-results/
-/web/playwright-report/
-
-# superpowers brainstorming session artifacts
-.superpowers/
