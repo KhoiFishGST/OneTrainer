@@ -6,6 +6,11 @@ import { api } from '$lib/api/client';
 import type { GalleryRunModel } from '$lib/api/types';
 import GalleryHarness from './GalleryTestHarness.svelte';
 import { toast } from 'svelte-sonner';
+import { goto } from '$app/navigation';
+
+vi.mock('$app/navigation', () => ({
+  goto: vi.fn(),
+}));
 
 vi.mock('svelte-sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
@@ -366,5 +371,45 @@ describe('Gallery Route Page', () => {
     });
     expect(loadSpy).not.toHaveBeenCalled();
     expect(workspace.reloadServer).not.toHaveBeenCalled();
+  });
+
+  it('navigates to the live dashboard scoped to the loaded run', async () => {
+    mockGalleryRuns(['2026-07-26_12-00-00']);
+    mockCurrentGallery(activeGallery('2026-07-26_12-00-00'));
+    vi.spyOn(api, 'loadGalleryRunConfig').mockResolvedValue({ config: { a: 1 }, revision: 'rev-2' } as any);
+    const workspace = fakeWorkspace();
+
+    render(GalleryHarness, { props: { workspace } });
+
+    const button = await screen.findByRole('button', { name: 'Load Run' });
+    await waitFor(() => expect(button).not.toBeDisabled());
+    await fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(goto).toHaveBeenCalledWith('/live?run=2026-07-26_12-00-00');
+    });
+  });
+
+  it('does not navigate when loading the config fails', async () => {
+    mockGalleryRuns(['2026-07-26_12-00-00']);
+    mockCurrentGallery(activeGallery('2026-07-26_12-00-00'));
+    vi.spyOn(api, 'loadGalleryRunConfig').mockRejectedValue(
+      Object.assign(new Error('boom'), {
+        status: 404,
+        detail: 'Config file for this run no longer exists',
+      })
+    );
+    const workspace = fakeWorkspace();
+
+    render(GalleryHarness, { props: { workspace } });
+
+    const button = await screen.findByRole('button', { name: 'Load Run' });
+    await waitFor(() => expect(button).not.toBeDisabled());
+    await fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Config file for this run no longer exists');
+    });
+    expect(goto).not.toHaveBeenCalled();
   });
 });

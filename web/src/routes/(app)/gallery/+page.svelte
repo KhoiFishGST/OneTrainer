@@ -13,6 +13,7 @@
   import { tryGetRouteContext } from '$lib/config/context';
   import { api } from '$lib/api/client';
   import { toast } from 'svelte-sonner';
+  import { goto } from '$app/navigation';
   import { tick } from 'svelte';
 
   let showDiscardDialog = $state(false);
@@ -104,6 +105,8 @@
       }
       ws.acceptRemote(resp);
       toast.success(`Loaded config from run ${key}`);
+      // Take the user to that run's curves; the live page reads ?run= on mount.
+      await goto(`/live?run=${encodeURIComponent(key)}`);
     } catch (err: any) {
       const detail = err?.detail;
       if (err?.status === 409) {
