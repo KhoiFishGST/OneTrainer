@@ -534,3 +534,15 @@ body {
   transition-duration: var(--motion-duration-layout);
   transition-timing-function: var(--motion-ease-enter);
 }
+
+/*
+  svelte-sonner ships its own transitions, independent of Tailwind, so toasts
+  already animate. They are left alone except for this: their durations are
+  pulled onto the tokens so the kill switches reach them. A toast that keeps
+  sliding after the user has turned animations off is the most visible way for
+  the setting to look broken.
+*/
+[data-sonner-toast] {
+  transition-duration: var(--motion-duration-enter);
+  transition-timing-function: var(--motion-ease-enter);
+}

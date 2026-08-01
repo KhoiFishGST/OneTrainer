@@ -44,9 +44,13 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
     border-width: 1px;
     border-style: solid;
     white-space: nowrap;
+    /* Colour only. The pill sits in the header and must not move; a status
+       change is a change of state, not of place. */
+    transition: background-color var(--motion-duration-enter) var(--motion-ease-enter),
+      color var(--motion-duration-enter) var(--motion-ease-enter),
+      transform 0.2s ease, box-shadow 0.2s ease;
   }
 </style>

@@ -6,6 +6,9 @@
   import * as Card from '$lib/components/ui/card/index.js';
   import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
   import { Alert } from '$lib/components/ui/alert';
+  import { fade } from 'svelte/transition';
+  import { flip } from 'svelte/animate';
+  import { MOTION, motionEnabled } from '$lib/motion';
 
   interface DatasetItem {
     name: string;
@@ -61,7 +64,14 @@
   <AddCard label="Add Dataset" onClick={onAdd} />
 
   {#each datasets as ds (ds.name)}
-    <a href="/datasets/{encodeURIComponent(ds.name)}" data-dataset-card class="dataset-card-link no-underline text-inherit flex flex-col">
+    <a
+      href="/datasets/{encodeURIComponent(ds.name)}"
+      data-dataset-card
+      class="dataset-card-link no-underline text-inherit flex flex-col"
+      animate:flip={{ duration: motionEnabled() ? MOTION.layoutMs : 0 }}
+      in:fade={{ duration: motionEnabled() ? MOTION.enterMs : 0 }}
+      out:fade={{ duration: motionEnabled() ? MOTION.exitMs : 0 }}
+    >
       <Card.Root class="card relative group overflow-hidden bg-card border border-border rounded-lg flex flex-col h-[220px] p-0 transition-all hover:border-primary hover:-translate-y-0.5">
         <div class="relative flex-1 bg-muted overflow-hidden">
           {#if ds.thumbnail_url}

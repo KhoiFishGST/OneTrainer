@@ -77,3 +77,11 @@ describe('motionEnabled', () => {
     expect(motionEnabled()).toBe(false);
   });
 });
+
+describe('toast motion', () => {
+  it('brings sonner durations under the token block', () => {
+    const cssText = readFileSync(resolve(process.cwd(), 'src/app.css'), 'utf-8');
+    expect(cssText).toContain('[data-sonner-toast]');
+    expect(cssText).toMatch(/\[data-sonner-toast\][\s\S]{0,200}--motion-duration-enter/);
+  });
+});
