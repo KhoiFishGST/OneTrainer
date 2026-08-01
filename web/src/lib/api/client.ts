@@ -1,4 +1,6 @@
 import type {
+  AppearanceSettings,
+  AppearanceUpdateRequest,
   BacklogResponse,
   Concept,
   ConceptsResponse,
@@ -291,6 +293,14 @@ export function createApi(base = '') {
       request<{ filename: string }>(`${base}/api/samples/files`, {
         method: 'POST',
         body: JSON.stringify({ name }),
+      }),
+
+    getAppearance: () => request<AppearanceSettings>(`${base}/api/appearance`),
+
+    putAppearance: (data: AppearanceUpdateRequest) =>
+      request<AppearanceSettings>(`${base}/api/appearance`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
       }),
   };
 }

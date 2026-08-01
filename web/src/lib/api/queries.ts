@@ -1,6 +1,6 @@
 import { createQuery, createMutation, useQueryClient, QueryClient, type CreateQueryOptions, type CreateQueryResult } from '@tanstack/svelte-query';
 import { api } from './client';
-import type { Concept, ConfigUpdateRequest, PresetLoadRequest, PresetSaveRequest, SampleDefinition, SamplesResponse, GalleryRunModel } from './types';
+import type { AppearanceUpdateRequest, Concept, ConfigUpdateRequest, PresetLoadRequest, PresetSaveRequest, SampleDefinition, SamplesResponse, GalleryRunModel } from './types';
 
 const defaultQueryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +38,7 @@ export const queryKeys = {
   galleryRuns: () => ['gallery', 'runs'] as const,
   galleryRun: (runKey: string) => ['gallery', 'runs', runKey] as const,
   galleryCurrent: () => ['gallery', 'current'] as const,
+  appearance: () => ['appearance'] as const,
 };
 
 export function createHealthQuery() {
@@ -421,6 +422,30 @@ export function createCreateSampleFileMutation() {
       mutationFn: (name: string) => api.createSampleFile(name),
       onSuccess: () => {
         client.invalidateQueries({ queryKey: queryKeys.sampleFiles() });
+      },
+    },
+    client
+  );
+}
+
+export function createAppearanceQuery() {
+  const client = getSafeQueryClient();
+  return createQuery(
+    {
+      queryKey: queryKeys.appearance(),
+      queryFn: () => api.getAppearance(),
+    },
+    client
+  );
+}
+
+export function createUpdateAppearanceMutation() {
+  const client = getSafeQueryClient();
+  return createMutation(
+    {
+      mutationFn: (data: AppearanceUpdateRequest) => api.putAppearance(data),
+      onSuccess: (result) => {
+        client.setQueryData(queryKeys.appearance(), result);
       },
     },
     client

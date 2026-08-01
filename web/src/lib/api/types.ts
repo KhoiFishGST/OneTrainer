@@ -306,3 +306,15 @@ export interface SamplesResponse {
   samples: SampleDefinition[];
   queued: boolean;
 }
+
+export type ThemeChoice = 'light' | 'dark' | 'system';
+
+export interface AppearanceSettings {
+  theme: ThemeChoice;
+  animations: boolean;
+}
+
+export interface AppearanceUpdateRequest {
+  theme?: ThemeChoice;
+  animations?: boolean;
+}

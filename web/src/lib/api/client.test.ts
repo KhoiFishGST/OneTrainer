@@ -69,6 +69,32 @@ describe("api client", () => {
   });
 });
 
+describe('appearance api', () => {
+  it('gets the appearance settings', async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ theme: 'dark', animations: true }), { status: 200 })
+    );
+
+    const result = await createApi().getAppearance();
+
+    expect(fetchSpy).toHaveBeenCalledWith('/api/appearance', expect.anything());
+    expect(result).toEqual({ theme: 'dark', animations: true });
+  });
+
+  it('sends a partial update as a PUT', async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ theme: 'system', animations: false }), { status: 200 })
+    );
+
+    await createApi().putAppearance({ animations: false });
+
+    const [url, init] = fetchSpy.mock.calls[0];
+    expect(url).toBe('/api/appearance');
+    expect((init as RequestInit).method).toBe('PUT');
+    expect(JSON.parse((init as RequestInit).body as string)).toEqual({ animations: false });
+  });
+});
+
 import { xhrUpload } from './client';
 
 class FakeXhr {
