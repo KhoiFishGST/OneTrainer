@@ -1,7 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { Sparkles, Archive, Save } from '@lucide/svelte';
+  import { page } from '$app/stores';
   import { trainingStore } from '$lib/events/training-store';
+  import { viewingRunStore } from '$lib/events/viewing-run-store';
   import { api } from '$lib/api/client';
   import {
     createRequestSampleMutation,
@@ -17,6 +19,8 @@
   import PageHeader from '$lib/components/layout/PageHeader.svelte';
   import RoutePage from '$lib/components/layout/RoutePage.svelte';
   import { Alert } from '$lib/components/ui/alert';
+  import { Button } from '$lib/components/ui/button';
+  import { NativeSelect, NativeSelectOption } from '$lib/components/ui/native-select/index.js';
   import { toast as sonnerToast } from 'svelte-sonner';
 
   const sampleMutation = createRequestSampleMutation();
@@ -39,6 +43,15 @@
   const galleryLoading = $derived($galleryQuery.isLoading);
   const galleryError = $derived($galleryQuery.error);
 
+  const viewing = $derived($viewingRunStore);
+
+  // Charts read whichever run the user is looking at. The training store stays
+  // the live SSE mirror and is never mutated with historical rows.
+  const chartMetrics = $derived(viewing.mode === 'historical' ? viewing.rows : metrics);
+
+  let availableRuns = $state<{ key: string }[]>([]);
+  let announcedTrainingStart = $state(false);
+
   // Series are discovered from the rows rather than hardcoded, so new parameter
   // groups or new trainer scalars appear on the charts automatically.
   function discoverSeries(rows: TrainingMetric[], matches: (key: string) => boolean): ChartSeries[] {
@@ -55,9 +68,9 @@
   }
 
   const lossSeries = $derived(
-    discoverSeries(metrics, (k) => k.startsWith('loss_') || k.startsWith('smooth_loss_'))
+    discoverSeries(chartMetrics, (k) => k.startsWith('loss_') || k.startsWith('smooth_loss_'))
   );
-  const lrSeries = $derived(discoverSeries(metrics, (k) => k.startsWith('lr_')));
+  const lrSeries = $derived(discoverSeries(chartMetrics, (k) => k.startsWith('lr_')));
 
   onMount(async () => {
     try {
@@ -72,7 +85,44 @@
     } catch (e) {
       // ignore
     }
+
+    try {
+      const runs = await api.getGalleryRuns();
+      availableRuns = runs?.runs ?? [];
+    } catch (e) {
+      availableRuns = [];
+    }
+
+    const requestedRun = $page.url.searchParams.get('run');
+    if (requestedRun) {
+      await viewingRunStore.showRun(requestedRun);
+    }
   });
+
+  // Training starting must never silently replace what the user is reading.
+  $effect(() => {
+    const isTraining = status.state === 'TRAINING';
+    if (!isTraining) {
+      announcedTrainingStart = false;
+      return;
+    }
+    if (viewing.mode !== 'historical' || announcedTrainingStart) return;
+
+    announcedTrainingStart = true;
+    sonnerToast('Training started', {
+      description: 'You are viewing a past run.',
+      action: { label: 'Switch to live', onClick: () => viewingRunStore.showLive() },
+    });
+  });
+
+  function onSelectRun(event: Event) {
+    const value = (event.currentTarget as HTMLSelectElement).value;
+    if (!value) {
+      viewingRunStore.showLive();
+    } else {
+      viewingRunStore.showRun(value);
+    }
+  }
 
   const stepPct = $derived(
     status.max_steps > 0
@@ -183,9 +233,47 @@
 
     <!-- Metrics Charts -->
     <section class="charts-section">
+      <div class="flex items-center justify-between flex-wrap gap-3 mb-2">
+        <label class="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>Viewing</span>
+          <NativeSelect
+            class="bg-muted text-foreground border border-border rounded px-2 py-1 text-sm"
+            aria-label="Viewing run"
+            value={viewing.mode === 'historical' ? (viewing.runKey ?? '') : ''}
+            onchange={onSelectRun}
+          >
+            <NativeSelectOption value="">Live</NativeSelectOption>
+            {#each availableRuns as run (run.key)}
+              <NativeSelectOption value={run.key}>{run.key}</NativeSelectOption>
+            {/each}
+          </NativeSelect>
+        </label>
+
+        {#if viewing.loading}
+          <span class="text-sm text-muted-foreground">Loading run…</span>
+        {/if}
+      </div>
+
+      {#if viewing.error}
+        <Alert variant="destructive" class="mb-2">{viewing.error}</Alert>
+      {:else if viewing.mode === 'historical'}
+        <Alert class="mb-2" data-testid="historical-run-banner">
+          Viewing historical run <strong>{viewing.runKey}</strong> — these charts are not live.
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            class="ml-2"
+            onclick={() => viewingRunStore.showLive()}
+          >
+            Back to live
+          </Button>
+        </Alert>
+      {/if}
+
       <div class="charts-grid">
-        <MetricsChart {metrics} series={lossSeries} title="Training Loss" height={280} />
-        <MetricsChart {metrics} series={lrSeries} title="Learning Rate" height={280} />
+        <MetricsChart metrics={chartMetrics} series={lossSeries} title="Training Loss" height={280} />
+        <MetricsChart metrics={chartMetrics} series={lrSeries} title="Learning Rate" height={280} />
       </div>
     </section>
 
