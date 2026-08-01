@@ -76,14 +76,19 @@
   );
 
   async function performLoadRun() {
+    // Capture the deriveds we need into plain locals before the first `await`: by the
+    // time a promise settles the component may already be destroyed (e.g. test teardown
+    // while a load is still in flight), and reading a $derived after that point trips
+    // Svelte's derived_inert warning.
     const key = selectedRunKey;
-    if (!key || !workspace) return;
+    const ws = workspace;
+    if (!key || !ws) return;
 
     isLoadingRun = true;
     try {
       let resp;
       try {
-        resp = await api.loadGalleryRunConfig(key, workspace.revision);
+        resp = await api.loadGalleryRunConfig(key, ws.revision);
       } catch (err: any) {
         const detail = err?.detail;
         const currentRevision =
@@ -97,7 +102,7 @@
           throw err;
         }
       }
-      workspace.acceptRemote(resp);
+      ws.acceptRemote(resp);
       toast.success(`Loaded config from run ${key}`);
     } catch (err: any) {
       const detail = err?.detail;
@@ -132,15 +137,18 @@
 
   async function handleConfirmDiscard() {
     showDiscardDialog = false;
+    // Capture the derived `workspace` reference before any `await` -- see the comment
+    // in performLoadRun for why.
+    const ws = workspace;
     // An in-flight save would resolve after the load and clobber it with the
     // old draft. Wait it out first; flush() returns the active promise here
     // rather than starting a new save.
-    if (workspace?.state === 'saving') {
-      await workspace.flush();
+    if (ws?.state === 'saving') {
+      await ws.flush();
     }
     // acceptRemote() refuses to rebase a dirty draft and flips the workspace into
     // 'conflict'. The user just chose to discard, so drop the draft first.
-    workspace?.reloadServer(true);
+    ws?.reloadServer(true);
     await performLoadRun();
   }
 
@@ -217,7 +225,7 @@
   </div>
 </RoutePage>
 
-{#if showDiscardDialog && AlertDialog}
+{#if AlertDialog}
   <AlertDialog.Root
     open={showDiscardDialog}
     onOpenChange={(v) => {
