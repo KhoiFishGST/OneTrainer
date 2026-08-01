@@ -7,37 +7,58 @@
     gpuStats?: GpuStat | null;
   }>();
 
-  const vramUsedMB = $derived(
-    gpuStats?.vram_used_mb ??
-      (gpuStats?.vram_used
-        ? gpuStats.vram_used > 1000000
-          ? gpuStats.vram_used / (1024 * 1024)
-          : gpuStats.vram_used
-        : 0)
-  );
+  /**
+   * A reading for one device. `devices` is the current shape; a bare stat
+   * object without it is the older single-GPU payload, which is normalized
+   * into a one-device list so the markup below has only one case to render.
+   */
+  function toMB(mbValue: number | undefined, rawValue: number | undefined): number {
+    if (mbValue !== undefined) return mbValue;
+    if (!rawValue) return 0;
+    // The raw field has been bytes in some payloads and MB in others.
+    return rawValue > 1000000 ? rawValue / (1024 * 1024) : rawValue;
+  }
 
-  const vramTotalMB = $derived(
-    gpuStats?.vram_total_mb ??
-      (gpuStats?.vram_total
-        ? gpuStats.vram_total > 1000000
-          ? gpuStats.vram_total / (1024 * 1024)
-          : gpuStats.vram_total
-        : 0)
-  );
+  function normalize(source: Record<string, any>, fallbackIndex: number) {
+    const vramUsedMB = toMB(source.vram_used_mb, source.vram_used);
+    const vramTotalMB = toMB(source.vram_total_mb, source.vram_total);
 
-  const vramUsedGB = $derived(vramUsedMB / 1024);
-  const vramTotalGB = $derived(vramTotalMB / 1024);
-  const vramPct = $derived(
-    vramTotalMB > 0 ? Math.min(100, Math.max(0, (vramUsedMB / vramTotalMB) * 100)) : 0
-  );
+    const rawUtil = source.gpu_util_pct ?? source.utilization ?? 0;
+    // Utilization arrives as a 0-1 fraction from some sources, 0-100 from others.
+    const utilPct =
+      rawUtil <= 1 && rawUtil > 0
+        ? rawUtil * 100
+        : Math.min(100, Math.max(0, rawUtil));
 
-  const rawUtil = $derived(gpuStats?.gpu_util_pct ?? gpuStats?.utilization ?? 0);
-  const utilPct = $derived(
-    rawUtil <= 1 && rawUtil > 0 ? rawUtil * 100 : Math.min(100, Math.max(0, rawUtil))
-  );
+    const tempC = source.temp_c ?? source.temperature ?? 0;
 
-  const tempC = $derived(gpuStats?.temp_c ?? gpuStats?.temperature ?? 0);
-  const tempPct = $derived(Math.min(100, Math.max(0, (tempC / 100) * 100)));
+    return {
+      index: source.index ?? fallbackIndex,
+      name: source.name as string | undefined,
+      vramUsedGB: vramUsedMB / 1024,
+      vramTotalGB: vramTotalMB / 1024,
+      vramPct:
+        vramTotalMB > 0
+          ? Math.min(100, Math.max(0, (vramUsedMB / vramTotalMB) * 100))
+          : 0,
+      utilPct,
+      tempC,
+      tempPct: Math.min(100, Math.max(0, tempC)),
+    };
+  }
+
+  const devices = $derived.by(() => {
+    if (!gpuStats) return [];
+    const list = gpuStats.devices;
+    if (Array.isArray(list) && list.length > 0) {
+      return list.map((d: Record<string, any>, i: number) => normalize(d, i));
+    }
+    return [normalize(gpuStats, 0)];
+  });
+
+  // A single card needs no ordinal; several do, since two of the same model
+  // are otherwise indistinguishable.
+  const showIndex = $derived(devices.length > 1);
 </script>
 
 <div class="gpu-monitor-panel" data-testid="gpu-monitor">
@@ -55,60 +76,70 @@
       <span>No GPU telemetry available</span>
     </div>
   {:else}
-    <div class="meters-grid">
-      <!-- VRAM Gauge -->
-      <div class="meter-card">
-        <div class="meter-header">
-          <span class="meter-label">VRAM Usage</span>
-          <span class="meter-value">{vramUsedGB.toFixed(1)} GB / {vramTotalGB > 0 ? vramTotalGB.toFixed(1) + ' GB' : 'N/A'}</span>
-        </div>
-        <div class="progress-bar-bg" title={`${vramPct.toFixed(1)}% VRAM used`}>
-          <div
-            class="progress-bar-fill vram"
-            style="width: {vramPct}%;"
-          ></div>
-        </div>
-        <div class="meter-footer">
-          <span>{vramPct.toFixed(0)}% Allocated</span>
-        </div>
-      </div>
+    {#each devices as device (device.index)}
+      <section class="device">
+        {#if device.name}
+          <h4 class="device-name">
+            {showIndex ? `GPU ${device.index} · ${device.name}` : device.name}
+          </h4>
+        {/if}
 
-      <!-- Utilization Gauge -->
-      <div class="meter-card">
-        <div class="meter-header">
-          <span class="meter-label">GPU Utilization</span>
-          <span class="meter-value">{utilPct.toFixed(0)}%</span>
-        </div>
-        <div class="progress-bar-bg" title={`${utilPct.toFixed(0)}% GPU core utilization`}>
-          <div
-            class="progress-bar-fill util"
-            style="width: {utilPct}%;"
-          ></div>
-        </div>
-        <div class="meter-footer">
-          <span>Core Compute Load</span>
-        </div>
-      </div>
+        <div class="meters-grid">
+          <!-- VRAM Gauge -->
+          <div class="meter-card">
+            <div class="meter-header">
+              <span class="meter-label">VRAM Usage</span>
+              <span class="meter-value">{device.vramUsedGB.toFixed(1)} GB / {device.vramTotalGB > 0 ? device.vramTotalGB.toFixed(1) + ' GB' : 'N/A'}</span>
+            </div>
+            <div class="progress-bar-bg" title={`${device.vramPct.toFixed(1)}% VRAM used`}>
+              <div
+                class="progress-bar-fill vram"
+                style="width: {device.vramPct}%;"
+              ></div>
+            </div>
+            <div class="meter-footer">
+              <span>{device.vramPct.toFixed(0)}% Allocated</span>
+            </div>
+          </div>
 
-      <!-- Temperature Gauge -->
-      <div class="meter-card">
-        <div class="meter-header">
-          <span class="meter-label">Temperature</span>
-          <span class="meter-value">{tempC ? `${tempC.toFixed(0)} °C` : 'N/A'}</span>
+          <!-- Utilization Gauge -->
+          <div class="meter-card">
+            <div class="meter-header">
+              <span class="meter-label">GPU Utilization</span>
+              <span class="meter-value">{device.utilPct.toFixed(0)}%</span>
+            </div>
+            <div class="progress-bar-bg" title={`${device.utilPct.toFixed(0)}% GPU core utilization`}>
+              <div
+                class="progress-bar-fill util"
+                style="width: {device.utilPct}%;"
+              ></div>
+            </div>
+            <div class="meter-footer">
+              <span>Core Compute Load</span>
+            </div>
+          </div>
+
+          <!-- Temperature Gauge -->
+          <div class="meter-card">
+            <div class="meter-header">
+              <span class="meter-label">Temperature</span>
+              <span class="meter-value">{device.tempC ? `${device.tempC.toFixed(0)} °C` : 'N/A'}</span>
+            </div>
+            <div class="progress-bar-bg" title={device.tempC ? `${device.tempC.toFixed(0)} °C` : 'Temperature'}>
+              <div
+                class="progress-bar-fill temp"
+                class:hot={device.tempC >= 80}
+                class:warm={device.tempC >= 65 && device.tempC < 80}
+                style="width: {device.tempPct}%;"
+              ></div>
+            </div>
+            <div class="meter-footer">
+              <span>Target &lt; 80 °C</span>
+            </div>
+          </div>
         </div>
-        <div class="progress-bar-bg" title={tempC ? `${tempC.toFixed(0)} °C` : 'Temperature'}>
-          <div
-            class="progress-bar-fill temp"
-            class:hot={tempC >= 80}
-            class:warm={tempC >= 65 && tempC < 80}
-            style="width: {tempPct}%;"
-          ></div>
-        </div>
-        <div class="meter-footer">
-          <span>Target &lt; 80 °C</span>
-        </div>
-      </div>
-    </div>
+      </section>
+    {/each}
   {/if}
 </div>
 
@@ -161,6 +192,20 @@
     text-align: center;
     color: var(--muted-foreground);
     font-size: 0.875rem;
+  }
+
+  .device {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+
+  .device-name {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
   }
 
   .meters-grid {

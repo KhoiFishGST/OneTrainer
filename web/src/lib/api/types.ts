@@ -189,7 +189,21 @@ export interface TrainingSample {
   [key: string]: any;
 }
 
+export interface GpuDevice {
+  index: number;
+  name?: string;
+  vram_used?: number;
+  vram_total?: number;
+  utilization?: number;
+  temperature?: number;
+}
+
 export interface GpuStat {
+  /** One entry per installed GPU. Absent in payloads predating multi-GPU. */
+  devices?: GpuDevice[];
+  /** The fields below mirror the first device, for consumers written against
+   *  the original single-GPU shape. */
+  name?: string;
   vram_used?: number;
   vram_total?: number;
   vram_used_mb?: number;

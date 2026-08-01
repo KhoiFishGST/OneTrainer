@@ -193,40 +193,86 @@ class TrainingService:
         with self._lock:
             return list(self._samples)
 
-    def get_gpu_stats(self) -> dict[str, Any]:
-        with self._lock:
-            vram_used = 0
-            vram_total = 0
-            gpu_util = 0.0
-            gpu_temp = 0.0
-            try:
-                import torch
-                if torch.cuda.is_available():
-                    free_b, total_b = torch.cuda.mem_get_info(0)
-                    vram_used = total_b - free_b
-                    vram_total = total_b
-            except Exception:
-                pass
+    @staticmethod
+    def _nvml_device_stats() -> list[dict[str, Any]]:
+        """Per-device readings from NVML, or [] if it is unavailable."""
+        import pynvml
 
-            try:
-                import pynvml
-                pynvml.nvmlInit()
-                handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+        pynvml.nvmlInit()
+        try:
+            devices = []
+            for index in range(pynvml.nvmlDeviceGetCount()):
+                handle = pynvml.nvmlDeviceGetHandleByIndex(index)
+                # nvidia-ml-py returned bytes before 12.x and str after.
+                name = pynvml.nvmlDeviceGetName(handle)
+                if isinstance(name, bytes):
+                    name = name.decode("utf-8", errors="replace")
+
                 info = pynvml.nvmlDeviceGetMemoryInfo(handle)
                 util = pynvml.nvmlDeviceGetUtilizationRates(handle)
-                temp = pynvml.nvmlDeviceGetTemperature(handle, pynvml.NVML_TEMPERATURE_GPU)
-                vram_used = info.used
-                vram_total = info.total
-                gpu_util = float(util.gpu)
-                gpu_temp = float(temp)
-            except Exception:
-                pass
+                temp = pynvml.nvmlDeviceGetTemperature(
+                    handle, pynvml.NVML_TEMPERATURE_GPU
+                )
+                devices.append({
+                    "index": index,
+                    "name": name,
+                    "vram_used": info.used,
+                    "vram_total": info.total,
+                    "utilization": float(util.gpu),
+                    "temperature": float(temp),
+                })
+            return devices
+        finally:
+            # Polled once a second for the length of a run, so every init
+            # needs its matching shutdown.
+            with contextlib.suppress(Exception):
+                pynvml.nvmlShutdown()
 
+    @staticmethod
+    def _torch_device_stats() -> list[dict[str, Any]]:
+        """Fallback when NVML is missing. No utilization or temperature."""
+        import torch
+
+        if not torch.cuda.is_available():
+            return []
+
+        devices = []
+        for index in range(torch.cuda.device_count()):
+            free_b, total_b = torch.cuda.mem_get_info(index)
+            devices.append({
+                "index": index,
+                "name": torch.cuda.get_device_name(index),
+                "vram_used": total_b - free_b,
+                "vram_total": total_b,
+                "utilization": 0.0,
+                "temperature": 0.0,
+            })
+        return devices
+
+    def get_gpu_stats(self) -> dict[str, Any]:
+        with self._lock:
+            devices: list[dict[str, Any]] = []
+            # NVML first: it is the only source with utilization and
+            # temperature, and it sees every device rather than the one torch
+            # happens to be using.
+            for source in (self._nvml_device_stats, self._torch_device_stats):
+                try:
+                    devices = source()
+                except Exception:
+                    devices = []
+                if devices:
+                    break
+
+            first = devices[0] if devices else {}
             return {
-                "vram_used": vram_used,
-                "vram_total": vram_total,
-                "utilization": gpu_util,
-                "temperature": gpu_temp,
+                "devices": devices,
+                # Flat fields predate `devices` and are still read by existing
+                # consumers, so they keep mirroring the first device.
+                "name": first.get("name"),
+                "vram_used": first.get("vram_used", 0),
+                "vram_total": first.get("vram_total", 0),
+                "utilization": first.get("utilization", 0.0),
+                "temperature": first.get("temperature", 0.0),
             }
 
     def get_status(self) -> dict[str, Any]:

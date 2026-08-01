@@ -29,6 +29,15 @@ discards everything to its left, so `Path("/base") / "/etc"` is `/etc`.
 - `GET /api/datasets/{name}/files` — items carry `kind` (`image`/`video`/`text`) and `media_name`. The former `image_name` field is removed. One item per media file: `id` is the filename stem, except when several media files share a stem (`a.png` beside `a.mp4`), where each gets `id` = its full filename and they share the stem's caption.
 - `GET /api/datasets` — dataset entries now carry `video_count`. `thumbnail_url` points at the filename-less form of `/api/datasets/image`, which resolves to `pick_dataset_thumbnail()`: the alphabetically first image or video, skipping dotfiles and `-masklabel.png` / `-condlabel.png`. Because that URL carries no version token and its target changes as the dataset is edited, it answers `Cache-Control: no-cache` and relies on the ETag for cheap 304s. Requests naming an explicit `filename` keep the long max-age.
 
+## Events
+
+- `gpu_stat` — carries a `devices` list, one entry per installed GPU
+  (`index`, `name`, `vram_used`, `vram_total`, `utilization`, `temperature`).
+  NVML is the preferred source since it is the only one reporting utilization
+  and temperature; torch is a memory-only fallback. The flat `vram_used` /
+  `vram_total` / `utilization` / `temperature` / `name` fields predate the list
+  and still mirror the first device, so older consumers keep working.
+
 ## Why `settings_store.py` exists
 
 `datasets_dir` and the Web UI password are needed only by this add-on. Rather
