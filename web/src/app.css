@@ -517,3 +517,20 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
   padding-left: env(safe-area-inset-left, 0px);
 }
+
+/*
+  RailContent.svelte passes collapsible="none" to the vendored Sidebar on
+  desktop, which renders a plain div carrying the literal `rail` class and
+  the hardcoded `transition-[width] duration-200 ease-in-out` utilities.
+  Rather than edit a vendored component, retarget it here: this rule is
+  unlayered and Tailwind's utilities are layered, so it wins. The rail then
+  follows the motion tokens and is covered by the kill switches for free.
+
+  The rail uses the layout duration, not the enter duration -- it travels
+  112px (--rail-compact 48px to --rail-expanded 160px), and that distance in
+  90ms reads as a snap.
+*/
+.rail {
+  transition-duration: var(--motion-duration-layout);
+  transition-timing-function: var(--motion-ease-enter);
+}

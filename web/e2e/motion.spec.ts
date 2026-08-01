@@ -45,4 +45,12 @@ test.describe("Overlay motion", () => {
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toHaveCount(0);
   });
+
+  test("the rail transitions its width at the layout duration", async ({ page }) => {
+    await page.goto("/model");
+    const rail = page.locator(".rail").first();
+    await expect(rail).toBeAttached();
+    const duration = await rail.evaluate((el) => getComputedStyle(el).transitionDuration);
+    expect(duration).toBe("0.12s");
+  });
 });
