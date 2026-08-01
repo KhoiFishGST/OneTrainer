@@ -6,15 +6,20 @@ test.describe("Console Connection Flows", () => {
   test("stdout and stderr lines appear, CR progress ends as single 20% row", async ({ page }) => {
     await page.goto("/console");
 
-    const terminal = page.locator(".terminal-viewport");
+    // The console drawer stays mounted (just closed) once the shell has
+    // preloaded it, so plain page-wide locators can double-match its
+    // off-screen copy of the console. Scope to the full-page instance.
+    const consolePage = page.locator(".console-page");
+
+    const terminal = consolePage.locator(".terminal-viewport");
     await expect(terminal).toBeVisible();
 
-    const filterInput = page.getByPlaceholder("Filter console...");
+    const filterInput = consolePage.getByPlaceholder("Filter console...");
     await filterInput.fill("stdout-line");
-    await expect(page.locator(".console-row", { hasText: "stdout-line" })).toBeVisible();
+    await expect(consolePage.locator(".console-row", { hasText: "stdout-line" })).toBeVisible();
 
     await filterInput.fill("stderr-line");
-    await expect(page.locator(".console-row", { hasText: "stderr-line" })).toBeVisible();
+    await expect(consolePage.locator(".console-row", { hasText: "stderr-line" })).toBeVisible();
 
     // Filter instead of clearing. The console viewport is virtualised and
     // follows the tail, so it renders only ~33 rows around the scroll position.
@@ -24,31 +29,33 @@ test.describe("Console Connection Flows", () => {
     // on them races the auto-scroll. Filtering to "0%" matches only the CR
     // progress output, which is what this test is actually about.
     await filterInput.fill("0%");
-    await expect(page.locator(".console-row", { hasText: "20%" })).toBeVisible();
-    await expect(page.locator(".console-row", { hasText: "10%" })).toHaveCount(0);
+    await expect(consolePage.locator(".console-row", { hasText: "20%" })).toBeVisible();
+    await expect(consolePage.locator(".console-row", { hasText: "10%" })).toHaveCount(0);
     // The CR sequence must have collapsed into exactly one row.
-    await expect(page.locator(".console-row")).toHaveCount(1);
+    await expect(consolePage.locator(".console-row")).toHaveCount(1);
   });
 
   test("scrolling pauses follow mode, Jump to latest resumes it, filtering works", async ({ page }) => {
     await page.goto("/console");
 
-    const filterInput = page.getByPlaceholder("Filter console...");
+    const consolePage = page.locator(".console-page");
+
+    const filterInput = consolePage.getByPlaceholder("Filter console...");
     await filterInput.fill("stdout");
 
-    await expect(page.locator(".console-row", { hasText: "stdout-line" })).toBeVisible();
-    await expect(page.locator(".console-row", { hasText: "stderr-line" })).not.toBeVisible();
+    await expect(consolePage.locator(".console-row", { hasText: "stdout-line" })).toBeVisible();
+    await expect(consolePage.locator(".console-row", { hasText: "stderr-line" })).not.toBeVisible();
 
     await filterInput.fill("");
 
-    const viewport = page.locator(".terminal-viewport");
+    const viewport = consolePage.locator(".terminal-viewport");
     await viewport.evaluate((el) => {
       Object.defineProperty(el, "scrollHeight", { value: 1000, configurable: true });
       el.scrollTop = 0;
       el.dispatchEvent(new Event("scroll"));
     });
 
-    const jumpBtn = page.getByRole("button", { name: "Latest" });
+    const jumpBtn = consolePage.getByRole("button", { name: "Latest" });
     await expect(jumpBtn).toBeVisible();
 
     await jumpBtn.click();
@@ -69,9 +76,10 @@ test.describe("Console Connection Flows", () => {
     await expect(drawer.locator(".console-row", { hasText: "stdout-line" })).toBeVisible();
 
     await page.goto("/console");
-    const pageFilterInput = page.getByPlaceholder("Filter console...");
+    const consolePage = page.locator(".console-page");
+    const pageFilterInput = consolePage.getByPlaceholder("Filter console...");
     await pageFilterInput.fill("stdout-line");
-    await expect(page.locator(".console-row", { hasText: "stdout-line" })).toBeVisible();
+    await expect(consolePage.locator(".console-row", { hasText: "stdout-line" })).toBeVisible();
   });
 
   test("socket interruption shows disconnected state and reconnect restores backlog without duplicates", async ({ page }) => {
@@ -89,19 +97,20 @@ test.describe("Console Connection Flows", () => {
     });
 
     await page.goto("/console");
+    const consolePage = page.locator(".console-page");
 
-    const statusTag = page.locator(".status-tag");
+    const statusTag = consolePage.locator(".status-tag");
     await expect(statusTag).toHaveText("connected");
 
-    const filterInput = page.getByPlaceholder("Filter console...");
+    const filterInput = consolePage.getByPlaceholder("Filter console...");
 
     await filterInput.fill("stdout-line");
-    await expect(page.locator(".console-row", { hasText: "stdout-line" })).toBeVisible();
-    await expect(page.locator(".console-row")).toHaveCount(1);
+    await expect(consolePage.locator(".console-row", { hasText: "stdout-line" })).toBeVisible();
+    await expect(consolePage.locator(".console-row")).toHaveCount(1);
 
     await filterInput.fill("stderr-line");
-    await expect(page.locator(".console-row", { hasText: "stderr-line" })).toBeVisible();
-    await expect(page.locator(".console-row")).toHaveCount(1);
+    await expect(consolePage.locator(".console-row", { hasText: "stderr-line" })).toBeVisible();
+    await expect(consolePage.locator(".console-row")).toHaveCount(1);
 
     await filterInput.fill("");
 
@@ -120,19 +129,19 @@ test.describe("Console Connection Flows", () => {
     await expect(statusTag).toHaveText("connected", { timeout: 5000 });
 
     await filterInput.fill("stdout-line");
-    await expect(page.locator(".console-row", { hasText: "stdout-line" })).toBeVisible();
-    await expect(page.locator(".console-row")).toHaveCount(1);
+    await expect(consolePage.locator(".console-row", { hasText: "stdout-line" })).toBeVisible();
+    await expect(consolePage.locator(".console-row")).toHaveCount(1);
 
     await filterInput.fill("stderr-line");
-    await expect(page.locator(".console-row", { hasText: "stderr-line" })).toBeVisible();
-    await expect(page.locator(".console-row")).toHaveCount(1);
+    await expect(consolePage.locator(".console-row", { hasText: "stderr-line" })).toBeVisible();
+    await expect(consolePage.locator(".console-row")).toHaveCount(1);
 
     // Same reason as the first test: filter rather than clear, because the
     // virtualised viewport does not render the oldest rows once the backlog is
     // large. Exactly one match also proves the reconnect did not re-apply the
     // backlog on top of the rows already held.
     await filterInput.fill("0%");
-    await expect(page.locator(".console-row", { hasText: "20%" })).toBeVisible();
-    await expect(page.locator(".console-row")).toHaveCount(1);
+    await expect(consolePage.locator(".console-row", { hasText: "20%" })).toBeVisible();
+    await expect(consolePage.locator(".console-row")).toHaveCount(1);
   });
 });

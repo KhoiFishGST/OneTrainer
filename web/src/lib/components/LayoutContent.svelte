@@ -40,8 +40,11 @@
   let drawerOpen = $state(false);
   let eventClient = $state<EventClient | null>(null);
 
-  // Both are overlays: nothing renders them until the user opens one, so
-  // keeping them out of the first-paint graph costs nothing at runtime.
+  // Both are overlays: neither is imported until the user opens one (or the
+  // idle-time preload below fires), so keeping them out of the first-paint
+  // graph costs nothing at load. ConsoleDrawer stays mounted-but-closed once
+  // loaded (it animates its own open/close), while DirectoryPicker still
+  // unmounts between opens.
   let ConsoleDrawer = $state<typeof import('./shell/ConsoleDrawer.svelte').default | null>(null);
   let DirectoryPicker = $state<typeof import('./directory/DirectoryPicker.svelte').default | null>(null);
 
@@ -201,6 +204,14 @@
       const mod = await import('./shell/ConsoleDrawer.svelte');
       ConsoleDrawer = mod.default;
       await tick();
+      // The drawer needs to actually paint at its closed (0-height) state
+      // before we flip it open, otherwise the browser coalesces the mount
+      // and the open into a single frame and the height transition has no
+      // starting point to animate from -- it pops instead of sliding. This
+      // race is normally hidden by the idle-time preload in onMount below,
+      // which has usually already loaded the module by the time the user
+      // clicks; it only shows up on a cold first click.
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     }
     drawerOpen = nextState;
     if (typeof localStorage !== 'undefined') {

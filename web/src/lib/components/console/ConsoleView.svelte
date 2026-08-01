@@ -167,7 +167,6 @@
 </script>
 
 <div class="console-view flex flex-col h-full w-full bg-background text-foreground font-mono text-xs overflow-hidden">
-{#if open}
   <div class="flex items-center justify-between px-3 py-1.5 bg-card border-b border-border gap-2 flex-wrap">
     <div class="flex items-center gap-2">
       <!-- Channel Selector -->
@@ -332,7 +331,6 @@
       </div>
     </div>
   </div>
-{/if}
 </div>
 
 <style>

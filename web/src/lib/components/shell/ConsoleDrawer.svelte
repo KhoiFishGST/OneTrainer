@@ -111,55 +111,55 @@
   }
 </script>
 
-  <section
-    class="console-drawer {isDragging ? 'resizing' : ''}"
-    aria-label="Console Output"
-    data-open={open ? 'true' : 'false'}
-    inert={!open}
-    style="height: {open ? drawerHeight : 0}px;"
+<section
+  class="console-drawer {isDragging ? 'resizing' : ''}"
+  aria-label="Console Output"
+  data-open={open ? 'true' : 'false'}
+  inert={!open}
+  style="height: {open ? drawerHeight : 0}px;"
+>
+  <!-- Touch-safe drag handle for resize -->
+  <div
+    class="resize-handle no-select"
+    role="slider"
+    aria-label="Resize Console Drawer"
+    aria-valuenow={drawerHeight}
+    tabindex="0"
+    onmousedown={startResize}
+    ontouchstart={startResize}
+    onkeydown={handleKeyDown}
   >
-    <!-- Touch-safe drag handle for resize -->
-    <div
-      class="resize-handle no-select"
-      role="slider"
-      aria-label="Resize Console Drawer"
-      aria-valuenow={drawerHeight}
-      tabindex="0"
-      onmousedown={startResize}
-      ontouchstart={startResize}
-      onkeydown={handleKeyDown}
-    >
-      <div class="handle-bar"></div>
-    </div>
+    <div class="handle-bar"></div>
+  </div>
 
-    <div class="drawer-header no-select">
-      <div class="header-left">
-        <span class="drawer-title">Console</span>
-        <a href="/console" class="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded inline-flex items-center justify-center" title="Open Fullpage Console">
-          <Maximize2 size={14} />
-        </a>
-      </div>
-      {#if onClose}
-        <Button
-          variant="ghost"
-          size="icon"
-          class="h-6 w-6 text-muted-foreground hover:text-foreground"
-          onclick={onClose}
-          title="Close Console Drawer"
-        >
-          <X size={14} />
-        </Button>
-      {/if}
+  <div class="drawer-header no-select">
+    <div class="header-left">
+      <span class="drawer-title">Console</span>
+      <a href="/console" class="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded inline-flex items-center justify-center" title="Open Fullpage Console">
+        <Maximize2 size={14} />
+      </a>
     </div>
+    {#if onClose}
+      <Button
+        variant="ghost"
+        size="icon"
+        class="h-6 w-6 text-muted-foreground hover:text-foreground"
+        onclick={onClose}
+        title="Close Console Drawer"
+      >
+        <X size={14} />
+      </Button>
+    {/if}
+  </div>
 
-    <div class="console-body">
-      {#if children}
-        {@render children()}
-      {:else}
-        <ConsoleView {store} {open} />
-      {/if}
-    </div>
-  </section>
+  <div class="console-body">
+    {#if children}
+      {@render children()}
+    {:else}
+      <ConsoleView {store} {open} />
+    {/if}
+  </div>
+</section>
 
 <style>
   .console-drawer {
@@ -218,7 +218,7 @@
     height: 4px;
     border-radius: 2px;
     background-color: var(--border);
-    transition: background-color 0.2s ease;
+    transition: background-color var(--motion-duration-enter) var(--motion-ease-enter);
   }
 
   .drawer-header {
