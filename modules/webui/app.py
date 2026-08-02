@@ -18,6 +18,7 @@ class QuietPollFilter(logging.Filter):
 
 logging.getLogger("uvicorn.access").addFilter(QuietPollFilter())
 
+from modules.webui.checkpoint_store import CheckpointStore
 from modules.webui.compression import SelectiveGZipMiddleware
 from modules.webui.config_service import ConfigService, ConfigSnapshot
 from modules.webui.directories import DirectoryService
@@ -127,6 +128,10 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
         await event_hub.start()
 
         metrics_store = MetricsStore()
+        checkpoint_store = CheckpointStore(
+            root_dir=settings.root_dir,
+            workspace_provider=lambda: config_svc.current_workspace,
+        )
         gallery_svc = GalleryService(
             root_dir=settings.root_dir,
             workspace_provider=lambda: config_svc.current_workspace,
@@ -146,6 +151,7 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
             event_bus=event_hub,
             sampling_coordinator=sampling_svc,
             metrics_store=metrics_store,
+            checkpoint_store=checkpoint_store,
         )
         media_svc = MediaService(root_dir=settings.root_dir)
         settings_store = SettingsStore(settings.root_dir / "webui.json")
@@ -196,6 +202,7 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
             capture=capture,
             training=training_svc,
             gallery=gallery_svc,
+            checkpoints=checkpoint_store,
             sampling=sampling_svc,
             media=media_svc,
             media_service=media_svc,

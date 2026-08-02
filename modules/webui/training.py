@@ -34,11 +34,13 @@ class TrainingService:
         event_bus: Any | None = None,
         sampling_coordinator: Any | None = None,
         metrics_store: Any | None = None,
+        checkpoint_store: Any | None = None,
     ):
         self._lock = RLock()
         self._event_bus = event_bus
         self._sampling_coordinator = sampling_coordinator
         self._metrics_store = metrics_store
+        self._checkpoint_store = checkpoint_store
         self._state = TrainingState.IDLE
         self._step = 0
         self._max_steps = 0
@@ -342,6 +344,12 @@ class TrainingService:
                 except Exception as e:
                     logging.exception(f"TrainingService: Error in metrics_store.begin_training: {e}")
 
+            if self._checkpoint_store is not None:
+                try:
+                    self._checkpoint_store.begin_training(train_config)
+                except Exception as e:
+                    logging.exception(f"TrainingService: Error in checkpoint_store.begin_training: {e}")
+
             try:
                 import json
                 import os
@@ -459,6 +467,12 @@ class TrainingService:
                         self._metrics_store.end_training()
                     except Exception as e:
                         logging.exception(f"TrainingService: Error in metrics_store.end_training: {e}")
+
+                if self._checkpoint_store is not None:
+                    try:
+                        self._checkpoint_store.end_training()
+                    except Exception as e:
+                        logging.exception(f"TrainingService: Error in checkpoint_store.end_training: {e}")
 
         except Exception as e:
             import logging

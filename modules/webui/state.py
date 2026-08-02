@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from modules.webui.checkpoint_store import CheckpointStore
     from modules.webui.config_service import ConfigService
     from modules.webui.directories import DirectoryService
     from modules.webui.events import EventHub
@@ -39,6 +40,7 @@ class AppState:
     capture: Any | None = None
     training: "TrainingService | None" = None
     gallery: "GalleryService | None" = None
+    checkpoints: "CheckpointStore | None" = None
     sampling: "SamplingCoordinator | None" = None
     media: "MediaService | None" = None
     media_service: "MediaService | None" = None
@@ -65,6 +67,12 @@ class AppState:
         if self.gallery is None:
             raise RuntimeError("GalleryService is not initialized on AppState")
         return self.gallery
+
+    @property
+    def checkpoint_store(self) -> "CheckpointStore":
+        if self.checkpoints is None:
+            raise RuntimeError("CheckpointStore is not initialized on AppState")
+        return self.checkpoints
 
     @property
     def sampling_coordinator(self) -> "SamplingCoordinator":
