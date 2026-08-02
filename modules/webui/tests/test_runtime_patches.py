@@ -231,3 +231,16 @@ def test_a_failing_store_never_breaks_the_save():
     finally:
         training_module._active_training_service = previous
 
+
+
+def test_patching_the_saver_survives_an_unimportable_training_stack(monkeypatch):
+    # install_runtime_patches() runs from create_app(), and this patch reaches
+    # the entire training dependency graph (dataloaders, every model class,
+    # LoRAModule, diffusers). An ImportError anywhere in there must degrade
+    # Downloads, not stop the whole web UI from starting -- which is why
+    # _patch_summary_writer guards its import the same way.
+    import sys
+
+    monkeypatch.setitem(sys.modules, "modules.util.create", None)
+
+    runtime_patches._patch_model_saver()  # must not raise

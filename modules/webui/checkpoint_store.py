@@ -12,7 +12,7 @@ from typing import Any
 
 from modules.util.config.TrainConfig import TrainConfig
 from modules.util.enum.ModelFormat import ModelFormat
-from modules.webui.atomic_io import write_json_atomic
+from modules.webui.atomic_io import copy_file_atomic, write_json_atomic
 from modules.webui.run_key import RunKeyResolver
 
 logger = logging.getLogger(__name__)
@@ -79,7 +79,11 @@ def link_or_copy(source: Path, destination: Path, *, allow_link: bool = True) ->
         except OSError:
             logger.debug("Hardlink failed for %s, copying instead", source, exc_info=True)
 
-    shutil.copyfile(source, destination)
+    # Atomic rather than a plain copyfile: a crash partway through a
+    # multi-gigabyte copy would otherwise leave a truncated file in the run
+    # directory with no manifest entry -- invisible in Downloads and not
+    # removable through it, so it would just consume disk.
+    copy_file_atomic(source, destination)
     return False
 
 
@@ -314,7 +318,11 @@ class CheckpointStore:
     def _append_manifest_entry(self, run_dir: Path, entry: dict[str, Any]) -> None:
         with self._lock:
             doc = self._read_manifest(run_dir)
-            entry = {"id": len(doc["checkpoints"]) + 1, **entry}
+            # Highest id seen, not the entry count: a delete makes the count
+            # smaller than an id already in use, and reissuing one collides with
+            # a live entry.
+            highest = max((int(c.get("id") or 0) for c in doc["checkpoints"]), default=0)
+            entry = {"id": highest + 1, **entry}
             doc["checkpoints"].append(entry)
             write_json_atomic(run_dir / MANIFEST_FILENAME, doc)
 
@@ -393,12 +401,29 @@ class CheckpointStore:
         return path
 
     def delete_checkpoint(self, run_key: str, filename: str) -> None:
-        with self._lock:
-            path = self.get_checkpoint_path(run_key, filename)
+        """Remove a checkpoint from Downloads.
 
+        Deliberately not routed through get_checkpoint_path: that refuses
+        entries we never managed to store, and entries whose file has since
+        vanished. Those are exactly the rows a user most wants to clear, and
+        refusing would strand them in the list forever. Membership in the
+        manifest is still required, so an unknown name is still a 404.
+        """
+        with self._lock:
+            if _is_unsafe_name(filename):
+                raise CheckpointNotFound("Checkpoint not found")
+
+            doc = self._load_manifest(run_key)
+            if not any(c.get("filename") == filename for c in doc["checkpoints"]):
+                raise CheckpointNotFound("Checkpoint not found")
+
+            path = self._checkpoints_root() / run_key / filename
+
+        # Outside the lock: removing a multi-gigabyte tree must not block a
+        # capture running on the worker thread.
         if path.is_dir():
             shutil.rmtree(path)
-        else:
+        elif path.exists():
             path.unlink()
 
         with self._lock:

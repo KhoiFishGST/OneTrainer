@@ -511,3 +511,84 @@ def test_delete_checkpoint_synchronizes_manifest_access(store, workspace, train_
     assert lock_held_during_manifest_load is True
 
 
+
+
+def _capture_one(store, workspace, train_config, name: str) -> None:
+    """Capture a single save into the already-started run."""
+    source = workspace / "save" / name
+    source.write_bytes(b"x" * 10)
+    store.capture(ModelFormat.KOHYA_LORA, str(source))
+    store.end_training()
+
+
+def test_ids_stay_unique_after_a_delete(store, workspace, train_config):
+    # Regression: the id was `len(checkpoints) + 1`, a position counter rather
+    # than an identity, so a delete made the next capture reuse a live id. The
+    # Downloads table keys its rows on it, and duplicate keys abort the render.
+    run_key = _start_run(store, workspace, train_config)
+    for name in ("a.safetensors", "b.safetensors"):
+        source = workspace / "save" / name
+        source.write_bytes(b"x" * 10)
+        store.capture(ModelFormat.KOHYA_LORA, str(source))
+    store.end_training()
+
+    store.delete_checkpoint(run_key, "a.safetensors")
+
+    # A later save in the same run: the run key resolves to the same directory.
+    store.begin_training(train_config)
+    (workspace / "config" / f"{run_key}.json").write_text('{"changed": 1}', encoding="utf-8")
+    _capture_one(store, workspace, train_config, "c.safetensors")
+
+    ids = [c["id"] for c in _manifest(workspace, run_key)["checkpoints"]]
+    assert len(ids) == len(set(ids)), f"duplicate checkpoint ids: {ids}"
+
+
+def test_an_unavailable_checkpoint_can_still_be_removed(store, workspace, train_config, monkeypatch):
+    # The save succeeded but we could not store our own link or copy, so there
+    # is no file to delete. The row must still be clearable from the list.
+    import modules.webui.checkpoint_store as cs
+
+    run_key = _start_run(store, workspace, train_config)
+    source = workspace / "save" / "a.safetensors"
+    source.write_bytes(b"x" * 10)
+
+    def boom(*args, **kwargs):
+        raise OSError(28, "No space left on device")
+
+    monkeypatch.setattr(cs, "link_or_copy", boom)
+    store.capture(ModelFormat.KOHYA_LORA, str(source))
+    store.end_training()
+    monkeypatch.undo()
+
+    assert _manifest(workspace, run_key)["checkpoints"][0]["available"] is False
+
+    store.delete_checkpoint(run_key, "a.safetensors")
+
+    assert _manifest(workspace, run_key)["checkpoints"] == []
+    # The original OneTrainer file is never touched.
+    assert source.read_bytes() == b"x" * 10
+
+
+def test_delete_removes_an_entry_whose_file_vanished(store, workspace, train_config):
+    # Same shape: something removed our stored copy out of band. The manifest
+    # entry must not become permanently stuck.
+    run_key = _start_run(store, workspace, train_config)
+    _capture_one(store, workspace, train_config, "a.safetensors")
+
+    (_checkpoint_dir(workspace, run_key) / "a.safetensors").unlink()
+
+    store.delete_checkpoint(run_key, "a.safetensors")
+
+    assert _manifest(workspace, run_key)["checkpoints"] == []
+
+
+def test_delete_still_rejects_a_name_not_in_the_manifest(store, workspace, train_config):
+    run_key = _start_run(store, workspace, train_config)
+    _capture_one(store, workspace, train_config, "a.safetensors")
+
+    (_checkpoint_dir(workspace, run_key) / "smuggled.safetensors").write_bytes(b"nope")
+
+    with pytest.raises(CheckpointNotFound):
+        store.delete_checkpoint(run_key, "smuggled.safetensors")
+    with pytest.raises(CheckpointNotFound):
+        store.delete_checkpoint(run_key, "../escape")

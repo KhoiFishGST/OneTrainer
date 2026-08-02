@@ -6,8 +6,12 @@
   import { Button } from '$lib/components/ui/button';
   import { api } from '$lib/api/client';
   import { toast } from 'svelte-sonner';
+  import { tick } from 'svelte';
 
   const runsQuery = createDownloadRunsQuery();
+
+  let AlertDialog = $state<typeof import('$lib/components/ui/alert-dialog/index.js') | null>(null);
+  let pendingRemoval = $state<{ filename: string; linked: boolean } | null>(null);
 
   let userSelectedKey = $state<string | null>(null);
 
@@ -38,20 +42,38 @@
       : `/api/downloads/runs/${run}/files/${name}`;
   }
 
-  async function remove(filename: string, linked: boolean) {
-    if (!selectedRunKey) return;
+  // Deleting a link frees nothing while the OneTrainer original survives;
+  // deleting a copy frees the bytes now. Those are opposite outcomes, so the
+  // confirmation has to say which one this is.
+  const removalMessage = $derived(
+    pendingRemoval === null
+      ? ''
+      : pendingRemoval.linked
+        ? `${pendingRemoval.filename} is a link to the file OneTrainer wrote. Removing it here keeps the original, so no disk space is freed.`
+        : `${pendingRemoval.filename} is the web UI's own copy. Removing it deletes those bytes and the space will be freed.`
+  );
 
-    // Deleting a link frees nothing while the original survives; deleting a
-    // copy frees the bytes now. Say which one this is.
-    const message = linked
-      ? `Remove ${filename} from Downloads? The original OneTrainer file is kept, so no disk space is freed.`
-      : `Delete ${filename}? This is the web UI's own copy and the space will be freed.`;
-    if (!confirm(message)) return;
+  async function requestRemove(filename: string, linked: boolean) {
+    if (!AlertDialog) {
+      AlertDialog = await import('$lib/components/ui/alert-dialog/index.js');
+      await tick();
+    }
+    pendingRemoval = { filename, linked };
+  }
+
+  async function confirmRemove() {
+    // Capture before the first await: the dialog closes immediately and the
+    // deriveds it reads are gone by the time the request settles.
+    const target = pendingRemoval;
+    const key = selectedRunKey;
+    const query = $runQuery;
+    pendingRemoval = null;
+    if (!target || !key) return;
 
     try {
-      await api.deleteCheckpoint(selectedRunKey, filename);
-      toast.success(`Removed ${filename}`);
-      await $runQuery.refetch();
+      await api.deleteCheckpoint(key, target.filename);
+      toast.success(`Removed ${target.filename}`);
+      await query.refetch();
     } catch (err: any) {
       toast.error(err?.detail?.message || err?.message || 'Could not remove this checkpoint');
     }
@@ -89,7 +111,9 @@
         </tr>
       </thead>
       <tbody>
-        {#each checkpoints as c (c.id)}
+        <!-- Keyed on filename, not id: _unique_name guarantees it is unique
+             within a run, whereas older manifests can carry reissued ids. -->
+        {#each checkpoints as c (c.filename)}
           <tr class="border-t border-border">
             <td class="py-2">
               {c.filename}
@@ -104,7 +128,10 @@
               {c.linked ? 'Linked' : 'Copy'}
             </td>
             <td class="text-right">
-              {#if c.available}
+              <!-- Only an explicit false means "we never stored this", matching
+                   the store's own check; a manifest without the field is not
+                   read as unavailable. -->
+              {#if c.available !== false}
                 <a
                   class="underline"
                   href={downloadHref(selectedRunKey ?? '', c)}
@@ -123,7 +150,7 @@
                 variant="secondary"
                 size="sm"
                 class="ml-2"
-                onclick={() => remove(c.filename, c.linked)}
+                onclick={() => requestRemove(c.filename, c.linked)}
               >
                 Remove
               </Button>
@@ -134,3 +161,23 @@
     </table>
   {/if}
 </RoutePage>
+
+{#if AlertDialog}
+  <AlertDialog.Root
+    open={pendingRemoval !== null}
+    onOpenChange={(v) => {
+      if (!v) pendingRemoval = null;
+    }}
+  >
+    <AlertDialog.Content>
+      <AlertDialog.Header>
+        <AlertDialog.Title>Remove this checkpoint?</AlertDialog.Title>
+        <AlertDialog.Description>{removalMessage}</AlertDialog.Description>
+      </AlertDialog.Header>
+      <AlertDialog.Footer>
+        <AlertDialog.Cancel onclick={() => (pendingRemoval = null)}>Cancel</AlertDialog.Cancel>
+        <AlertDialog.Action onclick={confirmRemove}>Remove</AlertDialog.Action>
+      </AlertDialog.Footer>
+    </AlertDialog.Content>
+  </AlertDialog.Root>
+{/if}

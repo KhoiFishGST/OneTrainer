@@ -34,6 +34,7 @@ test.describe("downloads", () => {
             created_at: "2026-08-02T09:10:00Z",
             source_path: "/ws/save/step-1000.safetensors",
             linked: true,
+            available: true,
           }],
         },
       })
@@ -44,7 +45,9 @@ test.describe("downloads", () => {
     await page.goto("/downloads");
     await page.waitForLoadState("networkidle");
 
-    await expect(page.getByText("step-1000.safetensors")).toBeVisible();
+    await expect(
+      page.getByRole("cell", { name: "step-1000.safetensors", exact: true })
+    ).toBeVisible();
 
     const link = page.getByRole("link", { name: /download step-1000\.safetensors/i });
     await expect(link).toHaveAttribute(

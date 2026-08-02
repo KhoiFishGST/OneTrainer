@@ -1,10 +1,12 @@
 import contextlib
+import logging
 import threading
 
-# The web UI needs two behaviours that core OneTrainer does not provide:
+# The web UI needs three behaviours that core OneTrainer does not provide:
 #   1. the on-disk path of each written sample, for the gallery
 #   2. real-time loss/lr metrics, for the training chart
-# Both are installed here as runtime patches so no core file is modified.
+#   3. notification of each written checkpoint, for downloads
+# All are installed here as runtime patches so no core file is modified.
 #
 # The patches are process-lifetime: they are installed exactly once, on the
 # first call, and are never removed. Installation happens only from
@@ -119,7 +121,16 @@ def _patch_model_saver() -> None:
     # a module attribute -- resolved at call time -- and GenericTrainer routes
     # backup (:449), save (:500) and the final model (:870) through the one
     # instance it stores (:151).
-    from modules.util import create as create_module
+    #
+    # Guarded because this import reaches the whole training dependency graph --
+    # dataloaders, every model class, LoRAModule, diffusers. install_runtime_patches()
+    # runs from create_app(), so an unguarded failure anywhere in there would stop
+    # the web UI from starting at all rather than just leaving Downloads empty.
+    try:
+        from modules.util import create as create_module
+    except Exception:
+        logging.exception("Checkpoint capture disabled: could not import the model saver factory")
+        return
 
     original_factory = create_module.create_model_saver
 
