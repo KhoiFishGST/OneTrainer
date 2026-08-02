@@ -17,6 +17,7 @@ from modules.util.enum.EMAMode import EMAMode
 from modules.util.enum.FileType import FileType
 from modules.webui.atomic_io import copy_file_atomic, save_pil_atomic, write_json_atomic
 from modules.webui.metrics_store import METRICS_FILENAME
+from modules.webui.run_key import RunKeyResolver
 
 from PIL import Image
 
@@ -31,12 +32,6 @@ class TrainingProgressSnapshot:
     global_step: int
 
 
-@dataclass(frozen=True)
-class FileSignature:
-    mtime_ns: int
-    size: int
-    sha256: str
-
 
 @dataclass(frozen=True)
 class GalleryImage:
@@ -47,19 +42,6 @@ class GalleryImage:
 
 class GalleryNotFound(LookupError):
     pass
-
-
-def _file_signature(path: Path) -> FileSignature:
-    stat = path.stat()
-    digest = hashlib.sha256()
-    with path.open("rb") as f:
-        while chunk := f.read(1024 * 1024):
-            digest.update(chunk)
-    return FileSignature(
-        mtime_ns=stat.st_mtime_ns,
-        size=stat.st_size,
-        sha256=digest.hexdigest(),
-    )
 
 
 def _expected_variants(config: TrainConfig) -> list[SampleVariant]:
@@ -113,7 +95,7 @@ class GalleryService:
         self._started_at_str: str | None = None
         self._resolution_attempted: bool = False
         self._disabled: bool = False
-        self._config_signatures: dict[str, FileSignature] = {}
+        self._run_key_resolver = RunKeyResolver()
         self._resolved_config_filename: str | None = None
 
     @property
@@ -149,13 +131,7 @@ class GalleryService:
             self._started_at = now
             self._started_at_str = now.isoformat()
 
-            self._config_signatures.clear()
-            config_dir = self._active_workspace / "config"
-            if config_dir.is_dir():
-                for item in config_dir.iterdir():
-                    if item.is_file() and item.suffix.lower() == ".json":
-                        with contextlib.suppress(OSError):
-                            self._config_signatures[item.name] = _file_signature(item)
+            self._run_key_resolver.snapshot(self._active_workspace / "config")
 
     def _resolve_run(self, config: TrainConfig) -> None:
         ws = self._active_workspace
@@ -163,8 +139,9 @@ class GalleryService:
             self._disabled = True
             return
 
-        config_dir = ws / "config"
-        if not config_dir.is_dir():
+        result = self._run_key_resolver.resolve(ws / "config", config.save_filename_prefix or "")
+
+        if result.reason == "no_config_dir" or result.reason == "missing":
             if self._warning_sink:
                 self._warning_sink(
                     "Gallery persistence disabled: missing core config candidate",
@@ -173,34 +150,7 @@ class GalleryService:
             self._disabled = True
             return
 
-        prefix = config.save_filename_prefix or ""
-        candidates: list[Path] = []
-
-        for item in config_dir.iterdir():
-            if not (item.is_file() and item.suffix.lower() == ".json"):
-                continue
-            if prefix and not item.name.startswith(prefix):
-                continue
-
-            # Candidate must be new or changed signature
-            if item.name not in self._config_signatures:
-                candidates.append(item)
-            else:
-                with contextlib.suppress(OSError):
-                    current_sig = _file_signature(item)
-                    if current_sig != self._config_signatures[item.name]:
-                        candidates.append(item)
-
-        if len(candidates) == 0:
-            if self._warning_sink:
-                self._warning_sink(
-                    "Gallery persistence disabled: missing core config candidate",
-                    {"workspace": str(ws)},
-                )
-            self._disabled = True
-            return
-
-        if len(candidates) > 1:
+        if result.reason == "ambiguous":
             if self._warning_sink:
                 self._warning_sink(
                     "Gallery persistence disabled: ambiguous core config candidate",
@@ -209,8 +159,9 @@ class GalleryService:
             self._disabled = True
             return
 
-        candidate = candidates[0]
-        run_key = candidate.stem
+        run_key = result.key
+        assert run_key is not None
+        config_filename = result.config_filename or ""
         target_dir = ws / "web" / "samples" / run_key
         manifest_path = target_dir / "manifest.json"
 
@@ -231,7 +182,7 @@ class GalleryService:
 
         self._active_run_key = run_key
         self._active_run_dir = target_dir
-        self._resolved_config_filename = candidate.name
+        self._resolved_config_filename = config_filename
 
         # Metrics start at step 1 but this only runs on the first sample batch,
         # so this is the signal that buffered rows finally have somewhere to go.
