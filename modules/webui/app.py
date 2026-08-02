@@ -34,6 +34,7 @@ from modules.webui.routers.config import router as config_router
 from modules.webui.routers.console import router as console_router
 from modules.webui.routers.datasets import router as datasets_router
 from modules.webui.routers.directories import router as directories_router
+from modules.webui.routers.downloads import router as downloads_router
 from modules.webui.routers.events import router as events_router
 from modules.webui.routers.gallery import router as gallery_router
 from modules.webui.routers.health import router as health_router
@@ -272,6 +273,7 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
     app.include_router(concepts_router, prefix="/api")
     app.include_router(datasets_router, prefix="/api")
     app.include_router(gallery_router, prefix="/api")
+    app.include_router(downloads_router, prefix="/api")
     app.include_router(meta_router, prefix="/api")
     app.include_router(presets_router, prefix="/api")
     app.include_router(directories_router, prefix="/api")
