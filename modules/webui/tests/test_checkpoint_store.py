@@ -450,3 +450,64 @@ def test_delete_checkpoint_removes_a_directory_tree(store, workspace, train_conf
     assert not (_checkpoint_dir(workspace, run_key) / "my-model").exists()
     assert tree.is_dir()
 
+
+import threading
+
+
+def test_capture_does_not_hold_lock_during_file_io(store, workspace, train_config, monkeypatch):
+    run_key = _start_run(store, workspace, train_config)
+    source = workspace / "save" / "blocking.safetensors"
+    source.write_bytes(b"data")
+
+    in_io_event = threading.Event()
+    release_io_event = threading.Event()
+    lock_acquired_by_other_thread = False
+
+    import modules.webui.checkpoint_store as cs
+    real_link_or_copy = cs.link_or_copy
+
+    def slow_link_or_copy(src, dst, allow_link=True):
+        in_io_event.set()
+        release_io_event.wait(timeout=5.0)
+        return real_link_or_copy(src, dst, allow_link=allow_link)
+
+    monkeypatch.setattr(cs, "link_or_copy", slow_link_or_copy)
+
+    store.capture(ModelFormat.KOHYA_LORA, str(source))
+
+    assert in_io_event.wait(timeout=5.0)
+
+    acquired = store._lock.acquire(blocking=False)
+    if acquired:
+        lock_acquired_by_other_thread = True
+        store._lock.release()
+
+    release_io_event.set()
+    store.end_training()
+
+    assert lock_acquired_by_other_thread is True
+
+
+def test_delete_checkpoint_synchronizes_manifest_access(store, workspace, train_config, monkeypatch):
+    run_key = _start_run(store, workspace, train_config)
+    source = workspace / "save" / "del.safetensors"
+    source.write_bytes(b"data")
+    store.capture(ModelFormat.KOHYA_LORA, str(source))
+    store.end_training()
+
+    lock_held_during_manifest_load = False
+
+    real_load_manifest = store._load_manifest
+
+    def spy_load_manifest(key):
+        nonlocal lock_held_during_manifest_load
+        lock_held_during_manifest_load = store._lock._is_owned()
+        return real_load_manifest(key)
+
+    monkeypatch.setattr(store, "_load_manifest", spy_load_manifest)
+
+    store.delete_checkpoint(run_key, "del.safetensors")
+
+    assert lock_held_during_manifest_load is True
+
+

@@ -248,40 +248,47 @@ class CheckpointStore:
                 allow_link = self._link_support.get(key, True)
                 is_directory = source.is_dir()
 
-                available = True
-                linked = False
-                try:
-                    if is_directory:
-                        linked = self._copy_tree(source, target, allow_link)
-                    else:
-                        linked = link_or_copy(source, target, allow_link=allow_link)
-                except OSError:
-                    # The save itself succeeded; only our copy of it failed.
-                    # Record it anyway so the user is told the file exists and
-                    # where, rather than it silently vanishing from Downloads.
-                    logger.exception("Could not store checkpoint %s", source)
-                    available = False
+            available = True
+            linked = False
+            try:
+                if is_directory:
+                    linked = self._copy_tree(source, target, allow_link)
+                else:
+                    linked = link_or_copy(source, target, allow_link=allow_link)
+            except OSError:
+                # The save itself succeeded; only our copy of it failed.
+                # Record it anyway so the user is told the file exists and
+                # where, rather than it silently vanishing from Downloads.
+                logger.exception("Could not store checkpoint %s", source)
+                available = False
 
+            size_bytes = _tree_size(target) if available else 0
+
+            with self._lock:
                 if available and allow_link and not linked:
                     # Remember per volume, not per run: a cross-device final
                     # model must not stop same-volume saves from being linked.
                     self._link_support[key] = False
 
-                self._append_manifest_entry({
-                    "kind": kind,
-                    "filename": name,
-                    "format": model_format.value,
-                    "is_directory": is_directory,
-                    "size_bytes": _tree_size(target) if available else 0,
-                    "created_at": datetime.now(timezone.utc).isoformat(),
-                    "source_path": str(source),
-                    "linked": linked,
-                    "available": available,
-                })
+                self._append_manifest_entry(
+                    run_dir,
+                    {
+                        "kind": kind,
+                        "filename": name,
+                        "format": model_format.value,
+                        "is_directory": is_directory,
+                        "size_bytes": size_bytes,
+                        "created_at": datetime.now(timezone.utc).isoformat(),
+                        "source_path": str(source),
+                        "linked": linked,
+                        "available": available,
+                    },
+                )
         except Exception:
             logger.exception("Checkpoint capture failed; disabling for this run")
             with contextlib.suppress(Exception):
-                self._disabled = True
+                with self._lock:
+                    self._disabled = True
 
     def _read_manifest(self, run_dir: Path) -> dict[str, Any]:
         path = run_dir / MANIFEST_FILENAME
@@ -304,12 +311,12 @@ class CheckpointStore:
             "checkpoints": [],
         }
 
-    def _append_manifest_entry(self, entry: dict[str, Any]) -> None:
-        assert self._run_dir is not None
-        doc = self._read_manifest(self._run_dir)
-        entry = {"id": len(doc["checkpoints"]) + 1, **entry}
-        doc["checkpoints"].append(entry)
-        write_json_atomic(self._run_dir / MANIFEST_FILENAME, doc)
+    def _append_manifest_entry(self, run_dir: Path, entry: dict[str, Any]) -> None:
+        with self._lock:
+            doc = self._read_manifest(run_dir)
+            entry = {"id": len(doc["checkpoints"]) + 1, **entry}
+            doc["checkpoints"].append(entry)
+            write_json_atomic(run_dir / MANIFEST_FILENAME, doc)
 
     # -- read side ---------------------------------------------------------
 
@@ -386,15 +393,17 @@ class CheckpointStore:
         return path
 
     def delete_checkpoint(self, run_key: str, filename: str) -> None:
-        path = self.get_checkpoint_path(run_key, filename)
+        with self._lock:
+            path = self.get_checkpoint_path(run_key, filename)
 
         if path.is_dir():
             shutil.rmtree(path)
         else:
             path.unlink()
 
-        run_dir = self._checkpoints_root() / run_key
-        doc = self._load_manifest(run_key)
-        doc["checkpoints"] = [c for c in doc["checkpoints"] if c.get("filename") != filename]
-        write_json_atomic(run_dir / MANIFEST_FILENAME, doc)
+        with self._lock:
+            run_dir = self._checkpoints_root() / run_key
+            doc = self._load_manifest(run_key)
+            doc["checkpoints"] = [c for c in doc["checkpoints"] if c.get("filename") != filename]
+            write_json_atomic(run_dir / MANIFEST_FILENAME, doc)
 
