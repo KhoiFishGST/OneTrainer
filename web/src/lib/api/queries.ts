@@ -40,6 +40,8 @@ export const queryKeys = {
   galleryRuns: () => ['gallery', 'runs'] as const,
   galleryRun: (runKey: string) => ['gallery', 'runs', runKey] as const,
   galleryCurrent: () => ['gallery', 'current'] as const,
+  downloadsRuns: () => ['downloads', 'runs'] as const,
+  downloadsRun: (runKey: string | null) => ['downloads', 'run', runKey] as const,
   appearance: () => ['appearance'] as const,
 };
 
@@ -538,6 +540,30 @@ export function createUpdateAppearanceMutation() {
     client
   );
 }
+
+export function createDownloadRunsQuery() {
+  const client = getSafeQueryClient();
+  return createQuery(
+    {
+      queryKey: queryKeys.downloadsRuns(),
+      queryFn: () => api.getDownloadRuns(),
+    },
+    client
+  );
+}
+
+export function createDownloadRunQuery(runKey?: string | null) {
+  const client = getSafeQueryClient();
+  return createQuery(
+    {
+      queryKey: queryKeys.downloadsRun(runKey ?? null),
+      queryFn: () => api.getDownloadRun(runKey as string),
+      enabled: Boolean(runKey),
+    },
+    client
+  );
+}
+
 
 
 

@@ -12,6 +12,7 @@
     Wrench,
     Tv,
     Images,
+    Download,
     PanelLeft,
     Key,
   } from '@lucide/svelte';
@@ -51,6 +52,7 @@
   const navItems = $derived([
     { name: 'Live', path: '/live', icon: Tv, disabled: false },
     { name: 'Gallery', path: '/gallery', icon: Images, disabled: false },
+    { name: 'Downloads', path: '/downloads', icon: Download, disabled: false },
     { name: 'General', path: '/general', icon: SlidersHorizontal, disabled: false },
     { name: 'Model', path: '/model', icon: Box, disabled: false },
     { name: 'Datasets', path: '/datasets', icon: Database, disabled: false },

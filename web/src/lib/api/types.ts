@@ -319,3 +319,36 @@ export interface AppearanceUpdateRequest {
   theme?: ThemeChoice;
   animations?: boolean;
 }
+
+export interface DownloadRunSummary {
+  key: string;
+  config_filename: string;
+  started_at?: string | null;
+  checkpoint_count: number;
+  total_size_bytes: number;
+}
+
+export interface DownloadRunsResponse {
+  runs: DownloadRunSummary[];
+}
+
+export interface DownloadCheckpoint {
+  id: number;
+  kind: 'save' | 'final';
+  filename: string;
+  format: string;
+  is_directory: boolean;
+  size_bytes: number;
+  created_at: string;
+  source_path: string;
+  linked: boolean;
+  // False when the save succeeded but the web UI could not store its own
+  // link or copy. Listed for visibility, but not downloadable.
+  available: boolean;
+}
+
+export interface DownloadRunModel {
+  run: { key: string; config_filename?: string; started_at?: string | null };
+  checkpoints: DownloadCheckpoint[];
+}
+

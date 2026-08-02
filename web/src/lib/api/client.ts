@@ -22,6 +22,8 @@ import type {
   GalleryRunsResponse,
   SampleDefinition,
   SamplesResponse,
+  DownloadRunModel,
+  DownloadRunsResponse,
 } from './types';
 
 export class ApiError extends Error {
@@ -316,6 +318,17 @@ export function createApi(base = '') {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
+
+    getDownloadRuns: () => request<DownloadRunsResponse>(`${base}/api/downloads/runs`),
+
+    getDownloadRun: (runKey: string) =>
+      request<DownloadRunModel>(`${base}/api/downloads/runs/${encodeURIComponent(runKey)}`),
+
+    deleteCheckpoint: (runKey: string, filename: string) =>
+      request<{ status: string }>(
+        `${base}/api/downloads/runs/${encodeURIComponent(runKey)}/files/${encodeURIComponent(filename)}`,
+        { method: 'DELETE' }
+      ),
   };
 }
 
