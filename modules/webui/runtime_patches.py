@@ -32,6 +32,7 @@ def install_runtime_patches() -> None:
             return
         _patch_sampler_output()
         _patch_summary_writer()
+        _patch_model_saver()
         _installed = True
 
 
@@ -109,3 +110,58 @@ def _patch_summary_writer() -> None:
             pass
 
     SummaryWriter.add_scalar = patched
+
+
+def _patch_model_saver() -> None:
+    # BaseModelSaver.save is abstract and every concrete saver overrides it, so
+    # the base class intercepts nothing. Construction is the single chokepoint:
+    # BaseTrainer.create_model_saver (:73-74) calls create.create_model_saver as
+    # a module attribute -- resolved at call time -- and GenericTrainer routes
+    # backup (:449), save (:500) and the final model (:870) through the one
+    # instance it stores (:151).
+    from modules.util import create as create_module
+
+    original_factory = create_module.create_model_saver
+
+    def patched_factory(*args, **kwargs):
+        saver = original_factory(*args, **kwargs)
+        if saver is None:
+            return None
+
+        def wrapped_save(*save_args, **save_kwargs):
+            result = type(saver).save(saver, *save_args, **save_kwargs)
+
+            # Capture only after the real write returned, so a recorded
+            # checkpoint always exists on disk.
+            with contextlib.suppress(Exception):
+                store = _active_checkpoint_store()
+                if store is not None:
+                    model_format = save_kwargs.get(
+                        "output_model_format",
+                        save_args[2] if len(save_args) > 2 else None,
+                    )
+                    destination = save_kwargs.get(
+                        "output_model_destination",
+                        save_args[3] if len(save_args) > 3 else None,
+                    )
+                    if model_format is not None and destination is not None:
+                        store.capture(model_format, str(destination))
+
+            return result
+
+        # An instance attribute shadows the class method under the normal
+        # attribute lookup that `self.model_saver.save(...)` performs.
+        saver.save = wrapped_save
+        return saver
+
+    create_module.create_model_saver = patched_factory
+
+
+def _active_checkpoint_store():
+    from modules.webui import training as training_module
+
+    service = training_module._active_training_service
+    if service is None:
+        return None
+    return getattr(service, "_checkpoint_store", None)
+
