@@ -280,6 +280,8 @@ def test_training_status_callbacks_bound_one_gallery_batch(monkeypatch):
 
     mock_create = MagicMock(create_trainer=fake_create_trainer)
     monkeypatch.setitem(sys.modules, "modules.util.create", mock_create)
+    import modules.util
+    monkeypatch.setattr(modules.util, "create", mock_create)
 
     config = valid_config_dict()
 
@@ -341,6 +343,8 @@ def test_training_exit_always_finishes_coordinator(monkeypatch, exit_mode):
 
     mock_create = MagicMock(create_trainer=fake_create_trainer)
     monkeypatch.setitem(sys.modules, "modules.util.create", mock_create)
+    import modules.util
+    monkeypatch.setattr(modules.util, "create", mock_create)
 
     config = valid_config_dict()
 
