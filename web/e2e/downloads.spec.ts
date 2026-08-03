@@ -36,6 +36,14 @@ test.describe("downloads", () => {
             linked: true,
             available: true,
           }],
+          artifacts: [
+            { kind: "config", label: "Config", available: true, is_archive: false,
+              size_bytes: 23552, download_name: `${RUN_KEY}.json` },
+            { kind: "samples", label: "Samples", available: true, is_archive: true,
+              size_bytes: 2411724, download_name: `${RUN_KEY}-samples.zip` },
+            { kind: "tensorboard", label: "Tensorboard", available: false, is_archive: true,
+              size_bytes: 0, download_name: `${RUN_KEY}-tensorboard.zip` },
+          ],
         },
       })
     );
@@ -54,6 +62,25 @@ test.describe("downloads", () => {
       "href",
       `/api/downloads/runs/${RUN_KEY}/files/step-1000.safetensors`
     );
+  });
+
+  test("lists run artifacts and links each to its own route", async ({ page }) => {
+    await page.goto("/downloads");
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.getByText("Run artifacts")).toBeVisible();
+
+    await expect(page.getByRole("link", { name: /download config/i })).toHaveAttribute(
+      "href",
+      `/api/downloads/runs/${RUN_KEY}/artifacts/config`
+    );
+    await expect(page.getByRole("link", { name: /download samples/i })).toHaveAttribute(
+      "href",
+      `/api/downloads/runs/${RUN_KEY}/artifacts/samples`
+    );
+
+    // Unavailable artifacts stay visible as a fact rather than disappearing.
+    await expect(page.getByText(/not available for this run/i)).toBeVisible();
   });
 
   test("is reachable from the nav rail", async ({ page }) => {
