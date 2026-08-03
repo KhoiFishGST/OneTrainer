@@ -21,6 +21,8 @@ const DIR_CHECKPOINT = {
 const ARTIFACTS = [
   { kind: 'config', label: 'Config', available: true, is_archive: false, size_bytes: 23552,
     download_name: 'run-a.json' },
+  { kind: 'metrics', label: 'Metrics', available: true, is_archive: false, size_bytes: 4096,
+    download_name: 'run-a-metrics.jsonl' },
   { kind: 'samples', label: 'Samples', available: true, is_archive: true, size_bytes: 2411724,
     download_name: 'run-a-samples.zip' },
   { kind: 'tensorboard', label: 'Tensorboard', available: true, is_archive: true, size_bytes: 10905190,
@@ -100,15 +102,7 @@ describe('Downloads Page', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('shows an empty state when no run has produced a checkpoint', async () => {
-    vi.spyOn(api, 'getDownloadRuns').mockResolvedValue({ runs: [] } as any);
 
-    render(DownloadsPage);
-
-    await waitFor(() => {
-      expect(screen.getByText(/no checkpoints yet/i)).toBeInTheDocument();
-    });
-  });
 
   it('renders every row when a manifest carries duplicate ids', async () => {
     // Older manifests can hold reissued ids. Keying the table on them aborted
@@ -234,8 +228,9 @@ describe('Downloads Page', () => {
       checkpoints: [],
       artifacts: [
         ARTIFACTS[0],
-        { ...ARTIFACTS[1], available: false, size_bytes: 0 },
-        ARTIFACTS[2],
+        ARTIFACTS[1],
+        { ...ARTIFACTS[2], available: false, size_bytes: 0 },
+        ARTIFACTS[3],
       ],
     } as any);
 
@@ -258,6 +253,39 @@ describe('Downloads Page', () => {
     render(DownloadsPage);
 
     expect(await screen.findByRole('link', { name: /download config/i })).toBeInTheDocument();
+  });
+
+  it('offers the metrics artifact at its own route', async () => {
+    render(DownloadsPage);
+
+    const link = await screen.findByRole('link', { name: /download metrics/i });
+    expect(link).toHaveAttribute('href', '/api/downloads/runs/run-a/artifacts/metrics');
+  });
+
+  it('says so when a run has no checkpoints', async () => {
+    // The normal shape for a run that logged metrics and never saved -- which
+    // previously rendered a bare table header and nothing else.
+    vi.spyOn(api, 'getDownloadRun').mockResolvedValue({
+      run: { key: 'run-a' },
+      checkpoints: [],
+      artifacts: ARTIFACTS,
+    } as any);
+
+    render(DownloadsPage);
+
+    expect(await screen.findByText(/no checkpoints for this run/i)).toBeInTheDocument();
+    // The artifacts are still offered.
+    expect(screen.getByRole('link', { name: /download config/i })).toBeInTheDocument();
+  });
+
+  it('describes the empty page in terms of runs, not saves', async () => {
+    vi.spyOn(api, 'getDownloadRuns').mockResolvedValue({ runs: [] } as any);
+
+    render(DownloadsPage);
+
+    await waitFor(() => {
+      expect(screen.getByText(/no runs yet/i)).toBeInTheDocument();
+    });
   });
 });
 

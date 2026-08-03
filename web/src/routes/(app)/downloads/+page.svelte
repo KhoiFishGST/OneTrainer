@@ -101,7 +101,8 @@
 
   {#if availableRuns.length === 0}
     <p class="text-muted-foreground">
-      No checkpoints yet. They appear here after a run saves a model or finishes.
+      No runs yet. A run appears here as soon as training starts, with its config and
+      logs — and its checkpoints once it saves any.
     </p>
   {:else}
     <section class="mb-6">
@@ -195,6 +196,13 @@
             </td>
           </tr>
         {/each}
+        {#if checkpoints.length === 0}
+          <tr class="border-t border-border">
+            <td class="py-2 text-muted-foreground" colspan="6">
+              No checkpoints for this run.
+            </td>
+          </tr>
+        {/if}
       </tbody>
     </table>
   {/if}
