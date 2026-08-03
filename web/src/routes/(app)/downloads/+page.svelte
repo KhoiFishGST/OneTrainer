@@ -165,7 +165,7 @@
             </td>
             <td class="hidden md:table-cell">{c.kind}</td>
             <td class="hidden md:table-cell">{c.format}</td>
-            <td class="whitespace-nowrap">{formatSize(c.size_bytes)}</td>
+            <td class="whitespace-nowrap tabular-nums">{formatSize(c.size_bytes)}</td>
             <td class="hidden md:table-cell" data-testid={`mode-${c.filename}`}>
               {c.linked ? 'Linked' : 'Copy'}
             </td>

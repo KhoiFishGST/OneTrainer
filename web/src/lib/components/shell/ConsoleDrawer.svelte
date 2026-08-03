@@ -247,6 +247,7 @@
     flex: 1;
     overflow: hidden;
     position: relative;
+    font-family: var(--mono-font);
   }
 
   @media (max-width: 768px) {

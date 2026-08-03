@@ -42,4 +42,17 @@ describe('font application', () => {
 
     expect(uses).toEqual(['shell/Header.svelte']);
   });
+
+  it('gives the console output the mono face', () => {
+    const source = read('lib/components/shell/ConsoleDrawer.svelte');
+
+    expect(source).toMatch(/\.console-body\s*\{[^}]*font-family:\s*var\(--mono-font\)/);
+  });
+
+  it('holds checkpoint sizes to a fixed digit width', () => {
+    // Proportional digits make a column of sizes jitter as the values change.
+    const source = read('routes/(app)/downloads/+page.svelte');
+
+    expect(source).toContain('tabular-nums');
+  });
 });
