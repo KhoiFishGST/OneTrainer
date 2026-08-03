@@ -329,7 +329,7 @@ def test_thumbnail_failure_keeps_full_image_ready(active_gallery, source_png, mo
 
 def test_copy_failure_marks_slot_error_without_touching_core(active_gallery, source_png, monkeypatch):
     original = source_png.read_bytes()
-    monkeypatch.setattr("modules.webui.gallery.copy_file_atomic", Mock(side_effect=OSError("copy failed")))
+    monkeypatch.setattr("modules.webui.gallery.link_or_copy_with_digest", Mock(side_effect=OSError("copy failed")))
     assert active_gallery.record_default_sample(image_output(source_png)) is None
     assert source_png.read_bytes() == original
     assert read_manifest(active_gallery)["batches"][0]["samples"][0]["status"] == "error"
@@ -471,3 +471,57 @@ def test_get_run_metrics_path_rejects_path_traversal(tmp_path):
     for bad_key in ["../escape", "a/b", "..\\escape", ".."]:
         with pytest.raises(GalleryNotFound):
             service.get_run_metrics_path(bad_key)
+
+
+def test_record_sample_hardlinks_instead_of_duplicating(active_gallery, source_png):
+    # Both paths are under workspace_dir, so they are same-volume by
+    # construction and the link should always succeed here.
+    output = ModelSamplerOutput(FileType.IMAGE, Image.open(source_png))
+    output.filepath = str(source_png)
+    active_gallery.record_default_sample(output)
+
+    sample = read_manifest(active_gallery)["batches"][0]["samples"][0]
+    mirrored = active_gallery.active_run_dir / sample["filename"]
+
+    import os
+
+    assert os.stat(mirrored).st_ino == os.stat(source_png).st_ino
+    assert mirrored.read_bytes() == source_png.read_bytes()
+
+
+def test_record_sample_etag_still_matches_the_content_after_linking(active_gallery, source_png):
+    # The digest is served as the media route's cache validator, so it must not
+    # drift when the copy became a link.
+    import hashlib
+
+    output = ModelSamplerOutput(FileType.IMAGE, Image.open(source_png))
+    output.filepath = str(source_png)
+    active_gallery.record_default_sample(output)
+
+    sample = read_manifest(active_gallery)["batches"][0]["samples"][0]
+
+    assert sample["etag"] == hashlib.sha256(source_png.read_bytes()).hexdigest()
+
+
+def test_record_sample_survives_a_filesystem_without_hardlinks(active_gallery, source_png, monkeypatch):
+    # FAT32, exFAT and network shares reject os.link; the copy fallback must
+    # still produce a byte-identical sample with a correct etag.
+    import hashlib
+    import os
+
+    def boom(*args, **kwargs):
+        raise OSError(1, "Operation not permitted")
+
+    monkeypatch.setattr(os, "link", boom)
+
+    output = ModelSamplerOutput(FileType.IMAGE, Image.open(source_png))
+    output.filepath = str(source_png)
+    active_gallery.record_default_sample(output)
+
+    sample = read_manifest(active_gallery)["batches"][0]["samples"][0]
+    mirrored = active_gallery.active_run_dir / sample["filename"]
+
+    assert sample["status"] == "ready"
+    assert mirrored.read_bytes() == source_png.read_bytes()
+    assert sample["etag"] == hashlib.sha256(source_png.read_bytes()).hexdigest()
+

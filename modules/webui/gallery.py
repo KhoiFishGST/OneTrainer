@@ -15,7 +15,7 @@ from modules.util.config.SampleConfig import SampleConfig
 from modules.util.config.TrainConfig import TrainConfig
 from modules.util.enum.EMAMode import EMAMode
 from modules.util.enum.FileType import FileType
-from modules.webui.atomic_io import copy_file_atomic, save_pil_atomic, write_json_atomic
+from modules.webui.atomic_io import link_or_copy_with_digest, save_pil_atomic, write_json_atomic
 from modules.webui.metrics_store import METRICS_FILENAME
 from modules.webui.run_key import RunKeyResolver
 
@@ -453,7 +453,12 @@ class GalleryService:
         thumb_path = active_run_dir / thumbnail_filename
 
         try:
-            full_etag = copy_file_atomic(source, target_path)
+            # Hardlink rather than duplicate. The sampler's output and
+            # web/samples/ are both under workspace_dir, so they are same-volume
+            # by construction and the cross-device case that forces a copy for
+            # checkpoints cannot arise here. The digest is unchanged either way,
+            # which matters because it is the sample's ETag.
+            _, full_etag = link_or_copy_with_digest(source, target_path)
         except Exception as e:
             with self._lock, contextlib.suppress(Exception):
                 m_doc = json.loads(manifest_path.read_text(encoding="utf-8"))
