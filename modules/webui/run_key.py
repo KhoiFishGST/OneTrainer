@@ -37,6 +37,22 @@ def file_signature(path: Path) -> FileSignature:
     )
 
 
+def _has_changed(path: Path, known: FileSignature) -> bool:
+    """Whether a config differs from its snapshot, hashing only when it might.
+
+    candidates() sits on the metrics hot path until a run resolves, and a run
+    that never resolves keeps calling it for its whole life. Hashing every saved
+    config on every call cost megabytes of sha256 per second there, so matching
+    mtime and size settle it without reading the file. Only when the cheap
+    metadata disagrees does the content hash decide -- which also means a bare
+    `touch` no longer registers as a new candidate.
+    """
+    stat = path.stat()
+    if stat.st_mtime_ns == known.mtime_ns and stat.st_size == known.size:
+        return False
+    return file_signature(path).sha256 != known.sha256
+
+
 class RunKeyResolver:
     def __init__(self) -> None:
         self._signatures: dict[str, FileSignature] = {}
@@ -62,11 +78,12 @@ class RunKeyResolver:
             if prefix and not item.name.startswith(prefix):
                 continue
 
-            if item.name not in self._signatures:
+            known = self._signatures.get(item.name)
+            if known is None:
                 found.append(item)
             else:
                 with contextlib.suppress(OSError):
-                    if file_signature(item) != self._signatures[item.name]:
+                    if _has_changed(item, known):
                         found.append(item)
 
         return found

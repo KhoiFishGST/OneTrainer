@@ -196,3 +196,29 @@ def test_honours_the_save_filename_prefix(session, workspace, train_config):
 
 def test_workspace_dir_is_resolved_and_absolute(session, workspace, train_config):
     assert session.workspace_dir == workspace.resolve()
+
+
+def test_end_resolves_before_declaring_the_run_unidentifiable(
+    session, workspace, train_config, warnings
+):
+    # GenericTrainer writes the config on the first line of start(), long before
+    # the first scalar -- and the first scalar is what normally drives
+    # resolution. A run that dies at model load therefore ends unresolved with
+    # its config sitting on disk, and must not be reported as missing.
+    session.begin(train_config)
+    _write_config(workspace, "run-a")
+
+    session.end()
+
+    assert warnings == []
+    assert session.run_key() == "run-a"
+
+
+def test_end_still_reports_a_run_that_really_never_wrote_a_config(
+    session, workspace, train_config, warnings
+):
+    session.begin(train_config)
+
+    session.end()
+
+    assert [w[1]["reason"] for w in warnings] == ["missing"]

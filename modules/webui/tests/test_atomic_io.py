@@ -2,9 +2,6 @@ import hashlib
 import os
 from pathlib import Path
 
-import pytest
-from PIL import Image
-
 from modules.webui.atomic_io import (
     copy_file_atomic,
     link_or_copy,
@@ -13,6 +10,9 @@ from modules.webui.atomic_io import (
     volume_key,
     write_json_atomic,
 )
+
+import pytest
+from PIL import Image
 
 
 def test_write_json_atomic_replaces_document_without_temp_file(tmp_path: Path):

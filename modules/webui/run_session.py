@@ -101,6 +101,14 @@ class RunSession:
 
     def end(self) -> None:
         with self._lock:
+            # One last attempt before giving up. Resolution is normally driven
+            # by the first scalar, so a run that died at model load reaches here
+            # unresolved with its config already on disk -- GenericTrainer wrote
+            # it on the first line of start(). Reporting that as "no config
+            # appeared" would contradict the real failure the user just saw.
+            if not self._resolved:
+                self._resolve_locked()
+
             if not self._resolved:
                 self._resolved = True
                 self._warn(MISSING_MESSAGE, "missing")

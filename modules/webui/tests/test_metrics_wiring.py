@@ -1,4 +1,3 @@
-from pathlib import Path
 
 from modules.webui.metrics_store import METRICS_FILENAME, read_rows
 from modules.webui.training import TrainingService

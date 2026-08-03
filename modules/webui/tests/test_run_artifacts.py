@@ -48,8 +48,7 @@ def _write_gallery(workspace: Path, *, ready: int = 2, pending: int = 1) -> Path
         (run_dir / name).write_bytes(b"image" * 10)
         (run_dir / f"00000{index}-base-thumb.webp").write_bytes(b"thumb" * 10)
         samples.append({"status": "ready", "filename": name, "thumbnail_filename": f"00000{index}-base-thumb.webp"})
-    for _ in range(pending):
-        samples.append({"status": "pending", "filename": None, "thumbnail_filename": None})
+    samples.extend({"status": "pending", "filename": None, "thumbnail_filename": None} for _ in range(pending))
 
     (run_dir / "manifest.json").write_text(
         json.dumps({"schema_version": 1, "run": {"key": RUN_KEY}, "batches": [{"batch_id": 1, "samples": samples}]}),

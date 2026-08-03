@@ -142,3 +142,54 @@ def test_candidates_returns_empty_for_a_missing_directory(tmp_path):
     resolver.snapshot(tmp_path / "absent")
 
     assert resolver.candidates(tmp_path / "absent", "") == []
+
+
+def test_candidates_does_not_rehash_untouched_configs(config_dir, monkeypatch):
+    # candidates() runs on the metrics hot path until the run resolves. Hashing
+    # every saved config on every call cost megabytes of sha256 per second in a
+    # run that never resolves, so an unchanged mtime and size must short-circuit.
+    import modules.webui.run_key as rk
+
+    for index in range(3):
+        (config_dir / f"saved-{index}.json").write_text("{}", encoding="utf-8")
+
+    resolver = RunKeyResolver()
+    resolver.snapshot(config_dir)
+
+    hashed = []
+    original = rk.file_signature
+    monkeypatch.setattr(
+        rk, "file_signature", lambda path: (hashed.append(path.name), original(path))[1]
+    )
+
+    assert resolver.candidates(config_dir, "") == []
+    assert hashed == []
+
+
+def test_candidates_still_sees_a_config_rewritten_in_place(config_dir):
+    config = config_dir / "run.json"
+    config.write_text('{"before": true}', encoding="utf-8")
+
+    resolver = RunKeyResolver()
+    resolver.snapshot(config_dir)
+
+    config.write_text('{"after": true}', encoding="utf-8")
+
+    assert [p.name for p in resolver.candidates(config_dir, "")] == ["run.json"]
+
+
+def test_candidates_ignores_a_config_that_was_touched_but_not_changed(config_dir):
+    # The content hash is what distinguishes a rewrite from a bare mtime bump,
+    # so it must still run when the cheap metadata disagrees.
+    import os
+
+    config = config_dir / "run.json"
+    config.write_text('{"same": true}', encoding="utf-8")
+
+    resolver = RunKeyResolver()
+    resolver.snapshot(config_dir)
+
+    stat = config.stat()
+    os.utime(config, ns=(stat.st_atime_ns, stat.st_mtime_ns + 1_000_000_000))
+
+    assert resolver.candidates(config_dir, "") == []

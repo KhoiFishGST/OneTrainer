@@ -1,4 +1,5 @@
 import os
+import threading
 from pathlib import Path
 
 from modules.util.enum.ModelFormat import ModelFormat
@@ -115,9 +116,9 @@ import json
 
 from modules.util.config.TrainConfig import TrainConfig
 from modules.webui.checkpoint_store import (
+    MANIFEST_FILENAME,
     CheckpointNotFound,
     CheckpointStore,
-    MANIFEST_FILENAME,
 )
 
 
@@ -462,11 +463,8 @@ def test_delete_checkpoint_removes_a_directory_tree(store, workspace, train_conf
     assert tree.is_dir()
 
 
-import threading
-
-
 def test_capture_does_not_hold_lock_during_file_io(store, workspace, train_config, monkeypatch):
-    run_key = _start_run(store, workspace, train_config)
+    _start_run(store, workspace, train_config)
     source = workspace / "save" / "blocking.safetensors"
     source.write_bytes(b"data")
 

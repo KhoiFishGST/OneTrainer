@@ -348,7 +348,7 @@ export interface DownloadCheckpoint {
 }
 
 export interface DownloadArtifact {
-  kind: 'config' | 'samples' | 'tensorboard';
+  kind: 'config' | 'metrics' | 'samples' | 'tensorboard';
   label: string;
   available: boolean;
   is_archive: boolean;

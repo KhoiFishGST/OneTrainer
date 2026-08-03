@@ -1,3 +1,4 @@
+import contextlib
 import hashlib
 import json
 import logging
@@ -80,12 +81,11 @@ def volume_key(path: Path) -> object:
     """
     probe = Path(path)
     while True:
-        try:
+        with contextlib.suppress(OSError):
             return os.stat(probe).st_dev
-        except OSError:
-            if probe.parent == probe:
-                return None
-            probe = probe.parent
+        if probe.parent == probe:
+            return None
+        probe = probe.parent
 
 
 def link_or_copy(source: Path, destination: Path, *, allow_link: bool = True) -> bool:

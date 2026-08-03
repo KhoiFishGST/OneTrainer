@@ -159,9 +159,8 @@ class CheckpointStore:
                 write_json_atomic(run_dir / MANIFEST_FILENAME, self._read_manifest(run_dir))
         except Exception:
             logger.exception("Could not write the run manifest; disabling capture for this run")
-            with contextlib.suppress(Exception):
-                with self._lock:
-                    self._disabled = True
+            with contextlib.suppress(Exception), self._lock:
+                self._disabled = True
 
     def capture(self, model_format: ModelFormat, destination: str) -> None:
         """Record a completed saver write. Never raises."""
@@ -294,9 +293,8 @@ class CheckpointStore:
                 )
         except Exception:
             logger.exception("Checkpoint capture failed; disabling for this run")
-            with contextlib.suppress(Exception):
-                with self._lock:
-                    self._disabled = True
+            with contextlib.suppress(Exception), self._lock:
+                self._disabled = True
 
     def _read_manifest(self, run_dir: Path) -> dict[str, Any]:
         path = run_dir / MANIFEST_FILENAME

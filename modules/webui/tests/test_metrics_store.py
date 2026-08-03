@@ -1,9 +1,8 @@
 import json
-
-from modules.webui.metrics_store import METRICS_FILENAME, MetricsStore, read_rows
-
 from pathlib import Path
+
 from modules.util.config.TrainConfig import TrainConfig
+from modules.webui.metrics_store import METRICS_FILENAME, MetricsStore, read_rows
 from modules.webui.run_session import RunSession
 
 import pytest
@@ -200,10 +199,11 @@ def test_rows_are_written_as_one_compact_json_object_per_line(session, workspace
 
 def _write_run(run_dir, steps, scalars_per_step=1):
     """Write a metrics file the way the store does: one row per scalar."""
-    lines = []
-    for step in range(steps):
-        for scalar in range(scalars_per_step):
-            lines.append(json.dumps({"step": step, f"metric_{scalar}": float(step)}))
+    lines = [
+        json.dumps({"step": step, f"metric_{scalar}": float(step)})
+        for step in range(steps)
+        for scalar in range(scalars_per_step)
+    ]
     (run_dir / METRICS_FILENAME).write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
