@@ -155,6 +155,35 @@ it("notifies training sample and gallery warning callbacks", async () => {
   client.stop();
 });
 
+it('dispatches run_warning to its handler', async () => {
+  const onRunWarning = vi.fn();
+  let socketInstance: FakeWebSocket | null = null;
+  const store = new ConsoleStore();
+  const client = new EventClient({
+    store,
+    getBacklog: async () => ({ stream_id: "s", cursor: 1, revision: "v1", lines: [], transient: null }),
+    onRunWarning,
+    createSocket: (url) => {
+      socketInstance = new FakeWebSocket(url);
+      return socketInstance as any;
+    },
+  });
+  client.start();
+  socketInstance!.triggerOpen();
+  await new Promise((r) => setTimeout(r, 0));
+
+  socketInstance!.triggerMessage({
+    type: 'run_warning',
+    message: 'Could not identify this training run',
+    reason: 'ambiguous',
+  });
+
+  expect(onRunWarning).toHaveBeenCalledWith(
+    expect.objectContaining({ type: 'run_warning', reason: 'ambiguous' })
+  );
+  client.stop();
+});
+
 it('dataset.file.added is routed to onDatasetFileAdded', async () => {
   const received: any[] = [];
   let socketInstance: FakeWebSocket | null = null;

@@ -19,6 +19,7 @@ class EventType(str, Enum):
     TRAINING_SAMPLE = "training_sample"
     GPU_STAT = "gpu_stat"
     GALLERY_WARNING = "gallery_warning"
+    RUN_WARNING = "run_warning"
 
     def __str__(self) -> str:
         return str(self.value)

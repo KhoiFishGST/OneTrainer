@@ -221,6 +221,12 @@
       onGalleryWarning: (event) => {
         toast.warning(event.message);
       },
+      onRunWarning: (event) => {
+        // An error rather than a warning: unlike a failed thumbnail, this
+        // disables the gallery, metrics and downloads for the whole run and
+        // the user has to act on it.
+        toast.error(event.message);
+      },
       // Only refreshes the view. Upload completion is driven by each
       // upload's own HTTP response, because this channel sheds messages
       // under a burst and never replays them.

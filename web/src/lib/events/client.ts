@@ -27,6 +27,13 @@ export interface GalleryWarningEvent {
   [key: string]: unknown;
 }
 
+export interface RunWarningEvent {
+  type: 'run_warning';
+  message: string;
+  reason?: string;
+  [key: string]: unknown;
+}
+
 export interface DatasetFileAddedEvent {
   dataset: string;
   filename: string;
@@ -41,6 +48,7 @@ export interface EventClientOptions {
   onRestart?: () => void;
   onTrainingSample?: (event: GalleryTrainingSampleEvent) => void;
   onGalleryWarning?: (event: GalleryWarningEvent) => void;
+  onRunWarning?: (event: RunWarningEvent) => void;
   onDatasetFileAdded?: (event: DatasetFileAddedEvent) => void;
   wsUrl?: string;
   createSocket?: (url: string) => WebSocketLike;
@@ -57,6 +65,7 @@ export class EventClient {
   private onRestart?: () => void;
   private onTrainingSample?: (event: GalleryTrainingSampleEvent) => void;
   private onGalleryWarning?: (event: GalleryWarningEvent) => void;
+  private onRunWarning?: (event: RunWarningEvent) => void;
   private onDatasetFileAdded?: (event: DatasetFileAddedEvent) => void;
   private wsUrl: string;
 
@@ -78,6 +87,7 @@ export class EventClient {
     this.onRestart = options.onRestart;
     this.onTrainingSample = options.onTrainingSample;
     this.onGalleryWarning = options.onGalleryWarning;
+    this.onRunWarning = options.onRunWarning;
     this.onDatasetFileAdded = options.onDatasetFileAdded;
 
     let defaultWsUrl = '/api/events';
@@ -207,6 +217,10 @@ export class EventClient {
 
     if (event.type === 'gallery_warning') {
       this.onGalleryWarning?.(event);
+    }
+
+    if (event.type === 'run_warning') {
+      this.onRunWarning?.(event);
     }
 
     if (event.type === 'dataset.file.added') {

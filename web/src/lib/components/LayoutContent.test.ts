@@ -63,6 +63,17 @@ describe('LayoutContent', () => {
     expect(toast.warning).toHaveBeenCalledWith('thumbnail failed');
   });
 
+  it('shows a run_warning as an error toast', () => {
+    const { eventClient } = renderLayoutContent();
+    eventClient.emit({
+      type: 'run_warning',
+      message: 'Could not identify this training run',
+      reason: 'ambiguous',
+    });
+
+    expect(toast.error).toHaveBeenCalledWith('Could not identify this training run');
+  });
+
   it('always renders the application shell, because login lives outside this layout', () => {
     renderLayoutContent();
     expect(screen.getByRole('main')).toBeInTheDocument();
