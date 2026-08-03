@@ -150,7 +150,7 @@ def _start_run(store: CheckpointStore, workspace: Path, train_config: TrainConfi
 
 
 def _checkpoint_dir(workspace: Path, run_key: str) -> Path:
-    return workspace / "webui" / "checkpoints" / run_key
+    return workspace / "web" / "checkpoints" / run_key
 
 
 def _manifest(workspace: Path, run_key: str) -> dict:
@@ -593,3 +593,14 @@ def test_delete_still_rejects_a_name_not_in_the_manifest(store, workspace, train
         store.delete_checkpoint(run_key, "smuggled.safetensors")
     with pytest.raises(CheckpointNotFound):
         store.delete_checkpoint(run_key, "../escape")
+
+
+def test_checkpoints_live_beside_the_gallery_under_the_web_root(store, workspace, train_config):
+    run_key = _start_run(store, workspace, train_config)
+    source = workspace / "save" / "a.safetensors"
+    source.write_bytes(b"x")
+    store.capture(ModelFormat.KOHYA_LORA, str(source))
+    store.end_training()
+
+    assert (workspace / "web" / "checkpoints" / run_key / "a.safetensors").is_file()
+    assert not (workspace / "webui").exists()

@@ -16,8 +16,8 @@ from modules.webui.run_key import RunKeyResolver
 
 logger = logging.getLogger(__name__)
 
-# Deliberately distinct from the gallery's <workspace>/web/samples.
-CHECKPOINTS_SUBDIR = ("webui", "checkpoints")
+# Beside the gallery's <workspace>/web/samples, so all web UI data shares a root.
+CHECKPOINTS_SUBDIR = ("web", "checkpoints")
 MANIFEST_FILENAME = "manifest.json"
 
 KIND_SAVE = "save"
