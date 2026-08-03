@@ -8,16 +8,22 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 KIND_CONFIG = "config"
+KIND_METRICS = "metrics"
 KIND_SAMPLES = "samples"
 KIND_TENSORBOARD = "tensorboard"
 
-ARTIFACT_KINDS = (KIND_CONFIG, KIND_SAMPLES, KIND_TENSORBOARD)
+# Config and metrics are the small single files you would grab for
+# reproducibility; the two archives follow.
+ARTIFACT_KINDS = (KIND_CONFIG, KIND_METRICS, KIND_SAMPLES, KIND_TENSORBOARD)
 
 LABELS = {
     KIND_CONFIG: "Config",
+    KIND_METRICS: "Metrics",
     KIND_SAMPLES: "Samples",
     KIND_TENSORBOARD: "Tensorboard",
 }
+
+METRICS_FILENAME = "metrics.jsonl"
 
 # The two JSON files record which prompt produced which image, so the archive is
 # self-describing. Thumbnails are derived and are the larger half of a gallery
@@ -35,6 +41,7 @@ class RunArtifact:
     size_bytes: int
     download_name: str
     compression: int = zipfile.ZIP_STORED
+    media_type: str = "application/octet-stream"
 
 
 def _is_unsafe_name(name: str) -> bool:
@@ -124,6 +131,23 @@ def resolve_artifact(workspace: Path, run_key: str, run_info: dict[str, Any], ki
             is_archive=False,
             size_bytes=path.stat().st_size,
             download_name=download_name,
+            media_type="application/json",
+        )
+
+    if kind == KIND_METRICS:
+        download_name = f"{run_key}-metrics.jsonl"
+        path = workspace / "web" / "samples" / run_key / METRICS_FILENAME
+        if not path.is_file():
+            return _unavailable(kind, download_name, is_archive=False)
+        return RunArtifact(
+            kind=kind,
+            label=LABELS[kind],
+            path=path,
+            available=True,
+            is_archive=False,
+            size_bytes=path.stat().st_size,
+            download_name=download_name,
+            media_type="application/x-ndjson",
         )
 
     if kind == KIND_SAMPLES:

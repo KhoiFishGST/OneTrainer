@@ -40,7 +40,7 @@ def _write_config(workspace: Path) -> Path:
 
 def _write_gallery(workspace: Path, *, ready: int = 2, pending: int = 1) -> Path:
     run_dir = workspace / "web" / "samples" / RUN_KEY
-    run_dir.mkdir(parents=True)
+    run_dir.mkdir(parents=True, exist_ok=True)
 
     samples = []
     for index in range(ready):
@@ -56,7 +56,6 @@ def _write_gallery(workspace: Path, *, ready: int = 2, pending: int = 1) -> Path
         encoding="utf-8",
     )
     (run_dir / "prompts.json").write_text(json.dumps({"revisions": {}}), encoding="utf-8")
-    (run_dir / "metrics.jsonl").write_text('{"step":1}\n', encoding="utf-8")
     return run_dir
 
 
@@ -67,8 +66,9 @@ def _write_tensorboard(workspace: Path) -> Path:
     return log_dir
 
 
-def test_resolves_all_three_kinds_when_everything_exists(workspace, run_info):
+def test_resolves_all_four_kinds_when_everything_exists(workspace, run_info):
     _write_config(workspace)
+    _write_metrics(workspace)
     _write_gallery(workspace)
     _write_tensorboard(workspace)
 
@@ -137,7 +137,7 @@ def test_tensorboard_uses_deflate_and_the_whole_directory(workspace, run_info):
 def test_missing_sources_report_unavailable_rather_than_raising(workspace, run_info):
     artifacts = {a.kind: a for a in resolve_artifacts(workspace, RUN_KEY, run_info)}
 
-    assert [a.available for a in artifacts.values()] == [False, False, False]
+    assert [a.available for a in artifacts.values()] == [False, False, False, False]
     assert all(a.size_bytes == 0 for a in artifacts.values())
 
 
@@ -211,3 +211,53 @@ def test_payload_drops_internal_fields(workspace, run_info):
         "size_bytes": payload["size_bytes"],
         "download_name": f"{RUN_KEY}.json",
     }
+
+
+def _write_metrics(workspace: Path) -> Path:
+    run_dir = workspace / "web" / "samples" / RUN_KEY
+    run_dir.mkdir(parents=True, exist_ok=True)
+    path = run_dir / "metrics.jsonl"
+    path.write_text('{"step":1}\n{"step":2}\n', encoding="utf-8")
+    return path
+
+
+def test_metrics_is_a_single_file_artifact(workspace, run_info):
+    path = _write_metrics(workspace)
+
+    artifact = resolve_artifact(workspace, RUN_KEY, run_info, "metrics")
+
+    assert artifact.available is True
+    assert artifact.is_archive is False
+    assert artifact.path == path
+    assert artifact.size_bytes == path.stat().st_size
+    assert artifact.download_name == f"{RUN_KEY}-metrics.jsonl"
+    assert artifact.media_type == "application/x-ndjson"
+
+
+def test_metrics_is_unavailable_when_the_file_is_absent(workspace, run_info):
+    _write_gallery(workspace)
+
+    assert resolve_artifact(workspace, RUN_KEY, run_info, "metrics").available is False
+
+
+def test_metrics_is_ordered_before_the_archives(workspace, run_info):
+    _write_config(workspace)
+    _write_metrics(workspace)
+    _write_gallery(workspace)
+    _write_tensorboard(workspace)
+
+    assert [a.kind for a in resolve_artifacts(workspace, RUN_KEY, run_info)] == [
+        "config",
+        "metrics",
+        "samples",
+        "tensorboard",
+    ]
+
+
+def test_metrics_is_not_included_in_the_samples_archive(workspace, run_info):
+    _write_gallery(workspace)
+    _write_metrics(workspace)
+
+    arcnames = [name for _, name in archive_entries(resolve_artifact(workspace, RUN_KEY, run_info, "samples"))]
+
+    assert "metrics.jsonl" not in arcnames

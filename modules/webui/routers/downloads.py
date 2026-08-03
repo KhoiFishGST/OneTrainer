@@ -21,6 +21,7 @@ class ArtifactKind(str, Enum):
     cannot collide with /archives/{filename}.zip."""
 
     config = "config"
+    metrics = "metrics"
     samples = "samples"
     tensorboard = "tensorboard"
 
@@ -118,7 +119,7 @@ def download_run_artifact(run_key: str, kind: ArtifactKind, request: Request):
         return FileResponse(
             artifact.path,
             filename=artifact.download_name,
-            media_type="application/json",
+            media_type=artifact.media_type,
         )
 
     return StreamingResponse(

@@ -137,7 +137,7 @@ def test_delete_404s_for_an_unknown_checkpoint(client, store):
 RUN_KEY = "2026-08-03_10-15-00"
 
 
-def _prepare_run(store, tmp_path, *, config=True, samples=True, tensorboard=True):
+def _prepare_run(store, tmp_path, *, config=True, samples=True, tensorboard=True, metrics=True):
     """Point the mocked store at a real workspace laid out on disk."""
     workspace = tmp_path / "workspace"
     (workspace / "config").mkdir(parents=True)
@@ -158,6 +158,11 @@ def _prepare_run(store, tmp_path, *, config=True, samples=True, tensorboard=True
         )
         (run_dir / "prompts.json").write_text("{}", encoding="utf-8")
 
+    if metrics:
+        run_dir = workspace / "web" / "samples" / RUN_KEY
+        run_dir.mkdir(parents=True, exist_ok=True)
+        (run_dir / "metrics.jsonl").write_text('{"step":1}\n{"step":2}\n', encoding="utf-8")
+
     if tensorboard:
         run_info["tensorboard_dirname"] = RUN_KEY
         log_dir = workspace / "tensorboard" / RUN_KEY
@@ -169,12 +174,12 @@ def _prepare_run(store, tmp_path, *, config=True, samples=True, tensorboard=True
     return workspace
 
 
-def test_run_detail_includes_the_three_artifacts(client, store, tmp_path):
+def test_run_detail_includes_every_artifact(client, store, tmp_path):
     _prepare_run(store, tmp_path)
 
     body = client.get(f"/api/downloads/runs/{RUN_KEY}").json()
 
-    assert [a["kind"] for a in body["artifacts"]] == ["config", "samples", "tensorboard"]
+    assert [a["kind"] for a in body["artifacts"]] == ["config", "metrics", "samples", "tensorboard"]
     assert all(a["available"] for a in body["artifacts"])
     assert body["checkpoints"] == []
 
@@ -242,4 +247,15 @@ def test_artifact_download_404s_for_an_unknown_run(client, store):
     store.get_run.side_effect = CheckpointNotFound("Run not found")
 
     assert client.get("/api/downloads/runs/nope/artifacts/config").status_code == 404
+
+
+def test_downloads_metrics_as_a_single_file(client, store, tmp_path):
+    _prepare_run(store, tmp_path)
+
+    response = client.get(f"/api/downloads/runs/{RUN_KEY}/artifacts/metrics")
+
+    assert response.status_code == 200
+    assert response.text.splitlines() == ['{"step":1}', '{"step":2}']
+    assert f'filename="{RUN_KEY}-metrics.jsonl"' in response.headers["content-disposition"]
+    assert response.headers["accept-ranges"] == "bytes"
 
