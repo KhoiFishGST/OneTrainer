@@ -26,6 +26,11 @@
 
   const runQuery = $derived(createDownloadRunQuery(selectedRunKey));
   const checkpoints = $derived($runQuery.data?.checkpoints ?? []);
+  const artifacts = $derived($runQuery.data?.artifacts ?? []);
+
+  function artifactHref(runKey: string, kind: string): string {
+    return `/api/downloads/runs/${encodeURIComponent(runKey)}/artifacts/${kind}`;
+  }
 
   function formatSize(bytes: number): string {
     if (!bytes) return '0 B';
@@ -99,6 +104,39 @@
       No checkpoints yet. They appear here after a run saves a model or finishes.
     </p>
   {:else}
+    <section class="mb-6">
+      <h2 class="text-sm font-semibold mb-2">Run artifacts</h2>
+      <table class="w-full text-sm">
+        <tbody>
+          {#each artifacts as a (a.kind)}
+            <tr class="border-t border-border">
+              <td class="py-2">
+                {a.label}
+                {#if a.kind === 'tensorboard' && a.available}
+                  <span class="text-muted-foreground"> — compressed on download</span>
+                {/if}
+              </td>
+              <td>{a.available ? formatSize(a.size_bytes) : ''}</td>
+              <td class="text-right">
+                {#if a.available}
+                  <a
+                    class="underline"
+                    href={artifactHref(selectedRunKey ?? '', a.kind)}
+                    aria-label={`Download ${a.label}`}
+                    download
+                  >
+                    Download{a.is_archive ? ' .zip' : ''}
+                  </a>
+                {:else}
+                  <span class="text-muted-foreground">Not available for this run</span>
+                {/if}
+              </td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </section>
+
     <table class="w-full text-sm">
       <thead>
         <tr class="text-left text-muted-foreground">

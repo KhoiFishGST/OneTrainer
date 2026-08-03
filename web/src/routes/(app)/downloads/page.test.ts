@@ -18,6 +18,15 @@ const DIR_CHECKPOINT = {
   source_path: '/out/my-model', linked: false, available: true,
 };
 
+const ARTIFACTS = [
+  { kind: 'config', label: 'Config', available: true, is_archive: false, size_bytes: 23552,
+    download_name: 'run-a.json' },
+  { kind: 'samples', label: 'Samples', available: true, is_archive: true, size_bytes: 2411724,
+    download_name: 'run-a-samples.zip' },
+  { kind: 'tensorboard', label: 'Tensorboard', available: true, is_archive: true, size_bytes: 10905190,
+    download_name: 'run-a-tensorboard.zip' },
+];
+
 // The dialog module is dynamically imported on first use, so the very first
 // open in a file pays the module-load cost -- more than findBy's default 1s.
 async function openRemovalDialog(index = 0) {
@@ -36,6 +45,7 @@ describe('Downloads Page', () => {
     vi.spyOn(api, 'getDownloadRun').mockResolvedValue({
       run: { key: 'run-a' },
       checkpoints: [FILE_CHECKPOINT, DIR_CHECKPOINT],
+      artifacts: ARTIFACTS,
     } as any);
   });
 
@@ -79,6 +89,7 @@ describe('Downloads Page', () => {
     vi.spyOn(api, 'getDownloadRun').mockResolvedValue({
       run: { key: 'run-a' },
       checkpoints: [{ ...FILE_CHECKPOINT, available: false }],
+      artifacts: ARTIFACTS,
     } as any);
 
     render(DownloadsPage);
@@ -109,6 +120,7 @@ describe('Downloads Page', () => {
         { ...FILE_CHECKPOINT, id: 2, filename: 'b.safetensors' },
         { ...FILE_CHECKPOINT, id: 2, filename: 'c.safetensors' },
       ],
+      artifacts: ARTIFACTS,
     } as any);
 
     render(DownloadsPage);
@@ -169,6 +181,7 @@ describe('Downloads Page', () => {
     vi.spyOn(api, 'getDownloadRun').mockResolvedValue({
       run: { key: 'run-a' },
       checkpoints: [{ ...FILE_CHECKPOINT, available: false }],
+      artifacts: ARTIFACTS,
     } as any);
     const deleteSpy = vi.spyOn(api, 'deleteCheckpoint').mockResolvedValue({ status: 'ok' } as any);
 
@@ -181,4 +194,70 @@ describe('Downloads Page', () => {
       expect(deleteSpy).toHaveBeenCalledWith('run-a', 'step-1000.safetensors');
     });
   });
+
+  it('lists the run artifacts with their sizes', async () => {
+    render(DownloadsPage);
+
+    expect(await screen.findByText('Run artifacts')).toBeInTheDocument();
+    expect(screen.getByText('Config')).toBeInTheDocument();
+    expect(screen.getByText('Samples')).toBeInTheDocument();
+    expect(screen.getByText('Tensorboard')).toBeInTheDocument();
+    expect(screen.getByText('23.0 KB')).toBeInTheDocument();
+  });
+
+  it('points each artifact at its own enum-keyed route', async () => {
+    render(DownloadsPage);
+
+    const config = await screen.findByRole('link', { name: /download config/i });
+    expect(config).toHaveAttribute('href', '/api/downloads/runs/run-a/artifacts/config');
+    expect(screen.getByRole('link', { name: /download samples/i })).toHaveAttribute(
+      'href',
+      '/api/downloads/runs/run-a/artifacts/samples'
+    );
+    expect(screen.getByRole('link', { name: /download tensorboard/i })).toHaveAttribute(
+      'href',
+      '/api/downloads/runs/run-a/artifacts/tensorboard'
+    );
+  });
+
+  it('says the tensorboard size is uncompressed', async () => {
+    // The transfer is several times smaller than the figure shown, so the
+    // number would otherwise look wrong.
+    render(DownloadsPage);
+
+    expect(await screen.findByText(/compressed on download/i)).toBeInTheDocument();
+  });
+
+  it('shows an unavailable artifact as a fact rather than hiding it', async () => {
+    vi.spyOn(api, 'getDownloadRun').mockResolvedValue({
+      run: { key: 'run-a' },
+      checkpoints: [],
+      artifacts: [
+        ARTIFACTS[0],
+        { ...ARTIFACTS[1], available: false, size_bytes: 0 },
+        ARTIFACTS[2],
+      ],
+    } as any);
+
+    render(DownloadsPage);
+
+    expect(await screen.findByText(/not available for this run/i)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: /download samples/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders the artifacts panel for a run with no checkpoints', async () => {
+    // A run stopped before its first save still has a config and logs.
+    vi.spyOn(api, 'getDownloadRun').mockResolvedValue({
+      run: { key: 'run-a' },
+      checkpoints: [],
+      artifacts: ARTIFACTS,
+    } as any);
+
+    render(DownloadsPage);
+
+    expect(await screen.findByRole('link', { name: /download config/i })).toBeInTheDocument();
+  });
 });
+

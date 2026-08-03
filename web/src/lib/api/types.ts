@@ -347,8 +347,18 @@ export interface DownloadCheckpoint {
   available: boolean;
 }
 
+export interface DownloadArtifact {
+  kind: 'config' | 'samples' | 'tensorboard';
+  label: string;
+  available: boolean;
+  is_archive: boolean;
+  size_bytes: number;
+  download_name: string;
+}
+
 export interface DownloadRunModel {
   run: { key: string; config_filename?: string; started_at?: string | null };
   checkpoints: DownloadCheckpoint[];
+  artifacts: DownloadArtifact[];
 }
 
