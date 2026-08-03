@@ -1,7 +1,6 @@
 import contextlib
 import json
 import logging
-import os
 import shutil
 import threading
 from collections.abc import Callable
@@ -12,7 +11,7 @@ from typing import Any
 
 from modules.util.config.TrainConfig import TrainConfig
 from modules.util.enum.ModelFormat import ModelFormat
-from modules.webui.atomic_io import copy_file_atomic, write_json_atomic
+from modules.webui.atomic_io import link_or_copy, volume_key, write_json_atomic
 from modules.webui.run_key import RunKeyResolver
 
 logger = logging.getLogger(__name__)
@@ -43,48 +42,6 @@ def classify(model_format: ModelFormat, destination: str) -> str | None:
         return KIND_SAVE
 
     return KIND_FINAL
-
-
-def volume_key(path: Path) -> object:
-    """Identify the filesystem a path lives on, for caching link support.
-
-    st_dev is the correct key on POSIX (a path's anchor is "/" even across
-    mounts) and is the volume serial number on Windows. The path may not exist
-    yet -- it is usually a destination -- so walk up to the nearest parent that
-    does.
-    """
-    probe = Path(path)
-    while True:
-        try:
-            return os.stat(probe).st_dev
-        except OSError:
-            if probe.parent == probe:
-                return None
-            probe = probe.parent
-
-
-def link_or_copy(source: Path, destination: Path, *, allow_link: bool = True) -> bool:
-    """Hardlink source to destination, falling back to a byte copy.
-
-    Returns True when hardlinked. Hardlinks need the same volume and a
-    filesystem that supports them (NTFS yes, FAT32/exFAT/network shares no) but,
-    unlike Windows symlinks, need no elevation.
-    """
-    destination.parent.mkdir(parents=True, exist_ok=True)
-
-    if allow_link:
-        try:
-            os.link(source, destination)
-            return True
-        except OSError:
-            logger.debug("Hardlink failed for %s, copying instead", source, exc_info=True)
-
-    # Atomic rather than a plain copyfile: a crash partway through a
-    # multi-gigabyte copy would otherwise leave a truncated file in the run
-    # directory with no manifest entry -- invisible in Downloads and not
-    # removable through it, so it would just consume disk.
-    copy_file_atomic(source, destination)
-    return False
 
 
 class CheckpointNotFound(LookupError):

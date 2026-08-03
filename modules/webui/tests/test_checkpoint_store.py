@@ -2,7 +2,8 @@ import os
 from pathlib import Path
 
 from modules.util.enum.ModelFormat import ModelFormat
-from modules.webui.checkpoint_store import classify, link_or_copy, volume_key
+from modules.webui.atomic_io import link_or_copy, volume_key
+from modules.webui.checkpoint_store import classify
 
 import pytest
 
