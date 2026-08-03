@@ -102,7 +102,7 @@ def _patch_summary_writer() -> None:
         with contextlib.suppress(Exception):
             store = _active_checkpoint_store()
             if store is not None:
-                store.note_run_active(getattr(writer_self, "log_dir", None))
+                store.note_run_active()
 
         try:
             # Keep only the faithful, namespaced key. The old collapsed `loss`

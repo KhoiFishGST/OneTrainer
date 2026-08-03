@@ -130,9 +130,18 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
         await event_hub.start()
 
         metrics_store = MetricsStore()
+        run_session = RunSession(
+            root_dir=settings.root_dir,
+            workspace_provider=lambda: config_svc.current_workspace,
+            warning_sink=lambda message, payload: event_hub.publish_from_thread(
+                EventType.RUN_WARNING.value,
+                {"message": message, **payload},
+            ),
+        )
         checkpoint_store = CheckpointStore(
             root_dir=settings.root_dir,
             workspace_provider=lambda: config_svc.current_workspace,
+            run_session=run_session,
         )
         gallery_svc = GalleryService(
             root_dir=settings.root_dir,
@@ -149,14 +158,6 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
             gallery=gallery_svc,
         )
         sampling_svc.recover_pending()
-        run_session = RunSession(
-            root_dir=settings.root_dir,
-            workspace_provider=lambda: config_svc.current_workspace,
-            warning_sink=lambda message, payload: event_hub.publish_from_thread(
-                EventType.RUN_WARNING.value,
-                {"message": message, **payload},
-            ),
-        )
         training_svc = TrainingService(
             event_bus=event_hub,
             sampling_coordinator=sampling_svc,

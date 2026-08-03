@@ -12,7 +12,6 @@ from typing import Any
 from modules.util.config.TrainConfig import TrainConfig
 from modules.util.enum.ModelFormat import ModelFormat
 from modules.webui.atomic_io import link_or_copy, volume_key, write_json_atomic
-from modules.webui.run_key import RunKeyResolver
 
 logger = logging.getLogger(__name__)
 
@@ -75,13 +74,14 @@ class CheckpointStore:
         self,
         root_dir: Path,
         workspace_provider: Callable[[], str | Path],
+        run_session: Any | None = None,
     ) -> None:
         self._root_dir = Path(root_dir).resolve()
         self._workspace_provider = workspace_provider
         self._lock = threading.RLock()
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="webui-checkpoints")
 
-        self._resolver = RunKeyResolver()
+        self._run_session = run_session
         self._config: TrainConfig | None = None
         self._workspace: Path | None = None
         self._run_key: str | None = None
@@ -120,31 +120,28 @@ class CheckpointStore:
             self._run_noted = False
             self._tensorboard_dirname = None
             self._started_at = datetime.now(timezone.utc).isoformat()
-            self._resolver.snapshot(self._workspace / "config")
 
-    def note_run_active(self, log_dir: str | None) -> None:
+    def note_run_active(self) -> None:
         """Establish this run's Downloads entry. Called from add_scalar; never raises.
 
-        This is the earliest and most reliable run marker available: the
-        SummaryWriter is created at run start and the first scalar lands at step
-        1, before any sample batch or save. Establishing the entry here is what
-        makes a run that never saved a model reachable in Downloads.
+        Every run gets an entry, including one that never saves a model. This
+        cannot happen at writer construction because the config does not exist
+        yet -- the session's note_writer records the hint at that point instead.
 
         add_scalar fires several times per step for the entire run, so the flag
-        check below must come before any lock or I/O.
+        check below must come before any lock or I/O, and every path that
+        decides not to work again sets it.
         """
         if self._run_noted:
             return
 
         try:
             with self._lock:
-                if self._run_noted or self._disabled or self._workspace is None:
+                if self._run_noted:
                     return
                 self._run_noted = True
-                # Stored as a bare name, like run.config_filename, so a
-                # hand-edited manifest cannot point the archiver outside the
-                # workspace. Reconstructed as <workspace>/tensorboard/<name>.
-                self._tensorboard_dirname = Path(log_dir).name if log_dir else None
+                if self._disabled or self._workspace is None:
+                    return
                 future = self._executor.submit(self._note_run_blocking)
                 self._pending.append(future)
         except Exception:
@@ -200,22 +197,19 @@ class CheckpointStore:
     def _ensure_run_dir(self) -> Path | None:
         if self._run_dir is not None:
             return self._run_dir
-        if self._workspace is None or self._config is None:
+        if self._workspace is None or self._run_session is None:
             return None
 
-        result = self._resolver.resolve(
-            self._workspace / "config", self._config.save_filename_prefix or ""
-        )
-        if result.key is None:
-            logger.warning(
-                "Checkpoint capture disabled: could not resolve a run key (%s)", result.reason
-            )
+        info = self._run_session.run_info()
+        if info is None:
+            # The session already warned; stay quiet rather than warning twice.
             self._disabled = True
             return None
 
-        self._run_key = result.key
-        self._config_filename = result.config_filename or ""
-        self._run_dir = self._workspace.joinpath(*CHECKPOINTS_SUBDIR, result.key)
+        self._run_key = info.get("key")
+        self._config_filename = info.get("config_filename") or ""
+        self._tensorboard_dirname = info.get("tensorboard_dirname")
+        self._run_dir = self._workspace.joinpath(*CHECKPOINTS_SUBDIR, self._run_key)
         return self._run_dir
 
     def _unique_name(self, name: str) -> str:

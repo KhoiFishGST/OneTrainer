@@ -130,8 +130,17 @@ def workspace(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def store(tmp_path: Path, workspace: Path) -> CheckpointStore:
-    return CheckpointStore(root_dir=tmp_path, workspace_provider=lambda: workspace)
+def run_session(tmp_path: Path, workspace: Path):
+    from modules.webui.run_session import RunSession
+
+    return RunSession(root_dir=tmp_path, workspace_provider=lambda: workspace)
+
+
+@pytest.fixture
+def store(tmp_path: Path, workspace: Path, run_session) -> CheckpointStore:
+    return CheckpointStore(
+        root_dir=tmp_path, workspace_provider=lambda: workspace, run_session=run_session
+    )
 
 
 @pytest.fixture
@@ -144,6 +153,7 @@ def train_config() -> TrainConfig:
 def _start_run(store: CheckpointStore, workspace: Path, train_config: TrainConfig,
                run_key: str = "run-20260802-091500") -> str:
     """Begin a run and write the timestamped config GenericTrainer would write."""
+    store._run_session.begin(train_config)
     store.begin_training(train_config)
     (workspace / "config" / f"{run_key}.json").write_text("{}", encoding="utf-8")
     return run_key
@@ -610,10 +620,12 @@ def test_note_run_active_creates_the_run_entry_before_any_checkpoint(store, work
     # A run that is stopped before its first save must still be reachable in
     # Downloads, with its config and tensorboard logs.
     run_key = "run-20260803-101500"
+    store._run_session.begin(train_config)
+    store._run_session.note_writer(str(workspace / "tensorboard" / run_key))
     store.begin_training(train_config)
     (workspace / "config" / f"{run_key}.json").write_text("{}", encoding="utf-8")
 
-    store.note_run_active(str(workspace / "tensorboard" / run_key))
+    store.note_run_active()
     store.end_training()
 
     doc = _manifest(workspace, run_key)
@@ -627,7 +639,8 @@ def test_note_run_active_stores_only_the_directory_name(store, workspace, train_
     # workspace, so a hand-edited manifest cannot redirect the archiver.
     run_key = _start_run(store, workspace, train_config)
 
-    store.note_run_active("/somewhere/else/tensorboard/2026-08-03_10-15-00")
+    store._run_session.note_writer("/somewhere/else/tensorboard/2026-08-03_10-15-00")
+    store.note_run_active()
     store.end_training()
 
     assert _manifest(workspace, run_key)["run"]["tensorboard_dirname"] == "2026-08-03_10-15-00"
@@ -638,9 +651,9 @@ def test_note_run_active_does_work_only_once(store, workspace, train_config):
     # call may touch a lock or the filesystem.
     _start_run(store, workspace, train_config)
 
-    store.note_run_active("/ws/tensorboard/a")
-    store.note_run_active("/ws/tensorboard/a")
-    store.note_run_active("/ws/tensorboard/a")
+    store.note_run_active()
+    store.note_run_active()
+    store.note_run_active()
 
     assert len(store._pending) == 1
     store.end_training()
@@ -649,7 +662,7 @@ def test_note_run_active_does_work_only_once(store, workspace, train_config):
 def test_note_run_active_tolerates_a_writer_without_a_log_dir(store, workspace, train_config):
     run_key = _start_run(store, workspace, train_config)
 
-    store.note_run_active(None)
+    store.note_run_active()
     store.end_training()
 
     doc = _manifest(workspace, run_key)
@@ -659,7 +672,8 @@ def test_note_run_active_tolerates_a_writer_without_a_log_dir(store, workspace, 
 
 def test_a_later_capture_appends_without_losing_the_tensorboard_name(store, workspace, train_config):
     run_key = _start_run(store, workspace, train_config)
-    store.note_run_active(str(workspace / "tensorboard" / run_key))
+    store._run_session.note_writer(str(workspace / "tensorboard" / run_key))
+    store.note_run_active()
 
     source = workspace / "save" / "a.safetensors"
     source.write_bytes(b"x")
@@ -673,7 +687,7 @@ def test_a_later_capture_appends_without_losing_the_tensorboard_name(store, work
 
 def test_a_run_with_no_checkpoints_is_listed(store, workspace, train_config):
     run_key = _start_run(store, workspace, train_config)
-    store.note_run_active(str(workspace / "tensorboard" / run_key))
+    store.note_run_active()
     store.end_training()
 
     runs = store.list_runs()
@@ -688,7 +702,7 @@ def test_note_run_active_never_raises_when_the_run_key_is_ambiguous(store, works
     (workspace / "config" / "a.json").write_text("{}", encoding="utf-8")
     (workspace / "config" / "b.json").write_text("{}", encoding="utf-8")
 
-    store.note_run_active("/ws/tensorboard/a")  # must not raise
+    store.note_run_active()  # must not raise
     store.end_training()
 
     assert not (workspace / "web" / "checkpoints").exists()
@@ -696,4 +710,35 @@ def test_note_run_active_never_raises_when_the_run_key_is_ambiguous(store, works
 
 def test_workspace_dir_exposes_the_resolved_absolute_path(store, workspace):
     assert store.workspace_dir == workspace.resolve()
+
+
+def test_the_store_takes_its_run_key_and_hint_from_the_session(store, workspace, train_config):
+    run_key = "2026-08-03_11-30-13"
+    store._run_session.begin(train_config)
+    store._run_session.note_writer(str(workspace / "tensorboard" / run_key))
+    store.begin_training(train_config)
+    (workspace / "config" / f"{run_key}.json").write_text("{}", encoding="utf-8")
+
+    store.note_run_active()
+    store.end_training()
+
+    doc = _manifest(workspace, run_key)
+    assert doc["run"]["key"] == run_key
+    assert doc["run"]["config_filename"] == f"{run_key}.json"
+    assert doc["run"]["tensorboard_dirname"] == run_key
+    assert doc["checkpoints"] == []
+
+
+def test_capture_is_skipped_when_the_session_cannot_identify_the_run(store, workspace, train_config):
+    store._run_session.begin(train_config)
+    store.begin_training(train_config)
+    (workspace / "config" / "a.json").write_text("{}", encoding="utf-8")
+    (workspace / "config" / "b.json").write_text("{}", encoding="utf-8")
+
+    source = workspace / "save" / "a.safetensors"
+    source.write_bytes(b"x")
+    store.capture(ModelFormat.KOHYA_LORA, str(source))
+    store.end_training()
+
+    assert not (workspace / "web" / "checkpoints").exists()
 
