@@ -4,6 +4,19 @@ import { describe, it, expect, vi } from 'vitest';
 import ConceptsEditor from './ConceptsEditor.svelte';
 
 describe('ConceptsEditor', () => {
+  it('filters disabled concepts with a switch, not a checkbox', async () => {
+    render(ConceptsEditor, { concepts: [], onChange: vi.fn() });
+
+    // Clicking the visible text must toggle it: a <label> activates a checkbox
+    // input by default but not a button, which is what the switch renders as.
+    const toggle = screen.getByRole('switch', { name: 'Show Disabled' });
+    expect(toggle).toBeChecked();
+
+    await fireEvent.click(screen.getByText('Show Disabled'));
+
+    expect(screen.getByRole('switch', { name: 'Show Disabled' })).not.toBeChecked();
+  });
+
   it('renders toolbar search, filter, and add button', () => {
     render(ConceptsEditor, { props: { concepts: [] } });
     expect(screen.getByRole('button', { name: /add first concept/i })).toBeInTheDocument();

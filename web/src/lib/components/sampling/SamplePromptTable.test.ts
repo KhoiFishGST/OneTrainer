@@ -42,12 +42,18 @@ describe('SamplePromptTable Component', () => {
     expect(diceButtons[1]).not.toHaveClass('active');
   });
 
-  it('triggers onUpdate when checkbox is toggled', async () => {
+  it('names each enable toggle after its row', async () => {
+    render(SamplePromptTable, { samples: sampleData, onUpdate: vi.fn() });
+
+    expect(screen.getByRole('switch', { name: 'Enable sample prompt 1' })).toBeInTheDocument();
+  });
+
+  it('triggers onUpdate when the enable toggle is switched', async () => {
     const onUpdate = vi.fn();
     render(SamplePromptTable, { samples: sampleData, onUpdate });
 
-    const checkboxes = screen.getAllByRole('checkbox');
-    await fireEvent.click(checkboxes[0]);
+    const toggles = screen.getAllByRole('switch');
+    await fireEvent.click(toggles[0]);
 
     expect(onUpdate).toHaveBeenCalledWith(0, expect.objectContaining({
       enabled: false,

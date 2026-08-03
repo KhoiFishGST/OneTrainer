@@ -4,6 +4,7 @@
   import { Button } from '$lib/components/ui/button';
   import { Input as TextInput } from '../ui/input/index.js';
   import { Checkbox } from '../ui/checkbox/index.js';
+  import { Switch } from '../ui/switch/index.js';
   import { Badge } from '../ui/badge/index.js';
   import * as Card from '../ui/card/index.js';
   import * as DropdownMenu from '../ui/dropdown-menu/index.js';
@@ -198,13 +199,15 @@
     <div class="toolbar-divider"></div>
 
     <div class="toolbar-row controls-row">
-      <label class="checkbox-toggle">
-        <Checkbox
+      <div class="checkbox-toggle">
+        <Switch
+          id="concepts-show-disabled"
+          ariaLabel="Show Disabled"
           value={showDisabled}
           onChange={(val) => (showDisabled = val)}
         />
-        <span>Show Disabled</span>
-      </label>
+        <label for="concepts-show-disabled">Show Disabled</label>
+      </div>
 
       <Button
         type="button"
@@ -484,6 +487,11 @@
     gap: 0.5rem;
     font-size: 0.875rem;
     color: var(--foreground);
+  }
+
+  /* The pointer moved to the label: the wrapper is a plain div now, so the
+     cursor should only signal over the parts that actually toggle. */
+  .checkbox-toggle label {
     cursor: pointer;
   }
 

@@ -4,7 +4,7 @@
 
   import { Button } from '$lib/components/ui/button';
   import Select from '$lib/components/form/ValueSelect.svelte';
-  import { Checkbox } from '$lib/components/ui/checkbox/index.js';
+  import { Switch } from '$lib/components/ui/switch/index.js';
   import NumberInput from '$lib/components/form/NumericDraftInput.svelte';
   import { Textarea as TextArea } from '$lib/components/ui/textarea/index.js';
 
@@ -140,8 +140,9 @@
 
       <div class="flex items-center justify-between">
         <label for="sample-enabled" class="text-sm font-medium text-foreground">Enabled</label>
-        <Checkbox
+        <Switch
           id="sample-enabled"
+          ariaLabel="Enabled"
           value={draft.enabled}
           onChange={(val) => (draft.enabled = val)}
         />

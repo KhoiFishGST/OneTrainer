@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Dices, Pencil, Copy, Trash2, Plus } from '@lucide/svelte';
   import { Button } from '$lib/components/ui/button';
-  import { Checkbox } from '$lib/components/ui/checkbox/index.js';
+  import { Switch } from '$lib/components/ui/switch/index.js';
   import NumberInput from '$lib/components/form/NumericDraftInput.svelte';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
   import * as Card from '$lib/components/ui/card/index.js';
@@ -71,7 +71,8 @@
       <Card.Root class={`p-4 bg-card border-border rounded-lg ${!sample.enabled ? 'opacity-60' : ''}`}>
         <Card.Header class="flex items-center justify-between p-0 pb-3 border-b border-border">
           <div class="flex items-center gap-3">
-            <Checkbox
+            <Switch
+              ariaLabel={`Enable sample prompt ${index + 1}`}
               value={sample.enabled}
               onChange={(checked) => handleEnabledChange(index, checked)}
             />

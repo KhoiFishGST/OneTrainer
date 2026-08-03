@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Dices, Pencil, Copy, Trash2, Plus } from '@lucide/svelte';
   import { Button } from '$lib/components/ui/button';
-  import { Checkbox } from '$lib/components/ui/checkbox/index.js';
+  import { Switch } from '$lib/components/ui/switch/index.js';
   import NumberInput from '$lib/components/form/NumericDraftInput.svelte';
   import { Input as TextInput } from '$lib/components/ui/input/index.js';
   import * as Table from '$lib/components/ui/table/index.js';
@@ -80,7 +80,8 @@
       {#each samples as sample, index (sample.webui_id || index)}
         <Table.Row class={!sample.enabled ? 'opacity-50' : ''}>
           <Table.Cell class="w-[44px] text-center p-2">
-            <Checkbox
+            <Switch
+              ariaLabel={`Enable sample prompt ${index + 1}`}
               value={sample.enabled}
               onChange={(checked) => handleEnabledChange(index, checked)}
             />

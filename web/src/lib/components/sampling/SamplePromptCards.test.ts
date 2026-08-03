@@ -51,8 +51,8 @@ describe('SamplePromptCards Component', () => {
       onAdd,
     });
 
-    const checkboxes = screen.getAllByRole('checkbox');
-    await fireEvent.click(checkboxes[0]);
+    const toggles = screen.getAllByRole('switch');
+    await fireEvent.click(toggles[0]);
     expect(onUpdate).toHaveBeenCalledWith(0, expect.objectContaining({ enabled: false }));
 
     const editButtons = screen.getAllByRole('button', { name: 'Edit sample prompt' });
@@ -70,6 +70,19 @@ describe('SamplePromptCards Component', () => {
     const addBtn = screen.getByRole('button', { name: /add sample prompt/i });
     await fireEvent.click(addBtn);
     expect(onAdd).toHaveBeenCalledTimes(1);
+  });
+
+  it('names each enable toggle after its card', () => {
+    render(SamplePromptCards, {
+      samples: sampleData,
+      onUpdate: vi.fn(),
+      onEditModal: vi.fn(),
+      onClone: vi.fn(),
+      onDelete: vi.fn(),
+      onAdd: vi.fn(),
+    });
+
+    expect(screen.getByRole('switch', { name: 'Enable sample prompt 1' })).toBeInTheDocument();
   });
 
   it('normalizes fractional and invalid sampling inputs on change commit', async () => {
