@@ -85,6 +85,37 @@ test.describe("downloads", () => {
     await expect(page.getByText(/not available for this run/i)).toBeVisible();
   });
 
+  test.describe("on a phone", () => {
+    test.use({ viewport: { width: 390, height: 844 } });
+
+    test("keeps the checkpoint table inside the viewport", async ({ page }) => {
+      await page.goto("/downloads");
+      await page.waitForLoadState("networkidle");
+
+      await expect(page.getByRole("cell", { name: "step-1000.safetensors" })).toBeVisible();
+
+      // Kind, Format and Storage are what made six columns overflow.
+      await expect(page.getByRole("columnheader", { name: "File" })).toBeVisible();
+      await expect(page.getByRole("columnheader", { name: "Size" })).toBeVisible();
+      await expect(page.getByRole("columnheader", { name: "Kind" })).toBeHidden();
+      await expect(page.getByRole("columnheader", { name: "Format" })).toBeHidden();
+      await expect(page.getByRole("columnheader", { name: "Storage" })).toBeHidden();
+
+      // Both actions survive the collapse, as icons.
+      await expect(
+        page.getByRole("link", { name: "Download step-1000.safetensors" })
+      ).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: "Remove step-1000.safetensors" })
+      ).toBeVisible();
+
+      const overflows = await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth
+      );
+      expect(overflows).toBe(false);
+    });
+  });
+
   test("is reachable from the nav rail", async ({ page }) => {
     await page.goto("/live");
     await page.waitForLoadState("networkidle");

@@ -278,6 +278,36 @@ describe('Downloads Page', () => {
     expect(screen.getByRole('link', { name: /download config/i })).toBeInTheDocument();
   });
 
+  it('keeps only file, size and the actions on a narrow screen', async () => {
+    // The checkpoint table has six columns and overflowed the viewport on a
+    // phone. Kind, Format and Storage are the ones a small screen can lose.
+    render(DownloadsPage);
+
+    await screen.findByRole('cell', { name: 'step-1000.safetensors' });
+
+    const headers = screen.getAllByRole('columnheader');
+    const desktopOnly = (name: string) =>
+      headers.find((h) => h.textContent?.trim() === name)?.className ?? '';
+
+    expect(desktopOnly('Kind')).toContain('hidden md:table-cell');
+    expect(desktopOnly('Format')).toContain('hidden md:table-cell');
+    expect(desktopOnly('Storage')).toContain('hidden md:table-cell');
+    expect(desktopOnly('File')).not.toContain('hidden');
+    expect(desktopOnly('Size')).not.toContain('hidden');
+  });
+
+  it('labels the compact download and remove controls for screen readers', async () => {
+    // Both collapse to a bare icon on mobile, so the accessible name has to
+    // come from the label rather than the visible text.
+    render(DownloadsPage);
+
+    const download = await screen.findByRole('link', { name: 'Download step-1000.safetensors' });
+    expect(download.querySelector('svg')).toBeTruthy();
+
+    const remove = screen.getByRole('button', { name: 'Remove step-1000.safetensors' });
+    expect(remove.querySelector('svg')).toBeTruthy();
+  });
+
   it('describes the empty page in terms of runs, not saves', async () => {
     vi.spyOn(api, 'getDownloadRuns').mockResolvedValue({ runs: [] } as any);
 

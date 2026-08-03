@@ -7,6 +7,7 @@
   import { api } from '$lib/api/client';
   import { toast } from 'svelte-sonner';
   import { tick } from 'svelte';
+  import { Download, Trash2 } from '@lucide/svelte';
 
   const runsQuery = createDownloadRunsQuery();
 
@@ -140,12 +141,14 @@
 
     <table class="w-full text-sm">
       <thead>
+        <!-- Six columns overflow a phone. File and Size are the two worth
+             keeping; Kind, Format and Storage return at md. -->
         <tr class="text-left text-muted-foreground">
           <th class="py-2">File</th>
-          <th>Kind</th>
-          <th>Format</th>
+          <th class="hidden md:table-cell">Kind</th>
+          <th class="hidden md:table-cell">Format</th>
           <th>Size</th>
-          <th>Storage</th>
+          <th class="hidden md:table-cell">Storage</th>
           <th></th>
         </tr>
       </thead>
@@ -160,28 +163,30 @@
                 <span class="text-muted-foreground"> — archive, not resumable</span>
               {/if}
             </td>
-            <td>{c.kind}</td>
-            <td>{c.format}</td>
-            <td>{formatSize(c.size_bytes)}</td>
-            <td data-testid={`mode-${c.filename}`}>
+            <td class="hidden md:table-cell">{c.kind}</td>
+            <td class="hidden md:table-cell">{c.format}</td>
+            <td class="whitespace-nowrap">{formatSize(c.size_bytes)}</td>
+            <td class="hidden md:table-cell" data-testid={`mode-${c.filename}`}>
               {c.linked ? 'Linked' : 'Copy'}
             </td>
-            <td class="text-right">
+            <td class="text-right whitespace-nowrap">
               <!-- Only an explicit false means "we never stored this", matching
                    the store's own check; a manifest without the field is not
                    read as unavailable. -->
               {#if c.available !== false}
                 <a
-                  class="underline"
+                  class="underline inline-flex items-center align-middle"
                   href={downloadHref(selectedRunKey ?? '', c)}
                   aria-label={`Download ${c.filename}`}
                   download
                 >
-                  Download
+                  <Download class="size-4 md:hidden" aria-hidden="true" />
+                  <span class="hidden md:inline">Download</span>
                 </a>
               {:else}
                 <span class="text-muted-foreground" title={c.source_path}>
-                  On disk at {c.source_path}
+                  <span class="hidden md:inline">On disk at {c.source_path}</span>
+                  <span class="md:hidden">On disk</span>
                 </span>
               {/if}
               <Button
@@ -189,9 +194,11 @@
                 variant="secondary"
                 size="sm"
                 class="ml-2"
+                aria-label={`Remove ${c.filename}`}
                 onclick={() => requestRemove(c.filename, c.linked)}
               >
-                Remove
+                <Trash2 class="size-4 md:hidden" aria-hidden="true" />
+                <span class="hidden md:inline">Remove</span>
               </Button>
             </td>
           </tr>
