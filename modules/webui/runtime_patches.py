@@ -34,6 +34,7 @@ def install_runtime_patches() -> None:
             return
         _patch_sampler_output()
         _patch_summary_writer()
+        _patch_summary_writer_init()
         _patch_model_saver()
         _installed = True
 
@@ -183,4 +184,37 @@ def _active_checkpoint_store():
     if service is None:
         return None
     return getattr(service, "_checkpoint_store", None)
+
+
+def _active_run_session():
+    from modules.webui import training as training_module
+
+    service = training_module._active_training_service
+    if service is None:
+        return None
+    return getattr(service, "_run_session", None)
+
+
+def _patch_summary_writer_init() -> None:
+    # The hint has to be captured here, not at the first add_scalar: with
+    # sampling on, the gallery's first batch can resolve the run before any
+    # scalar is logged -- in one observed run, 90 seconds before.
+    try:
+        from torch.utils.tensorboard import SummaryWriter
+    except Exception:
+        return
+
+    original = SummaryWriter.__init__
+
+    def patched(writer_self, *args, **kwargs):
+        original(writer_self, *args, **kwargs)
+
+        # Everything after the real constructor is suppressed: a failure here
+        # would surface inside trainer.start().
+        with contextlib.suppress(Exception):
+            session = _active_run_session()
+            if session is not None:
+                session.note_writer(getattr(writer_self, "log_dir", None))
+
+    SummaryWriter.__init__ = patched
 

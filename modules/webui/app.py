@@ -43,6 +43,7 @@ from modules.webui.routers.presets import router as presets_router
 from modules.webui.routers.samples import router as samples_router
 from modules.webui.routers.secrets import router as secrets_router
 from modules.webui.routers.training import router as training_router
+from modules.webui.run_session import RunSession
 from modules.webui.runtime_patches import install_runtime_patches
 from modules.webui.sampling_coordinator import SamplingCoordinator
 from modules.webui.schema import SchemaRegistry
@@ -148,11 +149,20 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
             gallery=gallery_svc,
         )
         sampling_svc.recover_pending()
+        run_session = RunSession(
+            root_dir=settings.root_dir,
+            workspace_provider=lambda: config_svc.current_workspace,
+            warning_sink=lambda message, payload: event_hub.publish_from_thread(
+                EventType.RUN_WARNING.value,
+                {"message": message, **payload},
+            ),
+        )
         training_svc = TrainingService(
             event_bus=event_hub,
             sampling_coordinator=sampling_svc,
             metrics_store=metrics_store,
             checkpoint_store=checkpoint_store,
+            run_session=run_session,
         )
         media_svc = MediaService(root_dir=settings.root_dir)
         settings_store = SettingsStore(settings.root_dir / "webui.json")

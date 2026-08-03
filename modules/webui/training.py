@@ -35,12 +35,14 @@ class TrainingService:
         sampling_coordinator: Any | None = None,
         metrics_store: Any | None = None,
         checkpoint_store: Any | None = None,
+        run_session: Any | None = None,
     ):
         self._lock = RLock()
         self._event_bus = event_bus
         self._sampling_coordinator = sampling_coordinator
         self._metrics_store = metrics_store
         self._checkpoint_store = checkpoint_store
+        self._run_session = run_session
         self._state = TrainingState.IDLE
         self._step = 0
         self._max_steps = 0
@@ -332,6 +334,12 @@ class TrainingService:
             train_config = TrainConfig.default_values().from_dict(config_data, migrate=True)
             logging.info(f"TrainingService: Base model name resolved as: {train_config.base_model_name}")
 
+            if self._run_session is not None:
+                try:
+                    self._run_session.begin(train_config)
+                except Exception as e:
+                    logging.exception(f"TrainingService: Error in run_session.begin: {e}")
+
             if self._sampling_coordinator is not None:
                 try:
                     self._sampling_coordinator.begin_training(train_config)
@@ -473,6 +481,12 @@ class TrainingService:
                         self._checkpoint_store.end_training()
                     except Exception as e:
                         logging.exception(f"TrainingService: Error in checkpoint_store.end_training: {e}")
+
+                if self._run_session is not None:
+                    try:
+                        self._run_session.end()
+                    except Exception as e:
+                        logging.exception(f"TrainingService: Error in run_session.end: {e}")
 
         except Exception as e:
             import logging

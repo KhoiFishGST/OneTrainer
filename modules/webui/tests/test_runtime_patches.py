@@ -347,3 +347,79 @@ def test_a_failing_checkpoint_store_never_breaks_add_scalar():
     # The metric still lands even though the store blew up.
     assert recorded and recorded[0]["loss_train_step"] == 0.5
 
+
+def test_summary_writer_construction_records_the_hint():
+    # The gallery's trigger (first sample) can fire before the first scalar --
+    # in the incident it did, by 90 seconds -- so the hint must be captured at
+    # writer construction, not at the first add_scalar.
+    import tempfile
+
+    from modules.webui import training as training_module
+
+    from torch.utils.tensorboard import SummaryWriter
+
+    install_runtime_patches()
+
+    seen = []
+
+    class FakeSession:
+        def note_writer(self, log_dir):
+            seen.append(log_dir)
+
+    class FakeService:
+        _run_session = FakeSession()
+
+    previous = training_module._active_training_service
+    training_module._active_training_service = FakeService()
+    try:
+        target = tempfile.mkdtemp() + "/2026-08-03_11-30-13"
+        writer = SummaryWriter(target)
+        writer.close()
+    finally:
+        training_module._active_training_service = previous
+
+    assert seen == [target]
+
+
+def test_a_failing_session_never_breaks_writer_construction():
+    import tempfile
+
+    from modules.webui import training as training_module
+
+    from torch.utils.tensorboard import SummaryWriter
+
+    install_runtime_patches()
+
+    class Exploding:
+        def note_writer(self, log_dir):
+            raise RuntimeError("boom")
+
+    class FakeService:
+        _run_session = Exploding()
+
+    previous = training_module._active_training_service
+    training_module._active_training_service = FakeService()
+    try:
+        writer = SummaryWriter(tempfile.mkdtemp())  # must not raise
+        writer.close()
+    finally:
+        training_module._active_training_service = previous
+
+
+def test_writer_construction_without_an_active_service_is_a_no_op():
+    import tempfile
+
+    from modules.webui import training as training_module
+
+    from torch.utils.tensorboard import SummaryWriter
+
+    install_runtime_patches()
+
+    previous = training_module._active_training_service
+    training_module._active_training_service = None
+    try:
+        writer = SummaryWriter(tempfile.mkdtemp())  # must not raise
+        writer.close()
+    finally:
+        training_module._active_training_service = previous
+

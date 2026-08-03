@@ -43,3 +43,24 @@ def test_a_broken_store_does_not_stop_training_from_starting(monkeypatch):
     # Both hooks are individually wrapped in the worker; construct and confirm
     # the service is usable rather than driving a full training run here.
     assert service._checkpoint_store is not None
+
+
+def test_the_run_session_is_exposed_under_the_name_the_patch_reads():
+    class FakeSession:
+        def begin(self, config):
+            pass
+
+        def end(self):
+            pass
+
+    session = FakeSession()
+    service = TrainingService(run_session=session)
+
+    # runtime_patches._active_run_session() reads exactly this attribute.
+    assert service._run_session is session
+
+
+def test_a_service_without_a_run_session_exposes_none():
+    service = TrainingService()
+
+    assert getattr(service, "_run_session", None) is None
