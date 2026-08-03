@@ -129,7 +129,6 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
 
         await event_hub.start()
 
-        metrics_store = MetricsStore()
         run_session = RunSession(
             root_dir=settings.root_dir,
             workspace_provider=lambda: config_svc.current_workspace,
@@ -138,6 +137,7 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
                 {"message": message, **payload},
             ),
         )
+        metrics_store = MetricsStore(run_session=run_session)
         checkpoint_store = CheckpointStore(
             root_dir=settings.root_dir,
             workspace_provider=lambda: config_svc.current_workspace,
@@ -150,7 +150,6 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
                 EventType.GALLERY_WARNING.value,
                 {"message": message, **payload},
             ),
-            run_resolved_sink=metrics_store.bind_run_dir,
         )
         sampling_svc = SamplingCoordinator(
             root_dir=settings.root_dir,

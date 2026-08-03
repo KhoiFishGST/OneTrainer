@@ -106,10 +106,10 @@ def read_rows(path: Path, limit: int | None = None) -> list[dict[str, Any]]:
 class MetricsStore:
     """Buffers training metric rows and appends them to <run_dir>/metrics.jsonl.
 
-    The gallery resolves a run directory lazily, on the first sample batch, but
-    metrics start at step 1. So rows accumulate in memory until bind_run_dir()
-    arrives, at which point the whole buffer is flushed and later rows stream
-    through in batches.
+    Rows arrive before the run can be identified -- GenericTrainer writes its
+    config partway through start() -- so they accumulate in memory until the
+    session can name the run, at which point the whole buffer is flushed and
+    later rows stream through in batches.
 
     Persistence is best-effort by design: any write failure disables it for the
     remainder of the run rather than propagating into the training thread.
@@ -117,11 +117,13 @@ class MetricsStore:
 
     def __init__(
         self,
+        run_session: Any | None = None,
         buffer_limit: int = DEFAULT_BUFFER_LIMIT,
         flush_rows: int = DEFAULT_FLUSH_ROWS,
         flush_seconds: float = DEFAULT_FLUSH_SECONDS,
         time_source: Callable[[], float] = time.monotonic,
     ) -> None:
+        self._run_session = run_session
         self._lock = threading.RLock()
         self._flush_rows = flush_rows
         self._flush_seconds = flush_seconds
@@ -147,22 +149,37 @@ class MetricsStore:
                 return
             if self._path is None:
                 self._buffer.append(row)
-                return
+                self._try_bind_locked()
+                if self._path is None:
+                    return
+            else:
+                self._pending.append(row)
 
-            self._pending.append(row)
             elapsed = self._time_source() - self._last_flush
             if len(self._pending) >= self._flush_rows or elapsed >= self._flush_seconds:
                 self._flush_locked()
 
-    def bind_run_dir(self, run_dir: Path) -> None:
-        with self._lock:
-            if self._disabled:
+    def _try_bind_locked(self) -> None:
+        """Bind metrics persistence directory if run_key is available.
+
+        run_key() resolves once when identified or ambiguous. If no candidate
+        config file has appeared yet, it returns None until identified or session.end().
+        """
+        if self._path is not None or self._run_session is None:
+            return
+        try:
+            run_key = self._run_session.run_key()
+            if run_key is None:
                 return
-            self._path = Path(run_dir) / METRICS_FILENAME
-            # Buffered rows precede anything recorded since binding.
-            self._pending = list(self._buffer) + self._pending
-            self._buffer.clear()
-            self._flush_locked()
+            run_dir = self._run_session.workspace_dir / "web" / "samples" / run_key
+        except Exception:
+            logger.exception("Could not determine the metrics path for this run")
+            return
+
+        self._path = run_dir / METRICS_FILENAME
+        # Buffered rows precede anything recorded since.
+        self._pending = list(self._buffer) + self._pending
+        self._buffer.clear()
 
     def flush(self) -> None:
         with self._lock:

@@ -78,18 +78,28 @@ def test_gallery_notifies_the_sink_when_a_run_resolves(tmp_path):
     assert resolved == [workspace / "web" / "samples" / "run-20260801"]
 
 
-def test_buffered_rows_land_on_disk_once_the_gallery_resolves(tmp_path):
+def test_buffered_rows_land_on_disk_once_the_run_is_identified(tmp_path):
+    from modules.util.config.TrainConfig import TrainConfig
     from modules.webui.metrics_store import MetricsStore
+    from modules.webui.run_session import RunSession
 
-    store = MetricsStore()
+    workspace = tmp_path / "ws"
+    (workspace / "config").mkdir(parents=True)
+    session = RunSession(root_dir=tmp_path, workspace_provider=lambda: workspace)
+    config = TrainConfig.default_values()
+    config.save_filename_prefix = ""
+    session.begin(config)
+
+    store = MetricsStore(run_session=session, flush_rows=1)
     service = TrainingService(metrics_store=store)
 
     store.begin_training()
     service.record_metric({"step": 1, "loss_train_step": 0.5})
     service.record_metric({"step": 2, "loss_train_step": 0.4})
 
-    run_dir = tmp_path / "run"
-    run_dir.mkdir()
-    store.bind_run_dir(run_dir)
+    (workspace / "config" / "run-a.json").write_text("{}", encoding="utf-8")
+    run_dir = workspace / "web" / "samples" / "run-a"
 
-    assert [r["step"] for r in read_rows(run_dir / METRICS_FILENAME)] == [1, 2]
+    service.record_metric({"step": 3, "loss_train_step": 0.3})
+
+    assert [r["step"] for r in read_rows(run_dir / METRICS_FILENAME)] == [1, 2, 3]

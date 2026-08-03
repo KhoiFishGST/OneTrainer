@@ -101,6 +101,9 @@ class RunSession:
 
     def end(self) -> None:
         with self._lock:
+            if not self._resolved:
+                self._resolved = True
+                self._warn(MISSING_MESSAGE, "missing")
             self._config = None
 
     # -- resolution --------------------------------------------------------
@@ -108,7 +111,6 @@ class RunSession:
     def run_key(self) -> str | None:
         with self._lock:
             if not self._resolved:
-                self._resolved = True
                 self._resolve_locked()
             return self._run_key
 
@@ -131,7 +133,6 @@ class RunSession:
 
     def _resolve_locked(self) -> None:
         if self._workspace is None or self._config is None:
-            self._warn(MISSING_MESSAGE, "missing")
             return
 
         try:
@@ -140,18 +141,18 @@ class RunSession:
             )
         except Exception:
             logger.exception("Could not list run config candidates")
-            self._warn(MISSING_MESSAGE, "missing")
             return
 
         if not found:
-            self._warn(MISSING_MESSAGE, "missing")
             return
 
         chosen = self._choose(found)
         if chosen is None:
+            self._resolved = True
             self._warn(AMBIGUOUS_MESSAGE.format(count=len(found)), "ambiguous")
             return
 
+        self._resolved = True
         self._run_key = chosen.stem
         self._config_filename = chosen.name
 

@@ -96,6 +96,7 @@ def test_ambiguity_without_a_hint_fails_loudly(session, workspace, train_config,
 
 def test_no_candidate_fails_loudly(session, workspace, train_config, warnings):
     session.begin(train_config)
+    session.end()
 
     assert session.run_key() is None
     assert len(warnings) == 1
@@ -105,9 +106,9 @@ def test_no_candidate_fails_loudly(session, workspace, train_config, warnings):
 def test_resolution_runs_at_most_once_even_when_it_fails(
     session, workspace, train_config, warnings, monkeypatch
 ):
-    # resolve() hashes every json in the directory and callers sit on hot paths,
-    # so a retried failure would hash once per metric row.
     session.begin(train_config)
+    _write_config(workspace, "a")
+    _write_config(workspace, "b")
 
     calls = []
     original = session._resolver.candidates
@@ -120,6 +121,7 @@ def test_resolution_runs_at_most_once_even_when_it_fails(
 
     assert len(calls) == 1
     assert len(warnings) == 1
+    assert warnings[0][1]["reason"] == "ambiguous"
 
 
 def test_a_successful_resolution_is_cached(session, workspace, train_config, monkeypatch):
