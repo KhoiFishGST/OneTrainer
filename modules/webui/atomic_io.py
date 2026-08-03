@@ -138,4 +138,3 @@ def link_or_copy_with_digest(
             return True, digest.hexdigest()
 
     return False, copy_file_atomic(source, destination)
-

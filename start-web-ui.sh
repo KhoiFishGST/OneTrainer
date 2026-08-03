@@ -16,6 +16,29 @@ if ! can_exec bun; then
     exit 1
 fi
 
+PORT=7801
+prev=""
+for arg in "$@"; do
+    if [[ "$prev" == "--port" ]]; then
+        PORT="$arg"
+    elif [[ "$arg" == --port=* ]]; then
+        PORT="${arg#--port=}"
+    fi
+    prev="$arg"
+done
+
+# A socket probe through Python rather than ss/lsof/nc: Python is already a hard
+# requirement here, and those tools are not portable to git-bash on Windows.
+if run_python_in_active_env -c "
+import socket, sys
+s = socket.socket()
+s.settimeout(0.5)
+sys.exit(0 if s.connect_ex(('127.0.0.1', $PORT)) == 0 else 1)
+" &>/dev/null; then
+    print_error "A server is already listening on port $PORT. Starting a second one will make both write to the same workspace, which disables the gallery, metrics and downloads for every run. Stop the existing server first, or pass a different --port."
+    exit 1
+fi
+
 IS_DEV=false
 for arg in "$@"; do
     if [[ "$arg" == "dev" || "$arg" == "--dev" ]]; then

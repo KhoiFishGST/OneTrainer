@@ -39,6 +39,8 @@ test.describe("downloads", () => {
           artifacts: [
             { kind: "config", label: "Config", available: true, is_archive: false,
               size_bytes: 23552, download_name: `${RUN_KEY}.json` },
+            { kind: "metrics", label: "Metrics", available: true, is_archive: false,
+              size_bytes: 4096, download_name: `${RUN_KEY}-metrics.jsonl` },
             { kind: "samples", label: "Samples", available: true, is_archive: true,
               size_bytes: 2411724, download_name: `${RUN_KEY}-samples.zip` },
             { kind: "tensorboard", label: "Tensorboard", available: false, is_archive: true,

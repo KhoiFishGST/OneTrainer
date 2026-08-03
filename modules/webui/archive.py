@@ -78,4 +78,3 @@ def stream_directory_zip(root: Path, compression: int = zipfile.ZIP_STORED) -> I
         for path in sorted(p for p in root.rglob("*") if p.is_file())
     )
     return stream_zip(entries, compression)
-
