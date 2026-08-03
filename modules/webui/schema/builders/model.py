@@ -306,9 +306,34 @@ def build_model_tab(model_type: ModelType, training_method: TrainingMethod) -> T
             )
         )
 
+    # Upstream puts these beside the Hugging Face token on its Model tab
+    # (BaseModelTabView). Ours keeps the token on the Secrets tab, so they get
+    # their own group here rather than moving model resolution settings away
+    # from the models they resolve.
+    hugging_face_fields = [
+        Field(
+            "offline-mode",
+            ("offline_mode",),
+            "Offline Mode",
+            "Skip the Hugging Face login and resolve every model from the local cache only. "
+            "Enable this when you have no internet connection; only already-downloaded models can be loaded.",
+            "toggle",
+        ),
+        Field(
+            "huggingface-cache-dir",
+            ("huggingface_cache_dir",),
+            "Hugging Face Cache Directory",
+            "Directory used to cache Hugging Face model downloads. "
+            "Leave empty to use the default Hugging Face cache directory.",
+            "directory",
+            path_mode="directory",
+        ),
+    ]
+
     groups = [
         Group("base_model", "Base Model", tuple(base_fields)),
         Group("output", "Output Settings", tuple(output_fields)),
+        Group("hugging_face", "Hugging Face", tuple(hugging_face_fields)),
     ]
 
     if backbone_fields:
