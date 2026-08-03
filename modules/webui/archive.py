@@ -1,6 +1,6 @@
 import os
 import zipfile
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from pathlib import Path
 
 # 1MiB read granularity: large enough that syscall overhead is negligible on a
@@ -35,21 +35,26 @@ class _ChunkSink:
             yield chunk
 
 
-def stream_directory_zip(root: Path) -> Iterator[bytes]:
-    """Yield a zip archive of every file under root, without buffering it whole.
+def stream_zip(
+    entries: Iterable[tuple[Path, str]],
+    compression: int = zipfile.ZIP_STORED,
+) -> Iterator[bytes]:
+    """Yield a zip archive of the given (path, arcname) pairs, unbuffered.
 
-    ZIP_STORED, not deflate: safetensors are incompressible, so compression
-    would burn CPU for nothing. force_zip64 is required because entry sizes are
-    unknown when writing to an unseekable stream.
+    force_zip64 is required because entry sizes are unknown when writing to an
+    unseekable stream. An entry whose file has vanished since the caller built
+    the list is skipped rather than aborting the archive -- a sample deleted
+    mid-run must not break the whole download.
     """
-    root = Path(root)
     sink = _ChunkSink()
 
-    with zipfile.ZipFile(sink, "w", zipfile.ZIP_STORED, allowZip64=True) as archive:
-        for path in sorted(p for p in root.rglob("*") if p.is_file()):
-            arcname = str(path.relative_to(root)).replace(os.sep, "/")
+    with zipfile.ZipFile(sink, "w", compression, allowZip64=True) as archive:
+        for path, arcname in entries:
+            if not path.is_file():
+                continue
+
             info = zipfile.ZipInfo(arcname)
-            info.compress_type = zipfile.ZIP_STORED
+            info.compress_type = compression
 
             with archive.open(info, "w", force_zip64=True) as entry, path.open("rb") as source:
                 while chunk := source.read(CHUNK_SIZE):
@@ -59,3 +64,18 @@ def stream_directory_zip(root: Path) -> Iterator[bytes]:
             yield from sink.drain()
 
     yield from sink.drain()
+
+
+def stream_directory_zip(root: Path, compression: int = zipfile.ZIP_STORED) -> Iterator[bytes]:
+    """Yield a zip archive of every file under root.
+
+    ZIP_STORED by default, not deflate: safetensors are incompressible, so
+    compression would burn CPU for nothing.
+    """
+    root = Path(root)
+    entries = (
+        (path, str(path.relative_to(root)).replace(os.sep, "/"))
+        for path in sorted(p for p in root.rglob("*") if p.is_file())
+    )
+    return stream_zip(entries, compression)
+
