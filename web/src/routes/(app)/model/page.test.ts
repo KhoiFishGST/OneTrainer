@@ -70,6 +70,18 @@ const mockSchema = {
           ],
         },
         {
+          id: "hugging_face",
+          title: "Hugging Face",
+          fields: [
+            {
+              id: "offline_mode",
+              keys: ["offline_mode"],
+              label: "Offline Mode",
+              control: "toggle",
+            },
+          ],
+        },
+        {
           id: "vae_autoencoders",
           title: "VAE & Image Autoencoders",
           fields: [
@@ -141,5 +153,13 @@ describe("Model page subnav tabs", () => {
     // Switch to VAE tab
     await fireEvent.click(screen.getByRole("tab", { name: "VAE" }));
     expect(screen.getByLabelText("VAE Override")).toBeInTheDocument();
+  });
+
+  it("shows the Hugging Face settings on the Model sub-tab", async () => {
+    // A group the sub-tab map does not name renders on no sub-tab at all and
+    // vanishes silently -- which is exactly how offline_mode was first missed.
+    render(ModelPage);
+
+    expect(screen.getByLabelText("Offline Mode")).toBeInTheDocument();
   });
 });

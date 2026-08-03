@@ -96,7 +96,14 @@
         return groupId === 'execution_hardware' || groupId === 'multi_gpu';
       // Model route subtabs:
       case 'model':
-        return groupId === 'base_model' || groupId === 'primary_backbone';
+        return (
+          groupId === 'base_model' ||
+          groupId === 'primary_backbone' ||
+          // Offline mode and the HF cache directory govern how the base model
+          // is resolved, so they belong with it rather than on a tab of their
+          // own. Upstream puts them beside the token on its Model tab.
+          groupId === 'hugging_face'
+        );
       case 'output':
         return groupId === 'output';
       case 'quant':
