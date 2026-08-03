@@ -17,6 +17,30 @@ describe('ConceptsEditor', () => {
     expect(screen.getByRole('switch', { name: 'Show Disabled' })).not.toBeChecked();
   });
 
+  it('enables a concept card with a switch named after that concept', async () => {
+    // One shared label across every card would leave a screen reader with a
+    // column of identical "Toggle concept enabled" switches.
+    const onChange = vi.fn();
+    render(ConceptsEditor, {
+      concepts: [
+        { name: 'MyDogConcept', path: '/data/dogs', enabled: true },
+        { name: '', path: '/data/cats', enabled: false },
+      ],
+      onChange,
+    });
+
+    const dog = screen.getByRole('switch', { name: 'Enable MyDogConcept' });
+    expect(dog).toBeChecked();
+    // An unnamed concept falls back to its directory, as the card title does.
+    expect(screen.getByRole('switch', { name: 'Enable cats' })).not.toBeChecked();
+
+    await fireEvent.click(dog);
+
+    expect(onChange).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ name: 'MyDogConcept', enabled: false })])
+    );
+  });
+
   it('renders toolbar search, filter, and add button', () => {
     render(ConceptsEditor, { props: { concepts: [] } });
     expect(screen.getByRole('button', { name: /add first concept/i })).toBeInTheDocument();

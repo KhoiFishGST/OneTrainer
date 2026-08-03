@@ -3,7 +3,6 @@
   import AddCard from '../collections/AddItemCard.svelte';
   import { Button } from '$lib/components/ui/button';
   import { Input as TextInput } from '../ui/input/index.js';
-  import { Checkbox } from '../ui/checkbox/index.js';
   import { Switch } from '../ui/switch/index.js';
   import { Badge } from '../ui/badge/index.js';
   import * as Card from '../ui/card/index.js';
@@ -39,6 +38,12 @@
   let searchQuery = $state('');
   let typeFilter = $state<'ALL' | 'STANDARD' | 'VALIDATION' | 'PRIOR_PREDICTION'>('ALL');
   let showDisabled = $state(true);
+
+  function conceptLabel(concept: { name?: string; path?: string }): string {
+    return (
+      concept.name || (concept.path ? concept.path.split('/').pop() : '') || 'Untitled Concept'
+    );
+  }
 
   let editingIndex = $state<number | null>(null);
   let isModalOpen = $state(false);
@@ -281,7 +286,7 @@
           <Card.Content class="card-content flex-1 p-3.5 flex flex-col justify-between gap-2">
             <div class="card-title-bar">
               <h4 class="concept-name" title={concept.name || concept.path}>
-                {concept.name || (concept.path ? concept.path.split('/').pop() : 'Untitled Concept')}
+                {conceptLabel(concept)}
               </h4>
               <div
                 class="toggle-wrapper"
@@ -289,8 +294,8 @@
                 onclick={(e) => e.stopPropagation()}
                 onkeydown={(e) => e.stopPropagation()}
               >
-                <Checkbox
-                  ariaLabel="Toggle concept enabled"
+                <Switch
+                  ariaLabel={`Enable ${conceptLabel(concept)}`}
                   value={concept.enabled !== false}
                   onChange={(checked) => {
                     const updated = concepts.map((c, i) =>
