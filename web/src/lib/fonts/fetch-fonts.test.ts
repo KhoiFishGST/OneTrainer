@@ -1,5 +1,13 @@
+// @vitest-environment node
+//
+// This file must not run under jsdom. jsdom installs its own AbortSignal
+// class, so a signal from Node's global AbortController is rejected by fetch
+// with "Expected signal to be an instance of AbortSignal" before any request
+// leaves the process. Every network assertion below would then pass on that
+// TypeError instead of on the behaviour it names -- green, and testing nothing.
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs/promises';
+import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import {
@@ -149,6 +157,40 @@ describe('runCli', () => {
 
     vi.unstubAllEnvs();
   });
+
+  it('gives up on a server that sends headers and then stalls', async () => {
+    // The failure this timeout exists for is not a refused connection -- that
+    // fails instantly. It is a proxy that accepts, answers with headers, and
+    // then never sends the body. Clearing the timer once the headers arrive
+    // leaves the body read unbounded and hangs `bun run build` forever.
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const server = http.createServer((_request, response) => {
+      response.writeHead(200, {
+        'Content-Type': 'text/css',
+        'Content-Length': '999999',
+      });
+      response.write('/* headers sent, body never finishes */');
+      // Deliberately no end().
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const { port } = server.address() as { port: number };
+
+    try {
+      const code = await runCli({
+        dir,
+        cssUrl: `http://127.0.0.1:${port}/stalls.css`,
+        timeoutMs: 250,
+      });
+
+      expect(code).toBe(0);
+      expect(warn).toHaveBeenCalled();
+      expect(await isCacheComplete(dir)).toBe(false);
+    } finally {
+      server.closeAllConnections();
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  }, 10_000);
 
   it('makes no request when the cache is already complete', async () => {
     await fs.writeFile(

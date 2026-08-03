@@ -118,7 +118,12 @@ if (typeof globalThis !== 'undefined' && !globalThis.localStorage) {
 }
 
 afterEach(() => {
-  document.body.innerHTML = '';
+  // Guarded because this setup file also loads for the handful of specs that
+  // opt into the node environment with `@vitest-environment node`, where there
+  // is no document to reset.
+  if (typeof document !== 'undefined') {
+    document.body.innerHTML = '';
+  }
   if (typeof localStorage !== 'undefined' && localStorage?.clear) {
     localStorage.clear();
   }

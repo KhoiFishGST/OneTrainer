@@ -59,9 +59,20 @@ export async function isCacheComplete(dir = FONTS_DIR) {
   }
 }
 
-async function fetchOrThrow(url) {
+// Returns the body, not the response. The timeout has to cover the transfer,
+// not just the headers: the failure it exists for is a proxy that accepts the
+// connection, answers, and then stalls mid-body. Handing back a response and
+// clearing the timer here would leave the caller's .text()/.arrayBuffer()
+// unbounded, and a stalled body would hang `bun run build` forever.
+async function fetchBody(url, { as = 'text', timeoutMs = TIMEOUT_MS } = {}) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  const describe = (err) =>
+    err.name === 'AbortError' || controller.signal.aborted
+      ? new Error(`fetch to ${url} timed out after ${timeoutMs}ms`, { cause: err })
+      : new Error(`fetch to ${url} failed: ${err.message}`, { cause: err });
+
   try {
     let response;
     try {
@@ -70,16 +81,24 @@ async function fetchOrThrow(url) {
         headers: { 'User-Agent': USER_AGENT },
       });
     } catch (err) {
-      throw new Error(`fetch to ${url} failed: ${err.message}`, { cause: err });
+      throw describe(err);
     }
+
     if (!response.ok) throw new Error(`${url} responded ${response.status}`);
-    return response;
+
+    try {
+      return as === 'text'
+        ? await response.text()
+        : Buffer.from(await response.arrayBuffer());
+    } catch (err) {
+      throw describe(err);
+    }
   } finally {
     clearTimeout(timer);
   }
 }
 
-export async function main({ dir = FONTS_DIR, cssUrl } = {}) {
+export async function main({ dir = FONTS_DIR, cssUrl, timeoutMs = TIMEOUT_MS } = {}) {
   const url = cssUrl || process.env.ONETRAINER_FONTS_CSS_URL || DEFAULT_CSS_URL;
 
   if (await isCacheComplete(dir)) {
@@ -89,7 +108,7 @@ export async function main({ dir = FONTS_DIR, cssUrl } = {}) {
 
   await fs.mkdir(dir, { recursive: true });
 
-  const css = await (await fetchOrThrow(url)).text();
+  const css = await fetchBody(url, { as: 'text', timeoutMs });
   const urls = parseFontUrls(css);
   if (urls.length === 0) {
     throw new Error('the stylesheet named no woff2 files');
@@ -99,7 +118,7 @@ export async function main({ dir = FONTS_DIR, cssUrl } = {}) {
     urls.map(async (fontUrl) => {
       const target = path.join(dir, localName(fontUrl));
       const temporary = `${target}.tmp`;
-      const body = Buffer.from(await (await fetchOrThrow(fontUrl)).arrayBuffer());
+      const body = await fetchBody(fontUrl, { as: 'buffer', timeoutMs });
       // Write then rename: an interrupted download must not leave a truncated
       // file that the next run's cache check would accept as complete.
       await fs.writeFile(temporary, body);
