@@ -1,4 +1,6 @@
+import json
 import zipfile
+import zipfile as zipfile_module
 from io import BytesIO
 from unittest.mock import MagicMock
 
@@ -130,3 +132,114 @@ def test_delete_404s_for_an_unknown_checkpoint(client, store):
     store.delete_checkpoint.side_effect = CheckpointNotFound("Checkpoint not found")
 
     assert client.delete("/api/downloads/runs/run-a/files/nope").status_code == 404
+
+
+RUN_KEY = "2026-08-03_10-15-00"
+
+
+def _prepare_run(store, tmp_path, *, config=True, samples=True, tensorboard=True):
+    """Point the mocked store at a real workspace laid out on disk."""
+    workspace = tmp_path / "workspace"
+    (workspace / "config").mkdir(parents=True)
+
+    run_info = {"key": RUN_KEY, "config_filename": f"{RUN_KEY}.json", "started_at": None}
+
+    if config:
+        (workspace / "config" / f"{RUN_KEY}.json").write_text('{"a": 1}', encoding="utf-8")
+
+    if samples:
+        run_dir = workspace / "web" / "samples" / RUN_KEY
+        run_dir.mkdir(parents=True)
+        (run_dir / "000001-base.jpg").write_bytes(b"image" * 10)
+        (run_dir / "000001-base-thumb.webp").write_bytes(b"thumb" * 10)
+        (run_dir / "manifest.json").write_text(
+            json.dumps({"batches": [{"samples": [{"status": "ready", "filename": "000001-base.jpg"}]}]}),
+            encoding="utf-8",
+        )
+        (run_dir / "prompts.json").write_text("{}", encoding="utf-8")
+
+    if tensorboard:
+        run_info["tensorboard_dirname"] = RUN_KEY
+        log_dir = workspace / "tensorboard" / RUN_KEY
+        log_dir.mkdir(parents=True)
+        (log_dir / "events.out.tfevents.1").write_bytes(b"protobuf" * 200)
+
+    store.workspace_dir = workspace
+    store.get_run.return_value = {"run": run_info, "checkpoints": []}
+    return workspace
+
+
+def test_run_detail_includes_the_three_artifacts(client, store, tmp_path):
+    _prepare_run(store, tmp_path)
+
+    body = client.get(f"/api/downloads/runs/{RUN_KEY}").json()
+
+    assert [a["kind"] for a in body["artifacts"]] == ["config", "samples", "tensorboard"]
+    assert all(a["available"] for a in body["artifacts"])
+    assert body["checkpoints"] == []
+
+
+def test_run_detail_marks_missing_artifacts_unavailable(client, store, tmp_path):
+    _prepare_run(store, tmp_path, samples=False, tensorboard=False)
+
+    artifacts = {a["kind"]: a for a in client.get(f"/api/downloads/runs/{RUN_KEY}").json()["artifacts"]}
+
+    assert artifacts["config"]["available"] is True
+    assert artifacts["samples"]["available"] is False
+    assert artifacts["tensorboard"]["available"] is False
+
+
+def test_downloads_the_config_as_a_single_file(client, store, tmp_path):
+    _prepare_run(store, tmp_path)
+
+    response = client.get(f"/api/downloads/runs/{RUN_KEY}/artifacts/config")
+
+    assert response.status_code == 200
+    assert response.json() == {"a": 1}
+    assert f'filename="{RUN_KEY}.json"' in response.headers["content-disposition"]
+    assert response.headers["accept-ranges"] == "bytes"
+
+
+def test_downloads_samples_as_a_stored_zip_without_thumbnails(client, store, tmp_path):
+    _prepare_run(store, tmp_path)
+
+    response = client.get(f"/api/downloads/runs/{RUN_KEY}/artifacts/samples")
+
+    assert response.status_code == 200
+    assert f'filename="{RUN_KEY}-samples.zip"' in response.headers["content-disposition"]
+    archive = zipfile_module.ZipFile(BytesIO(response.content))
+    assert archive.testzip() is None
+    assert sorted(archive.namelist()) == ["000001-base.jpg", "manifest.json", "prompts.json"]
+    assert archive.infolist()[0].compress_type == zipfile_module.ZIP_STORED
+
+
+def test_downloads_tensorboard_as_a_deflated_zip(client, store, tmp_path):
+    _prepare_run(store, tmp_path)
+
+    response = client.get(f"/api/downloads/runs/{RUN_KEY}/artifacts/tensorboard")
+
+    assert response.status_code == 200
+    assert f'filename="{RUN_KEY}-tensorboard.zip"' in response.headers["content-disposition"]
+    archive = zipfile_module.ZipFile(BytesIO(response.content))
+    assert archive.testzip() is None
+    assert archive.namelist() == ["events.out.tfevents.1"]
+    assert archive.infolist()[0].compress_type == zipfile_module.ZIP_DEFLATED
+
+
+def test_artifact_download_404s_when_the_source_is_gone(client, store, tmp_path):
+    _prepare_run(store, tmp_path, tensorboard=False)
+
+    assert client.get(f"/api/downloads/runs/{RUN_KEY}/artifacts/tensorboard").status_code == 404
+
+
+def test_an_unknown_artifact_kind_is_rejected(client, store, tmp_path):
+    _prepare_run(store, tmp_path)
+
+    assert client.get(f"/api/downloads/runs/{RUN_KEY}/artifacts/backups").status_code == 422
+
+
+def test_artifact_download_404s_for_an_unknown_run(client, store):
+    store.get_run.side_effect = CheckpointNotFound("Run not found")
+
+    assert client.get("/api/downloads/runs/nope/artifacts/config").status_code == 404
+
