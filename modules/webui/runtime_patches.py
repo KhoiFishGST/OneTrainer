@@ -95,6 +95,14 @@ def _patch_summary_writer() -> None:
         if service is None:
             return
 
+        # Establish the run's Downloads entry at step 1 and record where its
+        # tensorboard logs live. note_run_active returns on a flag check after
+        # the first call, so this stays off the hot path.
+        with contextlib.suppress(Exception):
+            store = _active_checkpoint_store()
+            if store is not None:
+                store.note_run_active(getattr(writer_self, "log_dir", None))
+
         try:
             # Keep only the faithful, namespaced key. The old collapsed `loss`
             # and `lr` aliases used substring matching, so every loss-family tag

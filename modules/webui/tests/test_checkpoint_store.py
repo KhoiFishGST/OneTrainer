@@ -604,3 +604,96 @@ def test_checkpoints_live_beside_the_gallery_under_the_web_root(store, workspace
 
     assert (workspace / "web" / "checkpoints" / run_key / "a.safetensors").is_file()
     assert not (workspace / "webui").exists()
+
+
+def test_note_run_active_creates_the_run_entry_before_any_checkpoint(store, workspace, train_config):
+    # A run that is stopped before its first save must still be reachable in
+    # Downloads, with its config and tensorboard logs.
+    run_key = "run-20260803-101500"
+    store.begin_training(train_config)
+    (workspace / "config" / f"{run_key}.json").write_text("{}", encoding="utf-8")
+
+    store.note_run_active(str(workspace / "tensorboard" / run_key))
+    store.end_training()
+
+    doc = _manifest(workspace, run_key)
+    assert doc["checkpoints"] == []
+    assert doc["run"]["key"] == run_key
+    assert doc["run"]["tensorboard_dirname"] == run_key
+
+
+def test_note_run_active_stores_only_the_directory_name(store, workspace, train_config):
+    # Stored like config_filename: a bare name, reconstructed under the
+    # workspace, so a hand-edited manifest cannot redirect the archiver.
+    run_key = _start_run(store, workspace, train_config)
+
+    store.note_run_active("/somewhere/else/tensorboard/2026-08-03_10-15-00")
+    store.end_training()
+
+    assert _manifest(workspace, run_key)["run"]["tensorboard_dirname"] == "2026-08-03_10-15-00"
+
+
+def test_note_run_active_does_work_only_once(store, workspace, train_config):
+    # add_scalar fires several times per step for the whole run; only the first
+    # call may touch a lock or the filesystem.
+    _start_run(store, workspace, train_config)
+
+    store.note_run_active("/ws/tensorboard/a")
+    store.note_run_active("/ws/tensorboard/a")
+    store.note_run_active("/ws/tensorboard/a")
+
+    assert len(store._pending) == 1
+    store.end_training()
+
+
+def test_note_run_active_tolerates_a_writer_without_a_log_dir(store, workspace, train_config):
+    run_key = _start_run(store, workspace, train_config)
+
+    store.note_run_active(None)
+    store.end_training()
+
+    doc = _manifest(workspace, run_key)
+    assert doc["checkpoints"] == []
+    assert doc["run"].get("tensorboard_dirname") is None
+
+
+def test_a_later_capture_appends_without_losing_the_tensorboard_name(store, workspace, train_config):
+    run_key = _start_run(store, workspace, train_config)
+    store.note_run_active(str(workspace / "tensorboard" / run_key))
+
+    source = workspace / "save" / "a.safetensors"
+    source.write_bytes(b"x")
+    store.capture(ModelFormat.KOHYA_LORA, str(source))
+    store.end_training()
+
+    doc = _manifest(workspace, run_key)
+    assert [c["filename"] for c in doc["checkpoints"]] == ["a.safetensors"]
+    assert doc["run"]["tensorboard_dirname"] == run_key
+
+
+def test_a_run_with_no_checkpoints_is_listed(store, workspace, train_config):
+    run_key = _start_run(store, workspace, train_config)
+    store.note_run_active(str(workspace / "tensorboard" / run_key))
+    store.end_training()
+
+    runs = store.list_runs()
+
+    assert [r["key"] for r in runs] == [run_key]
+    assert runs[0]["checkpoint_count"] == 0
+    assert runs[0]["total_size_bytes"] == 0
+
+
+def test_note_run_active_never_raises_when_the_run_key_is_ambiguous(store, workspace, train_config):
+    store.begin_training(train_config)
+    (workspace / "config" / "a.json").write_text("{}", encoding="utf-8")
+    (workspace / "config" / "b.json").write_text("{}", encoding="utf-8")
+
+    store.note_run_active("/ws/tensorboard/a")  # must not raise
+    store.end_training()
+
+    assert not (workspace / "web" / "checkpoints").exists()
+
+
+def test_workspace_dir_exposes_the_resolved_absolute_path(store, workspace):
+    assert store.workspace_dir == workspace.resolve()
+

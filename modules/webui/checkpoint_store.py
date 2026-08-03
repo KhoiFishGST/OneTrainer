@@ -92,12 +92,19 @@ class CheckpointStore:
         self._used_names: set[str] = set()
         self._link_support: dict[object, bool] = {}
         self._pending: list[Future] = []
+        self._run_noted = False
+        self._tensorboard_dirname: str | None = None
 
     # -- lifecycle ---------------------------------------------------------
 
     def _resolve_workspace(self) -> Path:
         raw = Path(self._workspace_provider())
         return raw.resolve() if raw.is_absolute() else (self._root_dir / raw).resolve()
+
+    @property
+    def workspace_dir(self) -> Path:
+        """The resolved absolute workspace, for callers that read run artifacts."""
+        return self._resolve_workspace()
 
     def begin_training(self, config: TrainConfig) -> None:
         with self._lock:
@@ -110,8 +117,54 @@ class CheckpointStore:
             self._used_names.clear()
             self._link_support.clear()
             self._pending.clear()
+            self._run_noted = False
+            self._tensorboard_dirname = None
             self._started_at = datetime.now(timezone.utc).isoformat()
             self._resolver.snapshot(self._workspace / "config")
+
+    def note_run_active(self, log_dir: str | None) -> None:
+        """Establish this run's Downloads entry. Called from add_scalar; never raises.
+
+        This is the earliest and most reliable run marker available: the
+        SummaryWriter is created at run start and the first scalar lands at step
+        1, before any sample batch or save. Establishing the entry here is what
+        makes a run that never saved a model reachable in Downloads.
+
+        add_scalar fires several times per step for the entire run, so the flag
+        check below must come before any lock or I/O.
+        """
+        if self._run_noted:
+            return
+
+        try:
+            with self._lock:
+                if self._run_noted or self._disabled or self._workspace is None:
+                    return
+                self._run_noted = True
+                # Stored as a bare name, like run.config_filename, so a
+                # hand-edited manifest cannot point the archiver outside the
+                # workspace. Reconstructed as <workspace>/tensorboard/<name>.
+                self._tensorboard_dirname = Path(log_dir).name if log_dir else None
+                future = self._executor.submit(self._note_run_blocking)
+                self._pending.append(future)
+        except Exception:
+            logger.exception("Could not establish the run entry for Downloads")
+
+    def _note_run_blocking(self) -> None:
+        try:
+            with self._lock:
+                if self._disabled:
+                    return
+                run_dir = self._ensure_run_dir()
+                if run_dir is None:
+                    return
+                run_dir.mkdir(parents=True, exist_ok=True)
+                write_json_atomic(run_dir / MANIFEST_FILENAME, self._read_manifest(run_dir))
+        except Exception:
+            logger.exception("Could not write the run manifest; disabling capture for this run")
+            with contextlib.suppress(Exception):
+                with self._lock:
+                    self._disabled = True
 
     def capture(self, model_format: ModelFormat, destination: str) -> None:
         """Record a completed saver write. Never raises."""
@@ -268,6 +321,9 @@ class CheckpointStore:
                 "key": self._run_key,
                 "config_filename": self._config_filename,
                 "started_at": self._started_at,
+                # Optional and additive, so schema_version stays at 1 and a
+                # manifest written without it still reads.
+                "tensorboard_dirname": self._tensorboard_dirname,
             },
             "checkpoints": [],
         }

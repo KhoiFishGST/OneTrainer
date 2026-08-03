@@ -244,3 +244,106 @@ def test_patching_the_saver_survives_an_unimportable_training_stack(monkeypatch)
     monkeypatch.setitem(sys.modules, "modules.util.create", None)
 
     runtime_patches._patch_model_saver()  # must not raise
+
+
+def test_add_scalar_notifies_the_checkpoint_store_with_the_writers_log_dir():
+    # The tensorboard directory name is built from a separate
+    # get_string_timestamp() call than the run key, so inferring it from the run
+    # key silently mismatches whenever the two straddle a second boundary.
+    from modules.webui import training as training_module
+
+    from torch.utils.tensorboard import SummaryWriter
+
+    install_runtime_patches()
+
+    seen = []
+
+    class FakeStore:
+        def note_run_active(self, log_dir):
+            seen.append(log_dir)
+
+    class FakeService:
+        _step = 1
+        _epoch = 0
+        _checkpoint_store = FakeStore()
+
+        def record_metric(self, payload):
+            pass
+
+    class FakeWriter:
+        log_dir = "/ws/tensorboard/2026-08-03_10-15-00"
+
+    previous = training_module._active_training_service
+    training_module._active_training_service = FakeService()
+    try:
+        SummaryWriter.add_scalar(FakeWriter(), "loss/train_step", 0.5, 1)
+    finally:
+        training_module._active_training_service = previous
+
+    assert seen == ["/ws/tensorboard/2026-08-03_10-15-00"]
+
+
+def test_add_scalar_tolerates_a_writer_without_a_log_dir():
+    # The existing tests drive the patch with a bare object(); that must keep
+    # working, and so must any writer subclass that lacks the attribute.
+    from modules.webui import training as training_module
+
+    from torch.utils.tensorboard import SummaryWriter
+
+    install_runtime_patches()
+
+    seen = []
+
+    class FakeStore:
+        def note_run_active(self, log_dir):
+            seen.append(log_dir)
+
+    class FakeService:
+        _step = 1
+        _epoch = 0
+        _checkpoint_store = FakeStore()
+
+        def record_metric(self, payload):
+            pass
+
+    previous = training_module._active_training_service
+    training_module._active_training_service = FakeService()
+    try:
+        SummaryWriter.add_scalar(object(), "loss/train_step", 0.5, 1)
+    finally:
+        training_module._active_training_service = previous
+
+    assert seen == [None]
+
+
+def test_a_failing_checkpoint_store_never_breaks_add_scalar():
+    from modules.webui import training as training_module
+
+    from torch.utils.tensorboard import SummaryWriter
+
+    install_runtime_patches()
+
+    recorded = []
+
+    class Exploding:
+        def note_run_active(self, log_dir):
+            raise RuntimeError("disk on fire")
+
+    class FakeService:
+        _step = 1
+        _epoch = 0
+        _checkpoint_store = Exploding()
+
+        def record_metric(self, payload):
+            recorded.append(payload)
+
+    previous = training_module._active_training_service
+    training_module._active_training_service = FakeService()
+    try:
+        SummaryWriter.add_scalar(object(), "loss/train_step", 0.5, 1)
+    finally:
+        training_module._active_training_service = previous
+
+    # The metric still lands even though the store blew up.
+    assert recorded and recorded[0]["loss_train_step"] == 0.5
+
