@@ -70,17 +70,7 @@ async function fetchOrThrow(url) {
         headers: { 'User-Agent': USER_AGENT },
       });
     } catch (err) {
-      if (err instanceof TypeError && err.message.includes('instance of AbortSignal')) {
-        try {
-          response = await fetch(url, {
-            headers: { 'User-Agent': USER_AGENT },
-          });
-        } catch (fallbackErr) {
-          throw new Error(`fetch to ${url} failed: ${fallbackErr.message}`, { cause: fallbackErr });
-        }
-      } else {
-        throw new Error(`fetch to ${url} failed: ${err.message}`, { cause: err });
-      }
+      throw new Error(`fetch to ${url} failed: ${err.message}`, { cause: err });
     }
     if (!response.ok) throw new Error(`${url} responded ${response.status}`);
     return response;
@@ -105,15 +95,17 @@ export async function main({ dir = FONTS_DIR, cssUrl } = {}) {
     throw new Error('the stylesheet named no woff2 files');
   }
 
-  for (const fontUrl of urls) {
-    const target = path.join(dir, localName(fontUrl));
-    const temporary = `${target}.tmp`;
-    const body = Buffer.from(await (await fetchOrThrow(fontUrl)).arrayBuffer());
-    // Write then rename: an interrupted download must not leave a truncated
-    // file that the next run's cache check would accept as complete.
-    await fs.writeFile(temporary, body);
-    await fs.rename(temporary, target);
-  }
+  await Promise.all(
+    urls.map(async (fontUrl) => {
+      const target = path.join(dir, localName(fontUrl));
+      const temporary = `${target}.tmp`;
+      const body = Buffer.from(await (await fetchOrThrow(fontUrl)).arrayBuffer());
+      // Write then rename: an interrupted download must not leave a truncated
+      // file that the next run's cache check would accept as complete.
+      await fs.writeFile(temporary, body);
+      await fs.rename(temporary, target);
+    })
+  );
 
   // Written last, deliberately. isCacheComplete keys off this file, so a crash
   // partway through the loop above leaves no stylesheet and the next build
