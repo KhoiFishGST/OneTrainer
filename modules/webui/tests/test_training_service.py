@@ -395,3 +395,46 @@ def test_auto_create_default_samples_when_concepts_not_none(tmp_path, monkeypatc
 
 
 
+
+
+def test_starting_a_run_clears_the_previous_runs_metrics():
+    # Every collaborator gets a begin_training() at run start, but the service's
+    # own buffers were never reset, so a second run's early steps landed on top
+    # of the first run's history. The chart keys points by step, so the stale
+    # tail stayed visible until the new run passed the old run's step count.
+    service = TrainingService()
+    service.start_training({"max_steps": 1000})
+    service.record_metric({"step": 50, "loss_train_step": 0.9})
+    service.stop_training()
+
+    assert len(service.get_metrics()) == 1
+
+    service.start_training({"max_steps": 1000})
+
+    assert service.get_metrics() == []
+
+
+def test_starting_a_run_clears_the_previous_runs_samples():
+    service = TrainingService()
+    service.start_training({"max_steps": 1000})
+    service.record_sample({"step": 50, "filename": "stale.png"})
+    service.stop_training()
+
+    assert len(service.get_samples()) == 1
+
+    service.start_training({"max_steps": 1000})
+
+    assert service.get_samples() == []
+
+
+def test_a_rejected_start_leaves_the_running_buffers_alone():
+    # start_training raises when the state does not allow it. That must not be
+    # a way to wipe the live chart of a run that is still going.
+    service = TrainingService()
+    service.start_training({"max_steps": 1000})
+    service.record_metric({"step": 10, "loss_train_step": 0.5})
+
+    with pytest.raises(RuntimeError):
+        service.start_training({"max_steps": 1000})
+
+    assert [m["step"] for m in service.get_metrics()] == [10]

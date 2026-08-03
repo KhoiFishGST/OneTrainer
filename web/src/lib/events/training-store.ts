@@ -21,6 +21,10 @@ const INITIAL_STATUS: TrainingStatus = {
   has_snapshot: false,
 };
 
+// States in which a run is under way. Entering one of these from outside the
+// set is what marks a new run; moving between them is not.
+const RUNNING_STATES = ['STARTING', 'TRAINING', 'PAUSED'];
+
 export interface TrainingStore extends Readable<TrainingStoreState> {
   setStatus: (status: Partial<TrainingStatus>) => void;
   setMetrics: (metrics: TrainingMetric[]) => void;
@@ -79,7 +83,26 @@ export function createTrainingStore(maxMetrics = 10000): TrainingStore {
     const payload = extractPayload(event);
 
     if (type === 'training_state') {
-      setStatus(payload);
+      // A new run starts back at step 0, so the previous run's points have to
+      // go. The server clears its own buffers on start, but this store fills
+      // from the event stream and is only refilled on mount -- so without this
+      // a new run's early steps landed on top of the last run's, and the chart
+      // (which keys points by step) kept showing the stale tail until the new
+      // run passed the old one's last step.
+      //
+      // Keyed on the transition, not the event: training_state also fires on
+      // every progress tick, and PAUSED -> TRAINING is a resume, not a new run.
+      update((s) => {
+        const wasRunning = RUNNING_STATES.includes(s.status.state);
+        const isRunning = RUNNING_STATES.includes(payload?.state);
+        const startingFresh = isRunning && !wasRunning;
+        return {
+          ...s,
+          status: { ...s.status, ...payload },
+          metrics: startingFresh ? [] : s.metrics,
+          samples: startingFresh ? [] : s.samples,
+        };
+      });
     } else if (type === 'training_metric') {
       update((s) => {
         const nextMetrics = [...s.metrics, payload];

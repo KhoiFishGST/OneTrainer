@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { get } from 'svelte/store';
 import { createTrainingStore } from './training-store';
 
 describe('trainingStore', () => {
@@ -99,6 +100,49 @@ describe('trainingStore', () => {
     expect(state.metrics).toEqual([{ step: 1, loss: 0.1 }]);
     expect(state.samples).toEqual([{ id: 's1' }]);
     expect(state.gpuStats).toEqual({ vram_used: 2048 });
+  });
+
+  it('drops the previous run data when a new run starts', () => {
+    // The server clears its own buffers on start, but this store accumulates
+    // from the event stream and is only refilled on mount. Without this, a new
+    // run's early steps landed on top of the last run's points, and the chart
+    // -- which keys by step -- showed the stale tail until the new run passed
+    // the old run's step count.
+    const store = createTrainingStore();
+    store.applyEvent({ type: 'training_state', state: 'TRAINING' });
+    store.applyEvent({ type: 'training_metric', step: 50, loss_train_step: 0.9 });
+    store.applyEvent({ type: 'training_sample', step: 50, filename: 'stale.png' });
+    store.applyEvent({ type: 'training_state', state: 'COMPLETED' });
+
+    store.applyEvent({ type: 'training_state', state: 'TRAINING' });
+
+    expect(get(store).metrics).toEqual([]);
+    expect(get(store).samples).toEqual([]);
+    expect(get(store).status.state).toBe('TRAINING');
+  });
+
+  it('keeps live data across repeated TRAINING progress events', () => {
+    // training_state fires on every progress update, not only at the start, so
+    // clearing on the event rather than the transition would wipe the chart on
+    // each tick.
+    const store = createTrainingStore();
+    store.applyEvent({ type: 'training_state', state: 'TRAINING' });
+    store.applyEvent({ type: 'training_metric', step: 1, loss_train_step: 0.5 });
+    store.applyEvent({ type: 'training_state', state: 'TRAINING', step: 2 });
+    store.applyEvent({ type: 'training_metric', step: 2, loss_train_step: 0.4 });
+
+    expect(get(store).metrics.map((m: any) => m.step)).toEqual([1, 2]);
+  });
+
+  it('does not clear when training merely pauses and resumes', () => {
+    const store = createTrainingStore();
+    store.applyEvent({ type: 'training_state', state: 'TRAINING' });
+    store.applyEvent({ type: 'training_metric', step: 1, loss_train_step: 0.5 });
+    store.applyEvent({ type: 'training_state', state: 'PAUSED' });
+
+    store.applyEvent({ type: 'training_state', state: 'TRAINING' });
+
+    expect(get(store).metrics.map((m: any) => m.step)).toEqual([1]);
   });
 
   it('resets state correctly', () => {

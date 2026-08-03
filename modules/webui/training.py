@@ -511,6 +511,13 @@ class TrainingService:
             self._elapsed_seconds = 0.0
             self._eta_seconds = 0.0
             self._error_message = None
+            # These belong with the counters above: they are this run's data, and
+            # a new run starts back at step 0. Left behind, a short previous run
+            # stayed on the chart -- which keys points by step -- until the new
+            # run passed the old one's last step. Cleared inside the guard, so a
+            # rejected start cannot wipe a live run's history.
+            self._metrics.clear()
+            self._samples.clear()
 
         self._emit_state_event()
 
