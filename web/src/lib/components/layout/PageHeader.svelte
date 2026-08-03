@@ -45,6 +45,7 @@
     gap: 1rem;
   }
   :where(.page-title) {
+    font-family: var(--display-font);
     font-size: 1.5rem;
     font-weight: 700;
     margin: 0;

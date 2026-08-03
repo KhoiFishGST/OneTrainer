@@ -366,6 +366,14 @@
     color: var(--ring);
   }
 
+  .app-title {
+    font-family: var(--brand-font);
+    /* Bricolage at 800 carries the weight itself; .brand's 700 would make the
+       fallback and the real face look like different designs. */
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
   .brand-logo {
     width: 26px;
     height: 26px;
