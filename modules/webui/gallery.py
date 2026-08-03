@@ -17,7 +17,6 @@ from modules.util.enum.EMAMode import EMAMode
 from modules.util.enum.FileType import FileType
 from modules.webui.atomic_io import link_or_copy_with_digest, save_pil_atomic, write_json_atomic
 from modules.webui.metrics_store import METRICS_FILENAME
-from modules.webui.run_key import RunKeyResolver
 
 from PIL import Image
 
@@ -75,13 +74,13 @@ class GalleryService:
         root_dir: Path,
         workspace_provider: Callable[[], str | Path],
         warning_sink: Callable[[str, dict[str, Any]], None] | None = None,
-        run_resolved_sink: Callable[[Path], None] | None = None,
+        run_session: Any | None = None,
         thumbnail_max_size: tuple[int, int] = (512, 512),
     ) -> None:
         self._root_dir = root_dir.resolve()
         self._workspace_provider = workspace_provider
         self._warning_sink = warning_sink
-        self._run_resolved_sink = run_resolved_sink
+        self._run_session = run_session
         self._thumbnail_max_size = thumbnail_max_size
         self._lock = threading.RLock()
 
@@ -95,7 +94,6 @@ class GalleryService:
         self._started_at_str: str | None = None
         self._resolution_attempted: bool = False
         self._disabled: bool = False
-        self._run_key_resolver = RunKeyResolver()
         self._resolved_config_filename: str | None = None
 
     @property
@@ -131,37 +129,21 @@ class GalleryService:
             self._started_at = now
             self._started_at_str = now.isoformat()
 
-            self._run_key_resolver.snapshot(self._active_workspace / "config")
-
     def _resolve_run(self, config: TrainConfig) -> None:
         ws = self._active_workspace
-        if ws is None:
+        if ws is None or self._run_session is None:
             self._disabled = True
             return
 
-        result = self._run_key_resolver.resolve(ws / "config", config.save_filename_prefix or "")
-
-        if result.reason == "no_config_dir" or result.reason == "missing":
-            if self._warning_sink:
-                self._warning_sink(
-                    "Gallery persistence disabled: missing core config candidate",
-                    {"workspace": str(ws)},
-                )
+        info = self._run_session.run_info()
+        if info is None:
+            # The session already emitted a run_warning naming the cause;
+            # warning again here would double up on one failure.
             self._disabled = True
             return
 
-        if result.reason == "ambiguous":
-            if self._warning_sink:
-                self._warning_sink(
-                    "Gallery persistence disabled: ambiguous core config candidate",
-                    {"workspace": str(ws)},
-                )
-            self._disabled = True
-            return
-
-        run_key = result.key
-        assert run_key is not None
-        config_filename = result.config_filename or ""
+        run_key = info.get("key")
+        config_filename = info.get("config_filename") or ""
         target_dir = ws / "web" / "samples" / run_key
         manifest_path = target_dir / "manifest.json"
 
@@ -183,12 +165,6 @@ class GalleryService:
         self._active_run_key = run_key
         self._active_run_dir = target_dir
         self._resolved_config_filename = config_filename
-
-        # Metrics start at step 1 but this only runs on the first sample batch,
-        # so this is the signal that buffered rows finally have somewhere to go.
-        if self._run_resolved_sink is not None:
-            with contextlib.suppress(Exception):
-                self._run_resolved_sink(target_dir)
 
     def begin_batch(
         self,

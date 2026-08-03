@@ -38,8 +38,19 @@ def train_config() -> TrainConfig:
 
 
 @pytest.fixture
-def gallery(tmp_path: Path, workspace: Path) -> GalleryService:
-    return GalleryService(root_dir=tmp_path, workspace_provider=lambda: workspace)
+def run_session(tmp_path: Path, workspace: Path):
+    from modules.webui.run_session import RunSession
+
+    return RunSession(root_dir=tmp_path, workspace_provider=lambda: workspace)
+
+
+@pytest.fixture
+def gallery(tmp_path: Path, workspace: Path, run_session) -> GalleryService:
+    return GalleryService(
+        root_dir=tmp_path,
+        workspace_provider=lambda: workspace,
+        run_session=run_session,
+    )
 
 
 def progress(step: int = 0, epoch: int = 1, epoch_step: int = 0) -> TrainingProgressSnapshot:
@@ -83,7 +94,8 @@ def first_revision_prompt(prompts_doc: dict[str, Any]) -> dict[str, Any]:
     return first_rev["prompts"][0]
 
 
-def test_resolves_new_core_config_using_exact_stem(gallery, train_config, workspace):
+def test_resolves_new_core_config_using_exact_stem(gallery, train_config, workspace, run_session):
+    run_session.begin(train_config)
     gallery.begin_training(train_config)
     config_file = workspace / "config" / "prefix-2026-07-26_11-17-26.json"
     config_file.parent.mkdir(parents=True, exist_ok=True)
@@ -93,7 +105,8 @@ def test_resolves_new_core_config_using_exact_stem(gallery, train_config, worksp
     assert (workspace / "web" / "samples" / config_file.stem / "manifest.json").exists()
 
 
-def test_reuses_canonical_prompt_revision(gallery, train_config, core_config):
+def test_reuses_canonical_prompt_revision(gallery, train_config, core_config, run_session):
+    run_session.begin(train_config)
     gallery.begin_training(train_config)
     core_config()
     definitions = [sample_definition("prompt_a", unknown_setting="kept")]
@@ -107,7 +120,8 @@ def test_reuses_canonical_prompt_revision(gallery, train_config, core_config):
     assert next(iter(prompts["revisions"].values()))["prompts"][0]["unknown_setting"] == "kept"
 
 
-def test_repeated_same_step_sampling_creates_distinct_batches(gallery, train_config, core_config):
+def test_repeated_same_step_sampling_creates_distinct_batches(gallery, train_config, core_config, run_session):
+    run_session.begin(train_config)
     gallery.begin_training(train_config)
     core_config()
     first = gallery.begin_batch([sample_definition("prompt_a")], train_config, progress(step=100))
@@ -116,32 +130,37 @@ def test_repeated_same_step_sampling_creates_distinct_batches(gallery, train_con
     assert (first, second) == (1, 2)
 
 
-def test_expected_variants_follow_active_ema_config(gallery, train_config, core_config):
+def test_expected_variants_follow_active_ema_config(gallery, train_config, core_config, run_session):
     train_config.ema = EMAMode.OFF
+    run_session.begin(train_config)
     gallery.begin_training(train_config)
     core_config()
     gallery.begin_batch([sample_definition("prompt_a")], train_config, progress(step=0))
     assert read_manifest(gallery)["batches"][0]["expected_variants"] == ["base"]
 
 
-def test_resolves_custom_prefix(gallery, train_config, workspace):
+def test_resolves_custom_prefix(gallery, train_config, workspace, run_session):
     train_config.save_filename_prefix = "portrait-"
+    run_session.begin(train_config)
     gallery.begin_training(train_config)
     write_core_config(workspace, "portrait-2026-07-26_11-17-26.json")
     gallery.begin_batch([sample_definition("prompt_a")], train_config, progress(step=0))
     assert gallery.active_run_key == "portrait-2026-07-26_11-17-26"
 
 
-def test_disables_missing_or_ambiguous_config_candidate(gallery, train_config, workspace):
+def test_disables_missing_or_ambiguous_config_candidate(gallery, train_config, workspace, run_session):
+    run_session.begin(train_config)
     gallery.begin_training(train_config)
     assert gallery.begin_batch([sample_definition("prompt_a")], train_config, progress(step=0)) is None
+    run_session.begin(train_config)
     gallery.begin_training(train_config)
     write_core_config(workspace, "2026-07-26_11-17-26.json")
     write_core_config(workspace, "2026-07-26_11-17-27.json")
     assert gallery.begin_batch([sample_definition("prompt_a")], train_config, progress(step=0)) is None
 
 
-def test_rejects_existing_run_key_collision(gallery, train_config, workspace):
+def test_rejects_existing_run_key_collision(gallery, train_config, workspace, run_session):
+    run_session.begin(train_config)
     gallery.begin_training(train_config)
     config = write_core_config(workspace, "2026-07-26_11-17-26.json")
     occupied = workspace / "web" / "samples" / config.stem
@@ -153,8 +172,9 @@ def test_rejects_existing_run_key_collision(gallery, train_config, workspace):
     assert gallery.begin_batch([sample_definition("prompt_a")], train_config, progress(step=0)) is None
 
 
-def test_revision_applies_model_defaults_and_train_overlays(gallery, train_config, core_config):
+def test_revision_applies_model_defaults_and_train_overlays(gallery, train_config, core_config, run_session):
     train_config.text_encoder_layer_skip = 3
+    run_session.begin(train_config)
     gallery.begin_training(train_config)
     core_config()
     gallery.begin_batch([{"webui_id": "prompt_a", "enabled": True, "prompt": "a"}], train_config, progress(step=0))
@@ -163,7 +183,8 @@ def test_revision_applies_model_defaults_and_train_overlays(gallery, train_confi
     assert prompt["width"] == SampleConfig.default_values(train_config.model_type).width
 
 
-def test_finish_batch_marks_pending_slots_unavailable(gallery, train_config, core_config):
+def test_finish_batch_marks_pending_slots_unavailable(gallery, train_config, core_config, run_session):
+    run_session.begin(train_config)
     gallery.begin_training(train_config)
     core_config()
     gallery.begin_batch([sample_definition("prompt_a")], train_config, progress(step=0))
@@ -171,8 +192,9 @@ def test_finish_batch_marks_pending_slots_unavailable(gallery, train_config, cor
     assert read_manifest(gallery)["batches"][0]["samples"][0]["status"] == "unavailable"
 
 
-def test_resolves_changed_same_name_config(gallery, train_config, workspace):
+def test_resolves_changed_same_name_config(gallery, train_config, workspace, run_session):
     config = write_core_config(workspace, "2026-07-26_11-17-26.json", content='{"before": true}')
+    run_session.begin(train_config)
     gallery.begin_training(train_config)
     config.write_text('{"after": true}', encoding="utf-8")
     gallery.begin_batch([sample_definition("prompt_a")], train_config, progress(step=0))
@@ -195,9 +217,10 @@ def image_output(source_path: Path) -> ModelSamplerOutput:
 
 
 @pytest.fixture
-def active_gallery(gallery: GalleryService, train_config: TrainConfig, core_config: Any) -> GalleryService:
+def active_gallery(gallery: GalleryService, run_session, train_config: TrainConfig, core_config: Any) -> GalleryService:
     train_config.ema = EMAMode.GPU
     train_config.non_ema_sampling = True
+    run_session.begin(train_config)
     gallery.begin_training(train_config)
     core_config()
     definitions = [
@@ -356,8 +379,9 @@ def test_list_runs_is_newest_first_and_isolates_corrupt_runs(gallery, historical
     assert [run["key"] for run in gallery.list_runs()] == ["newer", "older"]
 
 
-def test_current_gallery_shapes_before_and_after_first_batch(gallery, train_config, core_config):
+def test_current_gallery_shapes_before_and_after_first_batch(gallery, train_config, core_config, run_session):
     assert gallery.get_current_model() == {"active": False, "run": None, "batches": [], "revisions": {}}
+    run_session.begin(train_config)
     gallery.begin_training(train_config)
     assert gallery.get_current_model() == {"active": True, "run": None, "batches": [], "revisions": {}}
     core_config()
@@ -525,3 +549,38 @@ def test_record_sample_survives_a_filesystem_without_hardlinks(active_gallery, s
     assert mirrored.read_bytes() == source_png.read_bytes()
     assert sample["etag"] == hashlib.sha256(source_png.read_bytes()).hexdigest()
 
+
+def test_the_gallery_takes_its_run_key_from_the_session(gallery, run_session, workspace, train_config):
+    run_session.begin(train_config)
+    gallery.begin_training(train_config)
+    (workspace / "config").mkdir(parents=True, exist_ok=True)
+    (workspace / "config" / "run-a.json").write_text("{}", encoding="utf-8")
+
+    gallery.begin_batch([], train_config, TrainingProgressSnapshot(epoch=0, epoch_step=0, global_step=1))
+
+    assert gallery.active_run_key == "run-a"
+    assert gallery.active_run_dir == workspace / "web" / "samples" / "run-a"
+
+
+def test_a_run_key_collision_still_disables_only_the_gallery(
+    gallery, run_session, workspace, train_config
+):
+    # A session-level failure disables everything; this one is gallery-specific
+    # and must stay that way.
+    run_dir = workspace / "web" / "samples" / "run-a"
+    run_dir.mkdir(parents=True)
+    write_json_atomic(
+        run_dir / "manifest.json",
+        {"schema_version": 1, "run": {"key": "run-a", "started_at": "1999-01-01T00:00:00+00:00"}, "batches": []},
+    )
+
+    run_session.begin(train_config)
+    gallery.begin_training(train_config)
+    (workspace / "config").mkdir(parents=True, exist_ok=True)
+    (workspace / "config" / "run-a.json").write_text("{}", encoding="utf-8")
+
+    gallery.begin_batch([], train_config, TrainingProgressSnapshot(epoch=0, epoch_step=0, global_step=1))
+
+    assert gallery.active_run_key is None
+    # The session itself resolved fine.
+    assert run_session.run_key() == "run-a"

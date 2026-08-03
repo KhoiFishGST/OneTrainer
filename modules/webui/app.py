@@ -150,6 +150,7 @@ def create_app(settings: WebUISettings, capture=None) -> FastAPI:
                 EventType.GALLERY_WARNING.value,
                 {"message": message, **payload},
             ),
+            run_session=run_session,
         )
         sampling_svc = SamplingCoordinator(
             root_dir=settings.root_dir,
