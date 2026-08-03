@@ -113,3 +113,32 @@ def test_file_signature_changes_with_content(tmp_path):
 
     assert first.sha256 != second.sha256
     assert first.size != second.size
+
+
+def test_candidates_lists_every_new_or_changed_config(config_dir):
+    (config_dir / "old.json").write_text("{}", encoding="utf-8")
+
+    resolver = RunKeyResolver()
+    resolver.snapshot(config_dir)
+
+    (config_dir / "a.json").write_text("{}", encoding="utf-8")
+    (config_dir / "b.json").write_text("{}", encoding="utf-8")
+
+    names = sorted(p.name for p in resolver.candidates(config_dir, ""))
+
+    assert names == ["a.json", "b.json"]
+
+
+def test_candidates_is_empty_when_nothing_appeared(config_dir):
+    (config_dir / "old.json").write_text("{}", encoding="utf-8")
+    resolver = RunKeyResolver()
+    resolver.snapshot(config_dir)
+
+    assert resolver.candidates(config_dir, "") == []
+
+
+def test_candidates_returns_empty_for_a_missing_directory(tmp_path):
+    resolver = RunKeyResolver()
+    resolver.snapshot(tmp_path / "absent")
+
+    assert resolver.candidates(tmp_path / "absent", "") == []

@@ -50,11 +50,12 @@ class RunKeyResolver:
                 with contextlib.suppress(OSError):
                     self._signatures[item.name] = file_signature(item)
 
-    def resolve(self, config_dir: Path, prefix: str) -> RunKeyResult:
+    def candidates(self, config_dir: Path, prefix: str) -> list[Path]:
+        """Configs that are new or changed since the snapshot, prefix-filtered."""
         if not config_dir.is_dir():
-            return RunKeyResult(None, None, "no_config_dir")
+            return []
 
-        candidates: list[Path] = []
+        found: list[Path] = []
         for item in config_dir.iterdir():
             if not (item.is_file() and item.suffix.lower() == ".json"):
                 continue
@@ -62,16 +63,24 @@ class RunKeyResolver:
                 continue
 
             if item.name not in self._signatures:
-                candidates.append(item)
+                found.append(item)
             else:
                 with contextlib.suppress(OSError):
                     if file_signature(item) != self._signatures[item.name]:
-                        candidates.append(item)
+                        found.append(item)
 
-        if len(candidates) == 0:
+        return found
+
+    def resolve(self, config_dir: Path, prefix: str) -> RunKeyResult:
+        if not config_dir.is_dir():
+            return RunKeyResult(None, None, "no_config_dir")
+
+        found = self.candidates(config_dir, prefix)
+
+        if len(found) == 0:
             return RunKeyResult(None, None, "missing")
-        if len(candidates) > 1:
+        if len(found) > 1:
             return RunKeyResult(None, None, "ambiguous")
 
-        candidate = candidates[0]
+        candidate = found[0]
         return RunKeyResult(candidate.stem, candidate.name, None)
