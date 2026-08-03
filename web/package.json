@@ -3,6 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node scripts/fetch-fonts.mjs",
+    "prebuild": "node scripts/fetch-fonts.mjs",
     "dev": "vite",
     "build": "vite build",
     "check": "svelte-check --tsconfig ./tsconfig.json",
