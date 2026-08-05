@@ -6,9 +6,10 @@ from threading import Lock, Thread
 from time import monotonic
 from uuid import uuid4
 
-from modules.api.rest.errors import ConflictError
+from modules.api.rest.errors import ConflictError, NoActiveRunError
 from modules.util.callbacks.TrainCallbacks import TrainCallbacks
 from modules.util.commands.TrainCommands import TrainCommands
+from modules.util.config.SampleConfig import SampleConfig
 from modules.util.config.TrainConfig import TrainConfig
 
 logger = logging.getLogger(__name__)
@@ -114,6 +115,41 @@ class TrainingService:
             name=f"onetrainer-run-{run.run_id}",
         ).start()
         return run.run_id
+
+    # --- commands ---
+    # Each is a single call onto the TrainCommands object the trainer polls at
+    # step boundaries. Nothing here happens synchronously; that is why the HTTP
+    # layer answers 202 rather than 200.
+
+    def stop(self) -> None:
+        with self._lock:
+            run = self._require_active_locked()
+            run.state = "stopping"
+            commands = run.commands
+        commands.stop()
+
+    def sample(self, sample: SampleConfig | None = None) -> None:
+        if sample is None:
+            self._dispatch(lambda commands: commands.sample_default())
+        else:
+            self._dispatch(lambda commands: commands.sample_custom(sample))
+
+    def backup(self) -> None:
+        self._dispatch(lambda commands: commands.backup())
+
+    def save(self) -> None:
+        self._dispatch(lambda commands: commands.save())
+
+    def _dispatch(self, action) -> None:
+        with self._lock:
+            commands = self._require_active_locked().commands
+        action(commands)
+
+    def _require_active_locked(self) -> _Run:
+        # Caller must hold self._lock.
+        if self._run is None or self._run.state not in ACTIVE_STATES:
+            raise NoActiveRunError("There is no active training run")
+        return self._run
 
     def _worker(self, run: _Run, config: TrainConfig) -> None:
         self._safe_hook(self._on_run_begin, run.run_id, config)
