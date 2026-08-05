@@ -12,7 +12,8 @@ DEFAULT_SECRETS_PATH = "secrets.json"
 
 
 class ConfigSource(BaseModel):
-    """Where a training run's config comes from, and how to turn it into one.
+    """
+    Where a training run's config comes from, and how to turn it into one.
 
     Mirrors the arguments of scripts/train.py, and resolve() assembles them in
     the same order the CLI does -- preset, then config, then overrides -- so the
@@ -22,9 +23,8 @@ class ConfigSource(BaseModel):
     secrets_path; a config that tries to bring its own is rejected.
     """
 
-    # Unknown fields are an error rather than silently dropped. A body carrying
-    # a top-level "secrets" block should be told no, not quietly ignored, and a
-    # misspelled field name should fail loudly instead of taking a default.
+    # Unknown fields are an error, so a body carrying a top-level "secrets"
+    # block is told no rather than quietly ignored.
     model_config = ConfigDict(extra="forbid")
 
     config: dict[str, Any] | None = None
@@ -89,12 +89,9 @@ class ConfigSource(BaseModel):
             target = train_config
             for parent_key in parent_keys:
                 target = getattr(target, parent_key)
-            # Subscript, not .get(): an unknown key must raise KeyError here so
-            # the handler below turns it into a 422. BaseConfig.from_dict
-            # iterates its own schema rather than the incoming data, so a key it
-            # does not know is silently ignored -- which would accept a typo'd
-            # override and train for hours with the wrong config.
-            # scripts/train.py:34 subscripts too.
+            # Subscript, not .get(): an unknown key must raise KeyError here, or
+            # from_dict silently ignores it and a typo'd override starts a run
+            # with the wrong config. scripts/train.py:34 subscripts too.
             if target.types[leaf_key] is bool:
                 value = value.lower() in ("true", "1", "yes")
             target.from_dict({leaf_key: value}, migrate=False)

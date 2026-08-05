@@ -20,7 +20,8 @@ class SampleRequest(BaseModel):
 
 
 class RestApi:
-    """The complete HTTP contract: eight endpoints over a TrainingService.
+    """
+    The complete HTTP contract: eight endpoints over a TrainingService.
 
     This is an adapter, not a new abstraction. Every POST is a single call onto
     the TrainCommands object the trainer polls at step boundaries, and every
@@ -47,8 +48,8 @@ class RestApi:
         self.__router.add_api_route("/training/backup", self.training_backup, methods=["POST"], status_code=202)
         self.__router.add_api_route("/training/save", self.training_save, methods=["POST"], status_code=202)
 
+    # Adds the routes and the error contract to an application the caller owns.
     def install(self, app: FastAPI) -> None:
-        """Add the routes and the error contract to an application."""
         app.include_router(self.__router)
         app.add_exception_handler(ApiError, self.__handle_api_error)
         app.add_exception_handler(RequestValidationError, self.__handle_validation_error)

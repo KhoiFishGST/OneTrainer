@@ -1,4 +1,4 @@
-import logging
+import traceback
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -12,8 +12,6 @@ from modules.util.callbacks.TrainCallbacks import TrainCallbacks
 from modules.util.commands.TrainCommands import TrainCommands
 from modules.util.config.SampleConfig import SampleConfig
 from modules.util.config.TrainConfig import TrainConfig
-
-logger = logging.getLogger(__name__)
 
 ACTIVE_STATES = frozenset({"starting", "running", "stopping"})
 
@@ -40,7 +38,8 @@ class _Run:
 
 
 class TrainingService:
-    """Adapts OneTrainer's TrainCallbacks/TrainCommands pair to HTTP.
+    """
+    Adapts OneTrainer's TrainCallbacks/TrainCommands pair to HTTP.
 
     Callbacks come in from the trainer thread and are accumulated into a
     pollable status dict; commands go out to the TrainCommands object the
@@ -181,7 +180,8 @@ class TrainingService:
                 trainer.end()
             self._finish(run, "canceled" if canceled else "completed")
         except Exception as e:
-            logger.exception("training run %s failed", run.run_id)
+            print(f"training run {run.run_id} failed")
+            traceback.print_exc()
             self._finish(run, "failed", error={"type": type(e).__name__, "message": str(e)})
         finally:
             with self._lock:
@@ -212,10 +212,9 @@ class TrainingService:
     # --- state transitions ---
 
     def _set_state(self, run: _Run, state: str, expect: str | None = None) -> None:
-        # expect guards against clobbering a transition made concurrently from a
-        # request thread: a stop() during a slow model load sets "stopping", and
-        # without the guard the worker would drop it back to "running" once
-        # trainer.start() returned.
+        # expect guards against clobbering a concurrent transition: a stop()
+        # during a slow model load sets "stopping", and without it the worker
+        # would drop the run back to "running" once trainer.start() returned.
         with self._lock:
             if expect is not None and run.state != expect:
                 return
@@ -229,12 +228,13 @@ class TrainingService:
 
     @staticmethod
     def _safe_hook(hook, *args) -> None:
-        # TrainCallbacks wraps every invocation in contextlib.suppress(Exception),
-        # so a broken handler would vanish without a trace. Log it here instead.
+        # TrainCallbacks suppresses every exception a callback raises, so a
+        # broken handler would vanish without a trace. Report it here instead.
         try:
             hook(*args)
         except Exception:
-            logger.exception("error in training service hook %r", getattr(hook, "__name__", hook))
+            print(f"error in training service hook {getattr(hook, '__name__', hook)}")
+            traceback.print_exc()
 
     # --- subclass extension points ---
     # Deliberately no-ops. Our Web UI fork overrides these to drive its event

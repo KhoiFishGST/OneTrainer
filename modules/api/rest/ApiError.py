@@ -1,5 +1,6 @@
 class ApiError(Exception):
-    """Base for every error the REST API reports.
+    """
+    Base for every error the REST API reports.
 
     Subclasses set error_type/status_code. RestApi installs a single handler
     that renders any ApiError through envelope(), so a client only ever has to
