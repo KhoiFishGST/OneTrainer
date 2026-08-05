@@ -4,6 +4,7 @@ from pathlib import Path
 from modules.api.rest.errors import ApiError, error_envelope
 from modules.api.rest.routers import config as config_router
 from modules.api.rest.routers import health as health_router
+from modules.api.rest.routers import training as training_router
 from modules.api.rest.service import TrainingService
 
 from fastapi import FastAPI, Request
@@ -68,4 +69,5 @@ def create_app(
 
     app.include_router(health_router.router)
     app.include_router(config_router.router)
+    app.include_router(training_router.router)
     return app
