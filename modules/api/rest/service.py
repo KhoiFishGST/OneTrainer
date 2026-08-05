@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from functools import partial
@@ -140,7 +141,7 @@ class TrainingService:
     def save(self) -> None:
         self._dispatch(lambda commands: commands.save())
 
-    def _dispatch(self, action) -> None:
+    def _dispatch(self, action: Callable[[TrainCommands], None]) -> None:
         with self._lock:
             commands = self._require_active_locked().commands
         action(commands)

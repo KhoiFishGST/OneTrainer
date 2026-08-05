@@ -80,6 +80,8 @@ def test_config_value_override_cannot_set_secrets():
     # credential past the inline-secrets rejection above.
     with pytest.raises(InvalidConfigError, match="[Ss]ecrets"):
         resolve_config(config=_document(), config_values=["secrets.huggingface_token=hf_leak"])
+    with pytest.raises(InvalidConfigError, match="[Ss]ecrets"):
+        resolve_config(config=_document(), config_values=["secrets=leak"])
 
 
 def test_preset_is_applied_before_config(tmp_path):

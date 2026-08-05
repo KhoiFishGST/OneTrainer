@@ -66,11 +66,12 @@ def _apply_override(train_config: TrainConfig, config_value: str) -> None:
     if not separator:
         raise InvalidConfigError(f"Override must be KEY=VALUE: {config_value!r}")
 
-    *parent_keys, leaf_key = key.split(".")
-    if parent_keys and parent_keys[0] == "secrets":
+    if key == "secrets" or key.startswith("secrets."):
         raise InvalidConfigError(
             "Overrides may not set 'secrets'. Use 'secrets_path' to point at a secrets file."
         )
+
+    *parent_keys, leaf_key = key.split(".")
 
     try:
         target = train_config
