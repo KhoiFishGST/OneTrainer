@@ -64,13 +64,18 @@ curl -X POST http://127.0.0.1:7800/training/start \
   "config":        {},
   "config_path":   "configs/my-run.json",
   "preset_path":   "training_presets/#sdxl_lora.json",
-  "config_values": ["train.epochs=10"],
+  "config_values": ["epochs=10", "cloud.enabled=true"],
   "secrets_path":  "secrets.json"
 }
 ```
 
 `preset_path` and `config_values` are optional and apply in the CLI's order:
 preset → config → overrides.
+
+Each `config_values` entry is `KEY=VALUE`, where `KEY` may use dot notation to reach a
+nested config object (`cloud.enabled`) — the same form as the CLI's `--config-value`.
+An unknown key is rejected with `422` rather than ignored, so a typo fails immediately
+instead of starting a run with settings you did not ask for.
 
 ### Secrets
 

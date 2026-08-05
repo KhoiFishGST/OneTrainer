@@ -77,7 +77,12 @@ def _apply_override(train_config: TrainConfig, config_value: str) -> None:
         target = train_config
         for parent_key in parent_keys:
             target = getattr(target, parent_key)
-        if target.types.get(leaf_key) is bool:
+        # Subscript, not .get(): an unknown key must raise KeyError here so the
+        # handler below turns it into a 422. BaseConfig.from_dict iterates its
+        # own schema rather than the incoming data, so a key it does not know is
+        # silently ignored -- which would accept a typo'd override and train for
+        # hours with the wrong config. scripts/train.py:34 subscripts too.
+        if target.types[leaf_key] is bool:
             value = value.lower() in ("true", "1", "yes")
         target.from_dict({leaf_key: value}, migrate=False)
     except Exception as e:

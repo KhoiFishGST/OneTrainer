@@ -100,6 +100,23 @@ def test_start_with_inline_secrets_is_rejected(client):
     assert response.json()["error"]["type"] == "invalid_config"
 
 
+def test_start_rejects_a_top_level_secrets_block_rather_than_ignoring_it(client):
+    # Not a leak either way -- pydantic would drop it -- but silently accepting
+    # a body that looks like it set credentials is the wrong answer to give.
+    response = client.post(
+        "/training/start",
+        json={"config": _document(), "secrets": {"huggingface_token": "hf_leak"}},
+    )
+    assert response.status_code == 422
+    assert response.json()["error"]["type"] == "invalid_config"
+
+
+def test_start_rejects_a_misspelled_field(client):
+    response = client.post("/training/start", json={"configPath": "configs/run.json"})
+    assert response.status_code == 422
+    assert response.json()["error"]["type"] == "invalid_config"
+
+
 def test_start_while_a_run_is_active_is_a_409_carrying_the_run_id(client, factory):
     first = client.post("/training/start", json={"config": _document()}).json()["run_id"]
     response = client.post("/training/start", json={"config": _document()})

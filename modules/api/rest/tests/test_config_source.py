@@ -75,6 +75,25 @@ def test_config_value_override_without_equals_is_rejected():
         resolve_config(config=_document(), config_values=["workspace_dir"])
 
 
+def test_unknown_top_level_override_key_is_rejected():
+    # BaseConfig.from_dict iterates its own schema, not the incoming data, so an
+    # unknown key is a silent no-op there. Catching it here is what stops a
+    # typo'd override from being accepted and training for hours with the wrong
+    # config -- and it matches scripts/train.py, which raises on the same input.
+    with pytest.raises(InvalidConfigError, match="epocs"):
+        resolve_config(config=_document(), config_values=["epocs=10"])
+
+
+def test_unknown_nested_override_key_is_rejected():
+    with pytest.raises(InvalidConfigError, match="enabld"):
+        resolve_config(config=_document(), config_values=["cloud.enabld=true"])
+
+
+def test_unknown_override_parent_is_rejected():
+    with pytest.raises(InvalidConfigError, match="clod"):
+        resolve_config(config=_document(), config_values=["clod.enabled=true"])
+
+
 def test_config_value_override_cannot_set_secrets():
     # Closes the second door: without this, an override list smuggles a
     # credential past the inline-secrets rejection above.

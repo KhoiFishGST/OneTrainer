@@ -171,7 +171,7 @@ class TrainingService:
             trainer = trainer_factory(config, callbacks, run.commands)
 
             trainer.start()
-            self._set_state(run, "running")
+            self._set_state(run, "running", expect="starting")
             trainer.train()
 
             # Same condition as scripts/train.py:55 -- deliberately identical to
@@ -211,8 +211,14 @@ class TrainingService:
 
     # --- state transitions ---
 
-    def _set_state(self, run: _Run, state: str) -> None:
+    def _set_state(self, run: _Run, state: str, expect: str | None = None) -> None:
+        # expect guards against clobbering a transition made concurrently from a
+        # request thread: a stop() during a slow model load sets "stopping", and
+        # without the guard the worker would drop it back to "running" once
+        # trainer.start() returned.
         with self._lock:
+            if expect is not None and run.state != expect:
+                return
             run.state = state
 
     def _finish(self, run: _Run, state: str, error: dict | None = None) -> None:
