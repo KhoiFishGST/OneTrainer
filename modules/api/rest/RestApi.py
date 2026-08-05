@@ -49,8 +49,9 @@ class RestApi:
         self.__router.add_api_route("/training/save", self.training_save, methods=["POST"], status_code=202)
 
     # Adds the routes and the error contract to an application the caller owns.
-    def install(self, app: FastAPI) -> None:
-        app.include_router(self.__router)
+    # prefix namespaces the routes for a host that already serves its own API.
+    def install(self, app: FastAPI, prefix: str = "") -> None:
+        app.include_router(self.__router, prefix=prefix)
         app.add_exception_handler(ApiError, self.__handle_api_error)
         app.add_exception_handler(RequestValidationError, self.__handle_validation_error)
 
