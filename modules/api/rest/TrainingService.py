@@ -7,7 +7,7 @@ from threading import Lock, Thread
 from time import monotonic
 from uuid import uuid4
 
-from modules.api.rest.errors import ConflictError, NoActiveRunError
+from modules.api.rest.ApiError import ConflictError, NoActiveRunError
 from modules.util.callbacks.TrainCallbacks import TrainCallbacks
 from modules.util.commands.TrainCommands import TrainCommands
 from modules.util.config.SampleConfig import SampleConfig

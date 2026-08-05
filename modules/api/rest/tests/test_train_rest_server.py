@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
-SERVER_SCRIPT = REPO_ROOT / "scripts" / "train_server.py"
+SERVER_SCRIPT = REPO_ROOT / "scripts" / "train_rest_server.py"
 
 
 @pytest.fixture(scope="module")
@@ -16,7 +16,7 @@ def module():
     scripts_dir = str(REPO_ROOT / "scripts")
     if scripts_dir not in sys.path:
         sys.path.insert(0, scripts_dir)
-    spec = importlib.util.spec_from_file_location("train_server_under_test", SERVER_SCRIPT)
+    spec = importlib.util.spec_from_file_location("train_rest_server_under_test", SERVER_SCRIPT)
     loaded = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(loaded)
     return loaded

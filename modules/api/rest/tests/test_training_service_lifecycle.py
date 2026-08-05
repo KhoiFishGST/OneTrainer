@@ -1,7 +1,7 @@
 import threading
 
-from modules.api.rest.errors import ConflictError
-from modules.api.rest.service import TrainingService
+from modules.api.rest.ApiError import ConflictError
+from modules.api.rest.TrainingService import TrainingService
 from modules.util.config.TrainConfig import TrainConfig
 from modules.util.TrainProgress import TrainProgress
 

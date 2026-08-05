@@ -1,8 +1,9 @@
 class ApiError(Exception):
-    """Base for every error this API reports.
+    """Base for every error the REST API reports.
 
-    Subclasses set error_type/status_code; app.py has a single handler that
-    turns any ApiError into the envelope from error_envelope().
+    Subclasses set error_type/status_code. RestApi installs a single handler
+    that renders any ApiError through envelope(), so a client only ever has to
+    parse one error shape.
     """
 
     error_type = "internal"
@@ -12,6 +13,9 @@ class ApiError(Exception):
         super().__init__(message)
         self.message = message
         self.details = details or {}
+
+    def envelope(self) -> dict:
+        return {"error": {"type": self.error_type, "message": self.message, "details": self.details}}
 
 
 class InvalidConfigError(ApiError):
@@ -30,7 +34,3 @@ class ConflictError(ApiError):
 class NoActiveRunError(ApiError):
     error_type = "no_active_run"
     status_code = 409
-
-
-def error_envelope(error_type: str, message: str, details: dict | None = None) -> dict:
-    return {"error": {"type": error_type, "message": message, "details": details or {}}}

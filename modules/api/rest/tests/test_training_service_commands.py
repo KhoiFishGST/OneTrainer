@@ -1,7 +1,7 @@
 import threading
 
-from modules.api.rest.errors import NoActiveRunError
-from modules.api.rest.service import TrainingService
+from modules.api.rest.ApiError import NoActiveRunError
+from modules.api.rest.TrainingService import TrainingService
 from modules.util.config.SampleConfig import SampleConfig
 from modules.util.config.TrainConfig import TrainConfig
 

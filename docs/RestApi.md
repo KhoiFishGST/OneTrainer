@@ -20,7 +20,7 @@ pip install -r requirements-api.txt
 ## Run
 
 ```
-python scripts/train_server.py --port 7800
+python scripts/train_rest_server.py --port 7800
 ```
 
 The server binds `127.0.0.1` only. There is no `--host` flag: it can start training and

@@ -1,11 +1,12 @@
 import json
 import threading
 
-from modules.api.rest.app import create_app
-from modules.api.rest.service import TrainingService
+from modules.api.rest.RestApi import RestApi
+from modules.api.rest.TrainingService import TrainingService
 from modules.util.config.TrainConfig import TrainConfig
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 
@@ -47,7 +48,9 @@ def service(factory):
 
 @pytest.fixture
 def client(service):
-    return TestClient(create_app(training_service=service, version="testver"))
+    app = FastAPI()
+    RestApi(service, version="testver").install(app)
+    return TestClient(app)
 
 
 def _document() -> dict:

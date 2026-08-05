@@ -1,24 +1,23 @@
-from modules.api.rest.errors import (
+from modules.api.rest.ApiError import (
     ApiError,
     ConflictError,
     InvalidConfigError,
     NoActiveRunError,
-    error_envelope,
 )
 
 
 def test_envelope_has_a_single_error_key_with_type_message_and_details():
-    assert error_envelope("invalid_config", "bad", {"path": "train.epochs"}) == {
+    assert InvalidConfigError("bad", {"path": "epochs"}).envelope() == {
         "error": {
             "type": "invalid_config",
             "message": "bad",
-            "details": {"path": "train.epochs"},
+            "details": {"path": "epochs"},
         }
     }
 
 
 def test_envelope_defaults_details_to_an_empty_dict():
-    assert error_envelope("internal", "boom")["error"]["details"] == {}
+    assert ApiError("boom").envelope()["error"]["details"] == {}
 
 
 def test_base_error_is_a_500_internal():

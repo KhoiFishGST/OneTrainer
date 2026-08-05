@@ -1,14 +1,22 @@
-from modules.api.rest.app import create_app
-from modules.api.rest.errors import InvalidConfigError
-from modules.api.rest.service import TrainingService
+from modules.api.rest.ApiError import InvalidConfigError
+from modules.api.rest.RestApi import RestApi
+from modules.api.rest.TrainingService import TrainingService
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
+
+
+def build_app(training_service: TrainingService | None = None, version: str = "testver") -> FastAPI:
+    """What a host does: own the app, let RestApi install the contract into it."""
+    app = FastAPI()
+    RestApi(training_service or TrainingService(), version=version).install(app)
+    return app
 
 
 @pytest.fixture
 def client():
-    return TestClient(create_app(training_service=TrainingService(), version="testver"))
+    return TestClient(build_app())
 
 
 def test_health_reports_ok_the_version_and_the_training_state(client):
@@ -30,7 +38,7 @@ def test_config_defaults_never_leaks_secrets(client):
 
 
 def test_api_errors_render_through_the_shared_envelope():
-    app = create_app(training_service=TrainingService(), version="testver")
+    app = build_app()
 
     @app.get("/boom")
     def boom():
@@ -52,7 +60,7 @@ def test_request_validation_failures_use_the_same_envelope_shape():
     # client only ever has to parse one error format.
     from pydantic import BaseModel
 
-    app = create_app(training_service=TrainingService(), version="testver")
+    app = build_app()
 
     class Body(BaseModel):
         count: int
