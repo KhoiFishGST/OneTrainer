@@ -5,11 +5,10 @@ import io
 import mimetypes
 from pathlib import Path
 
-import av
 from modules.util import path_util
-
 from modules.webui.atomic_io import save_pil_atomic
 
+import av
 from PIL import Image, ImageOps
 from starlette.concurrency import run_in_threadpool
 from starlette.requests import Request

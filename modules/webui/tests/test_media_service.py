@@ -5,12 +5,12 @@ from pathlib import Path
 from modules.webui.media import MediaService
 from modules.webui.state import AppState, WebUISettings
 
+import av
+import numpy as np
 import pytest
 from PIL import Image
 from starlette.requests import Request
 from starlette.responses import FileResponse
-import av
-import numpy as np
 
 
 @pytest.fixture

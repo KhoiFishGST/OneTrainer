@@ -2,8 +2,8 @@ import mimetypes
 import os
 import re
 import shutil
-import uuid
 import urllib.parse
+import uuid
 from pathlib import Path
 
 from modules.util import path_util
@@ -231,14 +231,16 @@ async def get_dataset_files(name: str, request: Request):
         # (say a.png beside a.mp4), every file gets its own item rather than
         # one silently shadowing the other. They share the stem's caption,
         # which is how the trainer pairs them too.
-        for media in media_files:
-            items.append({
+        items.extend(
+            {
                 "id": stem if len(media_files) == 1 else media.name,
                 "kind": classify_media(media.suffix),
                 "media_name": media.name,
                 "caption_name": caption_name,
                 "caption_content": caption_content,
-            })
+            }
+            for media in media_files
+        )
 
     return {"name": name, "path": str(ds_dir), "items": items}
 
