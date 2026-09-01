@@ -1,0 +1,216 @@
+import asyncio
+import threading
+
+from modules.webui.console import ConsoleBuffer
+from modules.webui.events import EventHub
+
+import pytest
+
+
+@pytest.fixture
+def anyio_backend():
+    return "asyncio"
+
+
+@pytest.mark.anyio
+async def test_events_have_one_stream_and_monotonic_sequences():
+    hub = EventHub(ConsoleBuffer(), ingress_size=8, client_size=8)
+    await hub.start()
+    first = await hub.publish("config_changed", {"revision": "i:1"})
+    second = await hub.publish("config_changed", {"revision": "i:2"})
+    assert first["stream_id"] == second["stream_id"]
+    assert second["seq"] == first["seq"] + 1
+    await hub.close()
+
+
+@pytest.mark.anyio
+async def test_slow_client_drops_console_but_keeps_latest_revision():
+    hub = EventHub(ConsoleBuffer(), ingress_size=8, client_size=2)
+    await hub.start()
+    subscription = hub.subscribe()
+    iterator = subscription.__aiter__()
+    await hub.publish("console", {"lines": [{"id": 1, "spans": [], "overwrite": False}]})
+    await hub.publish("console", {"lines": [{"id": 2, "spans": [], "overwrite": False}]})
+    await hub.publish("config_changed", {"revision": "i:3"})
+    received = [await asyncio.wait_for(iterator.__anext__(), 1) for _ in range(2)]
+    assert received[-1]["type"] == "config_changed"
+    assert received[-1]["revision"] == "i:3"
+    assert any(event.get("gap") for event in received)
+    await subscription.aclose()
+    await hub.close()
+
+
+@pytest.mark.anyio
+async def test_backlog_returns_snapshot_cursor_and_revision():
+    buffer = ConsoleBuffer()
+    hub = EventHub(buffer)
+    await hub.start()
+    event = await hub.publish("config_changed", {"revision": "i:1"})
+    backlog = await hub.backlog()
+    assert backlog["stream_id"] == event["stream_id"]
+    assert backlog["cursor"] == event["seq"]
+    assert backlog["revision"] == "i:1"
+    await hub.close()
+
+
+@pytest.mark.anyio
+async def test_publish_from_thread_delivers_events():
+    hub = EventHub(ConsoleBuffer(), ingress_size=16, client_size=16)
+    await hub.start()
+    subscription = hub.subscribe()
+    iterator = subscription.__aiter__()
+
+    def produce():
+        for i in range(10):
+            hub.publish_from_thread("console", {"lines": [{"id": i, "spans": [], "overwrite": False}]})
+
+    thread = threading.Thread(target=produce)
+    thread.start()
+    thread.join()
+
+    received = []
+    for _ in range(10):
+        event = await asyncio.wait_for(iterator.__anext__(), timeout=2.0)
+        received.append(event)
+
+    assert len(received) == 10
+    assert [e["lines"][0]["id"] for e in received] == list(range(10))
+
+    await subscription.aclose()
+    await hub.close()
+
+
+@pytest.mark.anyio
+async def test_publish_from_thread_when_ingress_full_records_gap():
+    hub = EventHub(ConsoleBuffer(), ingress_size=2, client_size=8)
+    await hub.start()
+    subscription = hub.subscribe()
+    iterator = subscription.__aiter__()
+
+    # Publish 4 items into ingress queue of size 2
+    hub.publish_from_thread("console", {"msg": "1"})
+    hub.publish_from_thread("console", {"msg": "2"})
+    hub.publish_from_thread("console", {"msg": "3"})
+    hub.publish_from_thread("console", {"msg": "4"})
+
+    # Wait for drain task to process events
+    await asyncio.sleep(0.1)
+
+    async def _next_event():
+        try:
+            return await asyncio.wait_for(iterator.__anext__(), timeout=0.1)
+        except asyncio.TimeoutError:
+            return None
+
+    received = []
+    while True:
+        event = await _next_event()
+        if event is None:
+            break
+        received.append(event)
+
+    assert len(received) > 0
+    assert any(event.get("gap") for event in received)
+
+    await subscription.aclose()
+    await hub.close()
+
+
+@pytest.mark.anyio
+async def test_publish_envelope_overrides_payload_user_keys():
+    hub = EventHub(ConsoleBuffer())
+    await hub.start()
+    event = await hub.publish(
+        "config_changed",
+        {"stream_id": "fake_stream", "seq": 9999, "type": "fake_type", "revision": "v1"},
+    )
+    assert event["stream_id"] == hub.stream_id
+    assert event["stream_id"] != "fake_stream"
+    assert event["seq"] == 1
+    assert event["type"] == "config_changed"
+    assert event["revision"] == "v1"
+    await hub.close()
+
+
+@pytest.mark.anyio
+async def test_offer_sheds_oldest_event_rather_than_closing():
+    """A burst of non-console events must not kill the subscription.
+
+    Previously `offer` could only evict 'console' and 'config_changed'
+    entries; three consecutive overflows of any other type closed the
+    subscription outright, taking the client's whole event stream with it.
+    """
+    hub = EventHub(ConsoleBuffer())
+    sub = hub.subscribe()
+    sub._maxsize = 2
+
+    for i in range(10):
+        sub.offer({"type": "custom", "val": i})
+
+    assert not sub._closed
+    assert len(sub._queue) == 2
+    # The newest events survive; the loss is flagged as a gap.
+    assert [e["val"] for e in sub._queue] == [8, 9]
+    assert sub._has_gap
+
+    sub.close()
+
+
+@pytest.mark.anyio
+async def test_offer_still_prefers_dropping_console_events():
+    """Console lines stay the first thing sacrificed under pressure."""
+    hub = EventHub(ConsoleBuffer())
+    sub = hub.subscribe()
+    sub._maxsize = 2
+
+    sub.offer({"type": "console", "lines": []})
+    sub.offer({"type": "dataset.file.added", "filename": "a.png"})
+    sub.offer({"type": "dataset.file.added", "filename": "b.png"})
+
+    assert not sub._closed
+    types = [e["type"] for e in sub._queue]
+    assert types == ["dataset.file.added", "dataset.file.added"]
+    assert sub._has_gap
+
+    sub.close()
+
+
+@pytest.mark.anyio
+async def test_burst_of_upload_events_survives_a_slow_client():
+    """330 uploads must not cost the client its event stream."""
+    hub = EventHub(ConsoleBuffer())
+    await hub.start()
+    sub = hub.subscribe()
+
+    for i in range(330):
+        await hub.publish(
+            "dataset.file.added",
+            {"dataset": "ds", "filename": f"f{i}.png", "item_id": f"f{i}"},
+        )
+
+    assert not sub._closed
+    assert len(sub._queue) == sub._maxsize
+
+    sub.close()
+    await hub.close()
+
+
+@pytest.mark.anyio
+async def test_close_drains_remaining_ingress_queue():
+    hub = EventHub(ConsoleBuffer(), ingress_size=10, client_size=10)
+    await hub.start()
+    sub = hub.subscribe()
+
+    # Put items into ingress queue directly without setting event to simulate queued items prior to close
+    hub.publish_from_thread("test_event", {"idx": 1})
+    hub.publish_from_thread("test_event", {"idx": 2})
+
+    # Close hub which should trigger final drain
+    await hub.close()
+
+    received = []
+    while sub._queue:
+        received.append(sub._queue.popleft())
+
+    assert len(received) == 2
+    assert [e["idx"] for e in received] == [1, 2]

@@ -1,0 +1,596 @@
+import asyncio
+import contextlib
+import copy
+import json
+import logging
+import time
+from collections import deque
+from enum import Enum
+from pathlib import Path
+from threading import RLock
+from typing import Any, Optional
+
+from modules.webui.events import EventType
+from modules.webui.gallery import TrainingProgressSnapshot
+
+logger = logging.getLogger(__name__)
+
+_active_training_service: Optional["TrainingService"] = None
+
+
+class TrainingState(str, Enum):
+    IDLE = "IDLE"
+    STARTING = "STARTING"
+    TRAINING = "TRAINING"
+    PAUSED = "PAUSED"
+    STOPPING = "STOPPING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
+class TrainingService:
+    def __init__(
+        self,
+        event_bus: Any | None = None,
+        sampling_coordinator: Any | None = None,
+        metrics_store: Any | None = None,
+        checkpoint_store: Any | None = None,
+        run_session: Any | None = None,
+    ):
+        self._lock = RLock()
+        self._event_bus = event_bus
+        self._sampling_coordinator = sampling_coordinator
+        self._metrics_store = metrics_store
+        self._checkpoint_store = checkpoint_store
+        self._run_session = run_session
+        self._state = TrainingState.IDLE
+        self._step = 0
+        self._max_steps = 0
+        self._epoch = 0
+        self._epoch_step = 0
+        self._max_epochs = 0
+        self._speed_its = 0.0
+        self._elapsed_seconds = 0.0
+        self._eta_seconds = 0.0
+        self._error_message: str | None = None
+        self._config_snapshot: dict[str, Any] | None = None
+        self._sample_requested: bool = False
+        self._backup_requested: bool = False
+        self._save_requested: bool = False
+        self._metrics: deque = deque(maxlen=10000)
+        self._samples: list = []
+        self._active_train_config: Any | None = None
+        self._active_workspace: str | None = None
+        self._train_commands: Any | None = None
+
+    def _progress_snapshot(self) -> TrainingProgressSnapshot:
+        with self._lock:
+            return TrainingProgressSnapshot(
+                epoch=self._epoch,
+                epoch_step=self._epoch_step,
+                global_step=self._step,
+            )
+
+    def _handle_status(self, status: str) -> None:
+        if self._sampling_coordinator is None:
+            return
+        try:
+            self._sampling_coordinator.on_status(status, self._progress_snapshot())
+        except Exception as e:
+            logger.exception(f"Error in sampling_coordinator.on_status: {e}")
+
+    def _handle_default_sample(self, sampler_output: Any) -> None:
+        if self._sampling_coordinator is None:
+            return
+        try:
+            payload = self._sampling_coordinator.on_default_sample(sampler_output)
+            if payload is not None:
+                self.record_sample(payload)
+        except Exception as e:
+            logger.exception(f"Error in sampling_coordinator.on_default_sample: {e}")
+
+    def _emit_event(self, event_type: Any, data: dict[str, Any]) -> None:
+        if self._event_bus is None:
+            return
+        evt_str = str(event_type.value) if hasattr(event_type, "value") else str(event_type)
+        try:
+            if hasattr(self._event_bus, "publish_from_thread"):
+                self._event_bus.publish_from_thread(evt_str, data)
+            elif hasattr(self._event_bus, "publish"):
+                res = self._event_bus.publish(evt_str, data)
+                if asyncio.iscoroutine(res):
+                    try:
+                        loop = asyncio.get_running_loop()
+                        loop.create_task(res)
+                    except RuntimeError:
+                        pass
+        except Exception:
+            pass
+
+    def _emit_state_event(self) -> None:
+        status = self.get_status()
+        self._emit_event(EventType.TRAINING_STATE, status)
+
+    def _has_sample_definitions(self) -> bool:
+        with self._lock:
+            if not self._active_train_config:
+                return False
+            if getattr(self._active_train_config, "samples", None):
+                return True
+            sample_file = getattr(self._active_train_config, "sample_definition_file_name", None)
+            if not sample_file:
+                return False
+            path = Path(sample_file)
+            if not path.is_absolute() and self._active_workspace:
+                path = Path(self._active_workspace) / path
+            if path.exists() and path.is_file():
+                try:
+                    with open(path, "r", encoding="utf-8") as f:
+                        content = json.load(f)
+                        return isinstance(content, list) and len(content) > 0
+                except Exception:
+                    return False
+            return False
+
+    def request_sample(self):
+        with self._lock:
+            if self._state not in (TrainingState.TRAINING, TrainingState.PAUSED):
+                raise RuntimeError(f"Cannot request sample from state {self._state}")
+            if not self._has_sample_definitions():
+                raise RuntimeError("No sample prompts configured in sample definitions file (training_samples/samples.json)")
+            if hasattr(self, "_train_commands") and self._train_commands:
+                self._train_commands.sample_default()
+
+    def request_backup(self):
+        with self._lock:
+            if self._state not in (TrainingState.TRAINING, TrainingState.PAUSED):
+                raise RuntimeError(f"Cannot request backup from state {self._state}")
+            if hasattr(self, "_train_commands") and self._train_commands:
+                self._train_commands.backup()
+
+    def request_save(self):
+        with self._lock:
+            if self._state not in (TrainingState.TRAINING, TrainingState.PAUSED):
+                raise RuntimeError(f"Cannot request save from state {self._state}")
+            if hasattr(self, "_train_commands") and self._train_commands:
+                self._train_commands.save()
+
+
+    def record_metric(self, metric_data: dict[str, Any] | None = None, **kwargs) -> dict[str, Any]:
+        data: dict[str, Any] = {}
+        if metric_data is not None:
+            data.update(metric_data)
+        data.update(kwargs)
+        if "timestamp" not in data:
+            data["timestamp"] = time.time()
+
+        with self._lock:
+            self._metrics.append(data)
+
+        if self._metrics_store is not None:
+            # Persistence is best-effort; it must never break the training loop.
+            try:
+                self._metrics_store.record(data)
+            except Exception:
+                logger.exception("Failed to persist training metric")
+
+        self._emit_event(EventType.TRAINING_METRIC, data)
+        return data
+
+    def record_sample(self, sample_data: dict[str, Any] | None = None, **kwargs) -> dict[str, Any]:
+        data: dict[str, Any] = {}
+        if sample_data is not None:
+            data.update(sample_data)
+        data.update(kwargs)
+
+        with self._lock:
+            self._samples.append(data)
+
+        self._emit_event(EventType.TRAINING_SAMPLE, data)
+        return data
+
+    def emit_gpu_stat(self, stat_data: dict[str, Any] | None = None, **kwargs) -> dict[str, Any]:
+        data = self.get_gpu_stats()
+        if stat_data is not None:
+            data.update(stat_data)
+        data.update(kwargs)
+
+        self._emit_event(EventType.GPU_STAT, data)
+        return data
+
+    def get_metrics(self) -> list:
+        with self._lock:
+            return list(self._metrics)
+
+    def get_samples(self) -> list:
+        with self._lock:
+            return list(self._samples)
+
+    @staticmethod
+    def _nvml_device_stats() -> list[dict[str, Any]]:
+        """Per-device readings from NVML, or [] if it is unavailable."""
+        import pynvml
+
+        pynvml.nvmlInit()
+        try:
+            devices = []
+            for index in range(pynvml.nvmlDeviceGetCount()):
+                handle = pynvml.nvmlDeviceGetHandleByIndex(index)
+                # nvidia-ml-py returned bytes before 12.x and str after.
+                name = pynvml.nvmlDeviceGetName(handle)
+                if isinstance(name, bytes):
+                    name = name.decode("utf-8", errors="replace")
+
+                info = pynvml.nvmlDeviceGetMemoryInfo(handle)
+                util = pynvml.nvmlDeviceGetUtilizationRates(handle)
+                temp = pynvml.nvmlDeviceGetTemperature(
+                    handle, pynvml.NVML_TEMPERATURE_GPU
+                )
+                devices.append({
+                    "index": index,
+                    "name": name,
+                    "vram_used": info.used,
+                    "vram_total": info.total,
+                    "utilization": float(util.gpu),
+                    "temperature": float(temp),
+                })
+            return devices
+        finally:
+            # Polled once a second for the length of a run, so every init
+            # needs its matching shutdown.
+            with contextlib.suppress(Exception):
+                pynvml.nvmlShutdown()
+
+    @staticmethod
+    def _torch_device_stats() -> list[dict[str, Any]]:
+        """Fallback when NVML is missing. No utilization or temperature."""
+        import torch
+
+        if not torch.cuda.is_available():
+            return []
+
+        devices = []
+        for index in range(torch.cuda.device_count()):
+            free_b, total_b = torch.cuda.mem_get_info(index)
+            devices.append({
+                "index": index,
+                "name": torch.cuda.get_device_name(index),
+                "vram_used": total_b - free_b,
+                "vram_total": total_b,
+                "utilization": 0.0,
+                "temperature": 0.0,
+            })
+        return devices
+
+    def get_gpu_stats(self) -> dict[str, Any]:
+        with self._lock:
+            devices: list[dict[str, Any]] = []
+            # NVML first: it is the only source with utilization and
+            # temperature, and it sees every device rather than the one torch
+            # happens to be using.
+            for source in (self._nvml_device_stats, self._torch_device_stats):
+                try:
+                    devices = source()
+                except Exception:
+                    devices = []
+                if devices:
+                    break
+
+            first = devices[0] if devices else {}
+            return {
+                "devices": devices,
+                # Flat fields predate `devices` and are still read by existing
+                # consumers, so they keep mirroring the first device.
+                "name": first.get("name"),
+                "vram_used": first.get("vram_used", 0),
+                "vram_total": first.get("vram_total", 0),
+                "utilization": first.get("utilization", 0.0),
+                "temperature": first.get("temperature", 0.0),
+            }
+
+    def get_status(self) -> dict[str, Any]:
+        with self._lock:
+            return {
+                "state": self._state,
+                "step": self._step,
+                "max_steps": self._max_steps,
+                "epoch": self._epoch,
+                "max_epochs": self._max_epochs,
+                "speed_its": self._speed_its,
+                "elapsed_seconds": self._elapsed_seconds,
+                "eta_seconds": self._eta_seconds,
+                "error_message": self._error_message,
+                "has_snapshot": self._config_snapshot is not None,
+            }
+
+    def get_config_snapshot(self) -> dict[str, Any] | None:
+        with self._lock:
+            if self._config_snapshot is None:
+                return None
+            return copy.deepcopy(self._config_snapshot)
+
+    def _run_training_worker(self, config_data: dict[str, Any]):
+        has_real_config = isinstance(config_data, dict) and bool(
+            config_data.get("base_model_name") or config_data.get("model_path") or (isinstance(config_data.get("model"), dict) and config_data["model"].get("name"))
+        )
+        if not has_real_config:
+            import logging
+            logging.error(f"TrainingService: Cannot start training. No valid base model selected in config. Keys present: {list(config_data.keys())}")
+            self.set_failed("Cannot start training: No base model selected. Please select a model in the Model tab.")
+            return
+
+        global _active_training_service
+        _active_training_service = self
+
+        try:
+            import logging
+            logging.info("TrainingService: Initializing TrainConfig from dictionary.")
+            from modules.util import create
+            from modules.util.callbacks.TrainCallbacks import TrainCallbacks
+            from modules.util.commands.TrainCommands import TrainCommands
+            from modules.util.config.SecretsConfig import SecretsConfig
+            from modules.util.config.TrainConfig import TrainConfig
+
+            train_config = TrainConfig.default_values().from_dict(config_data, migrate=True)
+            logging.info(f"TrainingService: Base model name resolved as: {train_config.base_model_name}")
+
+            if self._run_session is not None:
+                try:
+                    self._run_session.begin(train_config)
+                except Exception as e:
+                    logging.exception(f"TrainingService: Error in run_session.begin: {e}")
+
+            if self._sampling_coordinator is not None:
+                try:
+                    self._sampling_coordinator.begin_training(train_config)
+                except Exception as e:
+                    logging.exception(f"TrainingService: Error in sampling_coordinator.begin_training: {e}")
+
+            if self._metrics_store is not None:
+                try:
+                    self._metrics_store.begin_training()
+                except Exception as e:
+                    logging.exception(f"TrainingService: Error in metrics_store.begin_training: {e}")
+
+            if self._checkpoint_store is not None:
+                try:
+                    self._checkpoint_store.begin_training(train_config)
+                except Exception as e:
+                    logging.exception(f"TrainingService: Error in checkpoint_store.begin_training: {e}")
+
+            try:
+                import json
+                import os
+
+                if train_config.concepts is None:
+                    concept_path = train_config.concept_file_name
+                    if concept_path and not os.path.exists(concept_path):
+                        if os.path.dirname(concept_path):
+                            os.makedirs(os.path.dirname(concept_path), exist_ok=True)
+                        with open(concept_path, "w", encoding="utf-8") as f:
+                            json.dump([], f)
+                        logging.info(f"TrainingService: Created default empty concepts file at {concept_path}")
+
+                if train_config.samples is None:
+                    sample_path = train_config.sample_definition_file_name
+                    if sample_path and not os.path.exists(sample_path):
+                        if os.path.dirname(sample_path):
+                            os.makedirs(os.path.dirname(sample_path), exist_ok=True)
+                        with open(sample_path, "w", encoding="utf-8") as f:
+                            json.dump([], f)
+                        logging.info(f"TrainingService: Created default empty samples file at {sample_path}")
+
+                try:
+                    import json
+                    with open("secrets.json", "r") as f:
+                        secrets_dict = json.load(f)
+                        train_config.secrets = SecretsConfig.default_values().from_dict(secrets_dict)
+                except Exception:
+                    pass
+
+                commands = TrainCommands()
+                with self._lock:
+                    self._train_commands = commands
+                    self._active_train_config = train_config
+
+                start_time = time.time()
+                last_step_time = [start_time]
+                last_step_count = [0]
+
+                import threading
+                def gpu_monitor_loop():
+                    while self._state in (TrainingState.TRAINING, TrainingState.PAUSED):
+                        with contextlib.suppress(Exception):
+                            self.emit_gpu_stat()
+                        time.sleep(1.0)
+                threading.Thread(target=gpu_monitor_loop, daemon=True).start()
+
+                def on_progress(train_progress, epoch_length, max_epoch):
+                    now = time.time()
+                    current_step = train_progress.global_step
+                    total_steps = (epoch_length * max_epoch) if (epoch_length and max_epoch) else (self._max_steps or 0)
+
+                    dt = now - last_step_time[0]
+                    ds = current_step - last_step_count[0]
+                    if ds > 0 and dt > 0:
+                        instant_speed = ds / dt
+                        last_step_time[0] = now
+                        last_step_count[0] = current_step
+                    else:
+                        elapsed = max(0.1, now - start_time)
+                        instant_speed = current_step / elapsed if current_step > 0 else 0.0
+
+                    remaining_steps = max(0, total_steps - current_step) if total_steps > 0 else 0
+                    eta = remaining_steps / instant_speed if instant_speed > 0 else 0.0
+
+                    self.update_progress(
+                        step=current_step,
+                        epoch=train_progress.epoch + 1,
+                        epoch_step=getattr(train_progress, "epoch_step", 0),
+                        max_steps=total_steps,
+                        max_epochs=max_epoch,
+                        speed_its=round(instant_speed, 2),
+                        elapsed_seconds=round(now - start_time, 1),
+                        eta_seconds=round(eta, 1),
+                    )
+
+                callbacks = TrainCallbacks(
+                    on_update_status=self._handle_status,
+                    on_update_train_progress=on_progress,
+                    on_sample_default=self._handle_default_sample,
+                )
+
+                logging.info("TrainingService: Instantiating PyTorch trainer...")
+                trainer = create.create_trainer(train_config, callbacks, commands)
+                logging.info(f"TrainingService: Trainer instantiated successfully: {type(trainer).__name__}")
+
+                trainer.start()
+                logging.info("TrainingService: trainer.start() completed.")
+
+                with self._lock:
+                    self._state = TrainingState.TRAINING
+                self._emit_state_event()
+
+                logging.info("TrainingService: Beginning trainer.train() loop...")
+                trainer.train()
+                logging.info("TrainingService: trainer.train() loop exited normally.")
+
+                if not commands.get_stop_command() or train_config.backup_before_save:
+                    logging.info("TrainingService: Finalizing training (trainer.end())...")
+                    trainer.end()
+
+                with self._lock:
+                    self._state = TrainingState.COMPLETED
+                self._emit_state_event()
+                logging.info("TrainingService: Training completed successfully.")
+            finally:
+                if self._sampling_coordinator is not None:
+                    try:
+                        self._sampling_coordinator.finish_training()
+                    except Exception as e:
+                        logging.exception(f"TrainingService: Error in sampling_coordinator.finish_training: {e}")
+
+                if self._metrics_store is not None:
+                    try:
+                        self._metrics_store.end_training()
+                    except Exception as e:
+                        logging.exception(f"TrainingService: Error in metrics_store.end_training: {e}")
+
+                if self._checkpoint_store is not None:
+                    try:
+                        self._checkpoint_store.end_training()
+                    except Exception as e:
+                        logging.exception(f"TrainingService: Error in checkpoint_store.end_training: {e}")
+
+                if self._run_session is not None:
+                    try:
+                        self._run_session.end()
+                    except Exception as e:
+                        logging.exception(f"TrainingService: Error in run_session.end: {e}")
+
+        except Exception as e:
+            import logging
+            logging.exception(f"TrainingService: Caught exception during training: {str(e)}")
+            with self._lock:
+                self._state = TrainingState.FAILED
+                self._error_message = str(e)
+            self._emit_state_event()
+
+    def start_training(self, config_data: dict[str, Any] | None = None):
+        with self._lock:
+            if self._state not in (TrainingState.IDLE, TrainingState.COMPLETED, TrainingState.FAILED):
+                raise RuntimeError(f"Cannot start training from state {self._state}")
+            snapshot_src = config_data if config_data is not None else {}
+            self._config_snapshot = copy.deepcopy(snapshot_src)
+            self._state = TrainingState.TRAINING
+            self._step = 0
+            self._epoch = 0
+            self._max_steps = self._config_snapshot.get("max_steps", 0) if isinstance(self._config_snapshot, dict) else 0
+            self._max_epochs = self._config_snapshot.get("max_epochs", 0) if isinstance(self._config_snapshot, dict) else 0
+            self._speed_its = 0.0
+            self._elapsed_seconds = 0.0
+            self._eta_seconds = 0.0
+            self._error_message = None
+            # These belong with the counters above: they are this run's data, and
+            # a new run starts back at step 0. Left behind, a short previous run
+            # stayed on the chart -- which keys points by step -- until the new
+            # run passed the old one's last step. Cleared inside the guard, so a
+            # rejected start cannot wipe a live run's history.
+            self._metrics.clear()
+            self._samples.clear()
+
+        self._emit_state_event()
+
+        import threading
+        thread = threading.Thread(target=self._run_training_worker, args=(copy.deepcopy(snapshot_src),), daemon=True)
+        thread.start()
+
+    def stop_training(self):
+        with self._lock:
+            self._state = TrainingState.IDLE
+            if hasattr(self, "_train_commands") and self._train_commands:
+                self._train_commands.stop()
+        self._emit_state_event()
+
+
+
+    def pause_training(self):
+        with self._lock:
+            if self._state not in (TrainingState.STARTING, TrainingState.TRAINING):
+                raise RuntimeError(f"Cannot pause training from state {self._state}")
+            self._state = TrainingState.PAUSED
+        self._emit_state_event()
+
+
+    def resume_training(self):
+        with self._lock:
+            if self._state != TrainingState.PAUSED:
+                raise RuntimeError(f"Cannot resume training from state {self._state}")
+            self._state = TrainingState.TRAINING
+        self._emit_state_event()
+
+    def set_state(self, new_state: TrainingState):
+        with self._lock:
+            self._state = new_state
+        self._emit_state_event()
+
+    def set_completed(self):
+        with self._lock:
+            self._state = TrainingState.COMPLETED
+        self._emit_state_event()
+
+    def set_failed(self, error_message: str):
+        with self._lock:
+            self._state = TrainingState.FAILED
+            self._error_message = error_message
+        self._emit_state_event()
+
+    def update_progress(
+        self,
+        step: int | None = None,
+        epoch: int | None = None,
+        epoch_step: int | None = None,
+        max_steps: int | None = None,
+        max_epochs: int | None = None,
+        speed_its: float | None = None,
+        elapsed_seconds: float | None = None,
+        eta_seconds: float | None = None,
+    ):
+        with self._lock:
+            if step is not None:
+                self._step = step
+            if epoch is not None:
+                self._epoch = epoch
+            if epoch_step is not None:
+                self._epoch_step = epoch_step
+            if max_steps is not None:
+                self._max_steps = max_steps
+            if max_epochs is not None:
+                self._max_epochs = max_epochs
+            if speed_its is not None:
+                self._speed_its = speed_its
+            if elapsed_seconds is not None:
+                self._elapsed_seconds = elapsed_seconds
+            if eta_seconds is not None:
+                self._eta_seconds = eta_seconds
+        self._emit_state_event()

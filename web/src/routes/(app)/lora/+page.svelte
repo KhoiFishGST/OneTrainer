@@ -1,0 +1,139 @@
+<script lang="ts">
+  import { getRouteContext } from '$lib/config/context';
+  import SchemaForm from '$lib/components/form/SchemaForm.svelte';
+  import FormPanel from '$lib/components/form/FormPanel.svelte';
+  import Field from '$lib/components/form/Field.svelte';
+  import Select from '$lib/components/form/ValueSelect.svelte';
+  import PageHeader from '$lib/components/layout/PageHeader.svelte';
+  import RoutePage from '$lib/components/layout/RoutePage.svelte';
+  import { Alert } from '$lib/components/ui/alert';
+  import FormPageSkeleton from '$lib/components/loading/FormPageSkeleton.svelte';
+
+  const ctx = getRouteContext();
+
+  const tab = $derived(
+    ctx.schema?.tabs?.find((t) => t.id === 'lora_embedding' || t.id === 'lora' || t.id === 'lora-embedding') ?? {
+      id: 'lora_embedding',
+      label: 'LoRA',
+      groups: [],
+    }
+  );
+
+  const peftTypeToGroup: Record<string, string> = {
+    LORA: 'lora',
+    LOHA: 'loha',
+    OFT_2: 'oft',
+    LOKR: 'lokr',
+  };
+
+  const peftType = $derived(ctx.workspace?.draft?.peft_type ?? 'LORA');
+  const activeSubTab = $derived(peftTypeToGroup[peftType] ?? 'lora');
+
+  const peftOptions = [
+    { value: 'LORA', label: 'LoRA (Low-Rank Adaptation)' },
+    { value: 'LOHA', label: 'LoHa (Low-Rank Hadamard Product)' },
+    { value: 'OFT_2', label: 'OFT v2 (Orthogonal Fine-Tuning)' },
+    { value: 'LOKR', label: 'LoKr (Low-Rank Kronecker Product)' },
+  ];
+
+  const filteredTab = $derived({
+    ...tab,
+    groups: (tab.groups || []).map((g: any) => ({
+      ...g,
+      fields: (g.fields || []).filter((f: any) => f.id !== 'peft-type' && f.keys?.[0] !== 'peft_type'),
+    })),
+  });
+
+  const trainingMethod = $derived(ctx.workspace?.draft?.training_method ?? 'FINE_TUNE');
+  const isLoraActive = $derived(trainingMethod === 'LORA');
+
+  function handlePeftChange(val: string) {
+    if (ctx.workspace && isLoraActive) {
+      ctx.workspace.setRaw('peft_type', val);
+    }
+  }
+</script>
+
+{#if !ctx.workspace}
+  <FormPageSkeleton />
+{:else}
+  <RoutePage>
+    <PageHeader title={tab.label || 'LoRA'} />
+
+    {#if !isLoraActive}
+      <Alert>
+        <span class="warning-icon" aria-hidden="true">⚠️</span>
+        <div class="warning-text">
+          LoRA / PEFT options are disabled because the current training method is <strong>{trainingMethod}</strong>.
+          Switch your Training Method to <strong>LORA</strong> in <em>Training &gt; Base</em> to enable editing these settings.
+        </div>
+      </Alert>
+    {/if}
+
+    <fieldset class="lora-fieldset" disabled={!isLoraActive}>
+      <div class="lora-container">
+        <FormPanel title="PEFT Options">
+          <Field id="peft-type" label="PEFT Type" tooltip="Parameter-efficient fine-tuning type">
+            {#snippet children({ id, ariaDescribedBy })}
+              <Select
+                {id}
+                value={peftType}
+                options={peftOptions}
+                {ariaDescribedBy}
+                onChange={handlePeftChange}
+              />
+            {/snippet}
+          </Field>
+
+          <SchemaForm
+            tab={filteredTab}
+            {activeSubTab}
+            hideGroupTitle={true}
+            values={ctx.workspace.draft}
+            issues={ctx.workspace.errors}
+            setRaw={(path: string, val: any) => ctx.workspace?.setRaw(path, val)}
+            openDirectory={ctx.openDirectory}
+          />
+        </FormPanel>
+      </div>
+    </fieldset>
+  </RoutePage>
+{/if}
+
+<style>
+  .warning-icon {
+    font-size: 1.125rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .warning-text strong {
+    color: var(--foreground);
+  }
+
+  .lora-fieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+    transition:
+      opacity var(--motion-duration-enter) var(--motion-ease-enter),
+      filter var(--motion-duration-enter) var(--motion-ease-enter);
+  }
+
+  .lora-fieldset:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    filter: grayscale(0.5);
+  }
+
+  .lora-fieldset:disabled * {
+    pointer-events: none;
+  }
+
+  .lora-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+</style>

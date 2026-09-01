@@ -1,0 +1,615 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-surface: var(--destructive-surface);
+  --color-destructive-surface-hover: var(--destructive-surface-hover);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-surface: var(--success-surface);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-surface: var(--warning-surface);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-surface: var(--info-surface);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Typography. Values live in :root beside the other raw tokens; these
+     registrations are what generate the font-brand / font-display /
+     font-sans / font-mono utilities. */
+  --font-brand: var(--brand-font);
+  --font-display: var(--display-font);
+  --font-sans: var(--body-font);
+  --font-mono: var(--mono-font);
+}
+
+:root {
+  color-scheme: light;
+
+  /* Approved Light Tokens */
+  --background: #f5f7fa;
+  --foreground: #17202a;
+  --card: #ffffff;
+  --card-foreground: #17202a;
+  --popover: #ffffff;
+  --popover-foreground: #17202a;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  /* Hover tokens: solid buttons shift to these on :hover instead of an
+     opacity blend, which lightens rather than emphasises on a light page.
+     Light theme hover goes darker for emphasis against the light page. */
+  --primary-hover: #1d4ed8;
+  --secondary: #e6ebf2;
+  --secondary-foreground: #17202a;
+  --secondary-hover: #d5dee9;
+  --muted: #f0f4f8;
+  --muted-foreground: #334155;
+  --accent: #e6ebf2;
+  --accent-foreground: #17202a;
+  --destructive: #b91c1c;
+  --destructive-foreground: #ffffff;
+  --destructive-surface: #fdeaea;
+  --destructive-surface-hover: #fbd5d5;
+  --success: #067647;
+  --success-foreground: #ffffff;
+  --success-surface: #e7f6ee;
+  --warning: #b54708;
+  --warning-foreground: #ffffff;
+  --warning-surface: #fdf1e7;
+  --info: #175cd3;
+  --info-foreground: #ffffff;
+  --info-surface: #e8f0fd;
+  --border: #d6dee8;
+  --input: #d6dee8;
+  --ring: #1d4ed8;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #17202a;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e6ebf2;
+  --sidebar-accent-foreground: #17202a;
+  --sidebar-border: #d6dee8;
+  --sidebar-ring: #1d4ed8;
+  --radius: 0.5rem;
+
+  /* Layout: the single source of truth for page and control width.
+     Consumed via var() in component styles; not a Tailwind utility namespace. */
+  --width-page: 1600px;
+  /* Ceiling for the control column, not a fixed width: the column sizes to the
+     widest control in its panel and stops here. There is deliberately no floor
+     — a column of toggles should collapse to the toggles, pulling the next
+     column left rather than padding dead space after each switch. */
+  --width-field-control: 360px;
+  /* Upper bound on the label column. The column itself sizes to the longest
+     label in its panel; this only stops one outlier label from pushing every
+     control in that panel to the right. Longer labels wrap. */
+  --width-field-label: 280px;
+
+
+  /* Desktop Control Variables */
+  --control-height: 2.25rem;
+  --rail-compact: 48px;
+  --rail-expanded: 160px;
+  --status-height: 52px;
+
+  /* No font-size override here on purpose. This used to pin the root to 14px,
+     which silently shrank the UI for anyone who had raised their browser's
+     default font size for readability. Leaving it unset means rem-based sizing
+     follows the user's preference. */
+  /* Every stack ends in system fonts on purpose. web/scripts/fetch-fonts.mjs
+     downloads the real faces at build time and exits 0 if it cannot, so these
+     tails are the app's actual appearance whenever that fetch did not run. */
+  --brand-font: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+  --display-font: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+  --body-font: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono-font: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  font-family: var(--body-font);
+}
+
+/* motion-tokens:start */
+/*
+  The single definition of the app's motion scale (Material-aligned).
+
+  Everything that animates references these and nothing else, so the whole feel
+  is retunable here. Two properties are load-bearing and must not be
+  "normalised": exits are deliberately faster than entrances (an entrance is
+  information, an exit is an obstacle), and travel is coupled to duration
+  (8px over 600ms looks broken; 40px over 200ms looks like a jump cut).
+
+  --motion-duration-layout is longer because the rail travels 112px
+  (48px -> 160px) and the console drawer travels its full height, while
+  overlays travel 8px. 112px crammed into 200ms reads as a snap.
+*/
+:root {
+  --motion-duration-enter: 200ms;
+  --motion-duration-exit: 150ms;
+  --motion-duration-layout: 300ms;
+  --motion-ease-enter: cubic-bezier(0, 0, 0.2, 1);
+  --motion-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --motion-travel: 8px;
+  --motion-scale: 0.98;
+}
+/* motion-tokens:end */
+
+/*
+  Kill switch one of two: the user's "Animations" setting, applied to <html> by
+  the blocking script in app.html and by the appearance store.
+
+  Durations are zeroed rather than the animations removed. bits-ui keeps a
+  closing overlay mounted until its animation ends, so `animation: none` can
+  strand a closed dialog in the DOM; a 0.01ms animation still fires
+  animationend, so the unmount always completes. 0.01ms is also the convention
+  the prefers-reduced-motion block below already uses.
+*/
+html[data-motion='off'] {
+  --motion-duration-enter: 0.01ms;
+  --motion-duration-exit: 0.01ms;
+  --motion-duration-layout: 0.01ms;
+  --motion-travel: 0px;
+  --motion-scale: 1;
+}
+
+/*
+  Zeroing the tokens only reaches motion that reads them. Anything with a
+  hardcoded duration -- most of it vendored, where we cannot edit the source --
+  would keep animating with animations turned off, which makes the setting a
+  lie. The prefers-reduced-motion block below already carries a blanket clamp
+  for exactly this reason; the app's own switch needs the same backstop.
+
+  Durations are collapsed, never removed: `animation: none` would strand a
+  closing bits-ui overlay in the DOM, because it stays mounted until
+  animationend fires.
+*/
+html[data-motion='off'] *,
+html[data-motion='off'] *::before,
+html[data-motion='off'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+.dark {
+  color-scheme: dark;
+
+  /* Approved Dark Tokens */
+  --background: #0c1118;
+  --foreground: #e8edf2;
+  --card: #151c24;
+  --card-foreground: #e8edf2;
+  --popover: #18212b;
+  --popover-foreground: #e8edf2;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  /* Primary darkens on hover in BOTH themes, not just light. The
+     foreground text is white, so lightening the button burns contrast --
+     #3b82f6 (the shadcn default) only holds 3.68:1, below the 4.5:1 floor,
+     and even the more conservative #2d6aea barely cleared it (4.815:1) with
+     a hover step too small to read as emphasis (9.74% luminance change).
+     Darkening instead moves away from the white foreground, so contrast
+     goes up, not down, and a solid blue block stays legible against the
+     dark page when darkened. Same value as the light theme: 6.70:1 against
+     white text, 30.3% luminance shift. */
+  --primary-hover: #1d4ed8;
+  --secondary: #1f2a37;
+  --secondary-foreground: #e8edf2;
+  --secondary-hover: #2a3746;
+  --muted: #18212b;
+  --muted-foreground: #94a3b8;
+  --accent: #1f2a37;
+  --accent-foreground: #e8edf2;
+  --destructive: #ef4444;
+  --destructive-foreground: #0c1118;
+  --destructive-surface: #2a1215;
+  /* Darker than the resting surface, same reasoning as --primary-hover
+     above: the foreground here is --destructive (#ef4444), a light red,
+     sitting well above this surface's luminance, so darkening moves away
+     from it and raises contrast instead of burning it. A lighter surface
+     (previously tried: #301417) only cleared the 4.5:1 floor by a hair
+     (4.507:1); darkening instead gives 4.957:1 against --destructive text
+     with a 35.7% luminance shift -- a clearly visible step with real
+     margin above the floor. */
+  --destructive-surface-hover: #200d0f;
+  --success: #4ade80;
+  --success-foreground: #0c1118;
+  --success-surface: #10241a;
+  --warning: #fbbf24;
+  --warning-foreground: #0c1118;
+  --warning-surface: #2a1d05;
+  --info: #60a5fa;
+  --info-foreground: #0c1118;
+  --info-surface: #0f1e33;
+  --border: #2b3948;
+  --input: #2b3948;
+  --ring: #60a5fa;
+  --sidebar: #151c24;
+  --sidebar-foreground: #e8edf2;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1f2a37;
+  --sidebar-accent-foreground: #e8edf2;
+  --sidebar-border: #2b3948;
+  --sidebar-ring: #60a5fa;
+}
+
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--background);
+  color: var(--foreground);
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: var(--body-font);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--display-font);
+}
+
+/* Global focus-visible rings */
+*:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Reduced motion overrides */
+@media (prefers-reduced-motion: reduce) {
+  /*
+    Kill switch two of two. Overriding the tokens (rather than only clamping via
+    the blanket rule below) means every token-driven transition collapses too,
+    including the JS-side motionEnabled() checks that read the same signal.
+
+    The composition is one-way -- the app's Animations setting can turn motion
+    off but can never turn it back on against the OS -- and NOT because this
+    block outranks the other. It does not: `html[data-motion='off']` is (0,1,1)
+    against this `:root`'s (0,1,0), so the app's kill switch would win a
+    head-to-head. It holds only because the app's ON state is expressed as the
+    ABSENCE of the attribute, so there is no rule here for the OS veto to lose
+    to. Adding an `html[data-motion='on'] { ... }` block would silently defeat
+    the veto; keep ON meaning "no attribute".
+  */
+  :root {
+    --motion-duration-enter: 0.01ms;
+    --motion-duration-exit: 0.01ms;
+    --motion-duration-layout: 0.01ms;
+    --motion-travel: 0px;
+    --motion-scale: 1;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/*
+  Sheet slide animation.
+
+  shadcn-svelte's sheet ships `animate-in` / `slide-in-from-left-full` classes
+  that need an animation plugin (`tw-animate-css`). This project imports plain
+  `@import "tailwindcss"` with no such plugin, so every one of those utilities
+  compiled to nothing and the sheet popped in and out with no transition at
+  all. The plugin is still not installed because its durations and travel are
+  hardcoded per-component, so the motion scale would have to be edited into
+  nine vendored files instead of living in one token block -- the sheet's
+  slide is hand-written here instead.
+
+  The selector is `[data-dialog-content][data-side]`: bits-ui sets
+  `data-dialog-content` and `data-state` on the content element, and
+  `sheet-content.svelte` sets `data-side`. Together they match sheets and
+  nothing else -- plain dialogs have no `data-side`, and menus and tooltips
+  carry `data-side` but are not dialog content.
+
+  Duration and easing come from `--motion-duration-layout`, the same token
+  the desktop rail's width transition uses, so the two navigation surfaces
+  move alike.
+*/
+/*
+  Overlay motion.
+
+  bits-ui sets data-state="open"|"closed" on every overlay it portals, and
+  shadcn's wrappers set a data-slot / data-*-content attribute identifying the
+  kind. Together they cover dialogs, alert dialogs, dropdowns, selects,
+  popovers and tooltips from one place, with no edits to the vendored
+  components and no animation plugin.
+
+  Those components still carry upstream's animate-in / zoom-in-95 classes,
+  which compile to nothing without tw-animate-css. These rules are unlayered
+  and Tailwind's utilities are layered, so these win even if that plugin is
+  ever added -- the same specificity property the phone min-height rule below
+  relies on.
+*/
+@keyframes overlay-scrim-in {
+  from { opacity: 0; }
+}
+
+@keyframes overlay-scrim-out {
+  to { opacity: 0; }
+}
+
+@keyframes overlay-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--motion-travel)) scale(var(--motion-scale));
+  }
+}
+
+@keyframes overlay-content-out {
+  to {
+    opacity: 0;
+    transform: translateY(var(--motion-travel)) scale(var(--motion-scale));
+  }
+}
+
+[data-dialog-overlay][data-state='open'],
+[data-alert-dialog-overlay][data-state='open'] {
+  animation: overlay-scrim-in var(--motion-duration-enter) var(--motion-ease-enter);
+}
+
+[data-dialog-overlay][data-state='closed'],
+[data-alert-dialog-overlay][data-state='closed'] {
+  animation: overlay-scrim-out var(--motion-duration-exit) var(--motion-ease-exit);
+}
+
+/*
+  Sheets are excluded here: they slide from an edge and have their own
+  keyframes above. `:not([data-side])` is what distinguishes a plain dialog
+  from a sheet, exactly as the sheet rules use [data-side] to select one.
+*/
+[data-dialog-content]:not([data-side])[data-state='open'],
+[data-alert-dialog-content][data-state='open'],
+[data-dropdown-menu-content][data-state='open'],
+[data-dropdown-menu-sub-content][data-state='open'],
+[data-select-content][data-state='open'],
+[data-popover-content][data-state='open'],
+[data-tooltip-content][data-state='open'],
+[data-tooltip-content][data-state='delayed-open'] {
+  animation: overlay-content-in var(--motion-duration-enter) var(--motion-ease-enter);
+}
+
+[data-dialog-content]:not([data-side])[data-state='closed'],
+[data-alert-dialog-content][data-state='closed'],
+[data-dropdown-menu-content][data-state='closed'],
+[data-dropdown-menu-sub-content][data-state='closed'],
+[data-select-content][data-state='closed'],
+[data-popover-content][data-state='closed'],
+[data-tooltip-content][data-state='closed'] {
+  animation: overlay-content-out var(--motion-duration-exit) var(--motion-ease-exit);
+}
+
+@keyframes sheet-slide-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes sheet-slide-out-left {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes sheet-slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes sheet-slide-out-right {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Top and bottom sheets are `h-auto` and sized by their content, so a full
+   translate would throw them much further than a side panel travels. They get
+   a shallow 2.5rem nudge with a fade, which is what upstream's `-10` meant. */
+@keyframes sheet-slide-in-top {
+  from {
+    transform: translateY(-2.5rem);
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-slide-out-top {
+  to {
+    transform: translateY(-2.5rem);
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-slide-in-bottom {
+  from {
+    transform: translateY(2.5rem);
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-slide-out-bottom {
+  to {
+    transform: translateY(2.5rem);
+    opacity: 0;
+  }
+}
+
+[data-dialog-content][data-side='left'][data-state='open'] {
+  animation: sheet-slide-in-left var(--motion-duration-layout) var(--motion-ease-enter);
+}
+[data-dialog-content][data-side='left'][data-state='closed'] {
+  animation: sheet-slide-out-left var(--motion-duration-exit) var(--motion-ease-exit);
+}
+[data-dialog-content][data-side='right'][data-state='open'] {
+  animation: sheet-slide-in-right var(--motion-duration-layout) var(--motion-ease-enter);
+}
+[data-dialog-content][data-side='right'][data-state='closed'] {
+  animation: sheet-slide-out-right var(--motion-duration-exit) var(--motion-ease-exit);
+}
+[data-dialog-content][data-side='top'][data-state='open'] {
+  animation: sheet-slide-in-top var(--motion-duration-layout) var(--motion-ease-enter);
+}
+[data-dialog-content][data-side='top'][data-state='closed'] {
+  animation: sheet-slide-out-top var(--motion-duration-exit) var(--motion-ease-exit);
+}
+[data-dialog-content][data-side='bottom'][data-state='open'] {
+  animation: sheet-slide-in-bottom var(--motion-duration-layout) var(--motion-ease-enter);
+}
+[data-dialog-content][data-side='bottom'][data-state='closed'] {
+  animation: sheet-slide-out-bottom var(--motion-duration-exit) var(--motion-ease-exit);
+}
+
+/* No `animation: none` here on purpose: bits-ui holds a closing sheet mounted
+   until its `animationend` fires, so removing the animation instead of
+   shortening it would strand a closed sheet in the DOM under
+   prefers-reduced-motion. The blanket reduced-motion block above already
+   clamps every animation-duration to 0.01ms, which still fires
+   `animationend` and lets bits-ui unmount normally -- see the matching
+   explanation on the data-motion='off' kill switch near the top of this
+   file. Nothing further is needed here; do not reinstate `animation: none`.
+*/
+
+/* Form grid layout: two-column above 768px, one-column below */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (max-width: 767px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Phone rules */
+@media (max-width: 767px) {
+  :root {
+    --control-height: 2.75rem;
+  }
+  /*
+    Blanket phone target as a backstop. Controls that are meant to stay
+    visually small -- switch, checkbox -- opt out here and supply their own
+    44px target with a transparent ::after overlay instead; forcing the border
+    box to 44px turns a pill switch into a circle and a 14px checkbox into a
+    slab. These utilities live in @layer utilities, and unlayered rules like
+    this one beat layered ones regardless of specificity, so a Tailwind
+    min-h-0 cannot override it -- the exemption has to happen here.
+    e2e/touch-targets.spec.ts hit-tests the real target, not the border box.
+  */
+  button:not([data-slot='switch']):not([data-slot='checkbox']),
+  input,
+  select,
+  textarea,
+  [role='button'],
+  [role='slider'] {
+    min-height: 44px;
+  }
+}
+
+/* Safe area padding for status bar / phone footer */
+.safe-area-padding {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Safe area padding for responsive overlays (Drawer / Sheet / Dialogs) */
+.safe-area-overlay {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+/*
+  RailContent.svelte passes collapsible="none" to the vendored Sidebar on
+  desktop, which renders a plain div carrying the literal `rail` class and
+  the hardcoded `transition-[width] duration-200 ease-in-out` utilities.
+  Rather than edit a vendored component, retarget it here: this rule is
+  unlayered and Tailwind's utilities are layered, so it wins. The rail then
+  follows the motion tokens and is covered by the kill switches for free.
+
+  The rail uses the layout duration, not the enter duration -- it travels
+  112px (--rail-compact 48px to --rail-expanded 160px), and that distance in
+  200ms reads as a snap.
+*/
+.rail {
+  transition-duration: var(--motion-duration-layout);
+  transition-timing-function: var(--motion-ease-enter);
+}
+
+/*
+  Same vendored-source problem as the rail above, in the same file: the
+  sidebar gap element carries a hardcoded `duration-200`, which no token
+  reaches. `src/lib/components/ui/**` is vendored and not edited, so it is
+  retargeted from here. Unlayered, so it beats the layered Tailwind utility.
+*/
+[data-slot='sidebar-gap'] {
+  transition-duration: var(--motion-duration-layout);
+  transition-timing-function: var(--motion-ease-enter);
+}
+
+/*
+  svelte-sonner ships its own transitions, independent of Tailwind, so toasts
+  already animate. They are left alone except for this: their durations are
+  pulled onto the tokens so the kill switches reach them. A toast that keeps
+  sliding after the user has turned animations off is the most visible way for
+  the setting to look broken.
+
+  The descendant selector is load-bearing, not decoration. sonner's own rule is
+  a bare `[data-sonner-toast]`, the same specificity as this one, and it is a
+  Svelte component style injected at runtime -- so it comes later in the
+  cascade and a bare selector here loses. Scoping to the toaster container
+  raises this to (0,2,0) and wins. e2e/motion.spec.ts reads a real toast's
+  computed transition-duration, because a source-text check cannot tell an
+  applied rule from an inert one.
+*/
+[data-sonner-toaster] [data-sonner-toast] {
+  transition-duration: var(--motion-duration-enter);
+  transition-timing-function: var(--motion-ease-enter);
+}

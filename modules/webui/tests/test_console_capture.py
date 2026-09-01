@@ -1,0 +1,81 @@
+import asyncio
+import json
+import os
+import subprocess
+import sys
+
+from modules.webui.console import ConsoleCapture, ConsoleLine, ConsoleSpan
+from modules.webui.events import EventHub
+
+
+def test_capture_tees_stdout_stderr_and_restores_descriptors(tmp_path):
+    result = tmp_path / "result.json"
+    process = subprocess.run(
+        [sys.executable, "modules/webui/tests/fixtures/console_capture_probe.py", str(result)],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    backlog = json.loads(result.read_text(encoding="utf-8"))
+    browser_text = "\n".join("".join(span["text"] for span in line["spans"]) for line in backlog["lines"])
+    assert "stdout-line" in process.stdout
+    assert "stderr-line" in process.stdout
+    assert "stdout-line" in browser_text
+    assert "stderr-line" in browser_text
+    assert "20%" in browser_text
+
+
+def test_capture_workspace_and_sink_creation(tmp_path):
+    capture = ConsoleCapture()
+    capture.set_workspace(tmp_path)
+    assert capture.sink is not None
+    assert (tmp_path / "webui.log").exists()
+    capture.close()
+    capture.close()  # Idempotent close
+
+
+def test_capture_attach_transfers_buffer(tmp_path):
+    async def run_test():
+        hub = EventHub()
+        await hub.start()
+        capture = ConsoleCapture()
+        capture.buffer.apply([
+            ConsoleLine(
+                id=1,
+                spans=(ConsoleSpan("preset-line"),),
+            )
+        ])
+        capture.attach(asyncio.get_running_loop(), hub, tmp_path)
+        await asyncio.sleep(0.05)
+        backlog = await hub.backlog()
+        assert len(backlog["lines"]) == 1
+        assert backlog["lines"][0].text == "preset-line"
+        capture.close()
+        await hub.close()
+
+    asyncio.run(run_test())
+
+
+def test_capture_preattach_lines_not_duplicated(tmp_path):
+    async def run_test():
+        hub = EventHub()
+        await hub.start()
+        capture = ConsoleCapture()
+        capture.install()
+        os.write(1, b"preattach-line-1\n")
+        await asyncio.sleep(0.05)
+        capture.attach(asyncio.get_running_loop(), hub, tmp_path)
+        await asyncio.sleep(0.05)
+        os.write(1, b"postattach-line-2\n")
+        await asyncio.sleep(0.05)
+        capture.close()
+
+        backlog = await hub.backlog()
+        line_texts = [line.text for line in backlog["lines"]]
+        assert line_texts.count("preattach-line-1") == 1
+        assert line_texts.count("postattach-line-2") == 1
+        await hub.close()
+
+    asyncio.run(run_test())
+
+

@@ -1,0 +1,60 @@
+<script lang="ts">
+  import { cn } from '$lib/utils';
+  import { trainingStore } from '../../events/training-store';
+
+  let { testId, class: className = '' } = $props<{
+    testId: string;
+    class?: string;
+  }>();
+
+  const trainingState = $derived($trainingStore.status?.state ?? 'IDLE');
+
+  const statusClasses: Record<string, string> = {
+    IDLE: 'bg-muted text-muted-foreground border-border',
+    STARTING: 'bg-info-surface text-info border-info/30 animate-pulse',
+    TRAINING: 'bg-info-surface text-info border-info/30 animate-pulse',
+    PAUSED: 'bg-warning-surface text-warning border-warning/30',
+    STOPPING: 'bg-destructive-surface text-destructive border-destructive/40',
+    FAILED: 'bg-destructive-surface text-destructive border-destructive/40',
+    COMPLETED: 'bg-success-surface text-success border-success/30',
+  };
+</script>
+
+<span
+  data-testid={testId}
+  class={cn('status-pill', statusClasses[trainingState] ?? statusClasses.IDLE, className)}
+  title={$trainingStore.status?.error_message ?? ''}
+>
+  {trainingState}
+</span>
+
+<style>
+  /*
+    No `display` here. Svelte's scoped styles are unlayered and Tailwind's
+    utilities live in @layer utilities, so a `display` declared here would beat
+    the `hidden` / `md:inline-flex` utilities the callers rely on to place this
+    pill on exactly one breakpoint.
+  */
+  .status-pill {
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-width: 1px;
+    border-style: solid;
+    white-space: nowrap;
+    /* Colour only from the motion tokens; transform/box-shadow are the
+       pre-existing hover/press affordance, retimed onto the same enter
+       token rather than left at a literal duration. The pill sits in the
+       header and must not move on a status change -- only these two.
+       transform and box-shadow are unaffected in behaviour, only timing. */
+    transition: background-color var(--motion-duration-enter) var(--motion-ease-enter),
+      color var(--motion-duration-enter) var(--motion-ease-enter),
+      transform var(--motion-duration-enter) var(--motion-ease-enter),
+      box-shadow var(--motion-duration-enter) var(--motion-ease-enter);
+  }
+</style>

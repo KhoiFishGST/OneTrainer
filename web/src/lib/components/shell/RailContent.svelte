@@ -1,0 +1,199 @@
+<script lang="ts">
+  import {
+    SlidersHorizontal,
+    Database,
+    Archive,
+    Terminal,
+    Box,
+    Layers,
+    Activity,
+    Sparkles,
+    Cpu,
+    Wrench,
+    Tv,
+    Images,
+    Download,
+    PanelLeft,
+    Key,
+  } from '@lucide/svelte';
+  import { Button } from '$lib/components/ui/button';
+  import {
+    Sidebar,
+    SidebarHeader,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarMenu,
+    SidebarMenuItem,
+    SidebarMenuButton,
+    useSidebar,
+  } from '$lib/components/ui/sidebar';
+  import { cn } from '$lib/utils';
+
+  let {
+    currentPath = '/live',
+    mobile = false,
+    onToggleConsole,
+    isConsoleOpen = false,
+    expanded = false,
+    onToggleExpand,
+  } = $props<{
+    currentPath?: string;
+    mobile?: boolean;
+    onToggleConsole?: () => void;
+    isConsoleOpen?: boolean;
+    expanded?: boolean;
+    onToggleExpand?: () => void;
+  }>();
+
+  const sidebar = useSidebar();
+
+  const navItems = $derived([
+    { name: 'Live', path: '/live', icon: Tv, disabled: false },
+    { name: 'Gallery', path: '/gallery', icon: Images, disabled: false },
+    { name: 'Downloads', path: '/downloads', icon: Download, disabled: false },
+    { name: 'General', path: '/general', icon: SlidersHorizontal, disabled: false },
+    { name: 'Model', path: '/model', icon: Box, disabled: false },
+    { name: 'Datasets', path: '/datasets', icon: Database, disabled: false },
+    { name: 'Concepts', path: '/concepts', icon: Layers, disabled: false },
+    { name: 'Training', path: '/training', icon: Activity, disabled: false },
+    { name: 'Sampling', path: '/sampling', icon: Sparkles, disabled: false },
+    { name: 'Backup', path: '/backup', icon: Archive, disabled: false },
+    { name: 'Tools', path: '/tools', icon: Wrench, disabled: true },
+    { name: 'LoRA', path: '/lora', icon: Cpu, disabled: false },
+    { name: 'Embeddings', path: '/embeddings', icon: Layers, disabled: false },
+    { name: 'Secrets', path: '/secrets', icon: Key, disabled: false },
+    ...(mobile ? [{ name: 'Console', path: '/console', icon: Terminal, disabled: false }] : []),
+  ]);
+</script>
+
+<Sidebar
+  {mobile}
+  collapsible={mobile ? 'offcanvas' : 'none'}
+  class={cn(
+    'rail w-[var(--rail-width)] bg-card border-r border-border flex flex-col h-full transition-[width] duration-200 ease-in-out overflow-hidden select-none',
+    expanded && 'expanded',
+    // The `data-[side=left]:` variant is load-bearing. A plain
+    // `w-[var(--sidebar-width)]` loses to sheet-content's
+    // `data-[side=left]:w-3/4` on specificity, and tailwind-merge will not
+    // save us: the two are in different merge groups (`w` vs
+    // `data-[side=left]:w`), so both ship to the DOM. Matching the variant
+    // ties the specificity, and Tailwind sorts arbitrary values after named
+    // ones, so ours lands later in the stylesheet and wins. Drop the variant
+    // and the drawer silently reverts to 75% of the viewport.
+    mobile && 'p-2 data-[side=left]:w-[var(--sidebar-width)]'
+  )}
+  style="--rail-width: {expanded ? 'var(--rail-expanded)' : 'var(--rail-compact)'}"
+>
+
+  {#if !mobile}
+    <!--
+      flex-row is load-bearing. SidebarHeader's own `flex flex-col` survives
+      tailwind-merge unless the incoming class names a direction, and in a
+      column `items-center` centres the toggle horizontally, which is what
+      pushed it to the middle of the expanded rail.
+    -->
+    <SidebarHeader class="h-12 flex flex-row items-center justify-start p-2 border-b border-border">
+      <Button
+        variant="ghost"
+        class="flex w-full items-center justify-start gap-3 px-2.5 py-2 text-muted-foreground rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors font-normal h-auto min-h-0 hover:bg-muted hover:text-foreground"
+        aria-label={expanded ? 'Collapse navigation' : 'Expand navigation'}
+        onclick={onToggleExpand}
+      >
+        <PanelLeft size={20} class="shrink-0 w-5 h-5" />
+        <span class={cn('nav-label', !expanded && 'opacity-0 w-0 pointer-events-none')}>Collapse</span>
+      </Button>
+    </SidebarHeader>
+  {/if}
+
+  <SidebarContent class={cn('flex flex-col p-2 gap-1 overflow-y-auto flex-1', mobile && 'p-0 gap-0')}>
+    <SidebarGroup class={cn('p-0', mobile && 'flex-1')}>
+      <SidebarGroupContent class={mobile ? 'h-full' : undefined}>
+        <SidebarMenu
+          class={mobile ? 'h-full gap-0.5' : 'gap-1'}
+          aria-label={mobile ? 'Mobile Navigation' : 'Sidebar'}
+        >
+          {#each navItems as item}
+            <SidebarMenuItem class={mobile ? 'flex-1 min-h-[44px]' : undefined}>
+              <SidebarMenuButton isActive={currentPath === item.path}>
+                {#snippet child({ props })}
+                  {#if item.disabled}
+                    <a
+                      {...props}
+                      href={item.path}
+                      class={cn(
+                        props.class as string,
+                        'relative flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors opacity-40 cursor-not-allowed max-md:h-full max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2 max-md:overflow-visible'
+                      )}
+                      aria-disabled="true"
+                      title="Unavailable in Phase A"
+                      onclick={(e) => e.preventDefault()}
+                    >
+                      <item.icon size={20} class="shrink-0 w-5 h-5 max-md:w-4 max-md:h-4" />
+                      <span class={cn('nav-label', !expanded && !mobile && 'opacity-0 w-0 pointer-events-none')}>{item.name}</span>
+                    </a>
+                  {:else}
+                    <a
+                      {...props}
+                      href={item.path}
+                      class={cn(
+                        props.class as string,
+                        'relative flex items-center gap-3 px-2.5 py-2 text-muted-foreground no-underline rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors max-md:h-full max-md:px-2 max-md:py-1 max-md:text-xs max-md:gap-2 max-md:overflow-visible',
+                        currentPath === item.path && 'bg-accent text-accent-foreground font-medium'
+                      )}
+                      onclick={() => {
+                        if (mobile) sidebar.setOpenMobile(false);
+                      }}
+                    >
+                      <item.icon size={20} class="shrink-0 w-5 h-5 max-md:w-4 max-md:h-4" />
+                      <span class={cn('nav-label', !expanded && !mobile && 'opacity-0 w-0 pointer-events-none')}>{item.name}</span>
+                    </a>
+                  {/if}
+                {/snippet}
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          {/each}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  </SidebarContent>
+
+  {#if !mobile && onToggleConsole}
+    <SidebarFooter class="p-2 border-t border-border mt-auto">
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton isActive={isConsoleOpen}>
+            {#snippet child({ props })}
+              <Button
+                {...props}
+                variant="ghost"
+                class={cn(
+                  'flex w-full items-center justify-start gap-3 px-2.5 py-2 text-muted-foreground rounded-md text-sm whitespace-nowrap overflow-hidden transition-colors font-normal h-auto min-h-0 hover:bg-muted hover:text-foreground',
+                  isConsoleOpen && 'bg-accent text-accent-foreground font-medium',
+                  props.class as string
+                )}
+                onclick={onToggleConsole}
+                title="Toggle Console Drawer"
+              >
+                <Terminal size={20} class="shrink-0 w-5 h-5" />
+                <span class={cn('nav-label', !expanded && !mobile && 'opacity-0 w-0 pointer-events-none')}>Console</span>
+              </Button>
+            {/snippet}
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    </SidebarFooter>
+  {/if}
+</Sidebar>
+
+<style>
+  .nav-label {
+    white-space: nowrap;
+    overflow: hidden;
+    /* Matches the rail's own width transition: the label is part of the
+       same gesture, and both must collapse together when the Animations
+       setting is off. */
+    transition: opacity var(--motion-duration-layout) var(--motion-ease-enter);
+  }
+</style>

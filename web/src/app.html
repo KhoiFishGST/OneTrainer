@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OneTrainer</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/icon.png" />
+    <link rel="stylesheet" href="/fonts/fonts.css" />
+    <script>
+      /*
+        Runs before first paint. routes/+layout.ts sets ssr = false, so this is
+        the only opportunity to apply appearance without a flash of the wrong
+        theme.
+
+        localStorage is a cache here, not the source of truth -- webui.json is.
+        The appearance store reconciles against the server once its query
+        resolves. This script exists purely so the first frame is right.
+
+        It must stay dependency-free, synchronous, and wrapped in try/catch: a
+        throw here runs before the app mounts and leaves a blank page.
+      */
+      (() => {
+        try {
+          const stored = localStorage.getItem('webui.theme');
+          /* 'system' is also the server's default, so a first visit with
+             nothing cached resolves through the OS instead of guessing
+             dark and flipping once the appearance query answers. */
+          const choice =
+            stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
+          const theme =
+            choice === 'system'
+              ? matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light'
+              : choice;
+          document.documentElement.classList.toggle('dark', theme === 'dark');
+          document.documentElement.style.colorScheme = theme;
+
+          if (localStorage.getItem('webui.animations') === 'false') {
+            document.documentElement.setAttribute('data-motion', 'off');
+          }
+        } catch {
+          /* Storage or matchMedia disabled or unavailable: fall through to
+             the CSS defaults (dark, motion on) rather than take the page
+             down. */
+        }
+      })();
+    </script>
+    %sveltekit.head%
+  </head>
+  <body data-sveltekit-preload-data="hover">
+    <div style="display: contents">%sveltekit.body%</div>
+  </body>
+</html>

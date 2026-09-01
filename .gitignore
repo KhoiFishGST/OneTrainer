@@ -12,12 +12,15 @@ debug*.py
 /workspace*
 /models/*
 /training_concepts
+/training_datasets
 /training_samples
 /training_user_settings
 /external
 /update.var
 config.json
+webui.json
 secrets.json
+.env*
 *.zip
 
 # environments

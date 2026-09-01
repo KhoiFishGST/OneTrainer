@@ -1,0 +1,393 @@
+import mimetypes
+import os
+import re
+import shutil
+import urllib.parse
+import uuid
+from pathlib import Path
+
+from modules.util import path_util
+from modules.webui.state import AppState
+
+from fastapi import APIRouter, BackgroundTasks, File, HTTPException, Request, UploadFile
+from pydantic import BaseModel
+from starlette.concurrency import run_in_threadpool
+from starlette.responses import FileResponse
+
+router = APIRouter()
+
+SAFE_NAME_REGEX = re.compile(r"^[a-zA-Z0-9 _-]+$")
+
+
+CAPTION_EXTENSIONS = {".txt", ".caption"}
+
+ALLOWED_UPLOAD_EXTENSIONS = (
+    path_util.supported_image_extensions()
+    | path_util.supported_video_extensions()
+    | CAPTION_EXTENSIONS
+)
+
+
+# The native UI excludes these from concept previews; they are training
+# annotations, not pictures anyone wants to see as a dataset's cover.
+THUMBNAIL_EXCLUDED_SUFFIXES = ("-masklabel.png", "-condlabel.png")
+
+
+def pick_dataset_thumbnail(ds_dir: Path) -> Path | None:
+    """Choose a dataset's cover image: the alphabetically first media file.
+
+    The native UI (BaseConceptTabView._get_preview_image) takes whichever
+    file the filesystem yields first, which varies between machines. Sorting
+    makes the choice stable; the exclusions match the native behaviour.
+    """
+    if not ds_dir.exists() or not ds_dir.is_dir():
+        return None
+
+    for f in sorted(ds_dir.glob("*.*")):
+        if f.name.startswith(".") or f.name.endswith(THUMBNAIL_EXCLUDED_SUFFIXES):
+            continue
+        if classify_media(f.suffix) in ("image", "video"):
+            return f
+    return None
+
+
+def classify_media(ext: str) -> str | None:
+    """Return 'image', 'video', 'text', or None for an unsupported extension."""
+    ext = ext.lower()
+    if path_util.is_supported_image_extension(ext):
+        return "image"
+    if path_util.is_supported_video_extension(ext):
+        return "video"
+    if ext in CAPTION_EXTENSIONS:
+        return "text"
+    return None
+
+def resolve_inside_base(base_dir: Path, *parts: str) -> Path:
+    """Join `parts` onto `base_dir` and reject anything that escapes it.
+
+    A `".." in value` check is not sufficient on its own: an absolute part
+    discards everything to its left, so `Path("/base") / "/etc"` is `/etc`.
+    Resolving and then verifying containment covers absolute paths, traversal,
+    and symlinks alike.
+    """
+    candidate = base_dir.joinpath(*parts)
+    try:
+        resolved = candidate.resolve()
+        base_resolved = base_dir.resolve()
+    except OSError:
+        raise HTTPException(status_code=400, detail="Invalid path") from None
+
+    if resolved != base_resolved and base_resolved not in resolved.parents:
+        raise HTTPException(status_code=400, detail="Invalid path")
+    return resolved
+
+
+def get_base_datasets_dir(app_state: AppState) -> Path:
+    raw_dir = app_state.settings_store.get_datasets_dir()
+    p = Path(raw_dir)
+    if not p.is_absolute():
+        p = (app_state.settings.root_dir / p).resolve()
+    p.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+class BaseDirUpdate(BaseModel):
+    path: str
+
+
+@router.put("/datasets/base-dir")
+async def set_datasets_base_dir(req: BaseDirUpdate, request: Request):
+    app_state: AppState = request.app.state.webui
+    app_state.settings_store.set_datasets_dir(req.path.strip())
+    return {
+        "status": "ok",
+        "base_dir": app_state.settings_store.get_datasets_dir(),
+        "resolved_base_dir": str(get_base_datasets_dir(app_state)),
+    }
+
+
+@router.get("/datasets")
+async def list_datasets(request: Request):
+    app_state: AppState = request.app.state.webui
+    base_dir = get_base_datasets_dir(app_state)
+    result = []
+    if base_dir.exists() and base_dir.is_dir():
+        for entry in sorted(base_dir.iterdir()):
+            if entry.is_dir() and not entry.name.startswith("."):
+                img_count = 0
+                vid_count = 0
+                cap_count = 0
+                for f in entry.glob("*.*"):
+                    kind = classify_media(f.suffix)
+                    if kind == "image":
+                        img_count += 1
+                    elif kind == "video":
+                        vid_count += 1
+                    elif kind == "text":
+                        cap_count += 1
+                encoded_name = urllib.parse.quote(entry.name)
+                result.append({
+                    "name": entry.name,
+                    "path": str(entry),
+                    "image_count": img_count,
+                    "video_count": vid_count,
+                    "caption_count": cap_count,
+                    "thumbnail_url": f"/api/datasets/image?dataset={encoded_name}&thumb=true",
+                })
+    return {
+        "datasets": result,
+        "base_dir": app_state.settings_store.get_datasets_dir(),
+        "resolved_base_dir": str(base_dir),
+    }
+
+
+@router.post("/datasets")
+async def create_dataset(request: Request):
+    app_state: AppState = request.app.state.webui
+    base_dir = get_base_datasets_dir(app_state)
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    name = (body.get("name") if body else "") or ""
+    name = name.strip()
+
+    if not name:
+        # Auto-suggest Dataset {n}
+        existing = {entry.name for entry in base_dir.iterdir() if entry.is_dir()}
+        idx = 1
+        while f"Dataset {idx}" in existing:
+            idx += 1
+        name = f"Dataset {idx}"
+
+    if not SAFE_NAME_REGEX.match(name) or ".." in name:
+        raise HTTPException(status_code=400, detail="Invalid dataset name. Use alphanumeric characters, spaces, dashes, and underscores only.")
+
+    ds_dir = base_dir / name
+    ds_dir.mkdir(parents=True, exist_ok=True)
+    return {"name": name, "path": str(ds_dir)}
+
+
+@router.delete("/datasets/{name}")
+async def delete_dataset(name: str, request: Request):
+    app_state: AppState = request.app.state.webui
+    base_dir = get_base_datasets_dir(app_state)
+    if not SAFE_NAME_REGEX.match(name) or ".." in name:
+        raise HTTPException(status_code=400, detail="Invalid dataset name")
+    ds_dir = base_dir / name
+    if ds_dir.exists() and ds_dir.is_dir():
+        shutil.rmtree(ds_dir)
+        return {"status": "ok"}
+    raise HTTPException(status_code=404, detail="Dataset not found")
+
+
+@router.get("/datasets/{name}/files")
+async def get_dataset_files(name: str, request: Request):
+    app_state: AppState = request.app.state.webui
+    base_dir = get_base_datasets_dir(app_state)
+    ds_dir = base_dir / name
+    if not ds_dir.exists() or not ds_dir.is_dir():
+        raise HTTPException(status_code=404, detail="Dataset not found")
+
+    media_by_stem: dict[str, list[Path]] = {}
+    captions_by_stem: dict[str, Path] = {}
+
+    for p in sorted(ds_dir.glob("*.*")):
+        if p.name.startswith(".") or p.suffix.lower() == ".part":
+            continue
+        kind = classify_media(p.suffix)
+        if kind is None:
+            continue
+        if kind == "text":
+            captions_by_stem[p.stem] = p
+        else:
+            media_by_stem.setdefault(p.stem, []).append(p)
+
+    def read_caption(stem: str) -> tuple[str | None, str]:
+        caption = captions_by_stem.get(stem)
+        if caption is None:
+            return None, ""
+        try:
+            return caption.name, caption.read_text(encoding="utf-8")
+        except OSError:
+            return caption.name, ""
+
+    items = []
+    for stem in sorted(media_by_stem.keys() | captions_by_stem.keys()):
+        caption_name, caption_content = read_caption(stem)
+        media_files = media_by_stem.get(stem, [])
+
+        if not media_files:
+            items.append({
+                "id": stem,
+                "kind": "text",
+                "media_name": None,
+                "caption_name": caption_name,
+                "caption_content": caption_content,
+            })
+            continue
+
+        # A stem usually maps to exactly one media file. When it does not
+        # (say a.png beside a.mp4), every file gets its own item rather than
+        # one silently shadowing the other. They share the stem's caption,
+        # which is how the trainer pairs them too.
+        items.extend(
+            {
+                "id": stem if len(media_files) == 1 else media.name,
+                "kind": classify_media(media.suffix),
+                "media_name": media.name,
+                "caption_name": caption_name,
+                "caption_content": caption_content,
+            }
+            for media in media_files
+        )
+
+    return {"name": name, "path": str(ds_dir), "items": items}
+
+
+UPLOAD_CHUNK_BYTES = 1024 * 1024
+
+
+def part_path_for(ds_dir: Path, filename: str) -> Path:
+    """Scratch path for an in-flight upload.
+
+    The token keeps two concurrent uploads of the same filename from writing
+    into each other's scratch file and producing a corrupt result.
+    """
+    return ds_dir / f"{filename}.{uuid.uuid4().hex}.part"
+
+
+def validated_upload_name(raw_name: str | None) -> str:
+    """Reject a filename outright rather than skipping it silently."""
+    filename = os.path.basename(raw_name or "")
+    if not filename or ".." in filename:
+        raise HTTPException(status_code=400, detail=f"Invalid filename: {raw_name!r}")
+    if Path(filename).suffix.lower() not in ALLOWED_UPLOAD_EXTENSIONS:
+        raise HTTPException(
+            status_code=415, detail=f"Unsupported file type: {filename}"
+        )
+    return filename
+
+
+@router.post("/datasets/{name}/upload")
+async def upload_dataset_files(
+    name: str,
+    request: Request,
+    background: BackgroundTasks,
+    files: list[UploadFile] = File(...),  # noqa: B008
+):
+    app_state: AppState = request.app.state.webui
+    base_dir = get_base_datasets_dir(app_state)
+    ds_dir = base_dir / name
+    if not ds_dir.exists() or not ds_dir.is_dir():
+        raise HTTPException(status_code=404, detail="Dataset not found")
+
+    # Validate the whole batch first so a rejected file at the end does not
+    # leave the files before it already written.
+    filenames = [validated_upload_name(f.filename) for f in files]
+
+    saved = []
+    for f, filename in zip(files, filenames, strict=True):
+        dest = ds_dir / filename
+        part = part_path_for(ds_dir, filename)
+        try:
+            with part.open("wb") as out:
+                await run_in_threadpool(
+                    shutil.copyfileobj, f.file, out, UPLOAD_CHUNK_BYTES
+                )
+            os.replace(part, dest)
+        except Exception:
+            part.unlink(missing_ok=True)
+            raise
+        finally:
+            await f.close()
+
+        saved.append(filename)
+
+        if classify_media(dest.suffix) in ("image", "video"):
+            txt_dest = ds_dir / f"{dest.stem}.txt"
+            if not txt_dest.exists():
+                txt_dest.write_text("", encoding="utf-8")
+
+        # Build the grid thumbnail after the response goes out, so a large
+        # drop paints immediately instead of decoding every original on
+        # demand. Bounded inside the media service; failures are ignored
+        # because the on-demand path regenerates through the same cache key.
+        background.add_task(app_state.media_service.warm_thumbnail, dest)
+
+        await app_state.events.publish(
+            "dataset.file.added",
+            {
+                "dataset": name,
+                "filename": filename,
+                "item_id": dest.stem,
+                "kind": classify_media(dest.suffix) or "text",
+            },
+        )
+
+    return {"saved": saved}
+
+
+@router.put("/datasets/{name}/caption")
+async def update_dataset_caption(name: str, request: Request):
+    app_state: AppState = request.app.state.webui
+    base_dir = get_base_datasets_dir(app_state)
+    ds_dir = base_dir / name
+    if not ds_dir.exists() or not ds_dir.is_dir():
+        raise HTTPException(status_code=404, detail="Dataset not found")
+    body = await request.json()
+    filename = body.get("filename")
+    content = body.get("content", "")
+    if not filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    txt_file = resolve_inside_base(base_dir, name, filename)
+    txt_file.write_text(content, encoding="utf-8")
+    return {"status": "ok"}
+
+
+@router.get("/datasets/image")
+async def get_dataset_image(
+    dataset: str, filename: str = "", thumb: bool = False, request: Request = None
+):
+    app_state: AppState = request.app.state.webui
+    base_dir = get_base_datasets_dir(app_state)
+    ds_dir = resolve_inside_base(base_dir, dataset)
+
+    img_path = None
+    if filename:
+        p = resolve_inside_base(base_dir, dataset, filename)
+        if p.exists() and p.is_file():
+            img_path = p
+    else:
+        img_path = pick_dataset_thumbnail(ds_dir)
+
+    return await app_state.media_service.serve_media(
+        request,
+        img_path or Path(""),
+        thumb=thumb,
+        # Which file this resolves to changes as the dataset is edited, and
+        # the URL carries no version token, so the client must revalidate
+        # instead of trusting a cached copy. Matching ETags still 304.
+        revalidate=not filename,
+    )
+
+
+@router.get("/datasets/video")
+async def get_dataset_video(dataset: str, filename: str, request: Request):
+    app_state: AppState = request.app.state.webui
+    if ".." in dataset or ".." in filename:
+        raise HTTPException(status_code=400, detail="Invalid path")
+    if not path_util.is_supported_video_extension(Path(filename).suffix):
+        raise HTTPException(status_code=400, detail="Not a supported video file")
+
+    base_dir = get_base_datasets_dir(app_state)
+    video_path = resolve_inside_base(base_dir, dataset, os.path.basename(filename))
+    if not video_path.exists() or not video_path.is_file():
+        raise HTTPException(status_code=404, detail="Video not found")
+
+    mime_type, _ = mimetypes.guess_type(video_path)
+    return FileResponse(
+        video_path,
+        media_type=mime_type or "application/octet-stream",
+        headers={"Accept-Ranges": "bytes", "Cache-Control": "private, max-age=3600"},
+    )
